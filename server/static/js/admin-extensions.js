@@ -84,7 +84,6 @@
     return `
       <div id="${PAGE_ID}" class="admin-ext-page hud-page-stack lg:col-span-2" data-tpl="B">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">INTEGRATIONS · ${ServerI18n.t("extKickerTail")}</div>
           <h2 class="admin-ui-page-title">${ServerI18n.t("adminRouteTitle_integrations")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("extPageNote", { tag: "<b>Fire Token</b>" })}</p>
         </div>

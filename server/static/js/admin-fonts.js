@@ -31,7 +31,6 @@
     return `
       <div id="sec-fonts" class="hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">FONT LIBRARY · ${ServerI18n.t("fontsKicker")} · SUBSET</div>
           <h2 class="admin-ui-page-title">${ServerI18n.t("font")}</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("fontsPageNote")}

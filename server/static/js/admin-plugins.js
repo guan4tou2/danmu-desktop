@@ -43,7 +43,6 @@
       const html = `
         <div id="sec-plugins" class="hud-page-stack lg:col-span-2" data-tpl="B">
           <div class="admin-ui-page-head">
-            <div class="admin-ui-page-kicker">PLUGIN SDK \u00b7 ${ServerI18n.t("pluginsDesc")} \u00b7 HOT-RELOAD</div>
             <h2 class="admin-ui-page-title">${ServerI18n.t("pluginsTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("pluginsPageNote2")}</p>
           </div>

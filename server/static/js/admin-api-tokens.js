@@ -163,7 +163,6 @@
       <div id="${PAGE_ID}" class="admin-at-page hud-page-stack lg:col-span-2" data-tpl="B">
         <!-- Page header -->
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">API TOKENS · DEVELOPER ACCESS · ${ServerI18n.t("apiTokensKicker")}</div>
           <h2 class="admin-ui-page-title">API Tokens</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("apiTokensPageNote")}</p>
         </div>

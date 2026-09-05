@@ -119,7 +119,6 @@
     return `
       <div id="${PAGE_ID}" class="admin-about-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">ABOUT · ${ServerI18n.t("aboutKickerTail")}</div>
           <h2 class="admin-ui-page-title">${ServerI18n.t("aboutPageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("aboutPageNote")}</p>
         </div>

@@ -55,7 +55,6 @@
              Page used to render straight into hud-stats-strip without a
              section header. -->
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">MODERATION · LIVE FILTERS · ${ServerI18n.t("filtersKickerTail")}</div>
           <h2 class="admin-ui-page-title">${ServerI18n.t("filtersPageTitle")}</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("filtersPageNote")}

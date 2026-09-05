@@ -1112,7 +1112,6 @@ document.addEventListener("DOMContentLoaded", () => {
     settingsGrid.insertAdjacentHTML("beforeend", `
       <div id="sec-themes" class="hud-page-stack lg:col-span-2" data-tpl="C">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">THEME PACKS · ${ServerI18n.t("themesKickerTail")}</div>
           <h2 class="admin-ui-page-title" data-i18n="styleThemePacks">${ServerI18n.t("styleThemePacks")}</h2>
           <p class="admin-ui-page-note" data-i18n="themesSectionDesc">${ServerI18n.t("themesSectionDesc")}</p>
         </div>

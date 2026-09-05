@@ -88,7 +88,6 @@
     return (
       '<div id="' + SECTION_ID + '" class="admin-replay-page hud-page-stack lg:col-span-2" style="display:none">' +
         '<div class="admin-ui-page-head">' +
-          '<div class="admin-ui-page-kicker">REPLAY · ' + esc(t("replayKicker", "歷史彈幕重播")) + '</div>' +
           '<h2 class="admin-ui-page-title">' + esc(t("replayTitle", "Replay")) + '</h2>' +
           '<p class="admin-ui-page-note">' + esc(t("replayNote", "Re-fire historical messages. Pick a day, scrub the timeline, fire single or batch.")) + '</p>' +
         '</div>' +

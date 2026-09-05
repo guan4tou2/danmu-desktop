@@ -52,7 +52,6 @@
     return `
       <div id="${SECTION_ID}" class="admin-stickers-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">ASSETS · STICKERS · QUICK-SEND FOR AUDIENCE</div>
           <h2 class="admin-ui-page-title">${ServerI18n.t("stickersPageTitle")}</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("stickersPageNote")}
