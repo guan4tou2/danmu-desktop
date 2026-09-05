@@ -245,15 +245,27 @@
   --font-family: var(--font-ui);
   --font-sans: var(--font-ui);
 
-  /* Type scale — 4px-rounded modular scale (base 16px) */
-  --text-2xs: 0.75rem;   /* 12px — kicker / caption */
-  --text-xs: 0.75rem;    /* 12px — small label */
-  --text-sm: 0.875rem;   /* 14px — secondary body */
-  --text-base: 1rem;     /* 16px — body */
-  --text-lg: 1.125rem;   /* 18px — emphasis */
-  --text-xl: 1.25rem;    /* 20px — card heading */
-  --text-2xl: 1.5rem;    /* 24px — section heading */
-  --text-3xl: 1.875rem;  /* 30px — page heading */
+  /* Type scale — Apple SF native（2026-08-19 設計稿 07 拍板）。
+   * 取代先前自訂的 11/13/16/20/28/34 六級刻度：SF 的級距本身就是 HIG 原文，
+   * 17 是 iOS Body 標準、15 Subheadline、13 Footnote、12 Caption1。
+   * 舊的 --text-* 名稱全數保留（呼叫點上千處），只重新指向 SF 級距。 */
+  --text-caption:  0.75rem;    /* 12px — Caption1：群組小標、單位、輔助註記 */
+  --text-footnote: 0.8125rem;  /* 13px — Footnote：次要說明、頁首註解 */
+  --text-subhead:  0.9375rem;  /* 15px — Subheadline：設定列標籤（主力 body） */
+  --text-body:     1.0625rem;  /* 17px — Body：卡片標題、強調 */
+  --text-title2:   1.375rem;   /* 22px — Title2：頁面 h1 */
+  --text-title1:   1.75rem;    /* 28px — Title1：區段大標 */
+  --text-large:    2.125rem;   /* 34px — LargeTitle：僅 hero */
+
+  /* 相容別名 — 舊名指向 SF 級距，呼叫點無需同步改動 */
+  --text-2xs: var(--text-caption);   /* 12px */
+  --text-xs: var(--text-caption);    /* 12px */
+  --text-sm: var(--text-footnote);   /* 13px（原 14px） */
+  --text-base: var(--text-subhead);  /* 15px（原 16px） */
+  --text-lg: var(--text-body);       /* 17px（原 18px） */
+  --text-xl: var(--text-title2);     /* 22px（原 20px） */
+  --text-2xl: var(--text-title1);    /* 28px（原 24px） */
+  --text-3xl: var(--text-large);     /* 34px（原 30px） */
 
   /* Spacing scale — 4px grid。D-1（2026-07-28 拍板）：4px 格是唯一正式刻度，
    * 全部 margin/padding/gap 已 snap 到 4n；僅 0/1/2px 保留為髮絲線與微間隙

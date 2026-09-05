@@ -347,7 +347,7 @@ body[data-os="mac"] .client-titlebar {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1px;
   color: rgba(148, 163, 184, 0.9);
   text-transform: uppercase;
@@ -394,7 +394,7 @@ body[data-os="mac"] .client-titlebar {
   background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
   color: var(--color-primary);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1.2px;
   text-transform: uppercase;
   cursor: pointer;
@@ -448,7 +448,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-update-card .kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 2px;
   color: var(--color-primary);
   text-transform: uppercase;
@@ -462,7 +462,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-update-card .version {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: rgba(148, 163, 184, 0.85);
   letter-spacing: 0.5px;
 }
@@ -510,7 +510,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-card .progress-label {
   flex: 0 0 auto;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(241, 245, 249, 0.85);
   min-width: 40px;
@@ -630,7 +630,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-nav-label .en {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1px;
   color: rgba(148, 163, 184, 0.8);
   margin-top: 1px;
@@ -641,7 +641,7 @@ body[data-os="mac"] .client-titlebar {
   padding: 8px 12px;
   border-top: 1px solid rgba(148, 163, 184, 0.14);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.85);
   line-height: 1.6;
@@ -705,7 +705,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-section-kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 2px;
   color: rgba(148, 163, 184, 0.8);
   text-transform: uppercase;
@@ -731,7 +731,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-keys-row .act {
   flex: 1;
-  font-size: 13px;
+  font-size: var(--text-footnote);
   color: rgba(241, 245, 249, 0.9);
 }
 
@@ -749,7 +749,7 @@ body[data-os="mac"] .client-titlebar {
 .client-keys-hint {
   margin-top: 12px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.8);
 }
@@ -772,7 +772,7 @@ body[data-os="mac"] .client-titlebar {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: var(--text-title2);
   background: rgba(134, 239, 172, 0.12);
   border: 1px solid rgba(134, 239, 172, 0.45);
   color: var(--color-success-light);
@@ -792,7 +792,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-status-meta {
   margin-top: 4px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.85);
 }
@@ -804,7 +804,7 @@ body[data-os="mac"] .client-titlebar {
   border-radius: var(--radius-md-sm);
   color: var(--color-primary);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1px;
   cursor: pointer;
   transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
@@ -823,7 +823,7 @@ body[data-os="mac"] .client-titlebar {
 }
 .client-update-prefs-kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1.5px;
   color: rgba(148, 163, 184, 0.85);
   text-transform: uppercase;
@@ -842,11 +842,11 @@ body[data-os="mac"] .client-titlebar {
 }
 .client-update-pref-body { display: flex; flex-direction: column; gap: 2px; }
 .client-update-pref-label {
-  font-size: 13px;
+  font-size: var(--text-footnote);
   color: rgba(241, 245, 249, 0.9);
 }
 .client-update-pref-hint {
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: rgba(148, 163, 184, 0.85);
 }
 
@@ -864,7 +864,7 @@ body[data-os="mac"] .client-titlebar {
 }
 .client-update-changelog-kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1.5px;
   color: rgba(148, 163, 184, 0.85);
   text-transform: uppercase;
@@ -872,7 +872,7 @@ body[data-os="mac"] .client-titlebar {
 .client-update-changelog-link {
   margin-left: auto;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: var(--color-primary);
   text-decoration: none;
@@ -915,7 +915,7 @@ body[data-os="mac"] .client-titlebar {
 .client-about-body .meta {
   margin-top: 2px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.85);
 }
@@ -923,7 +923,7 @@ body[data-os="mac"] .client-titlebar {
 .client-about-body .status {
   margin-top: var(--space-1);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1px;
   color: var(--color-success-light);
 }
@@ -976,7 +976,7 @@ body[data-os="mac"] .client-titlebar {
    (single card, <br /> separator). Tone-down via textDim color. */
 .client-about-copyright {
   color: rgba(148, 163, 184, 0.7);
-  font-size: 11px;
+  font-size: var(--text-caption);
 }
 
 
@@ -1004,7 +1004,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 2px;
   color: rgba(148, 163, 184, 0.8);
   text-transform: uppercase;
@@ -1013,7 +1013,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-url {
   margin-top: 4px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 13px;
+  font-size: var(--text-footnote);
   font-weight: 600;
   color: rgba(241, 245, 249, 0.95);
   word-break: break-all;
@@ -1022,7 +1022,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-meta {
   margin-top: var(--space-1);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.8);
   display: flex;
@@ -1036,7 +1036,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-note {
   margin-top: var(--space-1);
-  font-size: 11px;
+  font-size: var(--text-caption);
   line-height: 1.5;
   color: rgba(148, 163, 184, 0.8);
 }
@@ -1061,7 +1061,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-card-meta {
   margin-left: auto;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.7);
 }
@@ -1105,7 +1105,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-host {
   flex: 1;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 13px;
+  font-size: var(--text-footnote);
   font-weight: 600;
   color: rgba(241, 245, 249, 0.95);
   word-break: break-all;
@@ -1113,7 +1113,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-edit-pencil {
   flex: none;
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: rgba(148, 163, 184, 0.7);
   pointer-events: none;
   transition: color var(--motion-fast) ease;
@@ -1133,7 +1133,7 @@ body[data-os="mac"] .client-titlebar {
   background: rgba(56, 189, 248, 0.06);
   border: 1px solid rgba(56, 189, 248, 0.18);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.3px;
   color: var(--color-primary);
   word-break: break-all;
@@ -1147,7 +1147,7 @@ body[data-os="mac"] .client-titlebar {
   padding: 4px 8px;
   border-radius: var(--radius-sm);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.5px;
   border: 1px solid rgba(148, 163, 184, 0.25);
   background: transparent;
@@ -1180,7 +1180,7 @@ body[data-os="mac"] .client-titlebar {
   background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
   color: var(--color-primary);
   font-family: ui-sans-serif, system-ui, "PingFang TC", sans-serif;
-  font-size: 11px;
+  font-size: var(--text-caption);
   cursor: pointer;
   transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
@@ -1196,7 +1196,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-edit-label {
   margin-top: var(--space-2);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1px;
   color: rgba(148, 163, 184, 0.8);
   text-transform: uppercase;
@@ -1217,7 +1217,7 @@ body[data-os="mac"] .client-titlebar {
   border-radius: var(--radius-md-sm);
   color: rgba(241, 245, 249, 0.95);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 13px;
+  font-size: var(--text-footnote);
   outline: none;
   box-sizing: border-box;
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
@@ -1230,7 +1230,7 @@ body[data-os="mac"] .client-titlebar {
   background: var(--color-primary);
   color: var(--color-bg-base, #0f172a);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   font-weight: 600;
   letter-spacing: 1px;
   cursor: pointer;
@@ -1245,7 +1245,7 @@ body[data-os="mac"] .client-titlebar {
   background: transparent;
   color: rgba(148, 163, 184, 0.8);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   cursor: pointer;
 }
 
@@ -1273,7 +1273,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-last-when {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.7);
 }
@@ -1281,7 +1281,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-hint {
   margin-top: var(--space-2);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.3px;
   line-height: 1.5;
   color: rgba(148, 163, 184, 0.7);
@@ -1290,7 +1290,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-edit-help {
   margin-top: 4px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.3px;
   line-height: 1.5;
   color: rgba(148, 163, 184, 0.7);
@@ -1310,7 +1310,7 @@ body[data-os="mac"] .client-titlebar {
   align-items: center;
   gap: var(--space-2);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--text-footnote);
   font-weight: 500;
   color: rgba(241, 245, 249, 0.95);
   list-style: none;
@@ -1321,7 +1321,7 @@ body[data-os="mac"] .client-titlebar {
 .client-conn-auth-status {
   margin-left: auto;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.7);
 }
@@ -1341,7 +1341,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-auth-kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 2px;
   color: rgba(148, 163, 184, 0.8);
   text-transform: uppercase;
@@ -1356,7 +1356,7 @@ body[data-os="mac"] .client-titlebar {
   border-radius: var(--radius-md-sm);
   color: rgba(241, 245, 249, 0.95);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 13px;
+  font-size: var(--text-footnote);
   outline: none;
   box-sizing: border-box;
 }
@@ -1373,7 +1373,7 @@ body[data-os="mac"] .client-titlebar {
   background: rgba(15, 23, 42, 0.35);
   color: rgba(241, 245, 249, 0.9);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1px;
   cursor: pointer;
   transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, color var(--motion-fast) ease;
@@ -1407,7 +1407,7 @@ body[data-os="mac"] .client-titlebar {
   display: flex;
   gap: var(--space-5);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.8);
 }
@@ -1456,7 +1456,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-conn-edit-field > span {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1.5px;
   color: rgba(148, 163, 184, 0.8);
   text-transform: uppercase;
@@ -1516,14 +1516,14 @@ body[data-os="mac"] .client-titlebar {
 .client-overlay-card .client-overlay-card-body { flex: 1; }
 
 .client-overlay-card .title {
-  font-size: 13px;
+  font-size: var(--text-footnote);
   font-weight: 600;
   color: rgba(241, 245, 249, 0.95);
 }
 
 .client-overlay-card .dim {
   margin-top: 2px;
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: rgba(148, 163, 184, 0.85);
 }
 
@@ -1581,7 +1581,7 @@ body[data-os="mac"] .client-titlebar {
 
 .client-overlay-screens .head .kicker {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 2px;
   color: rgba(148, 163, 184, 0.8);
   text-transform: uppercase;
@@ -1632,13 +1632,13 @@ body[data-os="mac"] .client-titlebar {
   margin-left: auto;
   color: var(--color-primary);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   opacity: 0;
 }
 
 .client-screen-chip .meta {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.8);
 }
@@ -1716,7 +1716,7 @@ body[data-os="mac"] .client-titlebar {
   padding: var(--space-3);
   background: rgba(30, 41, 59, 0.5);
   border-radius: var(--radius-md-sm);
-  font-size: 11px;
+  font-size: var(--text-caption);
   line-height: 1.6;
   color: rgba(148, 163, 184, 0.85);
   margin-bottom: 12px;
@@ -1725,7 +1725,7 @@ body[data-os="mac"] .client-titlebar {
 .client-overlay-note .kicker {
   display: inline-block;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 2px;
   color: var(--color-primary);
   text-transform: uppercase;
@@ -1787,7 +1787,7 @@ body[data-os="mac"] .client-titlebar {
   background: none;
   border: none;
   color: var(--color-text-muted, #64748b);
-  font-size: 20px;
+  font-size: var(--text-title2);
   cursor: pointer;
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-md-sm);
@@ -1809,7 +1809,7 @@ body[data-os="mac"] .client-titlebar {
   background: transparent;
   color: var(--color-text-muted, #64748b);
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--text-footnote);
   font-weight: 600;
   cursor: pointer;
   transition: background var(--motion-fast), color var(--motion-fast);
@@ -1835,7 +1835,7 @@ body[data-os="mac"] .client-titlebar {
   text-align: center;
   padding: 40px 16px;
   color: var(--color-text-muted, #64748b);
-  font-size: 13px;
+  font-size: var(--text-footnote);
 }
 
 .wp-card {
@@ -1882,7 +1882,7 @@ body[data-os="mac"] .client-titlebar {
 }
 
 .wp-card-name {
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--color-text-secondary, #94a3b8);
   overflow: hidden;
   text-overflow: ellipsis;

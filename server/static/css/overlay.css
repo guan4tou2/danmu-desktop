@@ -76,7 +76,7 @@ body {
   align-items: center;
   gap: 12px;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1.5px;
   color: var(--color-text-secondary);
 }
@@ -145,7 +145,7 @@ body {
   border: 1px solid rgba(56, 189, 248, 0.45);
   background: rgba(56, 189, 248, 0.12);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1.5px;
   color: #38bdf8;
   transition: background var(--motion-normal), border-color var(--motion-normal), color var(--motion-normal);
@@ -304,7 +304,7 @@ body {
 .overlay-idle-note {
   margin-top: 12px;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 13px;
+  font-size: var(--text-footnote);
   letter-spacing: 1px;
   color: var(--color-text-secondary);
 }
@@ -326,7 +326,7 @@ body {
 .overlay-idle-hint {
   padding: 8px 12px;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1px;
   color: var(--color-text-secondary);
 }
@@ -334,7 +334,7 @@ body {
   padding: 8px 16px;
   border-radius: var(--radius-sm);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--text-caption);
   letter-spacing: 1.5px;
   cursor: pointer;
   pointer-events: auto;
@@ -404,11 +404,11 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   50%      { box-shadow: 0 0 0 6px transparent; }
 }
 .poll-overlay-topbar .kicker {
-  font-family: var(--font-mono, monospace); font-size: 11px;
+  font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 2px; color: #f87171; font-weight: 600;
 }
 .poll-overlay-topbar .qnum {
-  font-family: var(--font-mono, monospace); font-size: 11px;
+  font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 1px;
   color: rgba(255, 255, 255, 0.6);
 }
@@ -429,12 +429,12 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   margin-bottom: 12px;
 }
 .poll-overlay-meta .qq {
-  font-family: var(--font-mono, monospace); font-size: 11px;
+  font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 2px; color: #22d3ee;
 }
 .poll-overlay-meta .counts {
   margin-left: auto;
-  font-family: var(--font-mono, monospace); font-size: 11px;
+  font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 1px; color: rgba(255, 255, 255, 0.55);
 }
 .poll-overlay-question {
@@ -453,15 +453,15 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 }
 .poll-overlay-row-head .key {
   font-family: var(--font-display, sans-serif);
-  font-size: 20px; letter-spacing: 1px;
+  font-size: var(--text-title2); letter-spacing: 1px;
   min-width: 24px;
 }
 .poll-overlay-row-head .lbl {
-  font-size: 16px; flex: 1;
+  font-size: var(--text-subhead); flex: 1;
   color: #fff;
 }
 .poll-overlay-row-head .lead {
-  font-family: var(--font-mono, monospace); font-size: 11px;
+  font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 1px;
   padding: 2px 8px;
   border: 1px solid;
@@ -469,11 +469,11 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 }
 .poll-overlay-row-head .pct {
   font-family: var(--font-display, sans-serif);
-  font-size: 20px; letter-spacing: 1px; font-weight: 600;
+  font-size: var(--text-title2); letter-spacing: 1px; font-weight: 600;
   min-width: 60px; text-align: right;
 }
 .poll-overlay-row-head .votes {
-  font-family: var(--font-mono, monospace); font-size: 11px;
+  font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 0.4px;
   color: rgba(255, 255, 255, 0.45);
   min-width: 50px; text-align: right;
@@ -522,17 +522,17 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   background: #fff; color: #000;
   border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-mono, monospace); font-size: 11px; font-weight: 700;
+  font-family: var(--font-mono, monospace); font-size: var(--text-caption); font-weight: 700;
 }
 .poll-overlay-foot .qr .hint {
-  font-family: var(--font-mono, monospace); font-size: 11px;
+  font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   color: #22d3ee; letter-spacing: 0.5px;
 }
 .poll-overlay-empty {
   padding: 16px;
   text-align: center;
   color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
+  font-size: var(--text-footnote);
 }
 
 /* Same bright-stage reasoning as .poll-overlay-topbar-pill: a 0.65 scrim under
@@ -545,7 +545,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   background: rgba(0, 0, 0, 0.78);
   border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: var(--radius-sm);
-  font-family: var(--font-mono, monospace); font-size: 11px;
+  font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   color: rgba(255, 255, 255, 0.85);
   letter-spacing: 0.5px;
 }
@@ -600,12 +600,12 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   text-align: center;
 }
 .poll-overlay-celebration-top .kicker {
-  font-family: var(--font-mono, monospace); font-size: 11px;
+  font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 4px;
   margin-bottom: 4px;
 }
 .poll-overlay-celebration-top .question {
-  font-size: 16px;
+  font-size: var(--text-subhead);
   color: rgba(255, 255, 255, 0.65);
   font-weight: 400;
 }
@@ -616,7 +616,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   text-align: center;
 }
 .poll-overlay-winner .winner-kicker {
-  font-family: var(--font-mono, monospace); font-size: 11px;
+  font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 3px;
   color: #fbbf24;
   margin-bottom: 12px;
@@ -641,7 +641,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 .poll-overlay-winner .winner-label {
   margin-top: 16px;
   font-family: var(--font-display, sans-serif);
-  font-size: 28px; font-weight: 600;
+  font-size: var(--text-title1); font-weight: 600;
   letter-spacing: 0.5px;
 }
 .poll-overlay-winner .winner-stats {
@@ -653,7 +653,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   font-size: 32px; font-weight: 600; letter-spacing: 1px;
 }
 .poll-overlay-winner .winner-stats .votes {
-  font-family: var(--font-mono, monospace); font-size: 13px;
+  font-family: var(--font-mono, monospace); font-size: var(--text-footnote);
   letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.55);
 }
@@ -661,7 +661,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 .poll-overlay-celebration-foot {
   position: absolute; bottom: 40px; left: 50%;
   transform: translateX(-50%);
-  font-family: var(--font-mono, monospace); font-size: 11px;
+  font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.55);
 }
