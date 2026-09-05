@@ -141,7 +141,7 @@
               <div id="filterRuleForm" style="padding:14px;display:flex;flex-direction:column;gap:10px">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                   <div>
-                    <label for="filterType" class="admin-v3-card-kicker" style="margin:0">TYPE</label>
+                    <label for="filterType" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("mlType")}</label>
                     <select id="filterType" class="admin-ui-select">
                       <option value="keyword">keyword</option>
                       <option value="regex">regex</option>
@@ -150,7 +150,7 @@
                     </select>
                   </div>
                   <div>
-                    <label for="filterAction" class="admin-v3-card-kicker" style="margin:0">ACTION</label>
+                    <label for="filterAction" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("mlAction")}</label>
                     <select id="filterAction" class="admin-ui-select">
                       <option value="block">block</option>
                       <option value="replace">replace</option>
@@ -159,7 +159,7 @@
                   </div>
                 </div>
                 <div>
-                  <label for="filterPattern" class="admin-v3-card-kicker" style="margin:0">PATTERN</label>
+                  <label for="filterPattern" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("mlPattern")}</label>
                   <input type="text" id="filterPattern" placeholder="${t("filterPatternPlaceholder", "Enter pattern...")}"
                     class="admin-ui-input" />
                 </div>
@@ -214,7 +214,10 @@
   function renderRuleRow(rule) {
     const typePill = TYPE_PILL[rule.type] || "is-default";
     const actionCol = ACTION_COLOR[rule.action] || "var(--color-text-muted)";
-    const typeLabel = rule.type === "keyword" ? "WORD" : rule.type.toUpperCase();
+    // v8（2026-08-19）：規則型別標籤改吃 i18n——WORD/REGEX/REPLACE
+    // 是內部型別名，不該直接當標籤給主持人看。
+    const TYPE_KEY = { keyword: "ulWord", regex: "ulRegex", replace: "ulReplace", rate_limit: "ulRate" };
+    const typeLabel = ServerI18n.t(TYPE_KEY[rule.type] || "ulWord");
 
     let patternText = rule.pattern;
     if (rule.type === "replace" && rule.replacement !== undefined) {

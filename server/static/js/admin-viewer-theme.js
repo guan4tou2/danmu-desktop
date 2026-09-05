@@ -72,8 +72,8 @@
                 </div>
                 <div class="admin-vt-mode" data-vt-theme-force>
                   <button type="button" data-vt-theme-btn="auto"><span class="icon">◑</span><span class="lbl">${ServerI18n.t("viewerThemeModeAuto")}</span><span class="sub">${ServerI18n.t("lbAuto")}</span></button>
-                  <button type="button" data-vt-theme-btn="force-light"><span class="icon">☼</span><span class="lbl">${ServerI18n.t("viewerThemeForceLight")}</span><span class="sub">FORCE LIGHT</span></button>
-                  <button type="button" data-vt-theme-btn="force-dark"><span class="icon">◐</span><span class="lbl">${ServerI18n.t("viewerThemeForceDark")}</span><span class="sub">FORCE DARK</span></button>
+                  <button type="button" data-vt-theme-btn="force-light"><span class="icon">☼</span><span class="lbl">${ServerI18n.t("viewerThemeForceLight")}</span></button>
+                  <button type="button" data-vt-theme-btn="force-dark"><span class="icon">◐</span><span class="lbl">${ServerI18n.t("viewerThemeForceDark")}</span></button>
                 </div>
               </div>
               <div class="admin-vt-force-row">
@@ -86,10 +86,10 @@
                   <!-- D-4：語言自稱名（繁體中文／English／日本語／한국어）是語言選擇器
                        慣例——用該語言自身文字呈現，不隨 admin UI 語言翻譯，不搬。icon
                        字符（中/EN/日/한）同理，維持原樣。 -->
-                  <button type="button" data-vt-lang-btn="force-zh"><span class="icon">中</span><span class="lbl">繁體中文</span><span class="sub">FORCE ZH</span></button>
-                  <button type="button" data-vt-lang-btn="force-en"><span class="icon">EN</span><span class="lbl">English</span><span class="sub">FORCE EN</span></button>
-                  <button type="button" data-vt-lang-btn="force-ja"><span class="icon">日</span><span class="lbl">日本語</span><span class="sub">FORCE JA</span></button>
-                  <button type="button" data-vt-lang-btn="force-ko"><span class="icon">한</span><span class="lbl">한국어</span><span class="sub">FORCE KO</span></button>
+                  <button type="button" data-vt-lang-btn="force-zh"><span class="icon">中</span><span class="lbl">繁體中文</span></button>
+                  <button type="button" data-vt-lang-btn="force-en"><span class="icon">EN</span><span class="lbl">English</span></button>
+                  <button type="button" data-vt-lang-btn="force-ja"><span class="icon">日</span><span class="lbl">日本語</span></button>
+                  <button type="button" data-vt-lang-btn="force-ko"><span class="icon">한</span><span class="lbl">한국어</span></button>
                 </div>
               </div>
               <div class="admin-vt-force-note">
@@ -103,7 +103,7 @@
             </div>
 
             <div class="admin-vt-card">
-              <div class="admin-vt-card-head"><span class="title">LOGO</span><span class="kicker">LOGO · ${ServerI18n.t("viewerThemeLogoKickerSpec")}</span></div>
+              <div class="admin-vt-card-head"><span class="title">Logo</span><span class="kicker">${ServerI18n.t("viewerThemeLogoKickerSpec")}</span></div>
               <label class="admin-vt-logo-drop" data-vt-logo-drop>
                 <span class="hint-empty">${ServerI18n.t("viewerThemeLogoDropHint")}<br><small>${ServerI18n.t("viewerThemeLogoDropHintSmall")}</small></span>
                 <img class="hint-preview" hidden data-vt-logo-preview alt="logo" />
@@ -237,7 +237,7 @@
             <span style="background:${p.hero}"></span>
           </div>
           <div class="name">${ServerI18n.t(p.nameKey)}</div>
-          <div class="mode">${p.mode.toUpperCase()}</div>
+          <div class="mode">${ServerI18n.t(p.mode === "dark" ? "lbDark" : "lbLight")}</div>
         `;
         btn.addEventListener("click", () => { state = { ...state, ...p }; presetId = p.id; persist(); render(); });
         box.appendChild(btn);
@@ -254,7 +254,8 @@
       const box = root.querySelector("[data-vt-colors]");
       const fg = state.mode === "dark" ? "#F8FAFC" : "#0F172A";
       // D-4：label/vsLbl 是函式內建構（每次 render 呼叫），可直接 t()；
-      // en 欄位維持全大寫 EN 設計標籤（BG/PRIMARY/HERO），不搬。
+      // v8（2026-08-19）：en 欄位不再渲染——label 已是中文，旁邊再擺
+      // BG/PRIMARY/HERO 是同一件事說兩次。欄位留著（呼叫點都在傳）。
       const rows = [
         { key: "bg",      label: ServerI18n.t("viewerThemeColorLabelBg"),      en: "BG",      vs: fg,       vsLbl: ServerI18n.t("viewerThemeColorLabelText") },
         { key: "primary", label: ServerI18n.t("viewerThemeColorLabelPrimary"), en: "PRIMARY", vs: state.bg, vsLbl: ServerI18n.t("viewerThemeColorLabelBg") },
@@ -269,7 +270,6 @@
             <div class="meta">
               <div class="top">
                 <span class="label">${r.label}</span>
-                <span class="kicker">${r.en}</span>
                 <span class="grade ${g.cls}">${g.label} · ${ratio.toFixed(1)}</span>
               </div>
               <div class="bottom">

@@ -711,7 +711,7 @@
       card.innerHTML = `
         <div class="hud-effect-card-head">
           <span class="hud-status-dot is-live"></span>
-          <span class="admin-v3-card-kicker" style="margin:0;color:var(--color-text-muted)">${escapeHtml(cat)}</span>
+          <span class="admin-v3-card-kicker" style="margin:0;color:var(--color-text-muted)">${escapeHtml(ServerI18n.t("fxCat" + cat.charAt(0) + cat.slice(1).toLowerCase()) || cat)}</span>
           <!-- v8（設計稿 07 · R5）：檔名不再印在卡面。「.dme」是實作細節，
                依規格只在匯入時出現；檔名仍留在 card.title 的 tooltip 裡，
                需要對照檔案的人查得到。 -->

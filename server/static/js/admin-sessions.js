@@ -240,7 +240,6 @@
     return '<div class="admin-kpi-tile">'
       + '<div class="admin-kpi-tile-head">'
       +   '<span class="label">' + _escHtml(label) + '</span>'
-      +   '<span class="en">' + _escHtml(en) + '</span>'
       + '</div>'
       + '<div class="admin-kpi-tile-value" ' + attr + '>' + _escHtml(value) + '</div>'
       + '</div>';
@@ -325,7 +324,6 @@
         + '<div class="admin-sessions-bucket-head" data-sessions-bucket="' + _escHtml(b.range) + '" role="button" tabindex="0">'
         +   '<span class="admin-sessions-bucket-chev" aria-hidden="true">' + (collapsed ? '▸' : '▾') + '</span>'
         +   '<span class="admin-sessions-bucket-label">' + _escHtml(b.label) + '</span>'
-        +   '<span class="admin-sessions-bucket-en">' + _escHtml(b.range) + '</span>'
         +   '<span class="admin-sessions-bucket-date">' + _escHtml(dateRange) + '</span>'
         +   '<span class="admin-sessions-bucket-spacer"></span>'
         +   '<span class="admin-sessions-bucket-stat">' + b.count + ' sessions</span>'
