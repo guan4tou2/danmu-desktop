@@ -164,7 +164,6 @@
           <div class="admin-bc-v4__secondary admin-bc-v5__secondary" data-bc-secondary>
             <button type="button" class="admin-bc-v4__sec is-clear" data-bc-clear>
               <span class="admin-bc-v4__sec-label">${ServerI18n.t("broadcastClearScreenBtn")}</span>
-              <span class="admin-bc-v4__sec-hint">CLEAR ONSCREEN</span>
             </button>
           </div>
 

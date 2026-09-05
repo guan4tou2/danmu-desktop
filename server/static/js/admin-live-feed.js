@@ -489,8 +489,8 @@
               placeholder="${escapeAttr(ServerI18n.t("liveFeedSearchPlaceholder"))}"
               class="admin-lf-v4__search" />
             <span class="admin-lf-v4__density-label">DENSITY</span>
-            <button type="button" class="admin-lf-v4__dchip" data-density="compact">COMPACT</button>
-            <button type="button" class="admin-lf-v4__dchip is-active" data-density="comfy">COMFY</button>
+            <button type="button" class="admin-lf-v4__dchip" data-density="compact">${ServerI18n.t("lbCompact")}</button>
+            <button type="button" class="admin-lf-v4__dchip is-active" data-density="comfy">${ServerI18n.t("lbComfy")}</button>
             <button id="liveFeedPauseBtn" type="button" class="admin-lf-v4__pausebtn">${escapeAttr(ServerI18n.t("pauseBtn"))}</button>
             <button id="liveFeedClearBtn" type="button" class="admin-lf-v4__pausebtn">${escapeAttr(ServerI18n.t("clearBtn"))}</button>
           </div>

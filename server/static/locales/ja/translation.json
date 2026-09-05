@@ -2726,5 +2726,13 @@
   "layoutPresetTop": "上部",
   "layoutPresetBottom": "下部",
   "layoutPresetCenter": "中央",
-  "layoutPresetSide": "サイド"
+  "layoutPresetSide": "サイド",
+  "lbReady": "準備完了",
+  "lbInstall": "インストール",
+  "lbCompact": "コンパクト",
+  "lbComfy": "ゆったり",
+  "lbToday": "今日",
+  "lbYesterday": "昨日",
+  "lbLatest": "最新",
+  "lbRetro": "レトロ"
 }

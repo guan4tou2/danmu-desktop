@@ -2726,5 +2726,13 @@
   "layoutPresetTop": "Top",
   "layoutPresetBottom": "Bottom",
   "layoutPresetCenter": "Center",
-  "layoutPresetSide": "Side"
+  "layoutPresetSide": "Side",
+  "lbReady": "Ready",
+  "lbInstall": "Install",
+  "lbCompact": "Compact",
+  "lbComfy": "Comfy",
+  "lbToday": "Today",
+  "lbYesterday": "Yesterday",
+  "lbLatest": "Latest",
+  "lbRetro": "Retro"
 }

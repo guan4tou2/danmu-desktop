@@ -98,7 +98,7 @@
     const isReady = ext.status === "ready";
     const dotState = "is-cold";  // updated post-fetch
     const flag = isReady
-      ? `<span class="admin-ext-flag is-ready">READY</span>`
+      ? `<span class="admin-ext-flag is-ready">${ServerI18n.t("lbReady")}</span>`
       : `<span class="admin-ext-flag is-soon">${ServerI18n.t("extFlagSoon")}</span>`;
     const installSection = isReady && ext.install
       ? `<div class="admin-ext-install">

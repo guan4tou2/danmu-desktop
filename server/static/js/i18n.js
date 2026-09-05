@@ -2737,7 +2737,15 @@
       "layoutPresetTop": "Top",
       "layoutPresetBottom": "Bottom",
       "layoutPresetCenter": "Center",
-      "layoutPresetSide": "Side"
+      "layoutPresetSide": "Side",
+      "lbReady": "Ready",
+      "lbInstall": "Install",
+      "lbCompact": "Compact",
+      "lbComfy": "Comfy",
+      "lbToday": "Today",
+      "lbYesterday": "Yesterday",
+      "lbLatest": "Latest",
+      "lbRetro": "Retro"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -5467,7 +5475,15 @@
       "layoutPresetTop": "頂端",
       "layoutPresetBottom": "底端",
       "layoutPresetCenter": "中央",
-      "layoutPresetSide": "側邊"
+      "layoutPresetSide": "側邊",
+      "lbReady": "就緒",
+      "lbInstall": "安裝",
+      "lbCompact": "緊湊",
+      "lbComfy": "寬鬆",
+      "lbToday": "今天",
+      "lbYesterday": "昨天",
+      "lbLatest": "最新",
+      "lbRetro": "復古"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -8197,7 +8213,15 @@
       "layoutPresetTop": "上部",
       "layoutPresetBottom": "下部",
       "layoutPresetCenter": "中央",
-      "layoutPresetSide": "サイド"
+      "layoutPresetSide": "サイド",
+      "lbReady": "準備完了",
+      "lbInstall": "インストール",
+      "lbCompact": "コンパクト",
+      "lbComfy": "ゆったり",
+      "lbToday": "今日",
+      "lbYesterday": "昨日",
+      "lbLatest": "最新",
+      "lbRetro": "レトロ"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -10927,7 +10951,15 @@
       "layoutPresetTop": "상단",
       "layoutPresetBottom": "하단",
       "layoutPresetCenter": "중앙",
-      "layoutPresetSide": "측면"
+      "layoutPresetSide": "측면",
+      "lbReady": "준비됨",
+      "lbInstall": "설치",
+      "lbCompact": "조밀",
+      "lbComfy": "여유",
+      "lbToday": "오늘",
+      "lbYesterday": "어제",
+      "lbLatest": "최신",
+      "lbRetro": "레트로"
     }
   };
 

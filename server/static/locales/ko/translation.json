@@ -2726,5 +2726,13 @@
   "layoutPresetTop": "상단",
   "layoutPresetBottom": "하단",
   "layoutPresetCenter": "중앙",
-  "layoutPresetSide": "측면"
+  "layoutPresetSide": "측면",
+  "lbReady": "준비됨",
+  "lbInstall": "설치",
+  "lbCompact": "조밀",
+  "lbComfy": "여유",
+  "lbToday": "오늘",
+  "lbYesterday": "어제",
+  "lbLatest": "최신",
+  "lbRetro": "레트로"
 }

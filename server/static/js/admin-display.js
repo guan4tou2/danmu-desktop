@@ -1311,13 +1311,15 @@
     // #/ratelimit (which owns the actual editor + audit trail), and the
     // content side will gain inline editors once SettingUpdateSchema is
     // extended (BE TODO — see ratelimit/audience briefs).
+    // v8（2026-08-19 設計稿 07）：第二參數 en 不再渲染——第一參數已經是
+    // 中文標籤，再擺一行 PER FP / MIN 是同一件事說兩次。參數保留在簽章裡
+    // （十幾個呼叫點都在傳），只是不輸出。
     function _vcLimitRow(label, en, value, unit, hint, danger) {
       const valColor = danger ? "var(--color-crimson, #f87171)" : "var(--color-text-strong)";
       return (
         '<div class="admin-vc-limit-row">' +
           '<div class="admin-vc-limit-row__label">' +
             '<div class="admin-vc-limit-row__zh">' + label + '</div>' +
-            '<div class="admin-vc-limit-row__en">' + en + '</div>' +
           '</div>' +
           '<div class="admin-vc-limit-row__value" style="color:' + valColor + '">' +
             value +
@@ -1337,7 +1339,6 @@
         '<div class="admin-vc-limit-card__head">' +
           '<span class="admin-vc-limit-card__dot is-amber"></span>' +
           '<span class="admin-vc-limit-card__zh">' + escapeHtml(t("displayRateLimitsTitle")) + '</span>' +
-          '<span class="admin-vc-limit-card__en">RATE LIMITS</span>' +
           '<a href="#/ratelimit" class="admin-vc-limit-card__edit">' + escapeHtml(t("displayEditLink")) + '</a>' +
         '</div>' +
         _vcLimitRow(escapeHtml(t("displayRateFpLabel")), "PER FP / MIN", '<span data-vc-rate-fp>—</span>', escapeHtml(t("displayRateFpUnit")), escapeHtml(t("displayRateFpHint"))) +
@@ -1354,7 +1355,6 @@
         '<div class="admin-vc-limit-card__head">' +
           '<span class="admin-vc-limit-card__dot is-cyan"></span>' +
           '<span class="admin-vc-limit-card__zh">' + escapeHtml(t("displayContentLimitsTitle")) + '</span>' +
-          '<span class="admin-vc-limit-card__en">CONTENT LIMITS</span>' +
         '</div>' +
         _vcLimitRow(escapeHtml(t("displayMsgLenLabel")), "MAX LENGTH", '<span data-vc-msg-len>—</span>', escapeHtml(t("displayMsgLenUnit")), escapeHtml(t("displayMsgLenHint"))) +
         _vcLimitRow(escapeHtml(t("displayNickLenLabel")), "NICK MAX", '<span data-vc-nick-len>—</span>', escapeHtml(t("displayNickLenUnit")), escapeHtml(t("displayNickLenHint"))) +
