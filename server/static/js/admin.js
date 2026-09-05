@@ -1468,7 +1468,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 空陣列會讓 syncRouteContainerVisibility() 算出空 owner set 並藏掉
     // 整個容器，模組再怎麼把自己設成 display:"" 都沒用（#/security 也曾
     // 這樣壞過）。
-    overlay:   { title: "顯示層",        kicker: "DESKTOP · ON / OFF / PAUSED",       sections: ["admin-broadcast-v2-page"] },
+    overlay:   { title: "顯示層",        kicker: "DESKTOP · ON / OFF / PAUSED",       sections: ["admin-broadcast-v2-page", "sec-viewer-config-defaults"] },
     // Missing prototype pages — implemented 2026-04-29
     sessions:     { title: "場次",            kicker: "SESSIONS · 場次列表 · 即時 / 歷史",  sections: ["sec-sessions-overview"] },
     "session-detail": { title: "場次詳情",    kicker: "SESSION DETAIL · 密度時間軸 · 訊息回顧", sections: ["sec-session-detail-overview"] },

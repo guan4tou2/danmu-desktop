@@ -2617,5 +2617,9 @@
   "backupFactoryResetBtn": "重置",
   "fxPageNote": "開啟的效果會出現在觀眾頁的「樣式」裡。點卡片可預覽並調整參數。",
   "fxOpenToAudience": "開放給觀眾",
-  "fxStackingRulesLabel": "效果疊加規則"
+  "fxStackingRulesLabel": "效果疊加規則",
+  "displayValuesTitle": "彈幕外觀",
+  "displayValuesNote": "調整彈幕在大螢幕上的樣子。改動即時套用到所有已連線的顯示層。",
+  "displayColValue": "目前設定",
+  "displayHintBigScreen": "大螢幕上使用的值"
 }

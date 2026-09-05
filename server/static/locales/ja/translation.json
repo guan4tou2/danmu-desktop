@@ -2617,5 +2617,9 @@
   "backupFactoryResetBtn": "リセット",
   "fxPageNote": "オンにした効果は観客ページの「スタイル」に表示されます。カードをクリックするとプレビューと調整ができます。",
   "fxOpenToAudience": "観客に公開中",
-  "fxStackingRulesLabel": "重ねがけのルール"
+  "fxStackingRulesLabel": "重ねがけのルール",
+  "displayValuesTitle": "弾幕の見た目",
+  "displayValuesNote": "大画面での弾幕の見え方を調整します。変更は接続中のすべての表示レイヤーに即時反映されます。",
+  "displayColValue": "現在の設定",
+  "displayHintBigScreen": "大画面で使われる値"
 }

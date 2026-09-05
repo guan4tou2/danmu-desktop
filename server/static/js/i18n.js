@@ -2628,7 +2628,11 @@
       "backupFactoryResetBtn": "Reset",
       "fxPageNote": "Enabled effects appear under “Style” on the viewer page. Click a card to preview and adjust it.",
       "fxOpenToAudience": "open to the audience",
-      "fxStackingRulesLabel": "Stacking rules"
+      "fxStackingRulesLabel": "Stacking rules",
+      "displayValuesTitle": "Danmu appearance",
+      "displayValuesNote": "Adjust how danmu look on the big screen. Changes apply instantly to every connected display.",
+      "displayColValue": "Current value",
+      "displayHintBigScreen": "The value used on the big screen"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -5249,7 +5253,11 @@
       "backupFactoryResetBtn": "重置",
       "fxPageNote": "開啟的效果會出現在觀眾頁的「樣式」裡。點卡片可預覽並調整參數。",
       "fxOpenToAudience": "開放給觀眾",
-      "fxStackingRulesLabel": "效果疊加規則"
+      "fxStackingRulesLabel": "效果疊加規則",
+      "displayValuesTitle": "彈幕外觀",
+      "displayValuesNote": "調整彈幕在大螢幕上的樣子。改動即時套用到所有已連線的顯示層。",
+      "displayColValue": "目前設定",
+      "displayHintBigScreen": "大螢幕上使用的值"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -7870,7 +7878,11 @@
       "backupFactoryResetBtn": "リセット",
       "fxPageNote": "オンにした効果は観客ページの「スタイル」に表示されます。カードをクリックするとプレビューと調整ができます。",
       "fxOpenToAudience": "観客に公開中",
-      "fxStackingRulesLabel": "重ねがけのルール"
+      "fxStackingRulesLabel": "重ねがけのルール",
+      "displayValuesTitle": "弾幕の見た目",
+      "displayValuesNote": "大画面での弾幕の見え方を調整します。変更は接続中のすべての表示レイヤーに即時反映されます。",
+      "displayColValue": "現在の設定",
+      "displayHintBigScreen": "大画面で使われる値"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -10491,7 +10503,11 @@
       "backupFactoryResetBtn": "초기화",
       "fxPageNote": "켜 둔 효과는 관객 페이지의 “스타일”에 나타납니다. 카드를 클릭하면 미리보고 조정할 수 있습니다.",
       "fxOpenToAudience": "관객에게 공개",
-      "fxStackingRulesLabel": "중첩 규칙"
+      "fxStackingRulesLabel": "중첩 규칙",
+      "displayValuesTitle": "탄막 모양",
+      "displayValuesNote": "큰 화면에서 탄막이 어떻게 보일지 조정합니다. 변경 사항은 연결된 모든 표시 레이어에 즉시 반영됩니다.",
+      "displayColValue": "현재 설정",
+      "displayHintBigScreen": "큰 화면에서 사용되는 값"
     }
   };
 

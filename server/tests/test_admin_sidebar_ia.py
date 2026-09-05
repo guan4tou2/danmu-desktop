@@ -769,11 +769,19 @@ def test_viewer_owner_gate_accepts_all_four_owners(admin_display_js: str):
     assert (
         "const isViewerOwner = _isViewerOwner(route, leaf)" in body
     ), "syncVisibility must use the shared owner helper"
-    assert 'page.style.display = (isViewerOwner && tab === "defaults") ? "" : "none"' in body, (
-        "admin-display-v2-page now hosts the Viewer › Defaults tab; it "
-        "must become visible only when the viewer owner gate is true "
-        "AND the defaults tab is active."
-    )
+    # v8 IA (2026-08-19)：同一份面板改為服務兩條路由——顯示層 (overlay) 露
+    # 「值」欄、觀眾頁 (viewer › defaults) 露「觀眾可自訂」欄，由 data-dsp-mode
+    # 決定。可見性條件因此從單一 gate 變成兩個 owner 的聯集。
+    assert (
+        "const isDisplayOwner = _isDisplayOwner(route, leaf)" in body
+    ), "syncVisibility 必須一併問 display owner（顯示層路由）"
+    assert (
+        'const showPanel = (isViewerOwner && tab === "defaults") || isDisplayOwner' in body
+    ), "面板可見性 = 觀眾頁 defaults 分頁 或 顯示層路由"
+    assert (
+        'page.dataset.dspMode = isDisplayOwner ? "values" : "audience"' in body
+    ), "必須標上 data-dsp-mode，CSS 靠它決定露值欄還是觀眾欄"
+    assert 'page.style.display = showPanel ? "" : "none"' in body
 
 
 def test_viewer_tab_state_has_a_single_source(admin_display_js: str):

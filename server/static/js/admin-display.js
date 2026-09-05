@@ -121,9 +121,13 @@
   function pageTemplate() {
     return `
       <div id="${PAGE_ID}" class="admin-dsp2-page hud-page-stack lg:col-span-2" data-tpl="C">
+        <!-- 標題／說明兩套並存，由 data-dsp-mode 決定露哪一套（CSS 在 hud.css）。
+             同一份面板服務顯示層與觀眾頁兩條路由，文案不能只寫一種。 -->
         <div class="admin-ui-page-head">
-          <h2 class="admin-ui-page-title">${escapeHtml(t("displayViewerDefaultsTitle"))}</h2>
-          <p class="admin-ui-page-note">${t("displayViewerDefaultsNote")}</p>
+          <h2 class="admin-ui-page-title" data-dsp-only="values">${escapeHtml(t("displayValuesTitle"))}</h2>
+          <p class="admin-ui-page-note" data-dsp-only="values">${t("displayValuesNote")}</p>
+          <h2 class="admin-ui-page-title" data-dsp-only="audience">${escapeHtml(t("displayViewerDefaultsTitle"))}</h2>
+          <p class="admin-ui-page-note" data-dsp-only="audience">${t("displayViewerDefaultsNote")}</p>
         </div>
 
         <div class="admin-dsp2-grid">
@@ -131,8 +135,8 @@
           <div class="admin-dsp2-list" id="dsp2-list">
             <div class="admin-dsp2-list-head">
               <span>${escapeHtml(t("displayColParam"))}</span>
-              <span>${escapeHtml(t("displayColDefault"))}</span>
-              <span class="admin-dsp2-list-head-right">${escapeHtml(t("displayColAudience"))}</span>
+              <span data-dsp-only="values">${escapeHtml(t("displayColValue"))}</span>
+              <span class="admin-dsp2-list-head-right" data-dsp-only="audience">${escapeHtml(t("displayColAudience"))}</span>
             </div>
             <div id="dsp2-rows">
               ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : escapeHtml(t("loading"))}
@@ -462,7 +466,13 @@
           <div class="admin-dsp2-value-badge ${enabled ? "is-on" : ""}" data-value-badge>${escapeHtml(valStr)}</div>
         </div>
         <div class="admin-dsp2-cell-center">
-          <div class="admin-dsp2-cell-hint">
+          <!-- 提示兩套並存，CSS 依 data-dsp-mode 擇一。顯示層講的是「大螢幕
+               上就是這個值」；觀眾頁講的是「觀眾拖滑桿時從哪裡開始」。 -->
+          <div class="admin-dsp2-cell-hint" data-dsp-only="values">
+            <span class="admin-dsp2-cell-hint-arrow">▸</span>
+            ${escapeHtml(t("displayHintBigScreen"))}
+          </div>
+          <div class="admin-dsp2-cell-hint" data-dsp-only="audience">
             <span class="admin-dsp2-cell-hint-arrow">▸</span>
             ${escapeHtml(enabled
               ? t("displayHintAudienceOn")
@@ -1002,7 +1012,10 @@
 
   let _lastVisibleRoute = null;
   function _isDisplayOwner(route, leaf) {
-    return route === "display" || leaf === "display";
+    // `display` 是 2026-05-19 退役的 slug（bare-redirect 到 viewer/defaults），
+    // 這個判斷式因此一直是死的。v8 起由「顯示層」overlay 路由接管。
+    return route === "overlay" || leaf === "overlay" ||
+           route === "display" || leaf === "display";
   }
 
   function _isViewerOwner(route, leaf) {
@@ -1115,7 +1128,15 @@
     // via the router, so the viewer-owned panels continue to render for both
     // `viewer` and `viewer-config`.
     const isViewerOwner = _isViewerOwner(route, leaf);
-    page.style.display = (isViewerOwner && tab === "defaults") ? "" : "none";
+    // v8（設計稿 07）：同一份面板服務兩條路由，用 data-dsp-mode 決定露出哪一欄。
+    //   顯示層 (overlay) → values   ：主持人設定大螢幕上長什麼樣（值本身）
+    //   觀眾頁 (viewer)  → audience ：觀眾能不能自己改（每列的開關）
+    // 拆成兩份 DOM 會連帶要拆事件委派與 refreshRow 的目標；同一份 DOM 靠
+    // CSS 分模式，改動面小得多，兩頁也永遠不會不同步。
+    const isDisplayOwner = _isDisplayOwner(route, leaf);
+    const showPanel = (isViewerOwner && tab === "defaults") || isDisplayOwner;
+    page.dataset.dspMode = isDisplayOwner ? "values" : "audience";
+    page.style.display = showPanel ? "" : "none";
     const vt = document.getElementById("sec-viewer-theme");
     if (vt) {
       vt.style.display = (isViewerOwner && tab === "page") ? "" : "none";

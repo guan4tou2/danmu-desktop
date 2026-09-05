@@ -2617,5 +2617,9 @@
   "backupFactoryResetBtn": "Reset",
   "fxPageNote": "Enabled effects appear under “Style” on the viewer page. Click a card to preview and adjust it.",
   "fxOpenToAudience": "open to the audience",
-  "fxStackingRulesLabel": "Stacking rules"
+  "fxStackingRulesLabel": "Stacking rules",
+  "displayValuesTitle": "Danmu appearance",
+  "displayValuesNote": "Adjust how danmu look on the big screen. Changes apply instantly to every connected display.",
+  "displayColValue": "Current value",
+  "displayHintBigScreen": "The value used on the big screen"
 }

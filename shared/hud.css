@@ -3211,6 +3211,29 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   .admin-dsp2-list-head { display: none; }
 }
 
+/* ─── 顯示層 / 觀眾頁 的兩種模式（2026-08-19 設計稿 07）───────────────
+ * 同一份面板服務兩條路由，syncVisibility 在容器上標 data-dsp-mode：
+ *   values   → 顯示層：只露「值」那一欄（主持人設定大螢幕長什麼樣）
+ *   audience → 觀眾頁：只露「觀眾可自訂」的開關欄
+ * 設計稿把這兩件事分成 R1 與 R4 兩頁；資料本來就是同一列的 slot 3 與
+ * slot 0，所以拆的是呈現、不是資料。
+ * ──────────────────────────────────────────────────────────────────── */
+[data-dsp-mode="values"] .admin-dsp2-cell-toggle,
+[data-dsp-mode="audience"] .admin-dsp2-cell-center {
+  display: none;
+}
+
+/* 標題／說明／欄位表頭也是兩套並存，只露當前模式的那一套 */
+[data-dsp-mode="values"] [data-dsp-only="audience"],
+[data-dsp-mode="audience"] [data-dsp-only="values"] {
+  display: none;
+}
+
+/* 單欄模式下不需要三欄網格的留白 */
+[data-dsp-mode] .admin-dsp2-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+}
+
 .admin-dsp2-cell-label { padding-top: 2px; min-width: 0; }
 .admin-dsp2-cell-label-name {
   font-size: var(--text-footnote); font-weight: 600;
