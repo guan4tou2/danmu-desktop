@@ -703,7 +703,9 @@
         <div class="hud-effect-card-head">
           <span class="hud-status-dot is-live"></span>
           <span class="admin-v3-card-kicker" style="margin:0;color:var(--color-text-muted)">${escapeHtml(cat)}</span>
-          <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">${escapeHtml(eff.filename || "")}</span>
+          <!-- v8（設計稿 07 · R5）：檔名不再印在卡面。「.dme」是實作細節，
+               依規格只在匯入時出現；檔名仍留在 card.title 的 tooltip 裡，
+               需要對照檔案的人查得到。 -->
         </div>
         <div class="hud-effect-card-preview effect-card-preview ${previewClass}"><span class="effect-demo-text" style="${demoStyle}">ABC</span></div>
         <div>

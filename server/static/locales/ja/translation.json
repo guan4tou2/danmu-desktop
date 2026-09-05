@@ -2614,5 +2614,8 @@
   "backupGroupDownload": "ダウンロード",
   "backupGroupRestore": "復元",
   "backupGroupDanger": "危険な操作",
-  "backupFactoryResetBtn": "リセット"
+  "backupFactoryResetBtn": "リセット",
+  "fxPageNote": "オンにした効果は観客ページの「スタイル」に表示されます。カードをクリックするとプレビューと調整ができます。",
+  "fxOpenToAudience": "観客に公開中",
+  "fxStackingRulesLabel": "重ねがけのルール"
 }

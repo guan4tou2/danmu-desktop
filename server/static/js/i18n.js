@@ -2625,7 +2625,10 @@
       "backupGroupDownload": "Download",
       "backupGroupRestore": "Restore",
       "backupGroupDanger": "Danger zone",
-      "backupFactoryResetBtn": "Reset"
+      "backupFactoryResetBtn": "Reset",
+      "fxPageNote": "Enabled effects appear under “Style” on the viewer page. Click a card to preview and adjust it.",
+      "fxOpenToAudience": "open to the audience",
+      "fxStackingRulesLabel": "Stacking rules"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -5243,7 +5246,10 @@
       "backupGroupDownload": "下載",
       "backupGroupRestore": "還原",
       "backupGroupDanger": "危險操作",
-      "backupFactoryResetBtn": "重置"
+      "backupFactoryResetBtn": "重置",
+      "fxPageNote": "開啟的效果會出現在觀眾頁的「樣式」裡。點卡片可預覽並調整參數。",
+      "fxOpenToAudience": "開放給觀眾",
+      "fxStackingRulesLabel": "效果疊加規則"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -7861,7 +7867,10 @@
       "backupGroupDownload": "ダウンロード",
       "backupGroupRestore": "復元",
       "backupGroupDanger": "危険な操作",
-      "backupFactoryResetBtn": "リセット"
+      "backupFactoryResetBtn": "リセット",
+      "fxPageNote": "オンにした効果は観客ページの「スタイル」に表示されます。カードをクリックするとプレビューと調整ができます。",
+      "fxOpenToAudience": "観客に公開中",
+      "fxStackingRulesLabel": "重ねがけのルール"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -10479,7 +10488,10 @@
       "backupGroupDownload": "다운로드",
       "backupGroupRestore": "복원",
       "backupGroupDanger": "위험한 작업",
-      "backupFactoryResetBtn": "초기화"
+      "backupFactoryResetBtn": "초기화",
+      "fxPageNote": "켜 둔 효과는 관객 페이지의 “스타일”에 나타납니다. 카드를 클릭하면 미리보고 조정할 수 있습니다.",
+      "fxOpenToAudience": "관객에게 공개",
+      "fxStackingRulesLabel": "중첩 규칙"
     }
   };
 

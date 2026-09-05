@@ -2614,5 +2614,8 @@
   "backupGroupDownload": "다운로드",
   "backupGroupRestore": "복원",
   "backupGroupDanger": "위험한 작업",
-  "backupFactoryResetBtn": "초기화"
+  "backupFactoryResetBtn": "초기화",
+  "fxPageNote": "켜 둔 효과는 관객 페이지의 “스타일”에 나타납니다. 카드를 클릭하면 미리보고 조정할 수 있습니다.",
+  "fxOpenToAudience": "관객에게 공개",
+  "fxStackingRulesLabel": "중첩 규칙"
 }

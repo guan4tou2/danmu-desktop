@@ -1029,10 +1029,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // 開關狀態文字就地顯示。toggle-Effects input 契約原樣保留。
     const effectsEnabled = currentSettings.Effects ? currentSettings.Effects[0] !== false : true;
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <div id="sec-effects" class="admin-ui-card admin-master-toggle admin-master-toggle--slim lg:col-span-2">
-        <div class="admin-master-toggle__row">
-          <span class="admin-ui-monolabel">${ServerI18n.t("effectsSetting")}</span>
-          <span class="admin-master-toggle__state" data-on="${effectsEnabled}">${effectsEnabled ? ServerI18n.t("effectsEnabledMsg") : ServerI18n.t("effectsDisabledMsg")}</span>
+      <div id="sec-effects" class="admin-ui-group admin-master-toggle admin-master-toggle--slim lg:col-span-2">
+        <div class="admin-ui-group-row is-tall admin-master-toggle__row">
+          <span class="lbl">${ServerI18n.t("effectsSetting")}
+            <span class="sub admin-master-toggle__state" data-on="${effectsEnabled}">${effectsEnabled ? ServerI18n.t("effectsEnabledMsg") : ServerI18n.t("effectsDisabledMsg")}</span>
+          </span>
           <span class="admin-master-toggle__spacer"></span>
           <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in flex-shrink-0">
             <input type="checkbox" name="Effects" id="toggle-Effects" role="switch" aria-checked="${effectsEnabled}" aria-label="Toggle ${ServerI18n.t("effectsSetting")}" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" ${effectsEnabled ? "checked" : ""} />
@@ -1044,13 +1045,17 @@ document.addEventListener("DOMContentLoaded", () => {
     // Effects Management — AdminEffectsPage layout (1fr + 340px YAML inspector)
     settingsGrid.insertAdjacentHTML("beforeend", `
       <div id="sec-effects-mgmt" class="hud-page-stack lg:col-span-2" data-tpl="B">
-        <!-- TPL-B：KPI 條固定頁面頂部（原 LIBRARY STATS 右欄卡升格；
-             data-eflib-* 更新契約不變） -->
-        <div class="hud-stats-strip">
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">TOTAL</span><span class="hud-stat-tile-value" data-eflib-total>—</span><span class="hud-stat-tile-label">${ServerI18n.t("eflibStatTotal")}</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">ACTIVE</span><span class="hud-stat-tile-value is-lime" data-eflib-active>—</span><span class="hud-stat-tile-label">${ServerI18n.t("eflibStatActive")}</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">CATEGORIES</span><span class="hud-stat-tile-value" data-eflib-cats>—</span><span class="hud-stat-tile-label">${ServerI18n.t("eflibStatCategories")}</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">USER UPLOADS</span><span class="hud-stat-tile-value is-cyan" data-eflib-user>—</span><span class="hud-stat-tile-label">${ServerI18n.t("eflibStatUserUploads")}</span></div>
+        <!-- v8（設計稿 07 · R5）：四格 KPI 條撤掉。稿上頁首只用一句
+             「N / M 開放給觀眾」講清楚同一件事——TOTAL/CATEGORIES 對主持人
+             不構成決策資訊。data-eflib-* 契約保留在頁首那一句裡，
+             admin-effects-mgmt.js 的更新端不必改。 -->
+        <div class="admin-ui-page-head">
+          <h2 class="admin-ui-page-title">${ServerI18n.t("adminRouteTitle_effects")}</h2>
+          <p class="admin-ui-page-note">${ServerI18n.t("fxPageNote")}</p>
+        </div>
+        <div class="admin-ui-page-actions">
+          <span class="admin-ui-summary"><span data-eflib-active>—</span> / <span data-eflib-total>—</span> ${ServerI18n.t("fxOpenToAudience")}</span>
+          <span hidden data-eflib-cats>—</span><span hidden data-eflib-user>—</span>
         </div>
         <div class="hud-page-grid-2">
           <div class="hud-page-stack" style="gap:16px">
@@ -1089,8 +1094,8 @@ document.addEventListener("DOMContentLoaded", () => {
             <!-- LIBRARY STATS 已升格為頁頂 KPI 條（TPL-B），此處不再重複 -->
 
             <!-- v5 Batch 12-5: Stacking rules info card -->
-            <div class="admin-eflib-card">
-              <div class="admin-eflib-label">STACKING RULES</div>
+            <div class="admin-ui-group admin-eflib-card">
+              <div class="admin-eflib-label">${ServerI18n.t("fxStackingRulesLabel")}</div>
               <ul class="admin-eflib-rules">
                 <li>· ${ServerI18n.t("fxStackSameType")}</li>
                 <li>· ${ServerI18n.t("fxStackCrossType")}</li>

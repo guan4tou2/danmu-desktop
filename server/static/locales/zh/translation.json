@@ -2614,5 +2614,8 @@
   "backupGroupDownload": "下載",
   "backupGroupRestore": "還原",
   "backupGroupDanger": "危險操作",
-  "backupFactoryResetBtn": "重置"
+  "backupFactoryResetBtn": "重置",
+  "fxPageNote": "開啟的效果會出現在觀眾頁的「樣式」裡。點卡片可預覽並調整參數。",
+  "fxOpenToAudience": "開放給觀眾",
+  "fxStackingRulesLabel": "效果疊加規則"
 }

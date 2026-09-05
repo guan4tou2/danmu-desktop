@@ -2614,5 +2614,8 @@
   "backupGroupDownload": "Download",
   "backupGroupRestore": "Restore",
   "backupGroupDanger": "Danger zone",
-  "backupFactoryResetBtn": "Reset"
+  "backupFactoryResetBtn": "Reset",
+  "fxPageNote": "Enabled effects appear under “Style” on the viewer page. Click a card to preview and adjust it.",
+  "fxOpenToAudience": "open to the audience",
+  "fxStackingRulesLabel": "Stacking rules"
 }
