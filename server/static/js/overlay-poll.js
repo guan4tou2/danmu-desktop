@@ -95,7 +95,6 @@
         <div class="poll-overlay-topbar">
           <div class="poll-overlay-topbar-pill">
             <span class="dot"></span>
-            <span class="kicker">POLL · LIVE</span>
             <span class="qnum">第 ${qNum} / ${qTotal} 題</span>
           </div>
         </div>

@@ -191,7 +191,7 @@
         <span class="col col-ip">IP · UA</span>
         <span class="col col-joined">JOINED</span>
         <span class="col col-msgs">MSGS</span>
-        <span class="col col-status">STATUS</span>
+        <span class="col col-status">${ServerI18n.t("ulStatus")}</span>
         <span class="col col-actions">ACTIONS</span>
       </div>`;
     const rowsHtml = records.map(function (r) {

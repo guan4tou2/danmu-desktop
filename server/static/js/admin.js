@@ -771,7 +771,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span class="admin-dash-telem-bar-value" data-telem-value="ws">—</span>
                                     </div>
                                     <div class="admin-dash-telem-bar-row" data-telem-row="rate">
-                                        <span class="admin-dash-telem-bar-label">RATE</span>
+                                        <span class="admin-dash-telem-bar-label">${ServerI18n.t("ulRate")}</span>
                                         <span class="admin-dash-telem-bar-track"><span class="admin-dash-telem-bar-fill" data-telem-fill="rate" style="width:0%"></span></span>
                                         <span class="admin-dash-telem-bar-value" data-telem-value="rate">—</span>
                                     </div>
@@ -848,7 +848,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div class="admin-kpi-tile is-amber" data-kpi="peak">
                                     <div class="admin-kpi-tile-head">
                                         <span class="label">${ServerI18n.t("dashKpiPeakPerMin")}</span>
-                                        <span class="en">PEAK</span>
+                                        <span class="en">${ServerI18n.t("ulPeak")}</span>
                                     </div>
                                     <div class="admin-kpi-tile-value" data-kpi-value>—</div>
                                     <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(6)}</div>
@@ -1082,7 +1082,6 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="hud-inspector-head">
                 <span class="hud-status-dot is-paused" id="effectsInspectorDot"></span>
                 <span id="effectsInspectorTitle" style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u2014</span>
-                <span class="admin-v3-card-kicker" id="effectsInspectorKicker" style="margin:0">IDLE</span>
               </div>
               <pre class="hud-inspector-body" id="effectsInspectorBody"># ${ServerI18n.t("fxYamlIdle")}</pre>
               <div class="hud-inspector-foot">

@@ -124,7 +124,7 @@
                     <input id="wh-url" type="url" required placeholder="https://example.com/hook" class="admin-ui-input" />
                   </label>
                   <label class="admin-wh-form-field">
-                    <span class="admin-ui-monolabel">FORMAT</span>
+                    <span class="admin-ui-monolabel">${ServerI18n.t("mlFormat")}</span>
                     <select id="wh-format" class="admin-ui-select">
                       <option value="json">JSON</option>
                       <option value="discord">Discord</option>
@@ -137,7 +137,7 @@
                   </label>
                 </div>
                 <fieldset class="admin-wh-form-events">
-                  <legend class="admin-ui-monolabel">EVENTS</legend>
+                  <legend class="admin-ui-monolabel">${ServerI18n.t("mlEvents")}</legend>
                   <div data-wh-register-events></div>
                 </fieldset>
                 <div class="admin-wh-form-actions">

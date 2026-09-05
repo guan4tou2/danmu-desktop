@@ -47,22 +47,18 @@
              BLACKLIST 的 is-cyan 對齊敏感字頁同名指標。 -->
         <div class="hud-stats-strip">
           <div class="hud-stat-tile">
-            <span class="hud-stat-tile-en">REQUESTS · 24H</span>
             <span class="hud-stat-tile-value" data-rl-sum-hits>—</span>
             <span class="hud-stat-tile-label" data-rl-sum-hits-delta>${ServerI18n.t("ratelimitCalculatingLabel")}</span>
           </div>
           <div class="hud-stat-tile">
-            <span class="hud-stat-tile-en">VIOLATIONS · 24H</span>
             <span class="hud-stat-tile-value is-amber" data-rl-sum-viol>—</span>
             <span class="hud-stat-tile-label" data-rl-sum-viol-rate>${ServerI18n.t("ratelimitBlockRateLabel")}</span>
           </div>
           <div class="hud-stat-tile">
-            <span class="hud-stat-tile-en">LOCKED</span>
             <span class="hud-stat-tile-value is-crimson" data-rl-sum-locked>—</span>
             <span class="hud-stat-tile-label">LOGIN · ${ServerI18n.t("ratelimitLockedHint")}</span>
           </div>
           <div class="hud-stat-tile">
-            <span class="hud-stat-tile-en">BLACKLIST</span>
             <span class="hud-stat-tile-value is-cyan" data-rl-sum-black>—</span>
             <span class="hud-stat-tile-label">${ServerI18n.t("ratelimitBlacklistHint")}</span>
           </div>

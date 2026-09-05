@@ -48,9 +48,9 @@
 
         <!-- TPL-B KPI 條：共用 hud-stat-tile（私有 admin-ow-kpi 退役） -->
         <div class="hud-stats-strip">
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">TOTAL</span><span class="hud-stat-tile-value" data-ow-total>—</span><span class="hud-stat-tile-label">${ServerI18n.t("widgetsStatTotal")}</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">ACTIVE</span><span class="hud-stat-tile-value is-lime" data-ow-active>—</span><span class="hud-stat-tile-label">${ServerI18n.t("widgetsStatActive")}</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">KINDS</span><span class="hud-stat-tile-value is-cyan" data-ow-kinds>—</span><span class="hud-stat-tile-label">${ServerI18n.t("widgetsStatKinds")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-value" data-ow-total>—</span><span class="hud-stat-tile-label">${ServerI18n.t("widgetsStatTotal")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-value is-lime" data-ow-active>—</span><span class="hud-stat-tile-label">${ServerI18n.t("widgetsStatActive")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-value is-cyan" data-ow-kinds>—</span><span class="hud-stat-tile-label">${ServerI18n.t("widgetsStatKinds")}</span></div>
         </div>
 
         <div class="hud-page-grid-2">

@@ -47,10 +47,10 @@
 
         <!-- TPL-B KPI 條：共用 hud-stat-tile（私有 admin-assets-stat 退役） -->
         <div class="hud-stats-strip">
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">ASSETS</span><span class="hud-stat-tile-value" data-assets-stat="total">—</span><span class="hud-stat-tile-label">${ServerI18n.t("assetsStatTotal")}</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">DME</span><span class="hud-stat-tile-value is-amber" data-assets-stat="dme">—</span><span class="hud-stat-tile-label">${ServerI18n.t("assetsStatDme")}</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">FONTS</span><span class="hud-stat-tile-value is-cyan" data-assets-stat="font">—</span><span class="hud-stat-tile-label">${ServerI18n.t("assetsStatFont")}</span></div>
-          <div class="hud-stat-tile"><span class="hud-stat-tile-en">THEMES</span><span class="hud-stat-tile-value" style="color:var(--color-ink-theme)" data-assets-stat="theme">—</span><span class="hud-stat-tile-label">${ServerI18n.t("assetsStatTheme")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-value" data-assets-stat="total">—</span><span class="hud-stat-tile-label">${ServerI18n.t("assetsStatTotal")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-value is-amber" data-assets-stat="dme">—</span><span class="hud-stat-tile-label">${ServerI18n.t("assetsStatDme")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-value is-cyan" data-assets-stat="font">—</span><span class="hud-stat-tile-label">${ServerI18n.t("assetsStatFont")}</span></div>
+          <div class="hud-stat-tile"><span class="hud-stat-tile-value" style="color:var(--color-ink-theme)" data-assets-stat="theme">—</span><span class="hud-stat-tile-label">${ServerI18n.t("assetsStatTheme")}</span></div>
         </div>
 
         <!-- Filter chips -->

@@ -363,7 +363,7 @@
             +   '</div>'
             +   '<div class="admin-sessions-bucket-row-stats">'
             +     '<div class="admin-sessions-bucket-row-stat">'
-            +       '<div class="admin-sessions-bucket-row-stat-en">MSGS</div>'
+            +       ''
             +       '<div class="admin-sessions-bucket-row-stat-v is-accent">' + msgs.toLocaleString() + '</div>'
             +     '</div>'
             +     '<div class="admin-sessions-bucket-row-stat">'

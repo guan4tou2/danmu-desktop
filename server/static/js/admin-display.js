@@ -51,12 +51,15 @@
 
   const FONT_SIZE_PRESETS = [14, 20, 32, 44, 64];
   const COLOR_PRESETS = ["#F1F5F9", "#94A3B8", "#38BDF8", "#FBBF24", "#86EFAC", "#F87171", "#64748B", "#334155"];
+  // v8（2026-08-19 設計稿 07）：排版預設的標籤改吃 i18n。原本是大寫英文
+  // 字面量（SCROLL / TOP / …），對中文使用者而言是要猜的。與 ROWS 同慣例：
+  // 頂層常數 parse 時 ServerI18n 尚未 init，所以存 key、渲染時才 t()。
   const LAYOUT_PRESETS = [
-    { value: "scroll",       label: "SCROLL", icon: "→" },
-    { value: "top_fixed",    label: "TOP",    icon: "▀" },
-    { value: "bottom_fixed", label: "BOTTOM", icon: "▄" },
-    { value: "float",        label: "CENTER", icon: "■" },
-    { value: "rise",         label: "SIDE",   icon: "▌" },
+    { value: "scroll",       labelKey: "layoutPresetScroll", icon: "→" },
+    { value: "top_fixed",    labelKey: "layoutPresetTop",    icon: "▀" },
+    { value: "bottom_fixed", labelKey: "layoutPresetBottom", icon: "▄" },
+    { value: "float",        labelKey: "layoutPresetCenter", icon: "■" },
+    { value: "rise",         labelKey: "layoutPresetSide",   icon: "▌" },
   ];
 
   // D-4 (2026-08-02)：拿掉逐呼叫點的中文 fallback 字面量——那些字面量本身
@@ -147,7 +150,7 @@
           <div class="admin-dsp2-rail">
             <div class="admin-dsp2-card admin-dsp2-preview" id="dsp2-preview">
               <div class="admin-dsp2-preview-head">
-                <span class="admin-ui-monolabel">LIVE PREVIEW</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("mlLivePreview")}</span>
                 <span class="admin-dsp2-preview-sync">
                   <span class="admin-dsp2-dot"></span>
                   ${escapeHtml(t("displayPreviewSync"))}
@@ -176,7 +179,6 @@
             <div class="admin-dsp2-card admin-dsp2-autosync" style="padding:14px;background:var(--admin-panel,var(--color-bg-base));border:1px solid var(--hud-line);border-radius:6px;display:flex;flex-direction:column;gap:10px">
               <div class="admin-ui-monolabel admin-dsp2-card-head">
                 <span>${escapeHtml(t("displayAutoSyncTitle"))}</span>
-                <span class="admin-dsp2-card-head-en">AUTO-SYNC · IMPLICIT DEPLOY</span>
               </div>
               <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:4px;background:var(--hud-cyan-soft);border:1px solid var(--color-primary)">
                 <span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:var(--color-primary);box-shadow:0 0 6px var(--color-primary);animation:hud-pulse 2s ease-in-out infinite"></span>
@@ -198,7 +200,6 @@
             <div class="admin-dsp2-card admin-dsp2-admin-controlled" style="padding:14px;background:var(--admin-panel,var(--color-bg-base));border:1px solid var(--hud-line);border-radius:6px;display:flex;flex-direction:column;gap:10px">
               <div class="admin-ui-monolabel admin-dsp2-card-head">
                 <span>${escapeHtml(t("displayAdminControlledTitle"))}</span>
-                <span class="admin-dsp2-card-head-en">ADMIN CONTROLLED</span>
               </div>
               <div style="display:grid;grid-template-columns:auto 1fr;gap:7px 12px;align-items:start;font-size:11px;line-height:1.45">
                 <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">UI language</span><span>Auto (follow browser)</span>
@@ -214,7 +215,6 @@
             <div class="admin-dsp2-card admin-dsp2-summary" id="dsp2-summary">
               <div class="admin-ui-monolabel admin-dsp2-card-head">
                 <span>${escapeHtml(t("displaySummaryTitle"))}</span>
-                <span class="admin-dsp2-card-head-en" data-summary-count>AUDIENCE · 0/6 OPEN</span>
               </div>
               <div class="admin-dsp2-summary-list" data-summary-list></div>
             </div>
@@ -226,19 +226,22 @@
   // ─── Row rendering ──────────────────────────────────────────────────
 
   // D-4：label 中文全數需要翻譯，模組頂層常數 parse 時 ServerI18n 未 init，
-  // 一律存 labelKey、渲染時才 t()（en 是純大寫設計語言，維持字面量）。
+  // 一律存 labelKey、渲染時才 t()。
+  // v8（2026-08-19）：原本每列還帶一個 en 大寫欄位，渲染成中文標籤旁的
+  // 第二行（透明度 / OPACITY）。設計稿把這層對照拿掉後 en 已無消費者，
+  // 欄位一併刪除，免得下次有人以為它還在用。
   const ROWS = [
-    { key: "Opacity",    labelKey: "displayLabelOpacity",    en: "OPACITY",     fmt: (v) => `${Math.round(v)}%` },
-    { key: "FontSize",   labelKey: "displayLabelFontSize",   en: "FONT SIZE",   fmt: (v) => `${v}px` },
-    { key: "Speed",      labelKey: "displayLabelSpeed",      en: "SPEED",       fmt: (v) => `${(+v).toFixed(1)}×` },
-    { key: "Color",      labelKey: "displayLabelColor",      en: "COLOR",       fmt: (v) => `#${String(v || "").replace(/^#/, "").toUpperCase() || "—"}`, noRange: true },
-    { key: "FontFamily", labelKey: "displayLabelFontFamily", en: "FONT FAMILY", fmt: (v) => v || "—",                       noRange: true },
-    { key: "Layout",     labelKey: "displayLabelLayout",     en: "LAYOUT",      fmt: (v) => layoutLabel(v),                  noRange: true },
+    { key: "Opacity",    labelKey: "displayLabelOpacity",     fmt: (v) => `${Math.round(v)}%` },
+    { key: "FontSize",   labelKey: "displayLabelFontSize",   fmt: (v) => `${v}px` },
+    { key: "Speed",      labelKey: "displayLabelSpeed",       fmt: (v) => `${(+v).toFixed(1)}×` },
+    { key: "Color",      labelKey: "displayLabelColor",       fmt: (v) => `#${String(v || "").replace(/^#/, "").toUpperCase() || "—"}`, noRange: true },
+    { key: "FontFamily", labelKey: "displayLabelFontFamily", fmt: (v) => v || "—",                       noRange: true },
+    { key: "Layout",     labelKey: "displayLabelLayout",      fmt: (v) => layoutLabel(v),                  noRange: true },
   ];
 
   function layoutLabel(v) {
     const m = LAYOUT_PRESETS.find((l) => l.value === v);
-    return m ? m.label : (v || "—");
+    return m ? t(m.labelKey) : (v || "—");
   }
 
   function pickerHtml(row, opt) {
@@ -377,7 +380,7 @@
             return `<button type="button" class="${cls}" ${dataAttrs}
               aria-pressed="${inAllow ? "true" : "false"}">
               <span class="admin-dsp2-tile-icon">${l.icon}</span>
-              <span class="admin-dsp2-tile-label">${l.label}</span>
+              <span class="admin-dsp2-tile-label">${t(l.labelKey)}</span>
               ${editing ? `<span class="admin-dsp2-allow-mark">${inAllow ? "✓" : ""}</span>` : ""}
             </button>`;
           }).join("")}
@@ -443,7 +446,7 @@
           </div>
         </div>
         <div class="admin-dsp2-band-cell">
-          <span class="admin-ui-monolabel">STEP</span>
+          <span class="admin-ui-monolabel">${ServerI18n.t("mlStep")}</span>
           <div class="admin-dsp2-band-input">
             <input type="number" data-num-key="${row.key}" data-num-index="step"
               min="0.1" step="0.1" value="${escapeHtml(String(step))}" />
@@ -462,7 +465,6 @@
       <div class="admin-dsp2-row ${enabled ? "is-on" : "is-off"} ${isLast ? "is-last" : ""}" data-row-key="${row.key}">
         <div class="admin-dsp2-cell-label">
           <div class="admin-dsp2-cell-label-name">${escapeHtml(t(row.labelKey))}</div>
-          <div class="admin-dsp2-cell-label-en">${row.en}</div>
           <div class="admin-dsp2-value-badge ${enabled ? "is-on" : ""}" data-value-badge>${escapeHtml(valStr)}</div>
         </div>
         <div class="admin-dsp2-cell-center">
@@ -1374,19 +1376,19 @@
       '<div class="admin-vc-limit-status">' +
         '<span class="admin-vc-limit-status__label">CURRENT SESSION</span>' +
         '<div class="admin-vc-limit-status__metric">' +
-          '<span class="admin-vc-limit-status__metric-en">AVG RATE</span>' +
+          '' +
           '<span class="admin-vc-limit-status__metric-val" data-vc-avg-rate>—</span>' +
         '</div>' +
         '<div class="admin-vc-limit-status__metric">' +
-          '<span class="admin-vc-limit-status__metric-en">THROTTLED</span>' +
+          '' +
           '<span class="admin-vc-limit-status__metric-val is-amber" data-vc-throttled>—</span>' +
         '</div>' +
         '<div class="admin-vc-limit-status__metric">' +
-          '<span class="admin-vc-limit-status__metric-en">BLOCKED</span>' +
+          '' +
           '<span class="admin-vc-limit-status__metric-val is-crimson" data-vc-blocked>—</span>' +
         '</div>' +
         '<div class="admin-vc-limit-status__metric">' +
-          '<span class="admin-vc-limit-status__metric-en">DEDUP</span>' +
+          '' +
           '<span class="admin-vc-limit-status__metric-val is-mute" data-vc-deduped>—</span>' +
         '</div>' +
         '<span class="admin-vc-limit-status__spacer"></span>' +

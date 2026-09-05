@@ -42,7 +42,7 @@
         <div class="admin-vt-grid">
           <div class="admin-vt-controls">
             <div class="admin-vt-card">
-              <div class="admin-vt-card-head"><span class="title">${ServerI18n.t("viewerThemePresetsTitle")}</span><span class="kicker">PRESETS</span></div>
+              <div class="admin-vt-card-head"><span class="title">${ServerI18n.t("viewerThemePresetsTitle")}</span></div>
               <div class="admin-vt-presets" data-vt-presets></div>
             </div>
 
@@ -93,13 +93,12 @@
                 </div>
               </div>
               <div class="admin-vt-force-note">
-                <span class="kicker">BOUNDARY</span>
                 <p>${ServerI18n.t("viewerThemeForceBoundaryNote")}</p>
               </div>
             </div>
 
             <div class="admin-vt-card">
-              <div class="admin-vt-card-head"><span class="title">${ServerI18n.t("viewerThemeColorsTitle")}</span><span class="kicker">COLORS · BG / PRIMARY / HERO</span></div>
+              <div class="admin-vt-card-head"><span class="title">${ServerI18n.t("viewerThemeColorsTitle")}</span></div>
               <div class="admin-vt-color-rows" data-vt-colors></div>
             </div>
 

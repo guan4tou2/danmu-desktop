@@ -165,7 +165,7 @@
             placeholder="${ServerI18n.t("modbansTargetPlaceholder")}" maxlength="120" autocomplete="off" />
         </div>` : ""}
         <div class="admin-modbans-modal-row">
-          <div class="admin-ui-monolabel">BAN DURATION</div>
+          <div class="admin-ui-monolabel">${ServerI18n.t("mlBanDuration")}</div>
           <div class="admin-modbans-modal-presets" data-modbans-presets>
             ${PRESETS.map(function (p) {
               const cls = "admin-modbans-modal-preset"
@@ -435,10 +435,10 @@
         </div>
         <div class="admin-ui-card admin-modbans-card">
           <div class="admin-modbans-header">
-            <span class="admin-ui-monolabel">TARGET</span>
-            <span class="admin-ui-monolabel">KIND</span>
-            <span class="admin-ui-monolabel">REASON</span>
-            <span class="admin-ui-monolabel">STATUS</span>
+            <span class="admin-ui-monolabel">${ServerI18n.t("mlTarget")}</span>
+            <span class="admin-ui-monolabel">${ServerI18n.t("mlKind")}</span>
+            <span class="admin-ui-monolabel">${ServerI18n.t("mlReason")}</span>
+            <span class="admin-ui-monolabel">${ServerI18n.t("mlStatus")}</span>
             <span></span>
           </div>
           <div class="admin-modbans-list" data-modbans-list>

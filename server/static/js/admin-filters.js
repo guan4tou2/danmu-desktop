@@ -102,17 +102,17 @@
             </div>
             <div class="hud-filter-row" id="filterTypeChips" style="padding:10px 14px;border-bottom:1px solid var(--hud-line-strong)">
               <span class="hud-filter-chip is-active" data-filter-scope="all">${ServerI18n.t("fltChipAll")} <span data-filter-count="all">0</span></span>
-              <span class="hud-filter-chip" data-filter-scope="keyword">WORD <span data-filter-count="keyword">0</span></span>
-              <span class="hud-filter-chip" data-filter-scope="regex">REGEX <span data-filter-count="regex">0</span></span>
-              <span class="hud-filter-chip" data-filter-scope="replace">REPLACE <span data-filter-count="replace">0</span></span>
-              <span class="hud-filter-chip" data-filter-scope="rate_limit">RATE <span data-filter-count="rate_limit">0</span></span>
+              <span class="hud-filter-chip" data-filter-scope="keyword">${ServerI18n.t("ulWord")} <span data-filter-count="keyword">0</span></span>
+              <span class="hud-filter-chip" data-filter-scope="regex">${ServerI18n.t("ulRegex")} <span data-filter-count="regex">0</span></span>
+              <span class="hud-filter-chip" data-filter-scope="replace">${ServerI18n.t("ulReplace")} <span data-filter-count="replace">0</span></span>
+              <span class="hud-filter-chip" data-filter-scope="rate_limit">${ServerI18n.t("ulRate")} <span data-filter-count="rate_limit">0</span></span>
             </div>
             <div class="hud-table-head" style="grid-template-columns: 1.6fr 80px 80px 60px 60px 40px;border-bottom:1px solid var(--hud-line-strong);padding:8px 14px">
-              <span>PATTERN</span>
-              <span>TYPE</span>
-              <span>ACTION</span>
+              <span>${ServerI18n.t("ulPattern")}</span>
+              <span>${ServerI18n.t("ulType")}</span>
+              <span>${ServerI18n.t("ulAction")}</span>
               <span>P</span>
-              <span>STATUS</span>
+              <span>${ServerI18n.t("ulStatus")}</span>
               <span style="text-align:right"></span>
             </div>
             <div id="filterRulesList" class="hud-rules-body"></div>
@@ -122,7 +122,6 @@
               <div class="hud-inspector-head" style="border-bottom:1px solid var(--hud-line-strong)">
                 <span class="hud-status-dot is-live"></span>
                 <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("fltLiveLog")}</span>
-                <span class="admin-v3-card-kicker" style="margin:0">LAST 6 EVENTS</span>
                 <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.1em">AUTO-SCROLL \u25b6</span>
               </div>
               <div class="hud-console-body" id="filterLiveLog" style="max-height:200px;padding:10px 14px;font-family:var(--font-mono);font-size:11px;line-height:1.7">

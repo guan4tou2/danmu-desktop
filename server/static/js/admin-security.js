@@ -51,11 +51,11 @@
           <div class="admin-ui-group-row is-tall" data-sec-disclosure="sec2-pw-form" hidden>
             <form id="sec2-pw-form" class="admin-security-form" autocomplete="off">
               <label class="admin-security-field">
-                <span class="admin-ui-monolabel">CURRENT</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("mlCurrent")}</span>
                 <input id="sec2-pw-current" type="password" required autocomplete="current-password" class="admin-ui-input" />
               </label>
               <label class="admin-security-field">
-                <span class="admin-ui-monolabel">NEW · ≥8</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("mlNew8")}</span>
                 <input id="sec2-pw-new" type="password" required minlength="8" autocomplete="new-password" class="admin-ui-input" />
                 <div class="admin-security-strength">
                   <div class="admin-security-strength-bar"><span id="sec2-pw-meter" style="width:0%"></span></div>
@@ -63,7 +63,7 @@
                 </div>
               </label>
               <label class="admin-security-field">
-                <span class="admin-ui-monolabel">CONFIRM</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("mlConfirm")}</span>
                 <input id="sec2-pw-confirm" type="password" required autocomplete="new-password" class="admin-ui-input" />
               </label>
               <button type="submit" class="admin-ui-action is-primary admin-sec-action">${t("security2SubmitChangePassword")}</button>

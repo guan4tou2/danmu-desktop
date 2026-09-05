@@ -405,7 +405,7 @@
     const raw = it.raw ? JSON.stringify(it.raw, null, 2) : "—";
     inner.innerHTML = `
       <div class="admin-notif-detail-head">
-        <span class="admin-ui-monolabel">DETAIL</span>
+        <span class="admin-ui-monolabel">${ServerI18n.t("mlDetail")}</span>
         <span class="admin-ui-spacer"></span>
         <button type="button" class="admin-ui-action admin-notif-detail-close" data-notif-action="close-detail" aria-label="${ServerI18n.t("notifDetailCloseAria")}">${window.AdminUtils.closeIcon}</button>
       </div>

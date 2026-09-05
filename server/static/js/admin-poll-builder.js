@@ -437,7 +437,6 @@
               <div class="admin-polls-live-rail-card">
                 <div class="admin-poll-card-head">
                   <span class="title">${ServerI18n.t("pollBuilderPushTitle")}</span>
-                  <span class="kicker">DESKTOP PUSH</span>
                 </div>
                 <div class="admin-polls-live-toggles">
                   ${[
@@ -569,7 +568,6 @@
               <div class="admin-polls-results-rail-card">
                 <div class="admin-poll-card-head">
                   <span class="title">${ServerI18n.t("pollBuilderParticipationTitle")}</span>
-                  <span class="kicker">PARTICIPATION</span>
                 </div>
                 <div class="admin-polls-results-stat">
                   <span class="big">${totalVotes}</span>
@@ -587,7 +585,6 @@
               <div class="admin-polls-results-rail-card">
                 <div class="admin-poll-card-head">
                   <span class="title">${ServerI18n.t("pollBuilderTimelineTitle")}</span>
-                  <span class="kicker">TIMELINE</span>
                 </div>
                 <div class="admin-polls-results-timeline">
                   <div class="row"><span class="k">${ServerI18n.t("pollBuilderStartedLabel")}</span><span class="v">${snap.started_at ? new Date(snap.started_at * 1000).toLocaleTimeString() : '—'}</span></div>
@@ -607,7 +604,6 @@
               <div class="admin-polls-results-rail-card">
                 <div class="admin-poll-card-head">
                   <span class="title">${ServerI18n.t("pollBuilderActionsTitle")}</span>
-                  <span class="kicker">EXPORT</span>
                 </div>
                 <div class="admin-polls-results-actions">
                   <button type="button" class="admin-polls-results-btn" data-results-action="copy">${ServerI18n.t("pollBuilderCopyResultsBtn")}</button>

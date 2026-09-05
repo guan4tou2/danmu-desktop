@@ -305,7 +305,7 @@
 
     const depsBlock = deps.length === 0 ? "" : `
       <section class="admin-pu-section">
-        <span class="admin-ui-monolabel">DEPENDENCIES</span>
+        <span class="admin-ui-monolabel">${ServerI18n.t("mlDependencies")}</span>
         <div class="admin-pu-dep-list">${depRows}</div>
       </section>`;
 
@@ -320,11 +320,11 @@
         </div>
         <div class="admin-pu-manifest-desc">${escapeHtml(desc)}</div>
         <section class="admin-pu-section">
-          <span class="admin-ui-monolabel">PRIORITY</span>
+          <span class="admin-ui-monolabel">${ServerI18n.t("mlPriority")}</span>
           ${_priorityPill(m.priority)}
         </section>
         <section class="admin-pu-section">
-          <span class="admin-ui-monolabel">PERMISSIONS</span>
+          <span class="admin-ui-monolabel">${ServerI18n.t("mlPermissions")}</span>
           <div class="admin-pu-perm-list">${permRows}</div>
         </section>
         ${depsBlock}

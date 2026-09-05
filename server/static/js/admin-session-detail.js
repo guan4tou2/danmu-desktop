@@ -633,12 +633,12 @@
     body.className = "admin-sd-ann-modal-body";
     body.innerHTML = `
       <div class="admin-sd-ann-modal-row">
-        <div class="admin-ui-monolabel">TIME</div>
+        <div class="admin-ui-monolabel">${ServerI18n.t("mlTime")}</div>
         <div class="admin-sd-ann-modal-time">${_fmtTsMs(tsMs)}</div>
         <div class="admin-sd-ann-modal-hint">PRE-FILLED FROM TIMELINE HOVER POSITION</div>
       </div>
       <div class="admin-sd-ann-modal-row">
-        <div class="admin-ui-monolabel">LABEL</div>
+        <div class="admin-ui-monolabel">${ServerI18n.t("mlLabel")}</div>
         <div class="admin-sd-ann-modal-labels" data-ann-modal-labels>
           ${Object.keys(ANN_LABEL_SPEC).map(function (key) {
             const spec = ANN_LABEL_SPEC[key];

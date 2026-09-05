@@ -97,7 +97,7 @@
                 <span>VERSION</span>
                 <span>PRIORITY</span>
                 <span>LANG</span>
-                <span style="text-align:right">STATUS</span>
+                <span style="text-align:right">${ServerI18n.t("ulStatus")}</span>
               </div>
               <div id="pluginsList">
                 <div class="admin-plugins-row admin-plugins-empty">

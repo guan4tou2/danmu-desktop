@@ -267,7 +267,6 @@
   function _renderServerStep() {
     return `
       <div class="admin-setup-step-pad">
-        <div class="admin-setup-step-kicker">STEP 01</div>
         <h2 class="admin-setup-step-title">${ServerI18n.t("setupWizardStepServer")}</h2>
         <p class="admin-setup-step-desc">${ServerI18n.t("setupWizardServerDesc")}</p>
         <div class="admin-setup-server-fields">
@@ -331,7 +330,6 @@
     const cards = (_state.themes && _state.themes.length) ? _state.themes : FALLBACK_THEMES;
     return `
       <div class="admin-setup-step-pad">
-        <div class="admin-setup-step-kicker">STEP 04</div>
         <h2 class="admin-setup-step-title">${ServerI18n.t("setupWizardStepTheme")}</h2>
         <p class="admin-setup-step-desc">${ServerI18n.t("setupWizardThemeDesc")}</p>
         <div class="admin-setup-theme-grid">

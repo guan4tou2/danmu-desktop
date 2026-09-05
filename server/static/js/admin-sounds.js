@@ -442,7 +442,7 @@
                   <input type="file" id="soundFileInput" accept=".mp3,.ogg,.wav,audio/mpeg,audio/ogg,audio/wav" class="admin-ui-input" />
                 </label>
                 <label class="admin-webhooks-field">
-                  <span class="admin-ui-monolabel">NAME</span>
+                  <span class="admin-ui-monolabel">${ServerI18n.t("mlName")}</span>
                   <input type="text" id="soundNameInput" placeholder="${escapeHtml(ServerI18n.t("soundNamePlaceholder"))}" maxlength="100" class="admin-ui-input" />
                 </label>
                 <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">
@@ -455,7 +455,7 @@
           <!-- RIGHT: Trigger rules (form + list) -->
           <div class="admin-ui-card admin-sounds-col">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-              <span class="admin-ui-monolabel">TRIGGER RULES · EVENT → SOUND</span>
+              <span class="admin-ui-monolabel">${ServerI18n.t("mlTriggerRulesEventSound")}</span>
             </div>
             <div id="rulesList" class="admin-sounds-rules"></div>
 
@@ -464,7 +464,7 @@
               <div class="admin-ui-monolabel" style="margin-bottom:8px">+ ${ServerI18n.t("soundsAddRuleLabel")}</div>
               <div class="admin-sounds-form">
                 <label class="admin-webhooks-field">
-                  <span class="admin-ui-monolabel">TRIGGER TYPE</span>
+                  <span class="admin-ui-monolabel">${ServerI18n.t("mlTriggerType")}</span>
                   <select id="ruleTriggerType" class="admin-ui-select">
                     <option value="keyword">${escapeHtml(ServerI18n.t("triggerTypeKeyword"))}</option>
                     <option value="effect">${escapeHtml(ServerI18n.t("triggerTypeEffect"))}</option>
@@ -472,11 +472,11 @@
                   </select>
                 </label>
                 <label class="admin-webhooks-field">
-                  <span class="admin-ui-monolabel">TRIGGER VALUE</span>
+                  <span class="admin-ui-monolabel">${ServerI18n.t("mlTriggerValue")}</span>
                   <input type="text" id="ruleTriggerValue" placeholder="${escapeHtml(ServerI18n.t("triggerValueKeywordPlaceholder"))}" class="admin-ui-input" />
                 </label>
                 <label class="admin-webhooks-field admin-sounds-form-full">
-                  <span class="admin-ui-monolabel">SOUND</span>
+                  <span class="admin-ui-monolabel">${ServerI18n.t("mlSound")}</span>
                   <select id="ruleSoundName" class="admin-ui-select">
                     <option value="" disabled>${escapeHtml(ServerI18n.t("soundLoading"))}</option>
                   </select>
@@ -486,7 +486,7 @@
                   <input type="range" id="ruleVolume" min="0" max="100" value="80" class="admin-ui-input" />
                 </label>
                 <label class="admin-webhooks-field">
-                  <span class="admin-ui-monolabel">COOLDOWN · MS</span>
+                  <span class="admin-ui-monolabel">${ServerI18n.t("mlCooldownMs")}</span>
                   <input type="number" id="ruleCooldown" min="0" step="100" value="1000" class="admin-ui-input" />
                 </label>
                 <div class="admin-sounds-form-full" style="display:flex;justify-content:flex-end">

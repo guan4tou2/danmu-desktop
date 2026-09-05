@@ -136,7 +136,7 @@
           <div class="admin-ev-v4__row admin-ev-v4__row--head">
             <span>TIME</span>
             <span>SEV</span>
-            <span>TYPE</span>
+            <span>${ServerI18n.t("ulType")}</span>
             <span>ACTOR</span>
             <span>MESSAGE</span>
             <span></span>

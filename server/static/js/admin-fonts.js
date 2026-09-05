@@ -46,7 +46,7 @@
                 <span>WEIGHT</span>
                 <span>SIZE</span>
                 <span>FMT</span>
-                <span style="text-align:right">STATUS</span>
+                <span style="text-align:right">${ServerI18n.t("ulStatus")}</span>
               </div>
               <div id="adminFontList">
                 <div class="hud-table-row" style="grid-template-columns: 1fr;">
@@ -283,7 +283,7 @@
         <div class="admin-font-subset-target">
           <span class="admin-font-subset-target-glyph">${ServerI18n.t("fontsSubsetTargetGlyph")}</span>
           <div>
-            <div class="admin-ui-monolabel">FONT</div>
+            <div class="admin-ui-monolabel">${ServerI18n.t("mlFont")}</div>
             <div class="admin-font-subset-target-name">${escapeHtml(fontName)}</div>
           </div>
         </div>

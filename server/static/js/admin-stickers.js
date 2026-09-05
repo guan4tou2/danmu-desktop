@@ -62,7 +62,7 @@
           <!-- Left sidebar: pack list -->
           <aside class="admin-ui-card admin-stickers-sidebar">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-              <span class="admin-ui-monolabel">PACKS</span>
+              <span class="admin-ui-monolabel">${ServerI18n.t("mlPacks")}</span>
               <button
                 id="stickerPackAddBtn"
                 type="button"
@@ -80,7 +80,7 @@
 
             <div class="admin-ui-card">
               <div class="admin-stickers-toolbar">
-                <span class="admin-ui-monolabel">SEARCH</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("mlSearch")}</span>
                 <input
                   id="stickerSearchInput"
                   type="search"

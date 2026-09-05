@@ -435,7 +435,7 @@
                 <input id="schedulerInterval" type="number" value="10" min="1" max="3600" class="admin-ui-input" />
               </label>
               <label>
-                <span class="admin-ui-monolabel">REPEAT · -1=∞</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("mlRepeat1")}</span>
                 <input id="schedulerRepeat" type="number" value="-1" min="-1" max="10000" class="admin-ui-input" />
               </label>
               <div class="admin-scheduler-create-cell">

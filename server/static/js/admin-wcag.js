@@ -157,7 +157,7 @@
             </div>
 
             <div class="admin-wcag-guardrail">
-              <span class="admin-ui-monolabel">BUILT-IN GUARDRAIL</span>
+              <span class="admin-ui-monolabel">${ServerI18n.t("mlBuiltInGuardrail")}</span>
               ${ServerI18n.t("wcagGuardrailNote")}
             </div>
           </div>
@@ -173,7 +173,6 @@
   function _renderStatTile(en, value, label) {
     return `
       <div class="hud-stat-tile">
-        <span class="hud-stat-tile-en">${escapeHtml(en)}</span>
         <span class="hud-stat-tile-value">${escapeHtml(String(value))}</span>
         <span class="hud-stat-tile-label">${escapeHtml(label)}</span>
       </div>`;
@@ -231,7 +230,6 @@
 
       <div class="admin-wcag-result">
         <div class="hud-stat-tile">
-          <span class="hud-stat-tile-en">CONTRAST RATIO</span>
           <span class="hud-stat-tile-value">${ratio.toFixed(2)}<span class="admin-wcag-unit"> : 1</span></span>
         </div>
         <span class="hud-pill admin-wcag-pill ${ui.mod}">${uiLabel}</span>

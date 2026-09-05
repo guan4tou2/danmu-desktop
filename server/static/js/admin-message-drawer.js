@@ -200,7 +200,6 @@
 
     return `
       <header class="admin-msgd-v4__topbar">
-        <span class="admin-msgd-v4__kicker">MESSAGE DETAIL</span>
         <span class="admin-msgd-v4__spacer"></span>
         <button type="button" class="admin-msgd-v4__close" data-msgd-action="close" title="${ServerI18n.t("msgDrawerCloseTitle")}">${window.AdminUtils.closeIcon}</button>
       </header>

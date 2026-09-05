@@ -141,10 +141,10 @@
 
           <!-- Stats strip — 4 tiles (SESSION ACTIVITY framing) -->
           <div class="admin-bc-v4__stats" data-bc-stats>
-            <div class="admin-bc-v4__stat"><div class="admin-bc-v4__stat-en">SESSION TIME</div><div class="admin-bc-v4__stat-v" data-bc-stat-elapsed>—</div></div>
-            <div class="admin-bc-v4__stat"><div class="admin-bc-v4__stat-en">MESSAGES</div><div class="admin-bc-v4__stat-v" data-bc-stat-msgs>0</div></div>
-            <div class="admin-bc-v4__stat"><div class="admin-bc-v4__stat-en">UNIQUE FP</div><div class="admin-bc-v4__stat-v" data-bc-stat-fp>0</div></div>
-            <div class="admin-bc-v4__stat"><div class="admin-bc-v4__stat-en">FIRE COUNT</div><div class="admin-bc-v4__stat-v" data-bc-stat-fire>0</div></div>
+            <div class="admin-bc-v4__stat"><div class="admin-bc-v4__stat-v" data-bc-stat-elapsed>—</div></div>
+            <div class="admin-bc-v4__stat"><div class="admin-bc-v4__stat-v" data-bc-stat-msgs>0</div></div>
+            <div class="admin-bc-v4__stat"><div class="admin-bc-v4__stat-v" data-bc-stat-fp>0</div></div>
+            <div class="admin-bc-v4__stat"><div class="admin-bc-v4__stat-v" data-bc-stat-fire>0</div></div>
           </div>
 
           <!-- Primary toggle (2-state + paused sub-state) -->
@@ -185,12 +185,11 @@
         <div class="admin-bc-v4__ended" data-bc-ended hidden>
           <div class="admin-bc-v4__ended-icon">■</div>
           <div class="admin-bc-v4__ended-title">${ServerI18n.t("broadcastEndedTitle")}</div>
-          <div class="admin-bc-v4__ended-en" data-bc-ended-en>SESSION ENDED</div>
           <div class="admin-bc-v4__ended-stats">
-            <div><div class="admin-bc-v4__stat-en">DURATION</div><div data-bc-end-dur>—</div></div>
-            <div><div class="admin-bc-v4__stat-en">MESSAGES</div><div data-bc-end-msgs>—</div></div>
-            <div><div class="admin-bc-v4__stat-en">UNIQUE FP</div><div data-bc-end-fp>—</div></div>
-            <div><div class="admin-bc-v4__stat-en">FIRE COUNT</div><div data-bc-end-fire>—</div></div>
+            <div><div data-bc-end-dur>—</div></div>
+            <div><div data-bc-end-msgs>—</div></div>
+            <div><div data-bc-end-fp>—</div></div>
+            <div><div data-bc-end-fire>—</div></div>
           </div>
           <a class="admin-bc-v4__ended-link" data-bc-go-sessions href="#/sessions">${ServerI18n.t("broadcastViewSessionsLink")}</a>
         </div>
