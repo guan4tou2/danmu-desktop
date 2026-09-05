@@ -473,6 +473,39 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   white-space: nowrap;
 }
 
+/* 審核 · 封鎖字：新增列與清單（2026-08-19 設計稿 07 · R3） */
+.admin-mod-addrow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 「加入」是兩個字，被壓成直排會很醜——輸入框吃剩餘寬度就好 */
+.admin-mod-addrow > .admin-ui-action {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.admin-mod-wordlist {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* 清單每一列沿用群組列的節奏 */
+.admin-mod-wordlist > * {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.admin-mod-wordlist > *:last-child {
+  border-bottom: none;
+}
+
 /* 頁首主動作：擺在 .admin-ui-page-head 外面（標題與路由標題相同時整個
  * page-head 會被 _dedupSectionTitles 收掉，放裡面的按鈕會一起消失）。 */
 .admin-ui-page-actions {

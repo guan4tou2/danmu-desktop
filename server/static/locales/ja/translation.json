@@ -2621,5 +2621,17 @@
   "displayValuesTitle": "弾幕の見た目",
   "displayValuesNote": "大画面での弾幕の見え方を調整します。変更は接続中のすべての表示レイヤーに即時反映されます。",
   "displayColValue": "現在の設定",
-  "displayHintBigScreen": "大画面で使われる値"
+  "displayHintBigScreen": "大画面で使われる値",
+  "tabModBlockedWords": "ブロックする語",
+  "tabModBlockedViewers": "ブロック中の観客",
+  "tabModSendLimits": "送信の上限",
+  "modBlockedWordsTitle": "ブロックする語",
+  "modBlockedWordsNote": "ブロックする語を含むメッセージは大画面に出ません。旧「ブラックリスト／ルール／レート制限／フィンガープリント」の4ページをここに統合しました。",
+  "modAddWordPlaceholder": "ブロックする語を追加、Enter で確定",
+  "modAddWordBtn": "追加",
+  "modOnHitLabel": "一致したとき",
+  "modOnHitHide": "表示しない",
+  "modOnHitMask": "＊ で伏せる",
+  "modOnHitReview": "保留して確認",
+  "modSkipRepeatsLabel": "連続する重複メッセージを自動でスキップ"
 }

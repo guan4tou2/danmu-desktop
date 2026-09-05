@@ -2621,5 +2621,17 @@
   "displayValuesTitle": "탄막 모양",
   "displayValuesNote": "큰 화면에서 탄막이 어떻게 보일지 조정합니다. 변경 사항은 연결된 모든 표시 레이어에 즉시 반영됩니다.",
   "displayColValue": "현재 설정",
-  "displayHintBigScreen": "큰 화면에서 사용되는 값"
+  "displayHintBigScreen": "큰 화면에서 사용되는 값",
+  "tabModBlockedWords": "차단 단어",
+  "tabModBlockedViewers": "차단된 관객",
+  "tabModSendLimits": "전송 상한",
+  "modBlockedWordsTitle": "차단 단어",
+  "modBlockedWordsNote": "차단 단어가 들어간 메시지는 큰 화면에 나오지 않습니다. 기존 “블랙리스트／규칙／속도 제한／지문” 네 페이지를 여기에 합쳤습니다.",
+  "modAddWordPlaceholder": "차단 단어 추가, Enter로 확정",
+  "modAddWordBtn": "추가",
+  "modOnHitLabel": "일치했을 때",
+  "modOnHitHide": "표시 안 함",
+  "modOnHitMask": "＊로 가리기",
+  "modOnHitReview": "보류 후 검토",
+  "modSkipRepeatsLabel": "연속되는 중복 메시지 자동 건너뛰기"
 }

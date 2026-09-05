@@ -28,17 +28,23 @@
   // `sections: [...]` array instead of `section: "..."`.
   const TabConfig = {
     moderation: {
-      // 2026-05-18 brief 0518-v3 #2: queue + bans now top-level moderation
-      // tabs (was deep-link only). Default lands on `queue` since active
-      // workflow starts there.
+      // v8（2026-08-19 設計稿 07 · R3）：6 個分頁併成 3 個，依「你在管什麼」
+      // 而不是「後端有幾張表」分：
+      //   封鎖字     ← blacklist（字串黑名單）+ filters（規則）
+      //   被封鎖的觀眾 ← bans（人）+ fingerprints（同一個人的裝置指紋）
+      //   發送上限   ← ratelimit
+      // queue（待審佇列）保留為第四個分頁，未併入——設計稿的「命中時 →
+      // 先保留待審」這個選項會產生待審訊息，沒有佇列就沒地方看，
+      // 稿上三格是示意，不是要把佇列刪掉。
+      // 舊的 6 個 slug 全部保留為 deep-link 別名（_tabAliases）。
       defaultTab: "queue",
       tabs: [
-        { slug: "queue",        labelKey: "tabModQueue", en: "QUEUE",       section: "sec-modqueue"     },
-        { slug: "bans",         labelKey: "tabModBans", en: "BANS",        section: "sec-modbans-overview" },
-        { slug: "blacklist",    labelKey: "tabModBlacklist", en: "BLACKLIST",    section: "sec-blacklist"    },
-        { slug: "filters",      labelKey: "tabModFilters", en: "FILTERS",      section: "sec-filters"      },
-        { slug: "ratelimit",    labelKey: "tabModRatelimit", en: "RATE LIMIT",  section: "sec-ratelimit"    },
-        { slug: "fingerprints", labelKey: "tabModFingerprints", en: "FINGERPRINTS", section: "sec-fingerprints" },
+        { slug: "queue",        labelKey: "tabModQueue",       en: "QUEUE",   section: "sec-modqueue" },
+        { slug: "blacklist",    labelKey: "tabModBlockedWords", en: "WORDS",
+          sections: ["sec-blacklist", "sec-filters"] },
+        { slug: "bans",         labelKey: "tabModBlockedViewers", en: "VIEWERS",
+          sections: ["sec-modbans-overview", "sec-fingerprints"] },
+        { slug: "ratelimit",    labelKey: "tabModSendLimits",  en: "LIMITS",  section: "sec-ratelimit" },
       ],
     },
     // v7 S4 (2026-07-28): dead `appearance` group removed — the route is a
@@ -112,10 +118,22 @@
     return TabConfig[nav] || null;
   }
 
+  // v8（2026-08-19）：審核 6 分頁併成 4 之後，被併掉的 slug 仍是有效書籤
+  // （#/moderation/filters 這種）。沒有這張表的話 resolveActiveTab 會退回
+  // defaultTab，使用者點舊連結會落到佇列而不是他要看的內容。
+  const _tabAliases = {
+    moderation: {
+      filters: "blacklist",        // 規則併入「封鎖字」
+      fingerprints: "bans",        // 指紋併入「被封鎖的觀眾」
+    },
+  };
+
   function resolveActiveTab(nav, requestedTab) {
     const cfg = TabConfig[nav];
     if (!cfg) return null;
     const has = (slug) => cfg.tabs.some((t) => t.slug === slug);
+    const aliased = _tabAliases[nav]?.[requestedTab];
+    if (aliased && has(aliased)) return aliased;
     if (requestedTab && has(requestedTab)) return requestedTab;
     const mem = window.AdminRouter?.tabMemory?.get?.(nav);
     if (mem && has(mem)) return mem;
@@ -145,10 +163,10 @@
       label.textContent = tab.labelKey ? ServerI18n.t(tab.labelKey) : tab.label;
       btn.appendChild(label);
 
-      const en = document.createElement("span");
-      en.className = "admin-tabs-btn-en";
-      en.textContent = tab.en;
-      btn.appendChild(en);
+      // v8（2026-08-19 設計稿 07）：分頁不再印英文對照。稿上的分頁列就是
+      // 「封鎖字 / 被封鎖的觀眾 / 發送上限」三個中文詞——中文已經是標籤，
+      // 再疊一行大寫英文只是把同一件事說兩次，還讓分頁列高多一截。
+      // tab.en 欄位保留在 TabConfig（其他地方可能引用），只是不再渲染。
 
       btn.addEventListener("click", () => {
         if (typeof opts?.onSelect === "function") opts.onSelect(tab.slug);

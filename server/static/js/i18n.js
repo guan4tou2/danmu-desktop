@@ -2632,7 +2632,19 @@
       "displayValuesTitle": "Danmu appearance",
       "displayValuesNote": "Adjust how danmu look on the big screen. Changes apply instantly to every connected display.",
       "displayColValue": "Current value",
-      "displayHintBigScreen": "The value used on the big screen"
+      "displayHintBigScreen": "The value used on the big screen",
+      "tabModBlockedWords": "Blocked words",
+      "tabModBlockedViewers": "Blocked viewers",
+      "tabModSendLimits": "Send limits",
+      "modBlockedWordsTitle": "Blocked words",
+      "modBlockedWordsNote": "Messages containing a blocked word never reach the big screen. The former blacklist, rules, rate-limit and fingerprint pages are merged here.",
+      "modAddWordPlaceholder": "Add a blocked word, press Enter",
+      "modAddWordBtn": "Add",
+      "modOnHitLabel": "On a match",
+      "modOnHitHide": "Hide",
+      "modOnHitMask": "Mask with ＊",
+      "modOnHitReview": "Hold for review",
+      "modSkipRepeatsLabel": "Skip consecutive duplicate messages"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -5257,7 +5269,19 @@
       "displayValuesTitle": "彈幕外觀",
       "displayValuesNote": "調整彈幕在大螢幕上的樣子。改動即時套用到所有已連線的顯示層。",
       "displayColValue": "目前設定",
-      "displayHintBigScreen": "大螢幕上使用的值"
+      "displayHintBigScreen": "大螢幕上使用的值",
+      "tabModBlockedWords": "封鎖字",
+      "tabModBlockedViewers": "被封鎖的觀眾",
+      "tabModSendLimits": "發送上限",
+      "modBlockedWordsTitle": "封鎖字",
+      "modBlockedWordsNote": "含封鎖字的訊息不會出現在大螢幕。原「黑名單／規則／速率限制／指紋」四頁合併於此。",
+      "modAddWordPlaceholder": "新增封鎖字，Enter 加入",
+      "modAddWordBtn": "加入",
+      "modOnHitLabel": "命中時",
+      "modOnHitHide": "不顯示",
+      "modOnHitMask": "用 ＊ 遮蔽",
+      "modOnHitReview": "先保留待審",
+      "modSkipRepeatsLabel": "連續重複的訊息自動略過"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -7882,7 +7906,19 @@
       "displayValuesTitle": "弾幕の見た目",
       "displayValuesNote": "大画面での弾幕の見え方を調整します。変更は接続中のすべての表示レイヤーに即時反映されます。",
       "displayColValue": "現在の設定",
-      "displayHintBigScreen": "大画面で使われる値"
+      "displayHintBigScreen": "大画面で使われる値",
+      "tabModBlockedWords": "ブロックする語",
+      "tabModBlockedViewers": "ブロック中の観客",
+      "tabModSendLimits": "送信の上限",
+      "modBlockedWordsTitle": "ブロックする語",
+      "modBlockedWordsNote": "ブロックする語を含むメッセージは大画面に出ません。旧「ブラックリスト／ルール／レート制限／フィンガープリント」の4ページをここに統合しました。",
+      "modAddWordPlaceholder": "ブロックする語を追加、Enter で確定",
+      "modAddWordBtn": "追加",
+      "modOnHitLabel": "一致したとき",
+      "modOnHitHide": "表示しない",
+      "modOnHitMask": "＊ で伏せる",
+      "modOnHitReview": "保留して確認",
+      "modSkipRepeatsLabel": "連続する重複メッセージを自動でスキップ"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -10507,7 +10543,19 @@
       "displayValuesTitle": "탄막 모양",
       "displayValuesNote": "큰 화면에서 탄막이 어떻게 보일지 조정합니다. 변경 사항은 연결된 모든 표시 레이어에 즉시 반영됩니다.",
       "displayColValue": "현재 설정",
-      "displayHintBigScreen": "큰 화면에서 사용되는 값"
+      "displayHintBigScreen": "큰 화면에서 사용되는 값",
+      "tabModBlockedWords": "차단 단어",
+      "tabModBlockedViewers": "차단된 관객",
+      "tabModSendLimits": "전송 상한",
+      "modBlockedWordsTitle": "차단 단어",
+      "modBlockedWordsNote": "차단 단어가 들어간 메시지는 큰 화면에 나오지 않습니다. 기존 “블랙리스트／규칙／속도 제한／지문” 네 페이지를 여기에 합쳤습니다.",
+      "modAddWordPlaceholder": "차단 단어 추가, Enter로 확정",
+      "modAddWordBtn": "추가",
+      "modOnHitLabel": "일치했을 때",
+      "modOnHitHide": "표시 안 함",
+      "modOnHitMask": "＊로 가리기",
+      "modOnHitReview": "보류 후 검토",
+      "modSkipRepeatsLabel": "연속되는 중복 메시지 자동 건너뛰기"
     }
   };
 

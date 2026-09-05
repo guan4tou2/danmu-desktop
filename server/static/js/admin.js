@@ -1136,50 +1136,48 @@ document.addEventListener("DOMContentLoaded", () => {
     // Moderation Overview (AdminModerationPage layout): stats strip + banned/blacklist panel
     settingsGrid.insertAdjacentHTML("beforeend", `
       <div id="sec-blacklist" class="hud-page-stack lg:col-span-2">
-        <div class="hud-stats-strip" id="modStatsStrip" style="grid-template-columns:repeat(5, minmax(0, 1fr))">
-          <div class="hud-stat-tile">
-            <span class="hud-stat-tile-en">RULES</span>
-            <span class="hud-stat-tile-value" data-mod-stat="rules">\u2014</span>
-            <span class="hud-stat-tile-label">${ServerI18n.t("modStatRules")}</span>
+        <!-- v8（2026-08-19 設計稿 07 · R3）：五格 KPI 條撤掉。稿上這頁只有
+             「輸入列 → 命中時怎麼處理 → 封鎖字清單」三件事；RULES/BANNED/
+             MASKED/BLOCKED/REVIEW 五個數字是儀表板語言，不是這頁的工作。
+             data-mod-stat 契約保留在清單標題的計數裡。 -->
+        <div class="admin-ui-page-head">
+          <h2 class="admin-ui-page-title">${ServerI18n.t("modBlockedWordsTitle")}</h2>
+          <p class="admin-ui-page-note">${ServerI18n.t("modBlockedWordsNote")}</p>
+        </div>
+
+        <div class="admin-mod-addrow">
+          <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("modAddWordPlaceholder")}"
+            class="admin-ui-input admin-ui-grow">
+          <button id="addKeywordBtn" type="button" class="admin-ui-action is-primary">${ServerI18n.t("modAddWordBtn")}</button>
+        </div>
+
+        <div class="admin-ui-group">
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${ServerI18n.t("modOnHitLabel")}</span>
+            <span class="val">
+              <span class="admin-ui-seg" role="tablist" data-mod-onhit>
+                <button type="button" class="seg-item is-active" data-onhit="hide">${ServerI18n.t("modOnHitHide")}</button>
+                <button type="button" class="seg-item" data-onhit="mask">${ServerI18n.t("modOnHitMask")}</button>
+                <button type="button" class="seg-item" data-onhit="review">${ServerI18n.t("modOnHitReview")}</button>
+              </span>
+            </span>
           </div>
-          <div class="hud-stat-tile">
-            <span class="hud-stat-tile-en">BANNED</span>
-            <span class="hud-stat-tile-value is-danger" data-mod-stat="banned">\u2014</span>
-            <span class="hud-stat-tile-label">${ServerI18n.t("modStatBlacklist")}</span>
-          </div>
-          <div class="hud-stat-tile">
-            <span class="hud-stat-tile-en">MASKED \u00b7 24H</span>
-            <span class="hud-stat-tile-value is-amber" data-mod-stat="masked">\u2014</span>
-            <span class="hud-stat-tile-label">${ServerI18n.t("modStatMaskedToday")}</span>
-          </div>
-          <div class="hud-stat-tile">
-            <span class="hud-stat-tile-en">BLOCKED \u00b7 24H</span>
-            <span class="hud-stat-tile-value is-danger" data-mod-stat="blocked">\u2014</span>
-            <span class="hud-stat-tile-label">${ServerI18n.t("modStatBlockedToday")}</span>
-          </div>
-          <div class="hud-stat-tile">
-            <span class="hud-stat-tile-en">REVIEW QUEUE</span>
-            <span class="hud-stat-tile-value is-cyan" data-mod-stat="review">\u2014</span>
-            <span class="hud-stat-tile-label">${ServerI18n.t("modStatPending")}</span>
+          <div class="admin-ui-group-row">
+            <span class="lbl">${ServerI18n.t("modSkipRepeatsLabel")}</span>
+            <span class="val"><input type="checkbox" class="admin-ui-checkbox" data-mod-skip-repeats /></span>
           </div>
         </div>
 
-        <div class="hud-inspector hud-blacklist-panel" style="min-height:auto">
-          <div class="hud-inspector-head">
-            <span class="hud-status-dot is-danger"></span>
-            <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("blacklistManagement")}</span>
-            <span class="admin-v3-card-kicker" style="margin:0">KEYWORD \u00b7 BANNED</span>
-            <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.1em" id="modBlacklistCount">\u2014 words</span>
-          </div>
-          <div style="padding:14px;display:grid;grid-template-columns:1fr auto;gap:8px;border-bottom:1px solid var(--hud-line-strong)">
-            <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("enterKeyword")}"
-              class="admin-ui-input w-full">
-            <button id="addKeywordBtn" type="button" class="admin-ui-action is-primary admin-mod-keyword-action">+ ${ServerI18n.t("addKeyword")}</button>
-          </div>
-          <div id="blacklistKeywords" class="max-h-72 overflow-y-auto" style="padding:8px 14px">
+        <div class="admin-ui-group-label">${ServerI18n.t("modBlockedWordsTitle")} · <span id="modBlacklistCount" data-mod-stat="banned">—</span></div>
+        <div class="admin-ui-group">
+          <div id="blacklistKeywords" class="admin-mod-wordlist">
             <!-- Keywords will be listed here -->
           </div>
         </div>
+
+        <!-- 統計契約保留（admin-moderation.js 會寫入），不再佔版面 -->
+        <span hidden data-mod-stat="rules">—</span><span hidden data-mod-stat="masked">—</span>
+        <span hidden data-mod-stat="blocked">—</span><span hidden data-mod-stat="review">—</span>
       </div>
     `);
 

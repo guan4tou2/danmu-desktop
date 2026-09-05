@@ -54,36 +54,15 @@
         <!-- v4 P2-1 chrome (added 2026-05-19) — was missing kicker/title.
              Page used to render straight into hud-stats-strip without a
              section header. -->
-        <div class="admin-ui-page-head">
-          <h2 class="admin-ui-page-title">${ServerI18n.t("filtersPageTitle")}</h2>
-          <p class="admin-ui-page-note">
-            ${ServerI18n.t("filtersPageNote")}
-          </p>
-        </div>
+        <!-- 頁首由同分頁的 sec-blacklist 提供，這裡不再重複一份 -->
 
-        <!-- Overview stats strip — prototype admin-pages.jsx:648 -->
-        <div class="hud-stats-strip" id="moderationStatsStrip">
-          <div class="hud-stat-tile">
-            <span class="hud-stat-tile-en">RULES</span>
-            <span class="hud-stat-tile-value" data-mod-stat="rules">—</span>
-            <span class="hud-stat-tile-label">${ServerI18n.t("filtersStatRules")}</span>
-          </div>
-          <div class="hud-stat-tile">
-            <span class="hud-stat-tile-en">MASKED · 24H</span>
-            <span class="hud-stat-tile-value is-amber" data-mod-stat="masked">—</span>
-            <span class="hud-stat-tile-label">${ServerI18n.t("filtersStatMaskedToday")}</span>
-          </div>
-          <div class="hud-stat-tile">
-            <span class="hud-stat-tile-en">BLOCKED · 24H</span>
-            <span class="hud-stat-tile-value is-crimson" data-mod-stat="blocked">—</span>
-            <span class="hud-stat-tile-label">${ServerI18n.t("filtersStatBlockedToday")}</span>
-          </div>
-          <div class="hud-stat-tile">
-            <span class="hud-stat-tile-en">BLACKLIST</span>
-            <span class="hud-stat-tile-value is-cyan" data-mod-stat="blacklist">—</span>
-            <span class="hud-stat-tile-label">${ServerI18n.t("filtersStatBlacklist")}</span>
-          </div>
-        </div>
+        <!-- v8（2026-08-19 設計稿 07 · R3）：四格 KPI 條撤掉。這個 section
+             現在與 sec-blacklist 同在「封鎖字」分頁裡，兩張 KPI 條會前後
+             相疊；而稿上這頁只有「輸入 → 命中時怎麼處理 → 清單」三件事。
+             data-mod-stat 契約以隱藏節點保留，admin-moderation.js 照常寫入。 -->
+        <span hidden data-mod-stat="rules">—</span><span hidden data-mod-stat="masked">—</span>
+        <span hidden data-mod-stat="blocked">—</span><span hidden data-mod-stat="blacklist">—</span>
+
         <!-- 2026-05-18 design v4 P2-1: Quick Filters bar \u2014 one-shot
              preset toggles built on top of /admin/filters backend.
              Each toggle creates / removes a regex rule. The existing

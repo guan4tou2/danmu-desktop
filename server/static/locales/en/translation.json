@@ -2621,5 +2621,17 @@
   "displayValuesTitle": "Danmu appearance",
   "displayValuesNote": "Adjust how danmu look on the big screen. Changes apply instantly to every connected display.",
   "displayColValue": "Current value",
-  "displayHintBigScreen": "The value used on the big screen"
+  "displayHintBigScreen": "The value used on the big screen",
+  "tabModBlockedWords": "Blocked words",
+  "tabModBlockedViewers": "Blocked viewers",
+  "tabModSendLimits": "Send limits",
+  "modBlockedWordsTitle": "Blocked words",
+  "modBlockedWordsNote": "Messages containing a blocked word never reach the big screen. The former blacklist, rules, rate-limit and fingerprint pages are merged here.",
+  "modAddWordPlaceholder": "Add a blocked word, press Enter",
+  "modAddWordBtn": "Add",
+  "modOnHitLabel": "On a match",
+  "modOnHitHide": "Hide",
+  "modOnHitMask": "Mask with ＊",
+  "modOnHitReview": "Hold for review",
+  "modSkipRepeatsLabel": "Skip consecutive duplicate messages"
 }

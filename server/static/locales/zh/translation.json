@@ -2621,5 +2621,17 @@
   "displayValuesTitle": "彈幕外觀",
   "displayValuesNote": "調整彈幕在大螢幕上的樣子。改動即時套用到所有已連線的顯示層。",
   "displayColValue": "目前設定",
-  "displayHintBigScreen": "大螢幕上使用的值"
+  "displayHintBigScreen": "大螢幕上使用的值",
+  "tabModBlockedWords": "封鎖字",
+  "tabModBlockedViewers": "被封鎖的觀眾",
+  "tabModSendLimits": "發送上限",
+  "modBlockedWordsTitle": "封鎖字",
+  "modBlockedWordsNote": "含封鎖字的訊息不會出現在大螢幕。原「黑名單／規則／速率限制／指紋」四頁合併於此。",
+  "modAddWordPlaceholder": "新增封鎖字，Enter 加入",
+  "modAddWordBtn": "加入",
+  "modOnHitLabel": "命中時",
+  "modOnHitHide": "不顯示",
+  "modOnHitMask": "用 ＊ 遮蔽",
+  "modOnHitReview": "先保留待審",
+  "modSkipRepeatsLabel": "連續重複的訊息自動略過"
 }
