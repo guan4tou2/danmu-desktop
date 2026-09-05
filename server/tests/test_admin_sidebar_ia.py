@@ -50,71 +50,60 @@ def admin_js() -> str:
 # ─── Sidebar order ────────────────────────────────────────────────────────────
 
 EXPECTED_NAV_ORDER = [
-    # 場中操作 — dashboard → content streams → moderation
-    # (2026-07-28 v7 IA: `messages` retired — it was sec-live-feed under a
-    # second name; #/messages bare-redirects to live)
+    # 活動中 — 主持人在活動進行時會碰的四件事
+    # (2026-08-19 v8 IA: `overlay` 提升為側欄列——它本來就是 first-class
+    # route，只是沒有入口)
     "live",
+    "overlay",
     "polls",
     "moderation",
-    # 場前佈置 — surfaces first, then uploadable libraries
-    # (2026-05-19 v5 IA: `display` retired — content merged into viewer's 4 tabs)
-    # (2026-07-28 v7 IA: `fonts` folded into assets as its fifth tab)
+    # 外觀與素材 — 先是觀眾看到的表面，再是可上傳的素材庫
+    # (v8: `widgets` 降級，收進「擴充」hub)
     "viewer",
-    "widgets",
     "effects",
     "themes",
     "assets",
-    # 系統維運 — config → records → backup
-    # (2026-07-28 v7 IA: `ratelimit` demoted back to its moderation tab;
-    # `audit` folded into the history tabbed nav, retitled 紀錄 & 匯出)
-    "system",
+    # 系統 — 與活動當下無關的維運
+    # (v8: `security` 提升為側欄列，推翻 2026-05-13 的「不得獨立成列」決定；
+    #  `system` 降級——它的分頁內容分別由 security / 擴充 承接)
     "history",
     "backup",
-    # 開發擴充 — browser-side and server-side plug-ins adjacent, then wire protocols
-    "extensions",
-    "plugins",
-    "webhooks",
-    "api-tokens",
+    "security",
+    "integrations",
 ]
 
 # Group label i18n keys in sidebar order. v6 replaced the v5 keys
 # (adminNavGroup{Overview,Interact,Moderation,Settings,Integrations}) —
 # key names track the displayed meaning so they don't drift apart.
 EXPECTED_GROUP_KEYS = [
-    "adminNavGroupInSession",
-    "adminNavGroupSetup",
-    "adminNavGroupOperations",
-    "adminNavGroupExtensibility",
+    "adminNavGroupLive",
+    "adminNavGroupAppearance",
+    "adminNavGroupSystem",
 ]
 
 
-def test_dev_group_is_collapsible_and_defaults_collapsed():
-    """v7 IA (2026-07-28): the 開發擴充 group ships collapsed — its four
-    rows are permanent noise for non-developer operators. Contract:
-    a [data-nav-group="dev"] container carries data-collapsed in the
-    template, wraps a toggle + the four dev rows, and admin.js persists
-    the expanded state under admin:navgroup:dev."""
+def test_dev_group_is_gone():
+    """v8 IA (2026-08-19): 開發擴充 可收合群組退場。五個開發列收進「擴充」
+    hub 後，側欄不再有需要收合的群組——連帶 _setDevGroupCollapsed 與
+    admin:navgroup:dev 這個 localStorage key 都沒有消費者。"""
     admin_js = ADMIN_JS.read_text(encoding="utf-8")
-    group = re.search(
-        r'<div class="admin-dash-nav-group" data-nav-group="dev" data-collapsed>([\s\S]+?)</div>',
-        admin_js,
-    )
-    assert group, "sidebar must wrap 開發擴充 in [data-nav-group='dev'][data-collapsed]"
-    body = group.group(1)
-    assert "data-nav-group-toggle" in body, "dev group needs its toggle button"
-    for slug in ("extensions", "plugins", "webhooks", "api-tokens"):
-        assert f'data-route="{slug}"' in body, f"dev group must contain the {slug} row"
-    assert (
-        "admin:navgroup:dev" in admin_js
-    ), "expanded state must persist under localStorage key admin:navgroup:dev"
+    assert 'data-nav-group="dev"' not in admin_js, "開發擴充 收合群組應已移除"
+    assert "admin:navgroup:dev" not in admin_js, "dev group 的 localStorage key 應已移除"
+    assert "_setDevGroupCollapsed" not in admin_js, "收合函式應已移除"
 
 
 RETIRED_GROUP_KEYS = [
+    # v4 以前的抽象分類
     "adminNavGroupOverview",
     "adminNavGroupInteract",
     "adminNavGroupModeration",
     "adminNavGroupSettings",
     "adminNavGroupIntegrations",
+    # v6/v7 的頻率×對象分組，2026-08-19 v8 起改用「活動當下/之前/無關」
+    "adminNavGroupInSession",
+    "adminNavGroupSetup",
+    "adminNavGroupOperations",
+    "adminNavGroupExtensibility",
 ]
 
 
@@ -131,25 +120,25 @@ def test_sidebar_renders_nav_rows_in_locked_order(admin_js: str):
     )
 
 
-def test_security_is_not_a_standalone_sidebar_row(admin_js: str):
-    """Per the 2026-05-13 engineering update, `security` must NOT exist as
-    a top-level sidebar nav row. Its UI lives under System accordion's
-    `access` group as a leaf. Bookmarks like `#/security` still work via
-    the `_routeAliases` mapping to `{ nav: "system", tab: "security" }`."""
+def test_security_is_a_standalone_sidebar_row(admin_js: str):
+    """v8 IA (2026-08-19) 推翻 2026-05-13 的決定：`security` 回到側欄成為
+    獨立一列。
+
+    當初把它塞進 System accordion 的 `access` 群組，是因為側欄已經 15 列、
+    再加會爆；v8 把側欄收到 12 列後空間就回來了。安全設定（管理密碼、
+    顯示層連線密碼、後台存取）是主持人會直接找的東西，藏在兩層底下
+    等於沒有。"""
     pattern = re.compile(
         r'<button[^>]*\bdata-route="security"[^>]*role="tab"',
         re.DOTALL,
     )
-    assert not pattern.search(admin_js), (
-        "security must not be a top-level sidebar row — it belongs in "
-        "the System accordion `access` group per the 8-area IA."
-    )
+    assert pattern.search(admin_js), "security 應該是側欄的獨立一列"
 
 
 def test_truly_retired_slugs_have_no_sidebar_button(admin_js: str):
-    """Slugs explicitly removed from the design (dashboard / appearance /
-    automation / security) must NOT exist as sidebar buttons. Their hash
-    routes still redirect via _bareLegacyRedirects / _routeAliases."""
+    """從側欄移除的 slug 不得再有按鈕。注意「移除側欄入口」不等於
+    「路由退役」——下列多數仍是 first-class route，深連結與 ⌘K 照常，
+    只是不再各佔側欄一列。"""
     pattern = re.compile(r'<button[^>]*\bdata-route="([\w-]+)"[^>]*role="tab"', re.DOTALL)
     found = pattern.findall(admin_js)
     sidebar_slugs = set(found[: len(EXPECTED_NAV_ORDER)])
@@ -157,12 +146,17 @@ def test_truly_retired_slugs_have_no_sidebar_button(admin_js: str):
         "dashboard",
         "appearance",
         "automation",
-        "security",
         # v7 IA (2026-07-28)
         "messages",
         "ratelimit",
         "audit",
         "fonts",
+        # v8 IA (2026-08-19)：降級到「擴充」hub，路由本身保留
+        "widgets",
+        "system",
+        "plugins",
+        "webhooks",
+        "api-tokens",
     ):
         assert retired not in sidebar_slugs, (
             f"retired slug '{retired}' has a sidebar button — should live "
@@ -246,9 +240,9 @@ def test_bare_redirects_consulted_before_alias_resolution(admin_js: str):
 
 
 def test_extensions_lands_on_first_class_integrations_route(admin_js: str):
-    """The v5 grouped sidebar has an Integrations lane. The visible
-    `extensions` row may keep its product label, but it must resolve to the
-    first-class integrations page, not get folded back into System."""
+    """v8 IA (2026-08-19)：側欄那一列直接是 `integrations`（標題「擴充」），
+    `extensions` 只留作舊書籤的別名。別名仍必須解析到 first-class 的
+    integrations 頁，不能被折回 System。"""
     alias_match = re.search(
         r"const _routeAliases\s*=\s*Object\.create\(null\);\s*"
         r"Object\.assign\(_routeAliases,\s*\{([\s\S]+?)\n\s*\}\);",
@@ -265,7 +259,7 @@ def test_extensions_lands_on_first_class_integrations_route(admin_js: str):
         "to the System accordion"
     )
     assert re.search(
-        r'\bintegrations:\s*\{\s*title:\s*"整合"', admin_js
+        r'\bintegrations:\s*\{\s*title:\s*"擴充"', admin_js
     ), "ADMIN_ROUTES must keep a first-class integrations page title"
 
 

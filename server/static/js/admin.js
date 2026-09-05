@@ -674,11 +674,29 @@ document.addEventListener("DOMContentLoaded", () => {
                                      the URL's raw slug so the clicked item stays
                                      highlighted even after alias redirect. -->
 
-                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupInSession">場中操作</div>
+                                                                <!-- IA v8 grouped nav（2026-08-19，設計稿 07「Admin 各頁套用」）：
+                                     3 區 12 列，取代 v7 的 4 區 15 列。分組軸線從「頻率×對象」改成
+                                     「活動當下 / 活動之前 / 與活動無關」——主持人問的是「現在要用還是
+                                     先設好」，不是「這功能屬於哪一類」。
+                                
+                                     兩個提升：overlay（顯示層）與 security（安全）本來就是 first-class
+                                     route，只是不在側欄；設計稿把它們放回來。
+                                
+                                     五個降級：widgets / system / plugins / webhooks / api-tokens 離開側欄
+                                     但**路由全部保留**——深連結、⌘K、既有書籤都照常，只是不再各佔一列。
+                                     它們的入口收在「擴充」這個 hub 頁。
+                                
+                                     命名去術語化：效果庫 .dme → 動畫效果（副檔名只在匯入時才需要出現）、
+                                     風格主題包 → 主題、素材庫 → 素材、Desktop 控制 → 顯示層。 -->
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupLive">活動中</div>
                                 <button type="button" class="admin-dash-nav-row is-active" data-route="live" role="tab" aria-selected="true">
                                     <span class="admin-dash-nav-icon">◉</span>
                                     <span data-i18n="adminNavLive">控制台</span>
                                     <span class="admin-dash-nav-badge" data-count-messages hidden>—</span>
+                                </button>
+                                <button type="button" class="admin-dash-nav-row" data-route="overlay" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">▣</span>
+                                    <span data-i18n="adminNavOverlay">顯示層</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="polls" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◈</span>
@@ -691,79 +709,46 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-badge" data-count-blacklist hidden>—</span>
                                 </button>
 
-                                <!-- 場前佈置: surfaces first (viewer/widgets), then the
-                                     uploadable libraries (effects/themes/assets/fonts).
-                                     v5 IA (2026-05-19) removed the ◐ 顯示設定 item; its
-                                     content lives in the viewer route's 4-tab layout
-                                     (page/fields/defaults/limits). Legacy #/display
-                                     bookmarks redirect to #/viewer/defaults via
-                                     _bareLegacyRedirects. -->
-                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupSetup">場前佈置</div>
+                                <!-- 外觀與素材：先是觀眾看到的表面，再是可上傳的素材庫。 -->
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupAppearance">外觀與素材</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="viewer" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">◑</span>
+                                    <span class="admin-dash-nav-icon">◐</span>
                                     <span data-i18n="adminNavViewer">觀眾頁</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="widgets" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⬚</span>
-                                    <span data-i18n="adminNavWidgets">Desktop Widgets</span>
-                                    <span class="admin-dash-nav-badge" data-count-widgets hidden>—</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">✦</span>
-                                    <span data-i18n="adminNavEffects">效果庫 .dme</span>
+                                    <span data-i18n="adminNavEffects">動畫效果</span>
                                     <span class="admin-dash-nav-badge" data-count-effects>—</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">❖</span>
-                                    <span data-i18n="adminNavThemes">風格主題包</span>
+                                    <span data-i18n="adminNavThemes">主題</span>
                                     <span class="admin-dash-nav-badge" data-count-themes hidden>—</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">▦</span>
-                                    <span data-i18n="adminNavAssets">素材庫</span>
+                                    <span data-i18n="adminNavAssets">素材</span>
                                 </button>
 
-                                <!-- 系統維運: config → guards → logs/exports → backup. -->
-                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupOperations">系統維運</div>
-                                <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⚙</span>
-                                    <span data-i18n="adminNavSystem">系統</span>
-                                </button>
+                                <!-- 系統：與活動當下無關的維運。危險操作集中在備份與還原頁最底。 -->
+                                <div class="admin-dash-nav-label" data-i18n="adminNavGroupSystem">系統</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◷</span>
-                                    <span data-i18n="adminNavHistory">紀錄 &amp; 匯出</span>
+                                    <span data-i18n="adminNavHistory">紀錄與匯出</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⇪</span>
-                                    <span data-i18n="adminNavBackup">備份 &amp; 還原</span>
+                                    <span data-i18n="adminNavBackup">備份與還原</span>
                                 </button>
-
-                                <!-- 開發擴充: the two plug-in mechanisms sit adjacent
-                                     (Extensions = browser-side, 伺服器插件 = server-side)
-                                     so the distinction reads off the list itself. -->
-                                <div class="admin-dash-nav-group" data-nav-group="dev" data-collapsed>
-                                <button type="button" class="admin-dash-nav-label admin-dash-nav-group-toggle" data-nav-group-toggle aria-expanded="false">
-                                    <span data-i18n="adminNavGroupExtensibility">開發擴充</span>
-                                    <span class="admin-dash-nav-group-caret" aria-hidden="true">▸</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="extensions" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌬</span>
-                                    <span data-i18n="adminNavExtensions">Extensions</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="plugins" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⬢</span>
-                                    <span data-i18n="adminNavPlugins">伺服器插件</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="webhooks" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⇌</span>
-                                    <span data-i18n="adminNavWebhooks">Webhooks</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="api-tokens" role="tab" aria-selected="false">
+                                <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">⚿</span>
-                                    <span data-i18n="adminNavApiTokens">API Tokens</span>
+                                    <span data-i18n="adminNavSecurity">安全</span>
                                 </button>
-                                </div>
-                            </nav>
+                                <button type="button" class="admin-dash-nav-row" data-route="integrations" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">⌬</span>
+                                    <span data-i18n="adminNavIntegrations">擴充</span>
+                                </button>
+</nav>
                             <div class="admin-dash-telem">
                                 <div class="admin-dash-telem-head">
                                     <span>TELEMETRY</span>
@@ -1404,10 +1389,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // search / audit / replay / audience). Each tab's section is hidden
     // when not active by AdminTabs.applyTabSectionVisibility. Replay tab
     // owns sec-history-tabs + history-v2-section + sec-history-list + sec-history.
-    history:   { title: "紀錄 & 匯出",       kicker: "RECORDS · 場次資料切片", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history", "sec-audience-overview"] },
+    history:   { title: "紀錄與匯出",       kicker: "RECORDS · 場次資料切片", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history", "sec-audience-overview"] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
     widgets:   { title: "Desktop Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
-    themes:    { title: "風格主題包",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
+    themes:    { title: "主題",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
     // Viewer owns the page/fields/defaults/limits surface. Legacy
     // `#/viewer-config` deep-links still resolve here for backward compat.
     // v7 S4: `viewer-config` entry removed — the alias (→ viewer) always
@@ -1421,10 +1406,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // / sounds sub-sections kept below for editing per-type.
     // v7 IA (2026-07-28): assets gains the fonts tab (sec-fonts) — fonts are
     // the fourth uploadable asset type; tab strip defined in admin-tabs.js.
-    assets:    { title: "素材庫",           kicker: "ASSETS LIBRARY · 統一素材總覽", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds", "sec-fonts"] },
+    assets:    { title: "素材",           kicker: "ASSETS LIBRARY · 統一素材總覽", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds", "sec-fonts"] },
     // v5.2 Sprint 1 (2026-04-27): Extensions catalog page — Slido / Discord
     // / OBS / Bookmarklet cards + shared Fire Token UI inline.
-    integrations: { title: "整合",          kicker: "INTEGRATIONS · 第三方接入 · 共用 FIRE TOKEN", sections: ["sec-extensions-overview"] },
+    integrations: { title: "擴充",          kicker: "INTEGRATIONS · 第三方接入 · 共用 FIRE TOKEN", sections: ["sec-extensions-overview"] },
     // v5.2 Sprint 2 deeplink-only (2026-04-27 audit §A.3): Fire Token sub-row
     // removed from sidebar. Route stays reachable via integrations → 詳細統計.
     firetoken:    { title: "Fire Token",     kicker: "ADMIN LANE · FIRE TOKEN · 用量 / IP / AUDIT",  sections: ["sec-firetoken-overview"] },
@@ -1435,7 +1420,7 @@ document.addEventListener("DOMContentLoaded", () => {
     moderation:{ title: "審核",  kicker: "MODERATION · 審核與防護", sections: ["sec-modqueue", "sec-modbans-overview", "sec-blacklist", "sec-filters", "sec-ratelimit", "sec-fingerprints"] },
     // v7 IA (2026-07-28): `ratelimit` demoted to _bareLegacyRedirects →
     // moderation/ratelimit (the tab owns sec-ratelimit).
-    effects:   { title: "效果庫 .dme",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
+    effects:   { title: "動畫效果",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
     plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
     webhooks:  { title: "Webhooks",          kicker: "WEBHOOKS · 端點 · 投遞紀錄 · 重送", sections: ["sec-webhooks"] },
     // v7 IA (2026-07-28): `fonts` demoted to _bareLegacyRedirects →
@@ -1449,7 +1434,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Legacy alias target only. Security now resolves under system/security;
     // the v2 page handles its own visibility from activeRoute + activeLeaf.
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: ["admin-security-v2-page"] },
-    backup:    { title: "備份 & 匯出",       kicker: "BACKUP · EXPORT · DANGER",          sections: ["admin-backup-v2-page"] },
+    backup:    { title: "備份與還原",       kicker: "BACKUP · EXPORT · DANGER",          sections: ["admin-backup-v2-page"] },
     // P1 (2026-04-27 V1Z4 batch7): aggregated alerts inbox.
     notifications: { title: "通知",          kicker: "NOTIFICATIONS · 警示中心 · 多來源",  sections: ["sec-notifications-overview"] },
     // P3 Group B (2026-04-27 V1Z4 batch7): fingerprint aggregation list.
@@ -1479,7 +1464,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 空陣列會讓 syncRouteContainerVisibility() 算出空 owner set 並藏掉
     // 整個容器，模組再怎麼把自己設成 display:"" 都沒用（#/security 也曾
     // 這樣壞過）。
-    overlay:   { title: "Desktop 控制",        kicker: "DESKTOP · ON / OFF / PAUSED",       sections: ["admin-broadcast-v2-page"] },
+    overlay:   { title: "顯示層",        kicker: "DESKTOP · ON / OFF / PAUSED",       sections: ["admin-broadcast-v2-page"] },
     // Missing prototype pages — implemented 2026-04-29
     sessions:     { title: "場次",            kicker: "SESSIONS · 場次列表 · 即時 / 歷史",  sections: ["sec-sessions-overview"] },
     "session-detail": { title: "場次詳情",    kicker: "SESSION DETAIL · 密度時間軸 · 訊息回顧", sections: ["sec-session-detail-overview"] },
@@ -1713,16 +1698,6 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.setAttribute("aria-selected", on ? "true" : "false");
       });
 
-      // Keep the lit row visible: if the active route lives inside the
-      // collapsed 開發擴充 group, expand it (without persisting).
-      const _devGroup = shell.querySelector('[data-nav-group="dev"]');
-      if (_devGroup && _devGroup.hasAttribute("data-collapsed")) {
-        const _activeInside = _allBtns.some(
-          (b) => b.classList.contains("is-active") && _devGroup.contains(b)
-        );
-        if (_activeInside) _setDevGroupCollapsed(_devGroup, false, false);
-      }
-
       const kicker = shell.querySelector("[data-route-kicker]");
       const title = shell.querySelector("[data-route-title]");
       var _t = window.ServerI18n ? window.ServerI18n.t.bind(window.ServerI18n) : function (k) { return k; };
@@ -1951,35 +1926,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Attach Event Listeners
-  // v7 IA (2026-07-28): 開發擴充 sidebar group is collapsible and starts
-  // collapsed — it's permanent noise for non-developer operators. Expanded
-  // state persists; applyRoute force-expands when the active route is inside.
-  const _DEV_GROUP_LS_KEY = "admin:navgroup:dev";
-  function _setDevGroupCollapsed(group, collapsed, persist) {
-    group.toggleAttribute("data-collapsed", collapsed);
-    const toggle = group.querySelector("[data-nav-group-toggle]");
-    if (toggle) toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-    if (persist) {
-      try { localStorage.setItem(_DEV_GROUP_LS_KEY, collapsed ? "closed" : "open"); } catch (_) {}
-    }
-  }
+  // v8 IA (2026-08-19)：開發擴充可收合群組隨側欄改版一併退場——五個開發列
+  // 收進「擴充」hub 頁後，側欄不再有需要收合的群組，收合函式與它的
+  // localStorage key 都沒有消費者了，一併刪除。
 
   function addEventListeners() {
     if (window.ServerI18n && typeof window.ServerI18n.bindLanguageSelector === "function") {
       window.ServerI18n.bindLanguageSelector();
-    }
-
-    const devGroup = document.querySelector('[data-nav-group="dev"]');
-    if (devGroup) {
-      let saved = null;
-      try { saved = localStorage.getItem(_DEV_GROUP_LS_KEY); } catch (_) {}
-      _setDevGroupCollapsed(devGroup, saved !== "open", false);
-      const devToggle = devGroup.querySelector("[data-nav-group-toggle]");
-      if (devToggle) {
-        devToggle.addEventListener("click", () => {
-          _setDevGroupCollapsed(devGroup, !devGroup.hasAttribute("data-collapsed"), true);
-        });
-      }
     }
 
     // Topbar search chip opens the ⌘K palette — it must behave like the
