@@ -796,9 +796,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         <div class="admin-dash-main">
                             <header class="admin-dash-topbar">
+                                <!-- 2026-08-19 設計稿 07：頁首收斂成「標題 + 一行說明 +
+                                     右側最多 1 主 1 次動作」。麵包屑與 kicker 一併移除——
+                                     位置由側欄高亮表達，kicker 的英文代號對主持人沒有資訊量。
+                                     _renderBreadcrumb / kicker 的寫入端都有 null 防護，
+                                     移掉節點不會炸。 -->
                                 <div class="admin-dash-topbar-title">
-                                    <nav class="admin-dash-breadcrumb" data-route-breadcrumb aria-label="breadcrumb"></nav>
-                                    <span class="hud-label is-accent" data-route-kicker>DASHBOARD · 活動進行中</span>
                                     <h1 data-route-title>控制台</h1>
                                 </div>
                                 <div class="admin-dash-topbar-actions">

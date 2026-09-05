@@ -393,6 +393,192 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   padding: 12px 16px;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * 設定群組卡片 — 設計稿 07「Admin 各頁套用」的主力版型（2026-08-19）
+ *
+ * 規格：群組小標（12px）＋ 卡片（列高 48／雙行 52、列間髮絲線、
+ * 右側放值／開關／分段控制）。與 .admin-ui-card 並存：後者是自由內容的
+ * 面板，這組是「一列一個設定」的結構化清單。
+ * ───────────────────────────────────────────────────────────────────────── */
+
+.admin-ui-group-label {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--admin-text-dim);
+  padding: 0 4px;
+  margin-bottom: 8px;
+}
+
+.admin-ui-group {
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.admin-ui-group + .admin-ui-group-label {
+  margin-top: 16px;
+}
+
+/* 列：預設 48px（4px 格）。含副標的列用 .is-tall（52px）。 */
+.admin-ui-group-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 16px;
+  font-size: var(--text-subhead);
+  color: var(--admin-text);
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.admin-ui-group-row:last-child {
+  border-bottom: none;
+}
+
+.admin-ui-group-row.is-tall {
+  min-height: 52px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+/* 列左側：主標 + 選填副標（副標走 12px，說明這個設定會做什麼） */
+.admin-ui-group-row .lbl {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-ui-group-row .lbl .sub {
+  font-size: var(--text-caption);
+  color: var(--admin-text-dim);
+  line-height: 1.5;
+}
+
+/* 列右側：值。數字一律 tabular，避免調整時跳動。 */
+.admin-ui-group-row .val {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  color: var(--admin-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 分段控制 ── 取代「一排 chip」，表達互斥選項 */
+.admin-ui-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--admin-raised);
+}
+
+.admin-ui-seg > button,
+.admin-ui-seg > .seg-item {
+  min-height: 28px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-md-sm);
+  background: transparent;
+  color: var(--admin-text-dim);
+  font-size: var(--text-footnote);
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
+}
+
+.admin-ui-seg > button:hover,
+.admin-ui-seg > .seg-item:hover {
+  color: var(--admin-text);
+}
+
+.admin-ui-seg > button.is-active,
+.admin-ui-seg > .seg-item.is-active,
+.admin-ui-seg > button[aria-selected="true"] {
+  background: var(--admin-panel);
+  color: var(--admin-text);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 20%);
+}
+
+/* ── Stepper ── − 值 +，取代裸 number input 做小幅增減 */
+.admin-ui-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-ui-stepper > button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--admin-raised);
+  color: var(--admin-text);
+  font-size: var(--text-body);
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--motion-fast) ease;
+}
+
+.admin-ui-stepper > button:hover:not(:disabled) {
+  background: var(--admin-line);
+}
+
+.admin-ui-stepper > button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.admin-ui-stepper > .stepper-val {
+  min-width: 52px;
+  text-align: center;
+  color: var(--admin-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 危險區 ── 永遠在頁面最底；按鈕帶「…」代表會再確認一次 */
+.admin-ui-danger-label {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-ink-danger);
+  padding: 0 4px;
+  margin-bottom: 8px;
+}
+
+.admin-ui-group.is-danger {
+  border-color: color-mix(in oklab, var(--color-danger) 25%, transparent);
+}
+
+.admin-ui-danger-btn {
+  min-height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--color-danger) 12%, transparent);
+  color: var(--color-ink-danger);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: background var(--motion-fast) ease;
+}
+
+.admin-ui-danger-btn:hover {
+  background: color-mix(in oklab, var(--color-danger) 20%, transparent);
+}
+
 .admin-ui-monolabel {
   font-family: var(--font-mono);
   font-size: var(--text-caption);
