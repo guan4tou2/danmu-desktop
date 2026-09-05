@@ -2767,7 +2767,16 @@
       "lbCurrentSession": "Current session",
       "fxCatMisc": "Other",
       "fltOrderMatters": "Matched top to bottom",
-      "fltAutoScroll": "Auto-scroll"
+      "fltAutoScroll": "Auto-scroll",
+      "dlGroupLayout": "Big-screen layout",
+      "dlMaxTracks": "Rows shown at once",
+      "dlMaxTracksHint": "Set to 0 to fit the display height automatically",
+      "dlMaxTracksAuto": "Auto",
+      "dlAvoidOverlap": "Avoid overlapping danmu",
+      "dlAvoidOverlapHint": "When off, danmu may stack — busier, harder to read",
+      "dlGroupArea": "Display area",
+      "dlAreaTop": "From the top of the screen",
+      "dlAreaHeight": "Height used"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -5527,7 +5536,16 @@
       "lbCurrentSession": "目前場次",
       "fxCatMisc": "其他",
       "fltOrderMatters": "規則由上而下比對",
-      "fltAutoScroll": "自動捲動"
+      "fltAutoScroll": "自動捲動",
+      "dlGroupLayout": "大螢幕排版",
+      "dlMaxTracks": "同時顯示的行數",
+      "dlMaxTracksHint": "設 0 表示照顯示高度自動決定",
+      "dlMaxTracksAuto": "自動",
+      "dlAvoidOverlap": "避免彈幕重疊",
+      "dlAvoidOverlapHint": "關掉後彈幕可以疊著跑，畫面更滿但較難讀",
+      "dlGroupArea": "顯示範圍",
+      "dlAreaTop": "從畫面頂端算起",
+      "dlAreaHeight": "使用畫面高度"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -8287,7 +8305,16 @@
       "lbCurrentSession": "現在のセッション",
       "fxCatMisc": "その他",
       "fltOrderMatters": "上から順に判定",
-      "fltAutoScroll": "自動スクロール"
+      "fltAutoScroll": "自動スクロール",
+      "dlGroupLayout": "大画面のレイアウト",
+      "dlMaxTracks": "同時に表示する行数",
+      "dlMaxTracksHint": "0 にすると表示高さに合わせて自動で決まります",
+      "dlMaxTracksAuto": "自動",
+      "dlAvoidOverlap": "弾幕の重なりを避ける",
+      "dlAvoidOverlapHint": "オフにすると弾幕が重なって流れます。にぎやかですが読みにくくなります",
+      "dlGroupArea": "表示範囲",
+      "dlAreaTop": "画面上端からの位置",
+      "dlAreaHeight": "使用する高さ"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -11047,7 +11074,16 @@
       "lbCurrentSession": "현재 세션",
       "fxCatMisc": "기타",
       "fltOrderMatters": "위에서부터 순서대로 판정",
-      "fltAutoScroll": "자동 스크롤"
+      "fltAutoScroll": "자동 스크롤",
+      "dlGroupLayout": "큰 화면 배치",
+      "dlMaxTracks": "동시에 표시할 줄 수",
+      "dlMaxTracksHint": "0으로 두면 표시 높이에 맞춰 자동으로 정해집니다",
+      "dlMaxTracksAuto": "자동",
+      "dlAvoidOverlap": "탄막 겹침 방지",
+      "dlAvoidOverlapHint": "끄면 탄막이 겹쳐 흐릅니다. 화면은 꽉 차지만 읽기 어려워집니다",
+      "dlGroupArea": "표시 범위",
+      "dlAreaTop": "화면 위쪽부터",
+      "dlAreaHeight": "사용할 높이"
     }
   };
 

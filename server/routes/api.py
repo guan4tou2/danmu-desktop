@@ -404,6 +404,20 @@ def get_settings():
     return _json_response(get_options(), 200)
 
 
+@api_bp.route("/display-layer", methods=["GET"])
+def public_display_layer():
+    """顯示層排版設定 — 公開讀取（2026-08-19 設計稿 07 · R1）。
+
+    需要公開是因為消費者是 overlay：OBS browser source 與 Electron 顯示視窗
+    都沒有 admin session。內容是四個排版數字（行數／避免重疊／顯示範圍上緣
+    與高度），不含任何識別資訊或憑證，和 /get_settings 同等級。
+    寫入端仍是 /admin/display-layer（require_login + CSRF）。
+    """
+    from ..services import display_layer
+
+    return _json_response(display_layer.get_state(), 200)
+
+
 def _sanitize_poll_for_viewer(status):
     """Strip vote totals/percentages from poll status before sending to
     the public viewer endpoint.

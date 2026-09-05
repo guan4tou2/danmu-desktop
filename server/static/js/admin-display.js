@@ -133,6 +133,51 @@
           <p class="admin-ui-page-note" data-dsp-only="audience">${t("displayViewerDefaultsNote")}</p>
         </div>
 
+        <!-- 顯示層專屬：大螢幕怎麼排（2026-08-19 設計稿 07 · R1）。
+             這四個和上面那組不同種類——上面是「觀眾端的值」，這裡是
+             「大螢幕本身的排版」，觀眾永遠碰不到，所以不進 ROWS 那張表。 -->
+        <div data-dsp-only="values">
+          <div class="admin-ui-group-label">${escapeHtml(t("dlGroupLayout"))}</div>
+          <div class="admin-ui-group">
+            <div class="admin-ui-group-row is-tall">
+              <span class="lbl">${escapeHtml(t("dlMaxTracks"))}
+                <span class="sub">${escapeHtml(t("dlMaxTracksHint"))}</span>
+              </span>
+              <span class="val admin-ui-stepper" data-dl-stepper="max_tracks">
+                <button type="button" data-dl-step="-1">−</button>
+                <span class="stepper-val" data-dl-value="max_tracks">—</span>
+                <button type="button" data-dl-step="1">+</button>
+              </span>
+            </div>
+            <div class="admin-ui-group-row is-tall">
+              <span class="lbl">${escapeHtml(t("dlAvoidOverlap"))}
+                <span class="sub">${escapeHtml(t("dlAvoidOverlapHint"))}</span>
+              </span>
+              <span class="val">
+                <input type="checkbox" class="admin-ui-checkbox" data-dl-toggle="avoid_overlap" />
+              </span>
+            </div>
+          </div>
+
+          <div class="admin-ui-group-label">${escapeHtml(t("dlGroupArea"))}</div>
+          <div class="admin-ui-group">
+            <div class="admin-ui-group-row is-tall">
+              <span class="lbl">${escapeHtml(t("dlAreaTop"))}</span>
+              <span class="val">
+                <input type="range" min="0" max="90" step="5" data-dl-range="area_top" />
+                <span class="stepper-val" data-dl-value="area_top">—</span>
+              </span>
+            </div>
+            <div class="admin-ui-group-row is-tall">
+              <span class="lbl">${escapeHtml(t("dlAreaHeight"))}</span>
+              <span class="val">
+                <input type="range" min="10" max="100" step="5" data-dl-range="area_height" />
+                <span class="stepper-val" data-dl-value="area_height">—</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div class="admin-dsp2-grid">
           <!-- Left · row list -->
           <div class="admin-dsp2-list" id="dsp2-list">
@@ -1001,6 +1046,88 @@
         postUpdate(key, 3, t1.value);
       }
     });
+
+    // ── 顯示層排版（2026-08-19 設計稿 07 · R1）────────────────────────
+    // 走 /admin/display-layer，與 /admin/update 那組觀眾端設定分開。
+    page.addEventListener("click", (e) => {
+      const step = e.target.closest("[data-dl-step]");
+      if (step) {
+        const wrap = step.closest("[data-dl-stepper]");
+        if (!wrap) return;
+        const key = wrap.getAttribute("data-dl-stepper");
+        const cur = Number(_dlState[key] ?? 0);
+        const next = cur + Number(step.getAttribute("data-dl-step"));
+        postDisplayLayer(key, next);
+      }
+    });
+
+    page.addEventListener("change", (e) => {
+      const tg = e.target.closest("[data-dl-toggle]");
+      if (tg) { postDisplayLayer(tg.getAttribute("data-dl-toggle"), tg.checked); return; }
+      const rg = e.target.closest("[data-dl-range]");
+      if (rg) postDisplayLayer(rg.getAttribute("data-dl-range"), Number(rg.value));
+    });
+
+    // 拖動時先更新數字，放開才送出——不然每一格都打一次 API
+    page.addEventListener("input", (e) => {
+      const rg = e.target.closest("[data-dl-range]");
+      if (!rg) return;
+      const key = rg.getAttribute("data-dl-range");
+      const out = page.querySelector(`[data-dl-value="${key}"]`);
+      if (out) out.textContent = rg.value + "%";
+    });
+  }
+
+  // ── 顯示層排版狀態 ────────────────────────────────────────────────────
+  let _dlState = {};
+
+  function renderDisplayLayer() {
+    const page = document.getElementById(PAGE_ID);
+    if (!page) return;
+    Object.entries(_dlState).forEach(([key, val]) => {
+      const out = page.querySelector(`[data-dl-value="${key}"]`);
+      if (out) {
+        out.textContent = key === "max_tracks"
+          ? (Number(val) === 0 ? t("dlMaxTracksAuto") : String(val))
+          : String(val) + "%";
+      }
+      const rg = page.querySelector(`[data-dl-range="${key}"]`);
+      if (rg && document.activeElement !== rg) rg.value = String(val);
+      const tg = page.querySelector(`[data-dl-toggle="${key}"]`);
+      if (tg) tg.checked = !!val;
+    });
+  }
+
+  async function fetchDisplayLayer() {
+    try {
+      const res = await fetch("/admin/display-layer", { credentials: "same-origin" });
+      if (!res.ok) return;
+      _dlState = await res.json();
+      renderDisplayLayer();
+    } catch (e) {
+      console.warn("[admin-display] display-layer fetch failed:", e);
+    }
+  }
+
+  async function postDisplayLayer(key, value) {
+    const prev = _dlState[key];
+    _dlState[key] = value;          // 樂觀更新——滑桿不該等 round-trip 才動
+    renderDisplayLayer();
+    try {
+      const res = await window.csrfFetch("/admin/display-layer", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [key]: value }),
+      });
+      if (!res.ok) throw new Error("display-layer " + res.status);
+      _dlState = await res.json();
+      renderDisplayLayer();
+    } catch (e) {
+      _dlState[key] = prev;         // 打回原值，不要留下「畫面說改了但其實沒有」
+      renderDisplayLayer();
+      console.warn("[admin-display] display-layer update failed:", e);
+      window.showToast && window.showToast(t("updateFailed"), false);
+    }
   }
 
   // ─── Visibility / lifecycle ─────────────────────────────────────────
@@ -1427,6 +1554,7 @@
     hideLegacy();
     syncVisibility();
     if (!_state.options) await Promise.all([fetchSettings(), fetchFonts()]);
+    fetchDisplayLayer();
     renderRows();
   }
 

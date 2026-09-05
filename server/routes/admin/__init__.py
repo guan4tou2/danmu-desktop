@@ -43,6 +43,7 @@ from . import (  # noqa: E402, F401
     bootstrap,
     broadcast,
     dashboard,
+    display_layer,
     effects,
     emojis,
     filters,

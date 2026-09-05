@@ -2756,5 +2756,14 @@
   "lbCurrentSession": "Current session",
   "fxCatMisc": "Other",
   "fltOrderMatters": "Matched top to bottom",
-  "fltAutoScroll": "Auto-scroll"
+  "fltAutoScroll": "Auto-scroll",
+  "dlGroupLayout": "Big-screen layout",
+  "dlMaxTracks": "Rows shown at once",
+  "dlMaxTracksHint": "Set to 0 to fit the display height automatically",
+  "dlMaxTracksAuto": "Auto",
+  "dlAvoidOverlap": "Avoid overlapping danmu",
+  "dlAvoidOverlapHint": "When off, danmu may stack — busier, harder to read",
+  "dlGroupArea": "Display area",
+  "dlAreaTop": "From the top of the screen",
+  "dlAreaHeight": "Height used"
 }

@@ -2756,5 +2756,14 @@
   "lbCurrentSession": "현재 세션",
   "fxCatMisc": "기타",
   "fltOrderMatters": "위에서부터 순서대로 판정",
-  "fltAutoScroll": "자동 스크롤"
+  "fltAutoScroll": "자동 스크롤",
+  "dlGroupLayout": "큰 화면 배치",
+  "dlMaxTracks": "동시에 표시할 줄 수",
+  "dlMaxTracksHint": "0으로 두면 표시 높이에 맞춰 자동으로 정해집니다",
+  "dlMaxTracksAuto": "자동",
+  "dlAvoidOverlap": "탄막 겹침 방지",
+  "dlAvoidOverlapHint": "끄면 탄막이 겹쳐 흐릅니다. 화면은 꽉 차지만 읽기 어려워집니다",
+  "dlGroupArea": "표시 범위",
+  "dlAreaTop": "화면 위쪽부터",
+  "dlAreaHeight": "사용할 높이"
 }

@@ -2756,5 +2756,14 @@
   "lbCurrentSession": "目前場次",
   "fxCatMisc": "其他",
   "fltOrderMatters": "規則由上而下比對",
-  "fltAutoScroll": "自動捲動"
+  "fltAutoScroll": "自動捲動",
+  "dlGroupLayout": "大螢幕排版",
+  "dlMaxTracks": "同時顯示的行數",
+  "dlMaxTracksHint": "設 0 表示照顯示高度自動決定",
+  "dlMaxTracksAuto": "自動",
+  "dlAvoidOverlap": "避免彈幕重疊",
+  "dlAvoidOverlapHint": "關掉後彈幕可以疊著跑，畫面更滿但較難讀",
+  "dlGroupArea": "顯示範圍",
+  "dlAreaTop": "從畫面頂端算起",
+  "dlAreaHeight": "使用畫面高度"
 }

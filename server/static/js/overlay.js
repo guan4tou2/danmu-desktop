@@ -14,7 +14,31 @@
   var wsPath = params.get("path") || cfg.wsPath || "/ws";
   if (wsPath.charAt(0) !== "/") wsPath = "/" + wsPath;
   var wsToken = params.get("token") || cfg.wsToken || "";
-  var maxTracks = parseInt(params.get("maxTracks"), 10) || 10;
+  // 顯示層設定（2026-08-19 設計稿 07 · R1）。URL query 仍可覆寫——OBS 使用者
+  // 一台機器一個 source，有時就是要各自不同；沒帶 query 時才吃 admin 的設定。
+  var maxTracks = parseInt(params.get("maxTracks"), 10) || 0;
+  var maxTracksPinned = maxTracks > 0;   // query 有指定就不被 admin 覆蓋
+  var avoidOverlap = true;
+  var displayAreaCfg = { top: 0, height: 100 };
+
+  function applyDisplayLayer(d) {
+    if (!d || typeof d !== "object") return;
+    if (!maxTracksPinned && typeof d.max_tracks === "number") maxTracks = d.max_tracks;
+    if (typeof d.avoid_overlap === "boolean") avoidOverlap = d.avoid_overlap;
+    var top = typeof d.area_top === "number" ? d.area_top : displayAreaCfg.top;
+    var h = typeof d.area_height === "number" ? d.area_height : displayAreaCfg.height;
+    displayAreaCfg = { top: top, height: h };
+  }
+
+  function fetchDisplayLayer() {
+    try {
+      fetch("/display-layer", { credentials: "same-origin" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(applyDisplayLayer)
+        .catch(function () { /* 拿不到就用預設，overlay 不該因此不顯示 */ });
+    } catch (_) { /* no-op */ }
+  }
+  fetchDisplayLayer();
   var defaultFontSize = parseInt(params.get("fontSize"), 10) || 0; // 0 = use server value
   var defaultOpacity = parseInt(params.get("opacity"), 10) || 0;  // 0 = use server value
   var idleAfterMs = parseInt(params.get("idleAfter"), 10) || cfg.idleAfterMs || 30000;
@@ -435,6 +459,11 @@
           return;
         }
 
+        if (data.type === "display_layer") {
+          applyDisplayLayer(data.settings);
+          return;
+        }
+
         if (data.type === "clear") {
           document.querySelectorAll("h1.danmu, img.danmu, div.danmu-wrapper, div[style*='translateX']").forEach(function (el) {
             el.remove();
@@ -590,7 +619,7 @@
           parseFloat(data.speed) || 1.0,
           data.fontInfo,
           data.textStyles || { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 },
-          data.displayArea || { top: 0, height: 100 },
+          data.displayArea || displayAreaCfg,
           effectCss,
           data.layout || "scroll",
           data.layoutConfig || null,
@@ -645,7 +674,7 @@
     for (var idx = 0; idx < effectiveMaxTracks; idx++) {
       var trackTop = areaTopPx + idx * trackHeight;
 
-      var hasCollision = danmuTracks.some(function (t) {
+      var hasCollision = !avoidOverlap ? false : danmuTracks.some(function (t) {
         if (t.trackIndex !== idx) return false;
         var timeToReachRight = (cachedWidth / (cachedWidth + t.width)) * t.duration;
         var remainingTime = t.endTime - now;

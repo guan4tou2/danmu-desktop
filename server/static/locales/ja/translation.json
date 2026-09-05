@@ -2756,5 +2756,14 @@
   "lbCurrentSession": "現在のセッション",
   "fxCatMisc": "その他",
   "fltOrderMatters": "上から順に判定",
-  "fltAutoScroll": "自動スクロール"
+  "fltAutoScroll": "自動スクロール",
+  "dlGroupLayout": "大画面のレイアウト",
+  "dlMaxTracks": "同時に表示する行数",
+  "dlMaxTracksHint": "0 にすると表示高さに合わせて自動で決まります",
+  "dlMaxTracksAuto": "自動",
+  "dlAvoidOverlap": "弾幕の重なりを避ける",
+  "dlAvoidOverlapHint": "オフにすると弾幕が重なって流れます。にぎやかですが読みにくくなります",
+  "dlGroupArea": "表示範囲",
+  "dlAreaTop": "画面上端からの位置",
+  "dlAreaHeight": "使用する高さ"
 }

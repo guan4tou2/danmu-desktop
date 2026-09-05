@@ -213,6 +213,23 @@ def _isolate_security_settings(tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_display_layer(tmp_path):
+    """把顯示層設定的 runtime 檔導向 per-test tmp。
+
+    與 _isolate_ratelimit_ip 同模式：少了這個，任何打 /admin/display-layer
+    的測試都會寫進真正的 runtime/display_layer.json，污染 repo 與其他測試。
+    """
+    from server.services import display_layer
+
+    original = display_layer._state.path
+    display_layer._state.reset_for_tests(tmp_path / "display_layer.json")
+    try:
+        yield
+    finally:
+        display_layer._state.reset_for_tests(original)
+
+
+@pytest.fixture(autouse=True)
 def _isolate_ratelimit_ip(tmp_path):
     """Redirect ratelimit_ip runtime file to per-test tmp.
 
