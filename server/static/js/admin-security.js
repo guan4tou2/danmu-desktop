@@ -25,258 +25,179 @@
   var _escHtml = window.AdminUtils.escapeHtml;
 
   function pageTemplate() {
-    // v5 Batch 12-3 (2026-05-19): 2-col SecCard grid with tinted left
-    // border per batch12-system.jsx SecurityPage.
+    // v8（2026-08-19 設計稿 07）：從「2 欄彩邊 SecCard 網格」改成統一的
+    // 設定群組卡片——群組小標 + 一列一設定。原本每張卡各有 zh/en 雙標題、
+    // 彩色左邊框、狀態點三套視覺語言，資訊量卻只有「一個開關加一個值」。
+    // 危險操作依規格移到頁面最底，按鈕帶「…」表示會再確認。
+    // 所有 sec2-* id 原樣保留，行為邏輯完全沒動。
+    const t = (k) => ServerI18n.t(k);
     return `
         <div id="${PAGE_ID}" class="admin-security-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">SECURITY · AUTH · ACCESS · TOKENS</div>
-          <h2 class="admin-ui-page-title">${ServerI18n.t("security2PageTitle")}</h2>
-          <p class="admin-ui-page-note">
-            ${ServerI18n.t("security2PageNote")}
-          </p>
+          <h2 class="admin-ui-page-title">${t("security2PageTitle")}</h2>
+          <p class="admin-ui-page-note">${t("security2PageNote")}</p>
         </div>
 
-        <div class="admin-security-grid">
-
-          <!-- ① Admin password — change password form -->
-          <div class="admin-sec-card is-lime">
-            <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardPasswordTitle")}</span>
-              <span class="admin-sec-card__en">ADMIN PASSWORD</span>
-            </div>
-            <div class="admin-sec-card__body">
-              <form id="sec2-pw-form" class="admin-security-form" autocomplete="off">
-                <label class="admin-security-field">
-                  <span class="admin-ui-monolabel">CURRENT</span>
-                  <input id="sec2-pw-current" type="password" required autocomplete="current-password" class="admin-ui-input" />
-                </label>
-                <label class="admin-security-field">
-                  <span class="admin-ui-monolabel">NEW · ≥8</span>
-                  <input id="sec2-pw-new" type="password" required minlength="8" autocomplete="new-password" class="admin-ui-input" />
-                  <div class="admin-security-strength">
-                    <div class="admin-security-strength-bar"><span id="sec2-pw-meter" style="width:0%"></span></div>
-                    <span id="sec2-pw-label" class="admin-ui-monolabel">—</span>
-                  </div>
-                </label>
-                <label class="admin-security-field">
-                  <span class="admin-ui-monolabel">CONFIRM</span>
-                  <input id="sec2-pw-confirm" type="password" required autocomplete="new-password" class="admin-ui-input" />
-                </label>
-                <button type="submit" class="admin-ui-action is-primary admin-sec-action">${ServerI18n.t("security2SubmitChangePassword")}</button>
-              </form>
-            </div>
+        <div class="admin-ui-group-label">${t("security2CardPasswordTitle")}</div>
+        <div class="admin-ui-group">
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("security2PwRowLabel")}
+              <span class="sub">${t("security2PwDiscloseHint")}</span>
+            </span>
+            <span class="val">
+              <button type="button" class="admin-ui-action" data-sec-disclose="sec2-pw-form">${t("security2SubmitChangePassword")}…</button>
+            </span>
           </div>
-
-          <!-- ② Admin session -->
-          <div class="admin-sec-card is-cyan">
-            <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardSessionTitle")}</span>
-              <span class="admin-sec-card__en">ADMIN SESSION</span>
-            </div>
-            <div class="admin-sec-card__body">
-              <div class="admin-sec-row">
-                <span class="admin-sec-row__dot is-lime"></span>
-                <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">${ServerI18n.t("security2CurrentSessionRowLabel")}</div>
-                  <div class="admin-sec-row__value" id="sec2-session-self-line">—</div>
-                </div>
-              </div>
-              <div class="admin-sec-row">
-                <span class="admin-sec-row__dot is-lime"></span>
-                <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">Token TTL</div>
-                  <div class="admin-sec-row__value">${ServerI18n.t("security2TokenTtlValue")}</div>
-                </div>
-              </div>
-              <div class="admin-sec-row">
-                <span class="admin-sec-row__dot is-lime"></span>
-                <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">${ServerI18n.t("security2OtherDevicesLabel")}</div>
-                  <div class="admin-sec-row__value">${ServerI18n.t("security2OtherDevicesValue")}</div>
-                </div>
-                <span class="admin-sec-row__hint">${ServerI18n.t("security2PendingBackendHint")}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- ③ WS token — overlay viewer auth -->
-          <div class="admin-sec-card is-cyan">
-            <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardWsTokenTitle")}</span>
-              <span class="admin-sec-card__en">WS TOKEN · VIEWER AUTH</span>
-              <span class="admin-sec-card__spacer"></span>
-              <span id="sec2-wsa-status" class="admin-ui-chip admin-sec-status-chip">${ServerI18n.t("security2Loading")}</span>
-            </div>
-            <div class="admin-sec-card__body">
-              <label class="admin-security-toggle">
-                <input id="sec2-wsa-toggle" type="checkbox" />
-                <span>${ServerI18n.t("security2WsTokenToggleLabel")}</span>
-              </label>
-              <div class="admin-security-field">
-                <span class="admin-ui-monolabel">${ServerI18n.t("security2TokenLengthLabel")}</span>
-                <div class="admin-security-tokenrow">
-                  <input id="sec2-wsa-token" type="password" class="admin-ui-input" placeholder="${ServerI18n.t("security2NotConfigured")}" autocomplete="off" spellcheck="false" />
-                  <button type="button" id="sec2-wsa-reveal" class="admin-ui-action admin-sec-token-action">👁</button>
-                  <button type="button" id="sec2-wsa-copy" class="admin-ui-action admin-sec-token-action">${ServerI18n.t("security2CopyButton")}</button>
-                  <button type="button" id="sec2-wsa-rotate" class="admin-ui-action is-warn admin-sec-token-action">${ServerI18n.t("security2RegenerateButton")}</button>
-                </div>
-              </div>
-              <div class="admin-security-tokenmeta">
-                <span class="admin-ui-monolabel">LAST ROTATION</span>
-                <span id="sec2-wsa-lastrot" class="admin-security-timestamp">—</span>
-                <button type="button" id="sec2-wsa-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">${ServerI18n.t("security2SaveButton")}</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- ④ IP allowlist -->
-          <div class="admin-sec-card is-amber">
-            <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardIpTitle")}</span>
-              <span class="admin-sec-card__en">IP ALLOWLIST</span>
-              <span class="admin-sec-card__spacer"></span>
-              <span id="sec2-ip-status-chip" class="admin-ui-chip admin-sec-status-chip">${ServerI18n.t("security2Loading")}</span>
-            </div>
-            <div class="admin-sec-card__body">
-              <div class="admin-sec-row">
-                <span id="sec2-ip-dot" class="admin-sec-row__dot is-amber"></span>
-                <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">${ServerI18n.t("security2StatusLabel")}</div>
-                  <div id="sec2-ip-status-line" class="admin-sec-row__value">—</div>
-                </div>
-              </div>
-              <label class="admin-security-toggle">
-                <input id="sec2-ip-toggle" type="checkbox" />
-                <span>${ServerI18n.t("security2IpToggleLabel")}</span>
+          <div class="admin-ui-group-row is-tall" data-sec-disclosure="sec2-pw-form" hidden>
+            <form id="sec2-pw-form" class="admin-security-form" autocomplete="off">
+              <label class="admin-security-field">
+                <span class="admin-ui-monolabel">CURRENT</span>
+                <input id="sec2-pw-current" type="password" required autocomplete="current-password" class="admin-ui-input" />
               </label>
               <label class="admin-security-field">
-                <span class="admin-ui-monolabel">${ServerI18n.t("security2IpAllowlistLabel")}</span>
-                <textarea id="sec2-ip-entries" class="admin-ui-input" rows="4" spellcheck="false" placeholder="127.0.0.1/32"></textarea>
-              </label>
-              <div class="admin-security-tokenmeta">
-                <span class="admin-ui-monolabel">CURRENT IP</span>
-                <span id="sec2-ip-current" class="admin-security-timestamp">—</span>
-                <button type="button" id="sec2-ip-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">${ServerI18n.t("security2SaveButton")}</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- ⑤ CORS — informational -->
-          <div class="admin-sec-card">
-            <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardCorsTitle")}</span>
-              <span class="admin-sec-card__en">CROSS-ORIGIN</span>
-            </div>
-            <div class="admin-sec-card__body">
-              <div class="admin-sec-row">
-                <span class="admin-sec-row__dot is-amber"></span>
-                <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">${ServerI18n.t("security2CorsOriginsRowLabel")}</div>
-                  <div id="sec2-cors-origins-line" class="admin-sec-row__value">—</div>
+                <span class="admin-ui-monolabel">NEW · ≥8</span>
+                <input id="sec2-pw-new" type="password" required minlength="8" autocomplete="new-password" class="admin-ui-input" />
+                <div class="admin-security-strength">
+                  <div class="admin-security-strength-bar"><span id="sec2-pw-meter" style="width:0%"></span></div>
+                  <span id="sec2-pw-label" class="admin-ui-monolabel">—</span>
                 </div>
-              </div>
-              <div class="admin-sec-row">
-                <span id="sec2-cors-cred-dot" class="admin-sec-row__dot is-lime"></span>
-                <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">Credentials</div>
-                  <div id="sec2-cors-credentials-line" class="admin-sec-row__value">—</div>
-                </div>
-              </div>
-              <div class="admin-sec-row">
-                <span class="admin-sec-row__dot is-lime"></span>
-                <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">Methods</div>
-                  <div id="sec2-cors-methods-line" class="admin-sec-row__value">—</div>
-                </div>
-              </div>
-              <label class="admin-security-field">
-                <span class="admin-ui-monolabel">${ServerI18n.t("security2CorsOriginsLabel")}</span>
-                <textarea id="sec2-cors-origins" class="admin-ui-input" rows="3" spellcheck="false" placeholder="*"></textarea>
-              </label>
-              <label class="admin-security-toggle">
-                <input id="sec2-cors-credentials" type="checkbox" />
-                <span>${ServerI18n.t("security2CorsCredentialsToggleLabel")}</span>
               </label>
               <label class="admin-security-field">
-                <span class="admin-ui-monolabel">METHODS</span>
-                <input id="sec2-cors-methods" type="text" class="admin-ui-input" spellcheck="false" placeholder="GET, POST, DELETE, PATCH, OPTIONS" />
+                <span class="admin-ui-monolabel">CONFIRM</span>
+                <input id="sec2-pw-confirm" type="password" required autocomplete="new-password" class="admin-ui-input" />
               </label>
-              <div class="admin-security-tokenmeta">
-                <button type="button" id="sec2-cors-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end">${ServerI18n.t("security2SaveCorsButton")}</button>
-              </div>
-            </div>
+              <button type="submit" class="admin-ui-action is-primary admin-sec-action">${t("security2SubmitChangePassword")}</button>
+            </form>
           </div>
-
-          <!-- ⑥ HTTPS / TLS -->
-          <div class="admin-sec-card">
-            <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">HTTPS / TLS</span>
-              <span class="admin-sec-card__en">TRANSPORT SECURITY</span>
-            </div>
-            <div class="admin-sec-card__body">
-              <div class="admin-sec-row">
-                <span class="admin-sec-row__dot" id="sec2-tls-dot"></span>
-                <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">${ServerI18n.t("security2StatusLabel")}</div>
-                  <div class="admin-sec-row__value" id="sec2-tls-status">—</div>
-                </div>
-              </div>
-              <p class="admin-sec-card__note">
-                ${ServerI18n.t("security2TlsRecommendationNote")}
-              </p>
-              <div class="admin-sec-row">
-                <span class="admin-sec-row__dot is-amber"></span>
-                <div class="admin-sec-row__main">
-                  <div class="admin-sec-row__label">HSTS Header</div>
-                  <div class="admin-sec-row__value" id="sec2-hsts-status">—</div>
-                </div>
-              </div>
-            </div>
+          <div class="admin-ui-group-row">
+            <span class="lbl">${t("security2CurrentSessionRowLabel")}</span>
+            <span class="val" id="sec2-session-self-line">—</span>
           </div>
+        </div>
 
-          <!-- ⑦ Audit log link (span-2) -->
-          <div class="admin-sec-card is-span2">
-            <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardAuditTitle")}</span>
-              <span class="admin-sec-card__en">AUDIT LOG</span>
-              <span class="admin-sec-card__spacer"></span>
-              <a href="#/audit" class="admin-ui-action admin-sec-card__link">${ServerI18n.t("security2ViewFullLogLink")}</a>
-            </div>
-            <div class="admin-sec-card__body">
-              <p class="admin-sec-card__note">
-                ${ServerI18n.t("security2AuditLogNote")}
-              </p>
-            </div>
+        <div class="admin-ui-group-label">${t("security2CardWsTokenTitle")}</div>
+        <div class="admin-ui-group">
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("security2WsTokenToggleLabel")}
+              <span class="sub">${t("security2WsTokenToggleHint")}</span>
+            </span>
+            <span class="val">
+              <span id="sec2-wsa-status" class="admin-ui-chip admin-sec-status-chip">${t("security2Loading")}</span>
+              <input id="sec2-wsa-toggle" type="checkbox" class="admin-ui-checkbox" />
+            </span>
           </div>
-
-          <!-- ⑧ DANGER ZONE (span-2 row) -->
-          <div class="admin-sec-card is-crimson is-span2">
-            <div class="admin-sec-card__head">
-              <span class="admin-sec-card__zh">${ServerI18n.t("security2CardDangerTitle")}</span>
-              <span class="admin-sec-card__en">DANGER ZONE</span>
-            </div>
-            <div class="admin-sec-card__body">
-              <div class="admin-sec-dangerzone">
-                <button type="button" class="admin-ui-action is-danger admin-sec-danger" data-sec-danger="revoke-tokens">
-                  <span class="admin-sec-danger__title">${ServerI18n.t("security2RevokeApiTokensTitle")}</span>
-                  <span class="admin-sec-danger__desc">${ServerI18n.t("security2RevokeApiTokensDesc")}</span>
-                </button>
-                <button type="button" class="admin-ui-action is-danger admin-sec-danger" data-sec-danger="revoke-firetoken">
-                  <span class="admin-sec-danger__title">${ServerI18n.t("security2RevokeFireTokenTitle")}</span>
-                  <span class="admin-sec-danger__desc">${ServerI18n.t("security2RevokeFireTokenDesc")}</span>
-                </button>
-                <button type="button" class="admin-ui-action is-warn admin-sec-danger" data-sec-danger="reset-ws">
-                  <span class="admin-sec-danger__title">${ServerI18n.t("security2ResetWsTokenTitle")}</span>
-                  <span class="admin-sec-danger__desc">${ServerI18n.t("security2ResetWsTokenDesc")}</span>
-                </button>
-              </div>
-            </div>
+          <div class="admin-ui-group-row is-tall">
+            <input id="sec2-wsa-token" type="password" class="admin-ui-input admin-ui-grow" placeholder="${t("security2NotConfigured")}" autocomplete="off" spellcheck="false" />
+            <span class="val">
+              <button type="button" id="sec2-wsa-reveal" class="admin-ui-action admin-sec-token-action">👁</button>
+              <button type="button" id="sec2-wsa-copy" class="admin-ui-action admin-sec-token-action">${t("security2CopyButton")}</button>
+              <button type="button" id="sec2-wsa-rotate" class="admin-ui-danger-btn">${t("security2RegenerateButton")}…</button>
+            </span>
           </div>
+          <div class="admin-ui-group-row">
+            <span class="lbl">${t("security2LastRotationLabel")}</span>
+            <span class="val">
+              <span id="sec2-wsa-lastrot" class="admin-security-timestamp">—</span>
+              <button type="button" id="sec2-wsa-save" class="admin-ui-action is-primary">${t("security2SaveButton")}</button>
+            </span>
+          </div>
+        </div>
 
+        <div class="admin-ui-group-label">${t("security2CardIpTitle")}</div>
+        <div class="admin-ui-group">
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("security2IpToggleLabel")}
+              <span class="sub" id="sec2-ip-status-line">—</span>
+            </span>
+            <span class="val">
+              <span id="sec2-ip-dot" class="admin-ui-dot is-amber"></span>
+              <span id="sec2-ip-status-chip" class="admin-ui-chip admin-sec-status-chip">${t("security2Loading")}</span>
+              <input id="sec2-ip-toggle" type="checkbox" class="admin-ui-checkbox" />
+            </span>
+          </div>
+          <div class="admin-ui-group-row is-tall">
+            <textarea id="sec2-ip-entries" class="admin-ui-input admin-ui-grow" rows="3" spellcheck="false" placeholder="127.0.0.1/32"></textarea>
+          </div>
+          <div class="admin-ui-group-row">
+            <span class="lbl">${t("security2CurrentIpLabel")}</span>
+            <span class="val">
+              <span id="sec2-ip-current" class="admin-security-timestamp">—</span>
+              <button type="button" id="sec2-ip-save" class="admin-ui-action is-primary">${t("security2SaveButton")}</button>
+            </span>
+          </div>
+          <div class="admin-ui-group-row">
+            <span class="lbl">${t("security2CardAuditTitle")}</span>
+            <span class="val"><a href="#/audit" class="admin-ui-action">${t("security2ViewFullLogLink")}</a></span>
+          </div>
+        </div>
+
+        <div class="admin-ui-group-label">${t("security2CardCorsTitle")}</div>
+        <div class="admin-ui-group">
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("security2CorsOriginsRowLabel")}
+              <span class="sub" id="sec2-cors-origins-line">—</span>
+            </span>
+            <textarea id="sec2-cors-origins" class="admin-ui-input" rows="2" spellcheck="false" placeholder="*"></textarea>
+          </div>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("security2CorsCredentialsToggleLabel")}
+              <span class="sub" id="sec2-cors-credentials-line">—</span>
+            </span>
+            <span class="val">
+              <span id="sec2-cors-cred-dot" class="admin-ui-dot is-lime"></span>
+              <input id="sec2-cors-credentials" type="checkbox" class="admin-ui-checkbox" />
+            </span>
+          </div>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">Methods<span class="sub" id="sec2-cors-methods-line">—</span></span>
+            <span class="val">
+              <input id="sec2-cors-methods" type="text" class="admin-ui-input" spellcheck="false" placeholder="GET, POST, DELETE, PATCH, OPTIONS" />
+              <button type="button" id="sec2-cors-save" class="admin-ui-action is-primary">${t("security2SaveButton")}</button>
+            </span>
+          </div>
+        </div>
+
+        <div class="admin-ui-group-label">HTTPS / TLS</div>
+        <div class="admin-ui-group">
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("security2StatusLabel")}
+              <span class="sub">${t("security2TlsRecommendationNote")}</span>
+            </span>
+            <span class="val">
+              <span class="admin-ui-dot" id="sec2-tls-dot"></span>
+              <span id="sec2-tls-status">—</span>
+            </span>
+          </div>
+          <div class="admin-ui-group-row">
+            <span class="lbl">HSTS Header</span>
+            <span class="val" id="sec2-hsts-status">—</span>
+          </div>
+        </div>
+
+        <div class="admin-ui-danger-label">${t("security2CardDangerTitle")}</div>
+        <div class="admin-ui-group is-danger">
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("security2RevokeApiTokensTitle")}
+              <span class="sub">${t("security2RevokeApiTokensDesc")}</span>
+            </span>
+            <span class="val"><button type="button" class="admin-ui-danger-btn" data-sec-danger="revoke-tokens">${t("security2RevokeButton")}…</button></span>
+          </div>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("security2RevokeFireTokenTitle")}
+              <span class="sub">${t("security2RevokeFireTokenDesc")}</span>
+            </span>
+            <span class="val"><button type="button" class="admin-ui-danger-btn" data-sec-danger="revoke-firetoken">${t("security2RevokeButton")}…</button></span>
+          </div>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("security2ResetWsTokenTitle")}
+              <span class="sub">${t("security2ResetWsTokenDesc")}</span>
+            </span>
+            <span class="val"><button type="button" class="admin-ui-danger-btn" data-sec-danger="reset-ws">${t("security2RegenerateButton")}…</button></span>
+          </div>
         </div>
       </div>`;
   }
+
 
   // Rough zxcvbn-less strength: length + class variety. 0–4.
   function scorePassword(pw) {
@@ -641,6 +562,20 @@
     document.getElementById("sec2-wsa-reveal")?.addEventListener("click", revealToken);
     document.getElementById("sec2-ip-save")?.addEventListener("click", () => saveSecuritySettings("ip"));
     document.getElementById("sec2-cors-save")?.addEventListener("click", () => saveSecuritySettings("cors"));
+    // 密碼表單預設收合——三個輸入框攤在列表裡會把「一列一設定」的節奏
+    // 打斷，而改密碼是低頻動作。「變更…」的省略號表示後面還有 UI。
+    document.querySelectorAll("[data-sec-disclose]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = document.querySelector(
+          `[data-sec-disclosure="${btn.dataset.secDisclose}"]`
+        );
+        if (!target) return;
+        target.hidden = !target.hidden;
+        btn.setAttribute("aria-expanded", target.hidden ? "false" : "true");
+        if (!target.hidden) document.getElementById("sec2-pw-current")?.focus();
+      });
+    });
+
     document.querySelectorAll("[data-sec-danger]").forEach((btn) => {
       if (btn.dataset.secBound === "1") return;
       btn.dataset.secBound = "1";
