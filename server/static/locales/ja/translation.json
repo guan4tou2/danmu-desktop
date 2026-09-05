@@ -2739,5 +2739,22 @@
   "lbInactive": "無効",
   "lbFont": "フォント",
   "lbLayoutRow": "レイアウト",
-  "lbSourcePages": "ソースページ"
+  "lbSourcePages": "ソースページ",
+  "fxCatGlow": "グロー",
+  "fxCatMotion": "モーション",
+  "fxCatColor": "カラー",
+  "fxCatShake": "シェイク",
+  "fxCatText": "テキスト",
+  "lbEdit": "編集",
+  "lbDelete": "削除",
+  "lbDark": "ダーク",
+  "lbLight": "ライト",
+  "lbAuto": "デバイスに従う",
+  "lbScope": "範囲",
+  "lbAllowlist": "許可リスト",
+  "lbDenylist": "拒否リスト",
+  "lbCurrentSession": "現在のセッション",
+  "fxCatMisc": "その他",
+  "fltOrderMatters": "上から順に判定",
+  "fltAutoScroll": "自動スクロール"
 }

@@ -75,7 +75,7 @@
         </div>
         <div class="admin-flt-v4__card">
           <div class="admin-flt-v4__head">
-            <span class="admin-flt-v4__kicker">QUICK FILTERS · ${ServerI18n.t("fltQuickKickerTail")}</span>
+            <span class="admin-flt-v4__kicker">${ServerI18n.t("fltQuickKickerTail")}</span>
           </div>
           <div class="admin-flt-v4__quick" data-flt-quick>
             ${[
@@ -97,7 +97,7 @@
           <div class="hud-inspector" style="min-height:auto">
             <div class="hud-inspector-head">
               <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("fltRuleLib")}</span>
-              <span class="admin-v3-card-kicker" style="margin:0">RULESET \u00b7 ORDER MATTERS</span>
+              <span class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("fltOrderMatters")}</span>
               <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color: var(--color-ink-accent);letter-spacing:0.1em">${ServerI18n.t("fltActionsHead")}</span>
             </div>
             <div class="hud-filter-row" id="filterTypeChips" style="padding:10px 14px;border-bottom:1px solid var(--hud-line-strong)">
@@ -122,7 +122,7 @@
               <div class="hud-inspector-head" style="border-bottom:1px solid var(--hud-line-strong)">
                 <span class="hud-status-dot is-live"></span>
                 <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("fltLiveLog")}</span>
-                <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.1em">AUTO-SCROLL \u25b6</span>
+                <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.1em">${ServerI18n.t("fltAutoScroll")}</span>
               </div>
               <div class="hud-console-body" id="filterLiveLog" style="max-height:200px;padding:10px 14px;font-family:var(--font-mono);font-size:11px;line-height:1.7">
                 <div style="color:var(--color-text-muted);text-align:center;padding:10px">' + ServerI18n.t("fltNoEvents") + '</div>
@@ -136,7 +136,7 @@
               <div class="hud-inspector-head">
                 <span class="hud-status-dot is-live"></span>
                 <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${t("addFilterRule", "Add Rule")}</span>
-                <span class="admin-v3-card-kicker" style="margin:0">NEW \u00b7 PATTERN</span>
+                
               </div>
               <div id="filterRuleForm" style="padding:14px;display:flex;flex-direction:column;gap:10px">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">

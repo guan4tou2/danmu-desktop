@@ -2739,5 +2739,22 @@
   "lbInactive": "Inactive",
   "lbFont": "Font",
   "lbLayoutRow": "Layout",
-  "lbSourcePages": "Source pages"
+  "lbSourcePages": "Source pages",
+  "fxCatGlow": "Glow",
+  "fxCatMotion": "Motion",
+  "fxCatColor": "Color",
+  "fxCatShake": "Shake",
+  "fxCatText": "Text",
+  "lbEdit": "Edit",
+  "lbDelete": "Delete",
+  "lbDark": "Dark",
+  "lbLight": "Light",
+  "lbAuto": "Auto",
+  "lbScope": "Scope",
+  "lbAllowlist": "Allowlist",
+  "lbDenylist": "Denylist",
+  "lbCurrentSession": "Current session",
+  "fxCatMisc": "Other",
+  "fltOrderMatters": "Matched top to bottom",
+  "fltAutoScroll": "Auto-scroll"
 }

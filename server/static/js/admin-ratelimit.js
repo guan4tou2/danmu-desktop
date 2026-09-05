@@ -129,7 +129,7 @@
             </div>
             <div class="admin-ratelimit-vfeed-table">
               <div class="admin-ratelimit-vfeed-row is-head">
-                <span>TIME</span><span>SCOPE</span><span>IP</span>
+                <span>TIME</span><span>${ServerI18n.t("lbScope")}</span><span>IP</span>
               </div>
               <div class="admin-ratelimit-vfeed-body" data-rl-vbody>
                 <div class="admin-ratelimit-vfeed-empty">${ServerI18n.t("ratelimitNoViolationsYet")}</div>
@@ -154,7 +154,7 @@
             <div class="admin-ratelimit-ip-lists">
               <div class="admin-ratelimit-ip-col" data-rl-ip-col="allowlist">
                 <div class="admin-ratelimit-ip-col-head">
-                  <span class="lbl">ALLOWLIST</span>
+                  <span class="lbl">${ServerI18n.t("lbAllowlist")}</span>
                   <span class="cnt" data-rl-ip-allow-count>0</span>
                 </div>
                 <div class="admin-ratelimit-ip-col-body" data-rl-ip-body="allowlist">
@@ -163,7 +163,7 @@
               </div>
               <div class="admin-ratelimit-ip-col" data-rl-ip-col="denylist">
                 <div class="admin-ratelimit-ip-col-head">
-                  <span class="lbl">DENYLIST</span>
+                  <span class="lbl">${ServerI18n.t("lbDenylist")}</span>
                   <span class="cnt" data-rl-ip-deny-count>0</span>
                 </div>
                 <div class="admin-ratelimit-ip-col-body" data-rl-ip-body="denylist">

@@ -49,9 +49,9 @@
             <div class="admin-vt-card">
               <div class="admin-vt-card-head"><span class="title">${ServerI18n.t("viewerThemePreviewModeTitle")}</span><span class="kicker">PREVIEW MODE · ${ServerI18n.t("viewerThemePreviewModeKickerNote")}</span></div>
               <div class="admin-vt-mode" data-vt-mode>
-                <button type="button" data-vt-mode-btn="dark"><span class="icon">◐</span><span class="lbl">${ServerI18n.t("viewerThemeModeDark")}</span><span class="sub">DARK</span></button>
-                <button type="button" data-vt-mode-btn="light"><span class="icon">☼</span><span class="lbl">${ServerI18n.t("viewerThemeModeLight")}</span><span class="sub">LIGHT</span></button>
-                <button type="button" data-vt-mode-btn="auto"><span class="icon">◑</span><span class="lbl">${ServerI18n.t("viewerThemeModeAuto")}</span><span class="sub">AUTO</span></button>
+                <button type="button" data-vt-mode-btn="dark"><span class="icon">◐</span><span class="lbl">${ServerI18n.t("viewerThemeModeDark")}</span><span class="sub">${ServerI18n.t("lbDark")}</span></button>
+                <button type="button" data-vt-mode-btn="light"><span class="icon">☼</span><span class="lbl">${ServerI18n.t("viewerThemeModeLight")}</span><span class="sub">${ServerI18n.t("lbLight")}</span></button>
+                <button type="button" data-vt-mode-btn="auto"><span class="icon">◑</span><span class="lbl">${ServerI18n.t("viewerThemeModeAuto")}</span><span class="sub">${ServerI18n.t("lbAuto")}</span></button>
               </div>
             </div>
 
@@ -71,7 +71,7 @@
                   <span class="kicker">THEME MODE · ${ServerI18n.t("viewerThemeThemeModeKickerNote")}</span>
                 </div>
                 <div class="admin-vt-mode" data-vt-theme-force>
-                  <button type="button" data-vt-theme-btn="auto"><span class="icon">◑</span><span class="lbl">${ServerI18n.t("viewerThemeModeAuto")}</span><span class="sub">AUTO</span></button>
+                  <button type="button" data-vt-theme-btn="auto"><span class="icon">◑</span><span class="lbl">${ServerI18n.t("viewerThemeModeAuto")}</span><span class="sub">${ServerI18n.t("lbAuto")}</span></button>
                   <button type="button" data-vt-theme-btn="force-light"><span class="icon">☼</span><span class="lbl">${ServerI18n.t("viewerThemeForceLight")}</span><span class="sub">FORCE LIGHT</span></button>
                   <button type="button" data-vt-theme-btn="force-dark"><span class="icon">◐</span><span class="lbl">${ServerI18n.t("viewerThemeForceDark")}</span><span class="sub">FORCE DARK</span></button>
                 </div>
@@ -82,7 +82,7 @@
                   <span class="kicker">LANGUAGE MODE · ${ServerI18n.t("viewerThemeLangModeKickerNote")}</span>
                 </div>
                 <div class="admin-vt-mode" data-vt-lang-force>
-                  <button type="button" data-vt-lang-btn="auto"><span class="icon">⌬</span><span class="lbl">${ServerI18n.t("viewerThemeFollowBrowser")}</span><span class="sub">AUTO</span></button>
+                  <button type="button" data-vt-lang-btn="auto"><span class="icon">⌬</span><span class="lbl">${ServerI18n.t("viewerThemeFollowBrowser")}</span><span class="sub">${ServerI18n.t("lbAuto")}</span></button>
                   <!-- D-4：語言自稱名（繁體中文／English／日本語／한국어）是語言選擇器
                        慣例——用該語言自身文字呈現，不隨 admin UI 語言翻譯，不搬。icon
                        字符（中/EN/日/한）同理，維持原樣。 -->

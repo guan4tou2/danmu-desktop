@@ -2739,5 +2739,22 @@
   "lbInactive": "未啟用",
   "lbFont": "字型",
   "lbLayoutRow": "排版",
-  "lbSourcePages": "來源頁面"
+  "lbSourcePages": "來源頁面",
+  "fxCatGlow": "發光",
+  "fxCatMotion": "動態",
+  "fxCatColor": "顏色",
+  "fxCatShake": "抖動",
+  "fxCatText": "文字",
+  "lbEdit": "編輯",
+  "lbDelete": "刪除",
+  "lbDark": "深色",
+  "lbLight": "淺色",
+  "lbAuto": "跟隨裝置",
+  "lbScope": "範圍",
+  "lbAllowlist": "允許清單",
+  "lbDenylist": "封鎖清單",
+  "lbCurrentSession": "目前場次",
+  "fxCatMisc": "其他",
+  "fltOrderMatters": "規則由上而下比對",
+  "fltAutoScroll": "自動捲動"
 }

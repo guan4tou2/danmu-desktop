@@ -612,8 +612,17 @@
     const counts = { GLOW: 0, MOTION: 0, COLOR: 0, SHAKE: 0, TEXT: 0, MISC: 0 };
     _effectsState.all.forEach((e) => { counts[detectCategory(e.name)] += 1; });
     const total = _effectsState.all.length;
-    const chips = [["ALL", ServerI18n.t("fxChipAll"), total], ["GLOW", "GLOW", counts.GLOW], ["MOTION", "MOTION", counts.MOTION], ["COLOR", "COLOR", counts.COLOR], ["SHAKE", "SHAKE", counts.SHAKE], ["TEXT", "TEXT", counts.TEXT]];
-    if (counts.MISC > 0) chips.push(["MISC", "MISC", counts.MISC]);
+    // v8（2026-08-19 設計稿 07）：分類 chip 的標籤改吃 i18n。GLOW/MOTION/
+    // SHAKE 這些是效果分類的內部 key，不該直接當標籤給主持人看。
+    const chips = [
+      ["ALL", ServerI18n.t("fxChipAll"), total],
+      ["GLOW", ServerI18n.t("fxCatGlow"), counts.GLOW],
+      ["MOTION", ServerI18n.t("fxCatMotion"), counts.MOTION],
+      ["COLOR", ServerI18n.t("fxCatColor"), counts.COLOR],
+      ["SHAKE", ServerI18n.t("fxCatShake"), counts.SHAKE],
+      ["TEXT", ServerI18n.t("fxCatText"), counts.TEXT],
+    ];
+    if (counts.MISC > 0) chips.push(["MISC", ServerI18n.t("fxCatMisc"), counts.MISC]);
     // TPL-B 工具列：chips 與 Reload 同列。重繪只換 chips，
     // spacer 與 Reload（含其事件監聽）原地保留。
     const chipsHtml = chips.map(([key, label, n]) => {
@@ -714,8 +723,8 @@
         </div>
         <div class="hud-effect-card-actions">
           <span class="hud-effect-chip is-on" data-role="on">ON</span>
-          <button type="button" class="hud-effect-chip" data-role="edit">EDIT</button>
-          <button type="button" class="hud-effect-chip is-danger" data-role="delete" style="margin-left:auto">DEL</button>
+          <button type="button" class="hud-effect-chip" data-role="edit">${ServerI18n.t("lbEdit")}</button>
+          <button type="button" class="hud-effect-chip is-danger" data-role="delete" style="margin-left:auto">${ServerI18n.t("lbDelete")}</button>
         </div>
       `;
       container.appendChild(card);
