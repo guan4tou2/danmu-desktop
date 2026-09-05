@@ -467,6 +467,20 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-variant-numeric: tabular-nums;
 }
 
+/* 值區的按鈕不換行——「預覽變更…」被折成兩行會讓列高失控 */
+.admin-ui-group-row .val > .admin-ui-action,
+.admin-ui-group-row .val > button {
+  white-space: nowrap;
+}
+
+/* 頁首主動作：擺在 .admin-ui-page-head 外面（標題與路由標題相同時整個
+ * page-head 會被 _dedupSectionTitles 收掉，放裡面的按鈕會一起消失）。 */
+.admin-ui-page-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 /* ── 分段控制 ── 取代「一排 chip」，表達互斥選項 */
 .admin-ui-seg {
   display: inline-flex;
@@ -562,6 +576,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-ui-danger-btn {
   min-height: 32px;
   padding: 0 12px;
+  white-space: nowrap;
   border: none;
   border-radius: var(--radius-md);
   background: color-mix(in oklab, var(--color-danger) 12%, transparent);

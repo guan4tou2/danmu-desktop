@@ -29,189 +29,137 @@
   var _escHtml = window.AdminUtils.escapeHtml;
 
   function pageTemplate() {
+    // v8（2026-08-19 設計稿 07）：ZONE 1/2/3 的 mono 標籤網格改成設定群組
+    // 卡片。原本每個 subcard 都掛一條「SETTINGS · 設定快照」式的雙語
+    // mono 標籤，讀起來像機器日誌而不是給主持人看的介面。
+    //
+    // 與設計稿的一處刻意差異：稿上「還原」是單一拖放區，靠副檔名自動
+    // 判斷。這裡保留三個獨立流程——後端是三個不同 endpoint，而完整備份
+    // 與素材包都是 .tar.gz，前端無法從副檔名分辨；猜錯會把素材包當完整
+    // 備份套用而覆蓋設定。寧可多一列，不要有誤套的可能。
+    const t = (k) => ServerI18n.t(k);
     return `
       <div id="${PAGE_ID}" class="admin-backup-page hud-page-stack lg:col-span-2" data-tpl="C">
         <div class="admin-ui-page-head">
-          <div class="admin-ui-page-kicker">BACKUP · EXPORT · DANGER</div>
-          <h2 class="admin-ui-page-title">${ServerI18n.t("backupPageTitle")}</h2>
-          <p class="admin-ui-page-note">
-            ${ServerI18n.t("backupPageNote")}
-          </p>
+          <h2 class="admin-ui-page-title">${t("backupPageTitle")}</h2>
+          <p class="admin-ui-page-note">${t("backupPageNote")}</p>
         </div>
 
-        <!-- Zone 1 · Export -->
-        <div class="admin-ui-card admin-backup-zone" data-zone="export">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-            <span class="admin-ui-dot is-success"></span>
-            <span class="admin-ui-monolabel">ZONE 1 · EXPORT</span>
-          </div>
+        <!-- 主動作放在頁首「外面」：標題與路由標題相同時，_dedupSectionTitles
+             會把整個 .admin-ui-page-head 收起來，擺在裡面的按鈕會跟著消失。 -->
+        <div class="admin-ui-inline-toolbar admin-ui-page-actions">
+          <button type="button" id="bk2-pack-export" class="admin-ui-action is-primary">${t("backupPackExportBtn")}</button>
+        </div>
 
-          <!-- History export -->
-          <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">HISTORY · ${ServerI18n.t("backupSecHistory")}</div>
-            <div class="admin-backup-row">
-              <label class="admin-backup-field">
-                <span class="admin-ui-monolabel">RANGE</span>
-                <select id="bk2-hist-hours" class="admin-ui-select">
-                  <option value="1">${ServerI18n.t("backupRangeLast1h")}</option>
-                  <option value="6">${ServerI18n.t("backupRangeLast6h")}</option>
-                  <option value="24" selected>${ServerI18n.t("backupRangeLast24h")}</option>
-                  <option value="168">${ServerI18n.t("backupRangeLast7d")}</option>
-                  <option value="720">${ServerI18n.t("backupRangeLast30d")}</option>
-                </select>
-              </label>
-              <label class="admin-backup-field">
-                <span class="admin-ui-monolabel">FORMAT</span>
-                <select id="bk2-hist-format" class="admin-ui-select">
-                  <option value="json">${ServerI18n.t("backupFormatJson")}</option>
-                  <option value="csv">${ServerI18n.t("backupFormatCsv")}</option>
-                  <option value="srt">${ServerI18n.t("backupFormatSrt")}</option>
-                </select>
-              </label>
-              <button type="button" id="bk2-hist-download" class="admin-ui-action is-primary admin-bk-action">${ServerI18n.t("backupDownloadBtn")}</button>
-            </div>
+        <div class="admin-ui-group-label">${t("backupGroupDownload")}</div>
+        <div class="admin-ui-group" data-zone="export">
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("backupSecFullState")}
+              <span class="sub" id="bk2-pack-summary">${t("backupCalculatingSize")}</span>
+              <span class="sub" id="bk2-pack-detail">${t("backupPackContentList")}</span>
+            </span>
           </div>
-
-          <!-- Settings export -->
-          <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">SETTINGS · ${ServerI18n.t("backupSecSettingsSnap")}</div>
-            <div class="admin-backup-row">
-              <div class="admin-backup-desc">
-                ${ServerI18n.t("backupSettingsSnapshotDesc")}
-              </div>
-              <button type="button" id="bk2-settings-download" class="admin-ui-action is-primary admin-bk-action">${ServerI18n.t("backupDownloadBtn")}</button>
-            </div>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("backupSecSettingsSnap")}
+              <span class="sub">${t("backupSettingsSnapshotDesc")}</span>
+            </span>
+            <span class="val">
+              <button type="button" id="bk2-settings-download" class="admin-ui-action is-primary">${t("backupDownloadBtn")}</button>
+            </span>
           </div>
-
-          <!-- Full pack (2026-05-19 — wired to /admin/backup/export) -->
-          <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">FULL BACKUP · ${ServerI18n.t("backupSecFullState")}</div>
-            <div class="admin-backup-row">
-              <div class="admin-backup-desc" id="bk2-pack-summary">
-                ${ServerI18n.t("backupCalculatingSize")}
-              </div>
-              <button type="button" id="bk2-pack-export" class="admin-ui-action is-primary admin-bk-action">${ServerI18n.t("backupPackExportBtn")}</button>
-            </div>
-            <p class="admin-backup-deferred-note" id="bk2-pack-detail">
-              ${ServerI18n.t("backupPackContentList")}
-              <br>${ServerI18n.t("backupPackAssetHint")}
-            </p>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("backupSecAssetPack")}
+              <span class="sub" id="bk2-assets-summary">${t("backupCalculatingAssetSize")}</span>
+              <span class="sub" id="bk2-assets-detail">${t("backupAssetContentList")}</span>
+            </span>
+            <span class="val">
+              <button type="button" id="bk2-assets-export" class="admin-ui-action is-primary">${t("backupAssetsExportBtn")}</button>
+            </span>
           </div>
-
-          <!-- Asset pack export (uploaded media) -->
-          <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">ASSET PACK · ${ServerI18n.t("backupSecAssetPack")}</div>
-            <div class="admin-backup-row">
-              <div class="admin-backup-desc" id="bk2-assets-summary">
-                ${ServerI18n.t("backupCalculatingAssetSize")}
-              </div>
-              <button type="button" id="bk2-assets-export" class="admin-ui-action is-primary admin-bk-action">${ServerI18n.t("backupAssetsExportBtn")}</button>
-            </div>
-            <p class="admin-backup-deferred-note" id="bk2-assets-detail">
-              ${ServerI18n.t("backupAssetContentList")}
-            </p>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("backupSecHistory")}</span>
+            <span class="val">
+              <select id="bk2-hist-hours" class="admin-ui-select">
+                <option value="1">${t("backupRangeLast1h")}</option>
+                <option value="6">${t("backupRangeLast6h")}</option>
+                <option value="24" selected>${t("backupRangeLast24h")}</option>
+                <option value="168">${t("backupRangeLast7d")}</option>
+                <option value="720">${t("backupRangeLast30d")}</option>
+              </select>
+              <select id="bk2-hist-format" class="admin-ui-select">
+                <option value="json">${t("backupFormatJson")}</option>
+                <option value="csv">${t("backupFormatCsv")}</option>
+                <option value="srt">${t("backupFormatSrt")}</option>
+              </select>
+              <button type="button" id="bk2-hist-download" class="admin-ui-action is-primary">${t("backupDownloadBtn")}</button>
+            </span>
           </div>
         </div>
 
-        <!-- Zone 2 · Restore -->
-        <div class="admin-ui-card admin-backup-zone" data-zone="restore">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-            <span class="admin-ui-dot is-warn"></span>
-            <span class="admin-ui-monolabel">ZONE 2 · RESTORE</span>
+        <div class="admin-ui-group-label">${t("backupGroupRestore")}</div>
+        <div class="admin-ui-group" data-zone="restore">
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("backupSecRestoreSettings")}
+              <span class="sub">${t("backupSettingsRestoreNote")}</span>
+            </span>
+            <span class="val">
+              <input id="bk2-settings-upload" type="file" accept="application/json,.json" class="admin-ui-input" />
+              <button type="button" id="bk2-settings-dryrun" class="admin-ui-action">${t("backupDryRunBtn")}…</button>
+              <button type="button" id="bk2-settings-apply" class="admin-ui-danger-btn" disabled title="${t("backupApplyDisabledTitle")}">${t("backupApplyBtn")}</button>
+            </span>
           </div>
-
-          <!-- Settings restore -->
-          <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">SETTINGS · ${ServerI18n.t("backupSecRestoreSettings")}</div>
-            <div class="admin-backup-row">
-              <label class="admin-backup-field">
-                <span class="admin-ui-monolabel">JSON FILE</span>
-                <input id="bk2-settings-upload" type="file" accept="application/json,.json" class="admin-ui-input" />
-              </label>
-              <button type="button" id="bk2-settings-dryrun" class="admin-ui-action admin-bk-action">${ServerI18n.t("backupDryRunBtn")}</button>
-              <button type="button" id="bk2-settings-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="${ServerI18n.t("backupApplyDisabledTitle")}">${ServerI18n.t("backupApplyBtn")}</button>
-            </div>
-            <pre id="bk2-settings-diff" class="admin-backup-diff" hidden></pre>
-            <p class="admin-backup-deferred-note">${ServerI18n.t("backupSettingsRestoreNote")}</p>
+          <div class="admin-ui-group-row"><pre id="bk2-settings-diff" class="admin-backup-diff" hidden></pre></div>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("backupSecRestoreFull")}
+              <span class="sub">${t("backupFullPackRestoreNote")}</span>
+              <span class="sub">${t("backupRestoreBeforeApplyHint")}</span>
+            </span>
+            <span class="val">
+              <input id="bk2-pack-upload" type="file" accept=".tar.gz,application/gzip,application/x-gzip" class="admin-ui-input" />
+              <button type="button" id="bk2-pack-dryrun" class="admin-ui-action">${t("backupDryRunBtn")}…</button>
+              <button type="button" id="bk2-pack-apply" class="admin-ui-danger-btn" disabled title="${t("backupApplyDisabledTitle")}">${t("backupApplyBtn")}</button>
+            </span>
           </div>
-
-          <!-- Full pack restore (2026-05-19 — wired to /admin/backup/import) -->
-          <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">FULL BACKUP · ${ServerI18n.t("backupSecRestoreFull")}</div>
-            <div class="admin-backup-row">
-              <label class="admin-backup-field">
-                <span class="admin-ui-monolabel">TARBALL · ≤ 16 MB</span>
-                <input id="bk2-pack-upload" type="file" accept=".tar.gz,application/gzip,application/x-gzip" class="admin-ui-input" />
-              </label>
-              <button type="button" id="bk2-pack-dryrun" class="admin-ui-action admin-bk-action">${ServerI18n.t("backupDryRunBtn")}</button>
-              <button type="button" id="bk2-pack-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="${ServerI18n.t("backupApplyDisabledTitle")}">${ServerI18n.t("backupApplyBtn")}</button>
-            </div>
-            <pre id="bk2-pack-diff" class="admin-backup-diff" hidden></pre>
-            <p class="admin-backup-deferred-note">
-              ${ServerI18n.t("backupFullPackRestoreNote")}<br>
-              ${ServerI18n.t("backupRestoreBeforeApplyHint")}
-            </p>
+          <div class="admin-ui-group-row"><pre id="bk2-pack-diff" class="admin-backup-diff" hidden></pre></div>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("backupSecRestoreAssets")}
+              <span class="sub">${t("backupAssetRestoreNote")}</span>
+            </span>
+            <span class="val">
+              <input id="bk2-assets-upload" type="file" accept=".tar.gz,application/gzip,application/x-gzip" class="admin-ui-input" />
+              <button type="button" id="bk2-assets-dryrun" class="admin-ui-action">${t("backupDryRunBtn")}…</button>
+              <button type="button" id="bk2-assets-apply" class="admin-ui-danger-btn" disabled title="${t("backupApplyDisabledTitle")}">${t("backupApplyBtn")}</button>
+            </span>
           </div>
-
-          <!-- Asset pack restore -->
-          <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">ASSET PACK · ${ServerI18n.t("backupSecRestoreAssets")}</div>
-            <div class="admin-backup-row">
-              <label class="admin-backup-field">
-                <span class="admin-ui-monolabel">TARBALL · ≤ 64 MB</span>
-                <input id="bk2-assets-upload" type="file" accept=".tar.gz,application/gzip,application/x-gzip" class="admin-ui-input" />
-              </label>
-              <button type="button" id="bk2-assets-dryrun" class="admin-ui-action admin-bk-action">${ServerI18n.t("backupDryRunBtn")}</button>
-              <button type="button" id="bk2-assets-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="${ServerI18n.t("backupApplyDisabledTitle")}">${ServerI18n.t("backupApplyBtn")}</button>
-            </div>
-            <pre id="bk2-assets-diff" class="admin-backup-diff" hidden></pre>
-            <p class="admin-backup-deferred-note">
-              ${ServerI18n.t("backupAssetRestoreNote")}
-            </p>
-          </div>
+          <div class="admin-ui-group-row"><pre id="bk2-assets-diff" class="admin-backup-diff" hidden></pre></div>
         </div>
 
-        <!-- Zone 3 · Danger -->
-        <div class="admin-ui-card admin-backup-zone is-danger" data-zone="danger">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-            <span class="admin-ui-dot is-danger"></span>
-            <span class="admin-ui-monolabel" style="color: var(--color-ink-error)">ZONE 3 · DANGER</span>
+        <div class="admin-ui-danger-label">${t("backupGroupDanger")}</div>
+        <div class="admin-ui-group is-danger" data-zone="danger">
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("backupSecClearHistory")}
+              <span class="sub">${t("backupClearHistoryDesc")}</span>
+            </span>
+            <span class="val">
+              <select id="bk2-clear-scope" class="admin-ui-select">
+                <option value="all" selected>${t("backupClearScopeAll")}</option>
+              </select>
+              <button type="button" id="bk2-clear-history" class="admin-ui-danger-btn">${t("backupClearBtn")}…</button>
+            </span>
           </div>
-
-          <!-- Clear history -->
-          <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">CLEAR HISTORY · ${ServerI18n.t("backupSecClearHistory")}</div>
-            <div class="admin-backup-row">
-              <label class="admin-backup-field">
-                <span class="admin-ui-monolabel">RANGE</span>
-                <select id="bk2-clear-scope" class="admin-ui-select">
-                  <option value="all" selected>${ServerI18n.t("backupClearScopeAll")}</option>
-                </select>
-              </label>
-              <div class="admin-backup-desc">${ServerI18n.t("backupClearHistoryDesc")}</div>
-              <button type="button" id="bk2-clear-history" class="admin-ui-action is-danger admin-bk-action">${ServerI18n.t("backupClearBtn")}</button>
-            </div>
-          </div>
-
-          <!-- 2026-07-30：「END SESSION（登出管理員）」已拆除——它是頂欄
-               Logout 的重複入口，且本產品的「場次/session」一律指彈幕場次，
-               這顆紅色 END SESSION 站在 DANGER 區裡極易被誤讀成「結束場次」。 -->
-
-          <!-- Factory reset -->
-          <div class="admin-backup-subcard">
-            <div class="admin-ui-monolabel">FACTORY RESET · ${ServerI18n.t("backupSecFactoryReset")}</div>
-            <div class="admin-backup-row">
-              <label class="admin-backup-field">
-                <span class="admin-ui-monolabel">${ServerI18n.t("backupFactoryConfirmLabel")}</span>
-                <input id="bk2-factory-confirm" type="text" class="admin-ui-input" placeholder="reset" autocomplete="off" spellcheck="false" />
-              </label>
-              <div class="admin-backup-desc">${ServerI18n.t("backupFactoryResetDesc")}</div>
-              <button type="button" id="bk2-factory-reset" class="admin-ui-action is-danger admin-bk-action" disabled>FACTORY RESET</button>
-            </div>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${t("backupSecFactoryReset")}
+              <span class="sub">${t("backupFactoryResetDesc")}</span>
+            </span>
+            <span class="val">
+              <input id="bk2-factory-confirm" type="text" class="admin-ui-input" placeholder="reset" autocomplete="off" spellcheck="false" />
+              <button type="button" id="bk2-factory-reset" class="admin-ui-danger-btn" disabled>${t("backupFactoryResetBtn")}…</button>
+            </span>
           </div>
         </div>
       </div>`;
   }
+
 
   // ---- Zone 1 · Export ----
 
