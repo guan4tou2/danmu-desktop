@@ -70,7 +70,7 @@
 
           <aside class="admin-assets-rail">
             <div class="admin-assets-rail-card">
-              <div class="admin-ui-monolabel">SOURCE PAGES · ${ServerI18n.t("assetsSecSourcePages")}</div>
+              <div class="admin-ui-monolabel">${ServerI18n.t("assetsSecSourcePages")}</div>
               <div class="admin-assets-source-list">
                 ${Object.entries(KIND_META)
                   .filter(([k]) => k !== "sound")
@@ -79,7 +79,7 @@
                       <a class="admin-assets-source" href="#/${m.route}" data-assets-source="${k}">
                         <span class="ico" style="color:${m.color}">${m.icon}</span>
                         <span class="lbl">${escapeHtml(ServerI18n.t(m.labelKey))}</span>
-                        <span class="en">${m.en}</span>
+                        <span class="en">${ServerI18n.t(m.labelKey)}</span>
                         <span class="arrow">→</span>
                       </a>`
                   )
@@ -222,7 +222,7 @@
     return `
       <a class="admin-assets-card" href="#/${m.route}" data-assets-card="${escapeHtml(a.id)}">
         <div class="admin-assets-card-head">
-          <span class="kind" style="color:${m.color}">${m.icon} ${m.en}</span>
+          <span class="kind" style="color:${m.color}">${m.icon} ${ServerI18n.t(m.labelKey)}</span>
           ${flag}
         </div>
         <div class="admin-assets-card-name">${escapeHtml(a.name || "—")}</div>

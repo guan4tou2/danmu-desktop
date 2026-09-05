@@ -2734,5 +2734,10 @@
   "lbToday": "今日",
   "lbYesterday": "昨日",
   "lbLatest": "最新",
-  "lbRetro": "レトロ"
+  "lbRetro": "レトロ",
+  "lbActive": "有効",
+  "lbInactive": "無効",
+  "lbFont": "フォント",
+  "lbLayoutRow": "レイアウト",
+  "lbSourcePages": "ソースページ"
 }

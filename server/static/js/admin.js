@@ -839,7 +839,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div class="admin-kpi-tile is-cyan" data-kpi="messages">
                                     <div class="admin-kpi-tile-head">
                                         <span class="label">${ServerI18n.t("dashKpiMsgTotal")}</span>
-                                        <span class="en">MESSAGES</span>
                                     </div>
                                     <div class="admin-kpi-tile-value" data-kpi-value>—</div>
                                     <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(6)}</div>
@@ -857,7 +856,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div class="admin-kpi-tile is-lime" data-kpi="unique-fp">
                                     <div class="admin-kpi-tile-head">
                                         <span class="label">${ServerI18n.t("dashKpiUniqueFp")}</span>
-                                        <span class="en">UNIQUE FP</span>
                                     </div>
                                     <div class="admin-kpi-tile-value" data-kpi-value>—</div>
                                     <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(7)}</div>
@@ -866,7 +864,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div class="admin-kpi-tile is-text" data-kpi="session">
                                     <div class="admin-kpi-tile-head">
                                         <span class="label">${ServerI18n.t("dashKpiSessionDuration")}</span>
-                                        <span class="en">SESSION</span>
                                     </div>
                                     <div class="admin-kpi-tile-value" data-kpi-value>—</div>
                                     <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(3)}</div>

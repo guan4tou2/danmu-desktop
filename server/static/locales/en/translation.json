@@ -2734,5 +2734,10 @@
   "lbToday": "Today",
   "lbYesterday": "Yesterday",
   "lbLatest": "Latest",
-  "lbRetro": "Retro"
+  "lbRetro": "Retro",
+  "lbActive": "Active",
+  "lbInactive": "Inactive",
+  "lbFont": "Font",
+  "lbLayoutRow": "Layout",
+  "lbSourcePages": "Source pages"
 }

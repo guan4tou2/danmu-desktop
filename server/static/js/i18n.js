@@ -2745,7 +2745,12 @@
       "lbToday": "Today",
       "lbYesterday": "Yesterday",
       "lbLatest": "Latest",
-      "lbRetro": "Retro"
+      "lbRetro": "Retro",
+      "lbActive": "Active",
+      "lbInactive": "Inactive",
+      "lbFont": "Font",
+      "lbLayoutRow": "Layout",
+      "lbSourcePages": "Source pages"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -5483,7 +5488,12 @@
       "lbToday": "今天",
       "lbYesterday": "昨天",
       "lbLatest": "最新",
-      "lbRetro": "復古"
+      "lbRetro": "復古",
+      "lbActive": "啟用中",
+      "lbInactive": "未啟用",
+      "lbFont": "字型",
+      "lbLayoutRow": "排版",
+      "lbSourcePages": "來源頁面"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -8221,7 +8231,12 @@
       "lbToday": "今日",
       "lbYesterday": "昨日",
       "lbLatest": "最新",
-      "lbRetro": "レトロ"
+      "lbRetro": "レトロ",
+      "lbActive": "有効",
+      "lbInactive": "無効",
+      "lbFont": "フォント",
+      "lbLayoutRow": "レイアウト",
+      "lbSourcePages": "ソースページ"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -10959,7 +10974,12 @@
       "lbToday": "오늘",
       "lbYesterday": "어제",
       "lbLatest": "최신",
-      "lbRetro": "레트로"
+      "lbRetro": "레트로",
+      "lbActive": "활성",
+      "lbInactive": "비활성",
+      "lbFont": "글꼴",
+      "lbLayoutRow": "레이아웃",
+      "lbSourcePages": "소스 페이지"
     }
   };
 

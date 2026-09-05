@@ -2734,5 +2734,10 @@
   "lbToday": "오늘",
   "lbYesterday": "어제",
   "lbLatest": "최신",
-  "lbRetro": "레트로"
+  "lbRetro": "레트로",
+  "lbActive": "활성",
+  "lbInactive": "비활성",
+  "lbFont": "글꼴",
+  "lbLayoutRow": "레이아웃",
+  "lbSourcePages": "소스 페이지"
 }

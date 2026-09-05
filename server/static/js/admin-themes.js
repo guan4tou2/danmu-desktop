@@ -91,13 +91,13 @@
             <span class="en">${escapeHtml((theme.name || "").toUpperCase())}</span>
           </div>
           <span class="theme-pack-status${isActive ? " is-active" : ""}">
-            ${isActive ? "● ACTIVE" : "○ INACTIVE"}
+            ${isActive ? "● " + ServerI18n.t("lbActive") : "○ " + ServerI18n.t("lbInactive")}
           </span>
         </div>
         <p class="theme-pack-desc">${desc}</p>
         <div class="theme-pack-meta">
-          <div class="row"><span class="k">FONT</span><span class="v">${escapeHtml(fontFam)}</span></div>
-          <div class="row"><span class="k">LAYOUT</span><span class="v">${escapeHtml(layout)}</span></div>
+          <div class="row"><span class="k">${ServerI18n.t("lbFont")}</span><span class="v">${escapeHtml(fontFam)}</span></div>
+          <div class="row"><span class="k">${ServerI18n.t("lbLayoutRow")}</span><span class="v">${escapeHtml(layout)}</span></div>
           <div class="row"><span class="k">FX</span><span class="v">${
             effects.length
               ? effects.map(e => `<span class="theme-pack-chip">${escapeHtml(e)}</span>`).join(" ")

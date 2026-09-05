@@ -2734,5 +2734,10 @@
   "lbToday": "今天",
   "lbYesterday": "昨天",
   "lbLatest": "最新",
-  "lbRetro": "復古"
+  "lbRetro": "復古",
+  "lbActive": "啟用中",
+  "lbInactive": "未啟用",
+  "lbFont": "字型",
+  "lbLayoutRow": "排版",
+  "lbSourcePages": "來源頁面"
 }

@@ -58,7 +58,6 @@
             <div class="admin-kpi-tile is-text" data-plugins-kpi="loaded">
               <div class="admin-kpi-tile-head">
                 <span class="label">${ServerI18n.t("pluginsStatLoaded")}</span>
-                <span class="en">LOADED</span>
               </div>
               <div class="admin-kpi-tile-value" data-plugins-stat="loaded">\u2014</div>
               <div class="admin-kpi-tile-delta is-muted">SDK plugin slots</div>
@@ -66,7 +65,6 @@
             <div class="admin-kpi-tile is-lime" data-plugins-kpi="running">
               <div class="admin-kpi-tile-head">
                 <span class="label">${ServerI18n.t("pluginsStatRunning")}</span>
-                <span class="en">RUNNING</span>
               </div>
               <div class="admin-kpi-tile-value" data-plugins-stat="running">\u2014</div>
               <div class="admin-kpi-tile-delta is-success">${ServerI18n.t("pluginsDeltaLive")}</div>
@@ -74,7 +72,6 @@
             <div class="admin-kpi-tile is-amber" data-plugins-kpi="paused">
               <div class="admin-kpi-tile-head">
                 <span class="label">${ServerI18n.t("pluginsStatPaused")}</span>
-                <span class="en">PAUSED</span>
               </div>
               <div class="admin-kpi-tile-value" data-plugins-stat="paused">\u2014</div>
               <div class="admin-kpi-tile-delta is-warn">${ServerI18n.t("pluginsDeltaWaiting")}</div>
@@ -82,7 +79,6 @@
             <div class="admin-kpi-tile is-cyan" data-plugins-kpi="priority">
               <div class="admin-kpi-tile-head">
                 <span class="label">${ServerI18n.t("pluginsStatAvgPriority")}</span>
-                <span class="en">AVG PRIORITY</span>
               </div>
               <div class="admin-kpi-tile-value" data-plugins-stat="priority">\u2014</div>
               <div class="admin-kpi-tile-delta is-info">${ServerI18n.t("pluginsDeltaPriorityHint")}</div>
