@@ -44,34 +44,39 @@
         <div class="admin-poll-master-detail" data-poll-view-builder>
           <!-- LEFT · queue with real DnD -->
           <aside class="admin-poll-queue-panel">
-            <div class="admin-poll-card-head">
-              <span class="title">${ServerI18n.t("pollBuilderQueueTitle")}</span>
-              <span class="kicker">QUEUE · ${ServerI18n.t("pollBuilderQueueKicker")}</span>
-            </div>
+            <!-- v8（2026-08-19 設計稿 07 · R2）：QUEUE 英文對照拿掉，
+                 「題目佇列」改成稿上的「排隊中的題目」——後者是白話，
+                 前者是資料結構的名字。 -->
+            <div class="admin-ui-group-label">${ServerI18n.t("pollQueueTitle")}</div>
             <div class="admin-poll-queue" data-poll-queue></div>
             <button type="button" class="admin-poll-add-btn" data-poll-action="add">${ServerI18n.t("pollBuilderAddQuestion")}</button>
 
+            <!-- 快速範本（稿上有、原本沒有）：三個最常見的題型一鍵開好，
+                 省掉「新增 → 打字 → 再新增一個選項」的來回。 -->
+            <div class="admin-poll-templates">
+              <span class="tpl-label">${ServerI18n.t("pollTemplatesLabel")}</span>
+              <button type="button" class="admin-ui-chip" data-poll-template="yesno">${ServerI18n.t("pollTemplateYesNo")}</button>
+              <button type="button" class="admin-ui-chip" data-poll-template="stars">${ServerI18n.t("pollTemplateStars")}</button>
+              <button type="button" class="admin-ui-chip" data-poll-template="four">${ServerI18n.t("pollTemplateFourImg")}</button>
+            </div>
+
             <div class="admin-poll-mode">
-              <div class="mode-label">${ServerI18n.t("pollBuilderPlayModeLabel")}</div>
-              <div class="mode-row">
-                <button type="button" class="is-active" data-poll-mode="manual">
-                  <span class="lbl">${ServerI18n.t("pollBuilderModeManual")}</span>
-                  <span class="sub">${ServerI18n.t("pollBuilderModeManualSub")}</span>
-                </button>
-                <button type="button" data-poll-mode="auto">
-                  <span class="lbl">${ServerI18n.t("pollBuilderModeAuto")}</span>
-                  <span class="sub">${ServerI18n.t("pollBuilderAutoAdvanceDesc")}</span>
-                </button>
+              <div class="admin-ui-group-label">${ServerI18n.t("pollBuilderPlayModeLabel")}</div>
+              <div class="admin-ui-seg mode-row">
+                <button type="button" class="seg-item is-active" data-poll-mode="manual"
+                  title="${ServerI18n.t("pollBuilderModeManualSub")}">${ServerI18n.t("pollBuilderModeManual")}</button>
+                <button type="button" class="seg-item" data-poll-mode="auto"
+                  title="${ServerI18n.t("pollBuilderAutoAdvanceDesc")}">${ServerI18n.t("pollBuilderModeAuto")}</button>
               </div>
             </div>
 
             <!-- Multi-question session controls (P0-1) -->
             <div class="admin-poll-session" data-poll-session>
               <div class="session-status" data-poll-session-status>
-                <span class="kicker">SESSION · ${ServerI18n.t("pollBuilderSessionNotStarted")}</span>
+                <span class="kicker">${ServerI18n.t("pollBuilderSessionNotStarted")}</span>
               </div>
               <div class="session-actions">
-                <button type="button" class="admin-ui-action is-primary admin-poll-session-action" data-poll-session-action="start">START SESSION ▶</button>
+                <button type="button" class="admin-ui-action is-primary admin-poll-session-action" data-poll-session-action="start">${ServerI18n.t("pollSessionStartBtn")}</button>
                 <button type="button" class="admin-ui-action admin-poll-session-action" data-poll-session-action="advance" hidden>${ServerI18n.t("pollBuilderNextQuestionBtn")}</button>
                 <button type="button" class="admin-ui-action is-danger admin-poll-session-action" data-poll-session-action="end" hidden>${ServerI18n.t("pollBuilderEndSessionBtn")}</button>
               </div>
@@ -208,7 +213,7 @@
             <span class="idx">${idx + 1}</span>
             <div class="head-info">
               <span class="title">${ServerI18n.t("pollBuilderEditQuestionTitle", { n: idx + 1 })}</span>
-              <span class="kicker">EDITING · ${ServerI18n.t("pollBuilderEditingKicker")}</span>
+              <span class="kicker">${ServerI18n.t("pollBuilderEditingKicker")}</span>
             </div>
             <span class="progress">Q${idx + 1} / ${queue.length}</span>
           </div>
@@ -228,7 +233,7 @@
           </div>
 
           <div class="admin-poll-crop" data-ed-crop-row>
-            <span class="crop-label">${ServerI18n.t("pollBuilderCropLabel")} · CROP</span>
+            <span class="crop-label">${ServerI18n.t("pollBuilderCropLabel")}</span>
             ${["16:9", "1:1", "4:3"].map(r => `
               <button type="button" data-ed-crop="${r}" class="${q.crop === r ? "is-active" : ""}">${r}</button>
             `).join("")}
@@ -884,6 +889,27 @@
       sec.addEventListener("click", (e) => {
         const add = e.target.closest("[data-poll-action='add']");
         if (add) { const q = newQuestion(); queue.push(q); activeId = q.id; persist(); render(); return; }
+        const tpl = e.target.closest("[data-poll-template]");
+        if (tpl) {
+          const q = newQuestion();
+          const kind = tpl.dataset.pollTemplate;
+          const KEYS = ["A", "B", "C", "D", "E"];
+          const fill = (labels) => labels.map((txt, i) => {
+            const o = newOpt(KEYS[i]);
+            o.text = txt;
+            return o;
+          });
+          if (kind === "yesno") {
+            q.text = "";
+            q.options = fill([ServerI18n.t("pollTemplateYes"), ServerI18n.t("pollTemplateNo")]);
+          } else if (kind === "stars") {
+            q.timer = 60;
+            q.options = fill(["1", "2", "3", "4", "5"]);
+          } else if (kind === "four") {
+            q.options = fill(["", "", "", ""]);
+          }
+          queue.push(q); activeId = q.id; persist(); render(); return;
+        }
         const mb = e.target.closest("[data-poll-mode]");
         if (mb) {
           mode = mb.dataset.pollMode;
@@ -908,7 +934,7 @@
         const advBtn = wrap.querySelector("[data-poll-session-action='advance']");
         const endBtn = wrap.querySelector("[data-poll-session-action='end']");
         if (!session.pollId || !session.active) {
-          statusEl.innerHTML = `<span class="kicker">SESSION · ${ServerI18n.t("pollBuilderSessionNotStarted")}</span>`;
+          statusEl.innerHTML = `<span class="kicker">${ServerI18n.t("pollBuilderSessionNotStarted")}</span>`;
           startBtn.hidden = false;
           advBtn.hidden = true;
           endBtn.hidden = true;
@@ -917,7 +943,7 @@
         const total = queue.length;
         const pos = session.currentIndex + 1;
         const onLast = session.currentIndex >= total - 1;
-        statusEl.innerHTML = `<span class="kicker">SESSION · ACTIVE</span><span class="progress">Q ${pos} / ${total}</span>`;
+        statusEl.innerHTML = `<span class="kicker">${ServerI18n.t("pollSessionActive")}</span><span class="progress">${pos} / ${total}</span>`;
         startBtn.hidden = true;
         advBtn.hidden = onLast;
         endBtn.hidden = false;

@@ -126,7 +126,7 @@
         <div class="admin-ui-page-head">
           <h2 class="admin-ui-page-title" data-dsp-only="values">${escapeHtml(t("displayValuesTitle"))}</h2>
           <p class="admin-ui-page-note" data-dsp-only="values">${t("displayValuesNote")}</p>
-          <h2 class="admin-ui-page-title" data-dsp-only="audience">${escapeHtml(t("displayViewerDefaultsTitle"))}</h2>
+          <h2 class="admin-ui-page-title" data-dsp-only="audience">${escapeHtml(t("viewerGroupAudience"))}</h2>
           <p class="admin-ui-page-note" data-dsp-only="audience">${t("displayViewerDefaultsNote")}</p>
         </div>
 
@@ -1134,21 +1134,16 @@
     // 拆成兩份 DOM 會連帶要拆事件委派與 refreshRow 的目標；同一份 DOM 靠
     // CSS 分模式，改動面小得多，兩頁也永遠不會不同步。
     const isDisplayOwner = _isDisplayOwner(route, leaf);
-    const showPanel = (isViewerOwner && tab === "defaults") || isDisplayOwner;
+    // v8（設計稿 07 · R4）：觀眾頁的四個分頁退場，四個 section 一起在台上，
+    // 靠群組小標分段。tab 變數只剩下相容用途（舊 deep link 仍可帶著跑）。
+    const showPanel = isViewerOwner || isDisplayOwner;
     page.dataset.dspMode = isDisplayOwner ? "values" : "audience";
     page.style.display = showPanel ? "" : "none";
-    const vt = document.getElementById("sec-viewer-theme");
-    if (vt) {
-      vt.style.display = (isViewerOwner && tab === "page") ? "" : "none";
-    }
-    const vf = document.getElementById("sec-viewer-config-fields");
-    if (vf) {
-      vf.style.display = (isViewerOwner && tab === "fields") ? "" : "none";
-    }
-    const vl = document.getElementById("sec-viewer-config-limits");
-    if (vl) {
-      vl.style.display = (isViewerOwner && tab === "limits") ? "" : "none";
-    }
+    ["sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-limits"]
+      .forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = isViewerOwner ? "" : "none";
+      });
     const info = document.getElementById("sec-viewer-config-info");
     if (info) {
       // 說明橫幅不屬於任何分頁——四個 tab 都該看得到，所以只跟著 route 走。
@@ -1160,7 +1155,7 @@
     // 每次 DOM mutation 都會跑，水平觸發會變成無限 fetch 迴圈（見
     // _hydrateLimitsTab 的註解）。離開再回來會重抓 —— 跟舊的 click handler
     // 每點一次就重抓的語意一致，計數本來就會動。
-    if (isViewerOwner && tab === "limits") {
+    if (isViewerOwner) {
       if (!_limitsHydrated) {
         _limitsHydrated = true;
         _hydrateLimitsTab();

@@ -775,9 +775,11 @@ def test_viewer_owner_gate_accepts_all_four_owners(admin_display_js: str):
     assert (
         "const isDisplayOwner = _isDisplayOwner(route, leaf)" in body
     ), "syncVisibility 必須一併問 display owner（顯示層路由）"
+    # v8 R4（2026-08-19）：觀眾頁四個分頁退場，改成單頁三群組，可見性因此
+    # 不再綁 tab——觀眾頁或顯示層任一在台上就顯示，由 data-dsp-mode 分欄。
     assert (
-        'const showPanel = (isViewerOwner && tab === "defaults") || isDisplayOwner' in body
-    ), "面板可見性 = 觀眾頁 defaults 分頁 或 顯示層路由"
+        "const showPanel = isViewerOwner || isDisplayOwner" in body
+    ), "面板可見性 = 觀眾頁 或 顯示層路由（不再綁分頁）"
     assert (
         'page.dataset.dspMode = isDisplayOwner ? "values" : "audience"' in body
     ), "必須標上 data-dsp-mode，CSS 靠它決定露值欄還是觀眾欄"

@@ -67,15 +67,14 @@
     // 的 strip 都在標題列正下方（y≈197）。同一層級的控制不該長在兩個地方。
     // slug 沿用 body.dataset.viewerConfigTab 的既有值（page/fields/
     // defaults/limits），deep link 與 ⌘K 才不用改。
-    viewer: {
-      defaultTab: "defaults",
-      tabs: [
-        { slug: "page",     labelKey: "tabViewerPage", en: "PAGE",     section: "sec-viewer-theme" },
-        { slug: "fields",   labelKey: "tabViewerFields", en: "FIELDS",   section: "sec-viewer-config-fields" },
-        { slug: "defaults", labelKey: "tabViewerDefaults", en: "DEFAULTS", section: "sec-viewer-config-defaults" },
-        { slug: "limits",   labelKey: "tabViewerLimits", en: "LIMITS",   section: "sec-viewer-config-limits" },
-      ],
-    },
+    // v8（2026-08-19 設計稿 07 · R4）：觀眾頁的四個分頁退場，改成單頁三群組
+    // ——觀眾可以調整 / 限制 / 頁面外觀。稿上這頁沒有分頁列：四個分頁講的
+    // 是同一件事的四個面向（觀眾看到什麼、能改什麼、改到什麼程度、長什麼樣），
+    // 拆成分頁反而要點四次才看得完一頁的設定。
+    // 舊 deep link（#/viewer/defaults 等）仍有效——沒有 TabConfig 時
+    // resolveActiveTab 回 null，applyRoute 直接顯示 route 的全部 section。
+    // viewer: 已移除（保留這段註解，避免下次有人「補回來」）
+
     // v7 S3 (2026-07-28): the system accordion retired — 16 leaves were
     // mostly duplicate doors to first-class routes. What genuinely lives
     // here is now a 6-tab strip; everything else rehomed (see the legacy

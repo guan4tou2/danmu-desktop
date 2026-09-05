@@ -473,6 +473,25 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   white-space: nowrap;
 }
 
+/* 投票 · 快速範本列（2026-08-19 設計稿 07 · R2） */
+.admin-poll-templates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-poll-templates .tpl-label {
+  font-size: var(--text-caption);
+  color: var(--admin-text-dim);
+}
+
+.admin-poll-templates .admin-ui-chip {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 /* 審核 · 封鎖字：新增列與清單（2026-08-19 設計稿 07 · R3） */
 .admin-mod-addrow {
   display: flex;
