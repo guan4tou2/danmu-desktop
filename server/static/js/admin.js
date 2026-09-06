@@ -749,33 +749,16 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span data-i18n="adminNavIntegrations">擴充</span>
                                 </button>
 </nav>
-                            <div class="admin-dash-telem">
-                                <div class="admin-dash-telem-head">
-                                    <span>TELEMETRY</span>
-                                    <span class="status" data-telem-status>● HEALTHY</span>
-                                </div>
-                                <div class="admin-dash-telem-bars" data-telem-bars>
-                                    <div class="admin-dash-telem-bar-row" data-telem-row="cpu">
-                                        <span class="admin-dash-telem-bar-label">CPU</span>
-                                        <span class="admin-dash-telem-bar-track"><span class="admin-dash-telem-bar-fill" data-telem-fill="cpu" style="width:0%"></span></span>
-                                        <span class="admin-dash-telem-bar-value" data-telem-value="cpu">—</span>
-                                    </div>
-                                    <div class="admin-dash-telem-bar-row" data-telem-row="mem">
-                                        <span class="admin-dash-telem-bar-label">MEM</span>
-                                        <span class="admin-dash-telem-bar-track"><span class="admin-dash-telem-bar-fill" data-telem-fill="mem" style="width:0%"></span></span>
-                                        <span class="admin-dash-telem-bar-value" data-telem-value="mem">—</span>
-                                    </div>
-                                    <div class="admin-dash-telem-bar-row" data-telem-row="ws">
-                                        <span class="admin-dash-telem-bar-label">WS</span>
-                                        <span class="admin-dash-telem-bar-track"><span class="admin-dash-telem-bar-fill" data-telem-fill="ws" style="width:0%"></span></span>
-                                        <span class="admin-dash-telem-bar-value" data-telem-value="ws">—</span>
-                                    </div>
-                                    <div class="admin-dash-telem-bar-row" data-telem-row="rate">
-                                        <span class="admin-dash-telem-bar-label">${ServerI18n.t("ulRate")}</span>
-                                        <span class="admin-dash-telem-bar-track"><span class="admin-dash-telem-bar-fill" data-telem-fill="rate" style="width:0%"></span></span>
-                                        <span class="admin-dash-telem-bar-value" data-telem-value="rate">—</span>
-                                    </div>
-                                </div>
+                            <!-- 2026-08-19 設計稿 03：側欄 TELEMETRY 區移除
+                                 （CPU/MEM/WS/RATE 四條即時長條是給維運看的儀表，
+                                 主持人在活動中不會看，卻永久佔著側欄底部）。
+                                 系統健康度改在「系統」頁看。這裡換成帳號列，
+                                 登出從頂欄搬下來——它是低頻且不可逆的動作，
+                                 不該和高頻控制項並排在右上。 -->
+                            <div class="admin-dash-account">
+                                <span class="admin-dash-account-avatar" aria-hidden="true">管</span>
+                                <span class="admin-dash-account-name">${ServerI18n.t("adminAccountLabel")}</span>
+                                <a href="/logout" id="logoutButton" class="admin-dash-account-logout">${ServerI18n.t("logout")}</a>
                             </div>
                         </aside>
 
@@ -790,31 +773,24 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <h1 data-route-title>控制台</h1>
                                 </div>
                                 <div class="admin-dash-topbar-actions">
-                                    <div class="admin-dash-search" role="button" tabindex="0" data-open-palette
-                                         aria-label="${escapeHtml(ServerI18n.t("adminSearchHint"))}">
+                                    <!-- 2026-08-19 設計稿 03：頂欄收斂成「狀態 + 搜尋圖示」。
+                                         · ⌘K 提示文字移除、只留圖示——提示文字對用過一次的人
+                                           是永久噪音，圖示本身已足夠。
+                                         · 語言選單移至「系統」頁（低頻設定，不該常駐頂欄）。
+                                         · 登出移至側欄左下帳號列（低頻且不可逆，不該與高頻
+                                           控制項並排在右上）。 -->
+                                    <button class="admin-dash-search is-icon-only" type="button" data-open-palette
+                                         aria-label="${escapeHtml(ServerI18n.t("adminSearchHint"))}"
+                                         title="${escapeHtml(ServerI18n.t("adminSearchHint"))} ⌘K">
                                         <span aria-hidden="true">⌕</span>
-                                        <span data-i18n="adminSearchHint">${ServerI18n.t("adminSearchHint")}</span>
-                                        <span class="sep" aria-hidden="true">⌘K</span>
-                                    </div>
-                                    <select id="server-lang-select" aria-label="Language"
-                                      class="admin-ui-select" style="font-size:var(--text-xs);padding:8px">
-                                      <option value="en" ${ServerI18n.currentLang === "en" ? "selected" : ""}>English</option>
-                                      <option value="zh" ${ServerI18n.currentLang === "zh" ? "selected" : ""}>中文</option>
-                                      <option value="ja" ${ServerI18n.currentLang === "ja" ? "selected" : ""}>日本語</option>
-                                      <option value="ko" ${ServerI18n.currentLang === "ko" ? "selected" : ""}>한국어</option>
-                                    </select>
-                                    <!-- 誠實的狀態燈＋捷徑：它是導航（前往 Desktop 控制頁），
-                                         不是開關。舊 title 寫「切換狀態」會讓人以為點了就切，
-                                         與 #/overlay 頁的真控制形成假重複。 -->
-                                    <button class="admin-dash-broadcast ${broadcasting ? "is-on" : "is-off"}" type="button" aria-live="polite"
-                                        title="Desktop 狀態 · 點擊前往控制頁" data-route="overlay">
-                                        <span class="dot"></span>
-                                        ${broadcasting ? "DESKTOP · ON" : "DESKTOP · OFF"}
-                                        <span class="admin-dash-broadcast-go" aria-hidden="true">→</span>
                                     </button>
-                                    <button id="logoutButton" class="admin-ui-action is-danger admin-logout-action">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                                        <span data-i18n="logout">${ServerI18n.t("logout")}</span>
+                                    <!-- 誠實的狀態燈＋捷徑：它是導航（前往顯示層頁），
+                                         不是開關。 -->
+                                    <button class="admin-dash-broadcast ${broadcasting ? "is-on" : "is-off"}" type="button" aria-live="polite"
+                                        title="${escapeHtml(ServerI18n.t("adminRouteTitle_overlay"))}" data-route="overlay">
+                                        <span class="dot"></span>
+                                        ${escapeHtml(ServerI18n.t("adminRouteTitle_overlay"))} · ${broadcasting ? escapeHtml(ServerI18n.t("statusOn")) : escapeHtml(ServerI18n.t("statusOff"))}
+                                        <span class="admin-dash-broadcast-go" aria-hidden="true">→</span>
                                     </button>
                                 </div>
                                 <!-- 2026-07-30：note 從標題塊移出來、放成 topbar 的

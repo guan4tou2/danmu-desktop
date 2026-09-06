@@ -2765,5 +2765,10 @@
   "dlAvoidOverlapHint": "オフにすると弾幕が重なって流れます。にぎやかですが読みにくくなります",
   "dlGroupArea": "表示範囲",
   "dlAreaTop": "画面上端からの位置",
-  "dlAreaHeight": "使用する高さ"
+  "dlAreaHeight": "使用する高さ",
+  "sohGroupPreferences": "環境設定",
+  "sohLanguageLabel": "表示言語",
+  "adminAccountLabel": "管理者",
+  "statusOn": "オン",
+  "statusOff": "オフ"
 }

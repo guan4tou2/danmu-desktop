@@ -2765,5 +2765,10 @@
   "dlAvoidOverlapHint": "끄면 탄막이 겹쳐 흐릅니다. 화면은 꽉 차지만 읽기 어려워집니다",
   "dlGroupArea": "표시 범위",
   "dlAreaTop": "화면 위쪽부터",
-  "dlAreaHeight": "사용할 높이"
+  "dlAreaHeight": "사용할 높이",
+  "sohGroupPreferences": "환경설정",
+  "sohLanguageLabel": "인터페이스 언어",
+  "adminAccountLabel": "관리자",
+  "statusOn": "켬",
+  "statusOff": "끔"
 }

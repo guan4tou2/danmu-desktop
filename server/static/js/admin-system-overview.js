@@ -44,6 +44,24 @@
           <p class="admin-ui-page-note">${ServerI18n.t("sohPageNote")}</p>
         </div>
 
+        <!-- 2026-08-19 設計稿 03：語言選單由頂欄移到這裡。它是低頻設定，
+             常駐頂欄只是佔位；ID 沿用 server-lang-select，i18n.js 的
+             bindLanguageSelector 靠它綁定，不必改。 -->
+        <div class="admin-ui-group-label">${ServerI18n.t("sohGroupPreferences")}</div>
+        <div class="admin-ui-group">
+          <div class="admin-ui-group-row">
+            <span class="lbl">${ServerI18n.t("sohLanguageLabel")}</span>
+            <span class="val">
+              <select id="server-lang-select" class="admin-ui-select" aria-label="${ServerI18n.t("sohLanguageLabel")}">
+                <option value="en">English</option>
+                <option value="zh">中文</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+              </select>
+            </span>
+          </div>
+        </div>
+
         <!-- Status banner -->
         <div class="admin-soh-v4__banner" data-soh-banner>
           <span class="admin-soh-v4__banner-dot" data-soh-banner-dot></span>

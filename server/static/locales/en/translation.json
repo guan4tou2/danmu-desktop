@@ -2765,5 +2765,10 @@
   "dlAvoidOverlapHint": "When off, danmu may stack — busier, harder to read",
   "dlGroupArea": "Display area",
   "dlAreaTop": "From the top of the screen",
-  "dlAreaHeight": "Height used"
+  "dlAreaHeight": "Height used",
+  "sohGroupPreferences": "Preferences",
+  "sohLanguageLabel": "Interface language",
+  "adminAccountLabel": "Admin",
+  "statusOn": "On",
+  "statusOff": "Off"
 }

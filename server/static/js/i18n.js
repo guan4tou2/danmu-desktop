@@ -2776,7 +2776,12 @@
       "dlAvoidOverlapHint": "When off, danmu may stack — busier, harder to read",
       "dlGroupArea": "Display area",
       "dlAreaTop": "From the top of the screen",
-      "dlAreaHeight": "Height used"
+      "dlAreaHeight": "Height used",
+      "sohGroupPreferences": "Preferences",
+      "sohLanguageLabel": "Interface language",
+      "adminAccountLabel": "Admin",
+      "statusOn": "On",
+      "statusOff": "Off"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -5545,7 +5550,12 @@
       "dlAvoidOverlapHint": "關掉後彈幕可以疊著跑，畫面更滿但較難讀",
       "dlGroupArea": "顯示範圍",
       "dlAreaTop": "從畫面頂端算起",
-      "dlAreaHeight": "使用畫面高度"
+      "dlAreaHeight": "使用畫面高度",
+      "sohGroupPreferences": "偏好",
+      "sohLanguageLabel": "介面語言",
+      "adminAccountLabel": "管理員",
+      "statusOn": "開",
+      "statusOff": "關"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -8314,7 +8324,12 @@
       "dlAvoidOverlapHint": "オフにすると弾幕が重なって流れます。にぎやかですが読みにくくなります",
       "dlGroupArea": "表示範囲",
       "dlAreaTop": "画面上端からの位置",
-      "dlAreaHeight": "使用する高さ"
+      "dlAreaHeight": "使用する高さ",
+      "sohGroupPreferences": "環境設定",
+      "sohLanguageLabel": "表示言語",
+      "adminAccountLabel": "管理者",
+      "statusOn": "オン",
+      "statusOff": "オフ"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -11083,7 +11098,12 @@
       "dlAvoidOverlapHint": "끄면 탄막이 겹쳐 흐릅니다. 화면은 꽉 차지만 읽기 어려워집니다",
       "dlGroupArea": "표시 범위",
       "dlAreaTop": "화면 위쪽부터",
-      "dlAreaHeight": "사용할 높이"
+      "dlAreaHeight": "사용할 높이",
+      "sohGroupPreferences": "환경설정",
+      "sohLanguageLabel": "인터페이스 언어",
+      "adminAccountLabel": "관리자",
+      "statusOn": "켬",
+      "statusOff": "끔"
     }
   };
 

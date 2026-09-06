@@ -5412,3 +5412,63 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
     scroll-behavior: auto !important;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * 側欄帳號列 — 取代 TELEMETRY 區（2026-08-19 設計稿 03）
+ *
+ * 原本側欄底部是 CPU/MEM/WS/RATE 四條即時長條。那是給維運看的儀表，
+ * 主持人在活動中不會看，卻永久佔著側欄最底部。系統健康度移到「系統」頁，
+ * 這裡換成帳號列——登出從頂欄搬下來，它是低頻且不可逆的動作，
+ * 不該和高頻控制項並排在右上角。
+ * ───────────────────────────────────────────────────────────────────────── */
+.admin-dash-account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding: 12px 8px 4px;
+  border-top: 1px solid var(--admin-line);
+  font-size: var(--text-footnote);
+  color: var(--admin-text-dim);
+}
+
+.admin-dash-account-avatar {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--admin-raised);
+  color: var(--admin-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-caption);
+}
+
+.admin-dash-account-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-dash-account-logout {
+  color: var(--admin-text-dim);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--motion-fast) ease;
+}
+
+.admin-dash-account-logout:hover {
+  color: var(--color-ink-danger);
+}
+
+/* 搜尋鈕只留圖示：⌘K 提示文字對用過一次的人是永久噪音（設計稿 03） */
+.admin-dash-search.is-icon-only {
+  width: 32px;
+  padding: 0;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+}

@@ -2765,5 +2765,10 @@
   "dlAvoidOverlapHint": "關掉後彈幕可以疊著跑，畫面更滿但較難讀",
   "dlGroupArea": "顯示範圍",
   "dlAreaTop": "從畫面頂端算起",
-  "dlAreaHeight": "使用畫面高度"
+  "dlAreaHeight": "使用畫面高度",
+  "sohGroupPreferences": "偏好",
+  "sohLanguageLabel": "介面語言",
+  "adminAccountLabel": "管理員",
+  "statusOn": "開",
+  "statusOff": "關"
 }

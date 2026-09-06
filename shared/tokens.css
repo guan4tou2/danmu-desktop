@@ -77,6 +77,12 @@
   --emerald-500: oklch(69.59% 0.149 162.48);/* #10b981 */
   /* blue — secondary */
   --blue-500: oklch(62.31% 0.188 259.81);   /* #3b82f6 */
+  /* emerald / green-700 — 設計稿 03 的「成功／已連線」兩臂。
+   * 深色 #34D399 是 emerald-400（比 green-500 更亮、在深底上更跳），
+   * 淺色 #15803D 是 green-700（白底 4.5:1 過關；green-600 只有 3.4）。 */
+  --emerald-400: oklch(76.5% 0.1435 163.22);  /* #34d399 */
+  --green-700: oklch(52.7% 0.1371 150.07);    /* #15803d */
+
   /* lime — success-dim */
   --lime-700: oklch(53.222% 0.1405 131.589);/* #4d7c0f */
   --lime-800: oklch(45.284% 0.1129 130.933);/* #3f6212 — 見 --amber-800 註解 */
@@ -95,7 +101,7 @@
   --color-white: #ffffff;
 
   /* Semantic */
-  --color-success: light-dark(var(--green-600), var(--green-500));
+  --color-success: light-dark(var(--green-700), var(--emerald-400));   /* 設計稿 03：#15803D / #34D399 */
   --color-success-light: light-dark(var(--green-500), var(--green-300));      /* emerald-300 — used for success dots / pulse rings */
   --color-success-dim: #4d7c0f;        /* lime-700 — success copy on light surfaces (viewer reconnected toast) */
   --color-success-bright: #84e100;     /* lime — success copy/accent on dark surfaces */
@@ -190,7 +196,7 @@
    * bright    14.48:1 ✓ AAA
    * muted      2.36:1 ✗ — for disabled/decorative ONLY, not user-facing copy */
   --color-text-primary: light-dark(var(--slate-900), var(--slate-100));     /* slate-100 */
-  --color-text-secondary: light-dark(var(--slate-600), var(--slate-400));   /* slate-400 */
+  --color-text-secondary: light-dark(#5b6b7f, var(--slate-400));   /* 設計稿 03：淺 #5B6B7F(5.6:1) / 深 #94A3B8(7.0:1) */
   /* D-2 (2026-07-28 拍板): muted 曾是 slate-500（僅供 disabled/decorative），
      但 style.css 已有 246 處拿它當次要正文——統一到 secondary（slate-400），
      跨頁不再跳一階、對比也回到 AA。真正的 disabled 視覺請另用 opacity。 */
@@ -324,7 +330,7 @@
   --hud-cut: 14px;                                /* diagonal notch size on .hud-panel */
   --hud-corner-size: 10px;                        /* L-bracket arm length */
   --hud-corner-thickness: 1px;                    /* L-bracket stroke */
-  --hud-line: light-dark(rgba(15, 23, 42, 0.10), rgba(148, 163, 184, 0.18));          /* slate-400 @ 0.18 — hairlines */
+  --hud-line: light-dark(rgba(15, 23, 42, 0.10), rgba(148, 163, 184, 0.16));  /* 設計稿 03：淺 slate-900@10% / 深 slate-400@16% */
   --hud-line-strong: light-dark(rgba(15, 23, 42, 0.18), rgba(148, 163, 184, 0.35));   /* slate-400 @ 0.35 — emphasized */
   --hud-cyan-line: light-dark(rgba(2, 132, 199, 0.30), rgba(56, 189, 248, 0.45));      /* sky-400 @ 0.45 — accent edges */
   --hud-cyan-soft: light-dark(rgba(2, 132, 199, 0.08), rgba(56, 189, 248, 0.12));      /* sky-400 @ 0.12 — active fill */
@@ -343,9 +349,9 @@
   --hud-text: var(--color-text-primary);
   --hud-text-dim: var(--color-text-secondary);
   --hud-textDim: var(--color-text-secondary);     /* camelCase shim some prototypes use */
-  --hud-bg0: light-dark(var(--slate-50), #050912);                          /* deepest panel */
-  --hud-bg1: light-dark(#ffffff, #0c1424);                          /* card panel */
-  --hud-bg2: light-dark(var(--slate-100), #182239);                          /* elevated raised */
+  --hud-bg0: light-dark(#f4f6f9, #0b1120);   /* 設計稿 03 底層 bg */
+  --hud-bg1: light-dark(#ffffff, #121a2b);   /* 設計稿 03 卡片 card */
+  --hud-bg2: light-dark(#eef2f6, #1a2437);   /* 設計稿 03 浮起 raised */
   --hud-font-mono:   var(--font-mono);
   --hud-font-sans:   var(--font-ui);
   --hud-font-display: var(--font-display);
