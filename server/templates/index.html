@@ -78,7 +78,10 @@
           </span>
 
           <!-- 桌面兩段主題切換（設計稿 05 · D1）。手機跟隨系統，
-               主題／語言收進 ☰。JS 會在 admin 鎖定 ViewerThemeMode 時隱藏。 -->
+               主題／語言收進 ☰。JS 會在 admin 鎖定 ViewerThemeMode 時隱藏。
+               沒有「自動」那一格：跟隨系統是預設值，不需要一個按鈕來選它，
+               按 ☼ 或 ☾ 就是在覆寫它。高亮的是**畫面現在的樣子**（auto 時
+               取解析後的結果），不是「設定值」。 -->
           <div
             id="viewerThemeChip"
             class="viewer-theme-chip"
@@ -88,8 +91,6 @@
           >
             <button type="button" class="viewer-theme-chip-seg" data-theme-choice="light"
                     role="radio" aria-checked="false" title="淺色">☼</button>
-            <button type="button" class="viewer-theme-chip-seg is-active" data-theme-choice="auto"
-                    role="radio" aria-checked="true" title="自動">◐</button>
             <button type="button" class="viewer-theme-chip-seg" data-theme-choice="dark"
                     role="radio" aria-checked="false" title="深色">☾</button>
           </div>

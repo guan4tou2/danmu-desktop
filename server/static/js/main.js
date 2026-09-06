@@ -1128,6 +1128,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const onSysThemeChange = () => {
       // Only auto-apply when the resolved mode is "auto".
       if (_resolveMode() === "auto") _applyViewerTheme("auto");
+      // 兩段切換高亮的是「畫面現在的樣子」，所以系統翻面時要重算
+      // （_syncThemeChipState 定義在下面，這個 handler 只有事後才跑）。
+      if (typeof _syncThemeChipState === "function") _syncThemeChipState();
     };
     if (typeof mql.addEventListener === "function") {
       mql.addEventListener("change", onSysThemeChange);
@@ -1157,9 +1160,13 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ── Desktop theme chip (design v4 brief 0518-v3 #1, 2026-05-18) ──
-  // ☼ / ◐ / ☾ 3-segment toggle in viewer-hero-utility. Hidden on
-  // mobile via CSS. Shares state with mobile hamburger sheet + admin
-  // theme switcher (all read/write `theme-mode` storage key).
+  // ☼ / ☾ 兩段切換，只在桌面出現（手機跟隨系統，主題收在 ☰ 抽層）。
+  // 與 ☰ 抽層、admin 的主題切換共用 `theme-mode` storage key。
+  //
+  // 2026-09-06 設計稿 05 · D1：桌面留**兩段**，不是三段。原本的 ◐（自動）
+  // 是多出來的一格——「跟隨系統」是預設值，不需要一個按鈕來選它；使用者
+  // 按 ☼ 或 ☾ 就是在覆寫它。少一格，也讓高亮永遠對應「畫面現在是什麼樣」，
+  // 而不是「設定是什麼」（auto 模式下三段版本三格都不亮，那才是難懂的）。
   const _syncThemeChipState = () => {
     const chip = document.getElementById("viewerThemeChip");
     if (!chip) return;
@@ -1167,9 +1174,13 @@ document.addEventListener("DOMContentLoaded", () => {
     chip.hidden = forced;
     chip.setAttribute("aria-hidden", forced ? "true" : "false");
     if (forced) return;
-    const cur = _readUnifiedMode() || "auto";
+    // auto 時高亮**解析後**的主題，使用者才看得懂現在是哪一邊
+    const mode = _readUnifiedMode() || "auto";
+    const resolved = mode === "auto"
+      ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+      : mode;
     chip.querySelectorAll("[data-theme-choice]").forEach((b) => {
-      const on = b.dataset.themeChoice === cur;
+      const on = b.dataset.themeChoice === resolved;
       b.classList.toggle("is-active", on);
       b.setAttribute("aria-checked", on ? "true" : "false");
     });

@@ -99,6 +99,52 @@ def test_viewer_screen_off_is_three_calm_surfaces():
     assert '_setSendbarHint(ServerI18n.t("viewerOfflineHint"), "offline");' in main_js
 
 
+def test_viewer_desktop_theme_toggle_is_two_segments():
+    """設計稿 05 · D1：桌面留**兩段**主題切換（☼ / ☾），不是三段。
+
+    「跟隨系統」是預設值，不需要一個按鈕來選它——按 ☼ 或 ☾ 就是在覆寫它。
+    少掉 ◐ 那一格之後，高亮的才能是「畫面現在的樣子」；三段版本在 auto
+    模式下高亮的是 ◐，等於三格裡沒有一格告訴你現在是深是淺。
+
+    手機的 ☰ 抽層保留三段（深色／淺色／系統）——那是設定清單，
+    「系統」在那裡是一個合理的選項。
+    """
+    html = _read("server/templates/index.html")
+    chip_start = html.index('id="viewerThemeChip"')
+    chip = html[chip_start : html.index("</div>", chip_start)]
+    assert 'data-theme-choice="light"' in chip
+    assert 'data-theme-choice="dark"' in chip
+    assert 'data-theme-choice="auto"' not in chip, "桌面不該有「自動」那一格"
+
+    # ☰ 抽層仍是三段
+    sheet_start = html.index('id="viewerMobileSheet"')
+    sheet = (
+        html[sheet_start : html.index('id="viewerThemeChip"')]
+        if sheet_start < chip_start
+        else html[sheet_start:]
+    )
+    assert 'data-theme-choice="auto"' in sheet
+
+    # 高亮取解析後的主題，不是設定值
+    main_js = _read("server/static/js/main.js")
+    assert 'const resolved = mode === "auto"' in main_js
+
+
+def test_viewer_shell_grid_assigns_every_main_column_child():
+    """設計稿 05 · D1 / 16 · VP1：桌面兩欄 grid，主欄的每一塊都要明確
+    指定 `grid-column: 1`。
+
+    漏掉任何一個，它會被自動排到第 2 欄（樣式面板那欄）——`.viewer-tabbar`
+    就這樣在桌面寬度下被排到面板後面，投票分頁「存在但不可見」。
+    這種 bug 只在一半的寬度出現，手機測不出來。
+    """
+    css = _read("server/static/css/viewer-v2.css")
+    block = css[css.index("@media (min-width: 768px)") :]
+    col1 = block[: block.index("grid-column: 1;")]
+    for sel in (".viewer-topbar", ".viewer-tabbar", ".viewer-pane", ".viewer-sendbar"):
+        assert sel in col1, f"{sel} 沒有指定 grid-column"
+
+
 def test_viewer_keyboard_and_first_run_nickname():
     """設計稿 16 · VK1/VN1：鍵盤跟隨、emoji 快捷列、首次暱稱提示。"""
     html = _read("server/templates/index.html")
