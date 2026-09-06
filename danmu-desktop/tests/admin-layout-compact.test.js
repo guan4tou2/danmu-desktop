@@ -689,9 +689,13 @@ test("admin Widgets page actions compose shared controls", () => {
   const staticDir = path.join(rootDir, "server", "static");
   const widgetsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-widgets.js"), "utf8");
 
-  expect(widgetsSrc).toContain('id="widget-add-scoreboard" type="button" class="admin-ui-action is-primary admin-widget-toolbar-action"');
-  expect(widgetsSrc).toContain('id="widget-add-ticker" type="button" class="admin-ui-action is-primary admin-widget-toolbar-action"');
-  expect(widgetsSrc).toContain('id="widget-add-label" type="button" class="admin-ui-action is-primary admin-widget-toolbar-action"');
+  // 2026-09-07 設計稿 08 · W1：三顆並排的「+ 計分板／+ 跑馬燈／+ 標籤」收成
+  // 一顆「新增小工具」，種類在按下去之後才選。
+  expect(widgetsSrc).toContain('id="widget-add" type="button" class="admin-ui-action is-primary"');
+  expect(widgetsSrc).toContain('data-ow-add="scoreboard"');
+  expect(widgetsSrc).toContain('data-ow-add="ticker"');
+  expect(widgetsSrc).toContain('data-ow-add="label"');
+  expect(widgetsSrc).not.toContain("widget-add-scoreboard");
   expect(widgetsSrc).toContain('id="widget-clear-all" type="button" class="admin-ui-action is-danger admin-widget-toolbar-action"');
   expect(widgetsSrc).toContain('class="admin-ui-action admin-widget-toolbar-action" data-ow-copy');
   expect(widgetsSrc).toContain('toggleBtn.className = "admin-ui-action admin-widget-card-action";');

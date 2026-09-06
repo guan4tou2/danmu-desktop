@@ -544,3 +544,35 @@ def test_emoji_cards_answer_should_i_keep_this(zh):
     assert "size_bytes" not in js
     # 中文標籤旁邊不再擺一行大寫英文（設計稿 14）
     assert "AUDIENCE PREVIEW" not in js
+
+
+def test_widget_rows_are_summaries_and_the_preview_is_real(zh):
+    """設計稿 08 · W1：一列＝圖示＋名稱＋摘要＋›，右邊是真的「大螢幕預覽」。
+
+    之前每一列都是永遠攤開的編輯器，頂上掛著 L0 圖層碼、type slug、
+    `/overlay/scoreboard` 內部路徑、`POS · top-right`。主持人掃這頁是要確認
+    「大螢幕上現在擺了什麼」，不是要讀規格。
+
+    右欄那塊「大螢幕預覽」原本是寫死的 `<span>Desktop preview</span>`——
+    一塊永遠不會變的佔位。稿上的說明寫著「拖預覽裡的方塊可改位置」，所以
+    它必須真的畫得出方塊，而且真的能拖。
+    """
+    assert "常駐在大螢幕上的計分板、跑馬燈或文字標籤" in zh["widgetsDesc"]
+    assert "拖預覽裡的方塊可改位置" in zh["widgetsDesc"]
+    assert zh["widgetsAddBtn"] == "新增小工具"
+    assert zh["widgetsPreviewLabel"] == "大螢幕預覽"
+    # 設計稿 14 詞彙表：Desktop Widgets → 小工具。側欄與頁首標題同一個詞。
+    assert zh["adminRouteTitle_widgets"] == zh["adminNavWidgets"] == "小工具"
+
+    js = _strip_comments(_read("server/static/js/admin-widgets.js"))
+    assert "admin-widget-summary" in js and "_summary(w)" in js
+    assert "data-ow-stage" in js and '"dragend"' in js
+    assert "_nearestPosition" in js
+    for gone in (
+        "admin-widget-card-layer",
+        "admin-widget-card-url",
+        "admin-widget-card-type",
+        "hud-stats-strip",
+        "Desktop preview",
+    ):
+        assert gone not in js, gone

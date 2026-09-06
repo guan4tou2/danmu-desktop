@@ -82,7 +82,8 @@
     },
 
     widgets: {
-      title: "Desktop Widgets",
+      // 設計稿 14 詞彙表：Desktop Widgets → 小工具（四語都跟側欄同一個詞）
+      titleKey: "adminNavWidgets",
       tipKeys: [
         "helpDrawerWidgetsTip1",
         "helpDrawerWidgetsTip2",

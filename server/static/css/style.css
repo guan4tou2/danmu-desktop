@@ -10918,31 +10918,54 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   overflow: hidden;
 }
 
-.admin-widget-card-head {
+/* 設計稿 08 · W1：一列＝圖示＋名稱＋摘要＋›，編輯器收在後面。
+   舊的卡片頭（L# 圖層碼／type slug／/overlay/xxx 路徑／POS · top-right）
+   整組退場——主持人掃這頁是要確認大螢幕上擺了什麼，不是要讀規格。 */
+.admin-widget-summary {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--admin-line, var(--hud-line));
-  background: rgba(56, 189, 248, 0.04);
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text-primary);
 }
-
-.admin-widget-card-type {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 2px;
-  text-transform: uppercase;
+.admin-widget-summary:hover { background: var(--color-bg-elevated); }
+.admin-widget-summary-icon {
+  flex-shrink: 0;
   color: var(--color-ink-accent);
+}
+.admin-widget-summary-name {
+  flex-shrink: 0;
+  font-size: var(--text-footnote);
   font-weight: 600;
 }
-
-.admin-widget-card-pos {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 1px;
-  color: var(--admin-text-dim, #94a3b8);
+.admin-widget-summary-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-footnote);
+  color: var(--color-text-secondary);
 }
+.admin-widget-summary-off {
+  flex-shrink: 0;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-strong);
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+.admin-widget-summary-chev {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  transition: transform var(--motion-fast) ease;
+}
+.admin-widget-card.is-open .admin-widget-summary-chev { transform: rotate(90deg); }
 
 .admin-widget-card-actions { display: flex; gap: 4px; }
 
@@ -13594,23 +13617,87 @@ body.admin-pu-open { overflow: hidden; }
 }
 .admin-ow-card-meta span { color: var(--hud-textDim); letter-spacing: 0.5px; }
 .admin-ow-card-meta code { color: var(--color-text-strong); background: transparent; }
-.admin-ow-preview {
+/* 設計稿 08 · W1 的「大螢幕預覽」。原本這裡是 .admin-ow-preview，內容是
+   寫死的 <span>Desktop preview</span>——一塊永遠不會變的佔位。現在它照著
+   小工具的實際位置畫方塊，關掉的畫成灰，而且可以拖。 */
+.admin-ow-stage {
+  position: relative;
   aspect-ratio: 16 / 9;
-  /* 底寫死 #000、兩主題相同 → 宣告 dark，讓面板內每顆 light-dark() 走深色臂。
-   * 否則淺色主題把 "Desktop preview" 這類說明文字翻成 slate-600 深字，
-   * 壓在黑底上只有 2.77。同 .admin-dsp2-preview-stage 的處理。 */
+  /* 底寫死黑、兩主題相同 → 宣告 dark，讓面板內每顆 light-dark() 走深色臂。
+   * 否則淺色主題把說明文字翻成深字，壓在黑底上只有 2.77。 */
   color-scheme: dark;
   background:
-    linear-gradient(to right, rgba(125,211,252,0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(125,211,252,0.04) 1px, transparent 1px),
+    linear-gradient(to right, rgba(125, 211, 252, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(125, 211, 252, 0.04) 1px, transparent 1px),
     #000;
   background-size: 24px 24px;
-  border: 1px solid var(--hud-line); border-radius: var(--radius-sm);
+  border: 1px solid var(--hud-line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.admin-ow-stage-empty {
+  position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--hud-font-mono);
+  padding: var(--space-4);
+  text-align: center;
   font-size: var(--text-caption);
   color: var(--hud-textDim);
 }
+.admin-ow-box {
+  position: absolute;
+  max-width: 60%;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-xs);
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid var(--hud-cyan, #38bdf8);
+  font-size: var(--text-caption);
+  color: var(--viewer-stage-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: grab;
+}
+.admin-ow-box.is-off {
+  border-color: var(--hud-line);
+  color: var(--hud-textDim);
+  opacity: 0.5;
+}
+.admin-ow-box.is-top-left     { top: var(--space-2); left: var(--space-2); }
+.admin-ow-box.is-top-center   { top: var(--space-2); left: 50%; transform: translateX(-50%); }
+.admin-ow-box.is-top-right    { top: var(--space-2); right: var(--space-2); }
+.admin-ow-box.is-bottom-left  { bottom: var(--space-2); left: var(--space-2); }
+.admin-ow-box.is-bottom-center{ bottom: var(--space-2); left: 50%; transform: translateX(-50%); }
+.admin-ow-box.is-bottom-right { bottom: var(--space-2); right: var(--space-2); }
+.admin-ow-box.is-center       { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+/* 新增小工具：一顆鈕靠右，按下去才展開三個種類 */
+.admin-ow-addrow {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+.admin-ow-addmenu {
+  position: absolute;
+  top: 100%; right: 0;
+  z-index: 20;
+  margin-top: var(--space-1);
+  display: flex; flex-direction: column;
+  min-width: 8rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: 0 var(--space-2) var(--space-5) var(--shadow-base);
+  overflow: hidden;
+}
+.admin-ow-addmenu button {
+  padding: var(--space-2) var(--space-3);
+  background: none; border: 0;
+  text-align: left;
+  font-size: var(--text-footnote);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+.admin-ow-addmenu button:hover { background: var(--color-bg-elevated); }
 
 /* ─── v5 Batch 12 polish: Effects drop-zone ───────────────────────────────
    Dashed-cyan card per batch12-effects.jsx EffectsLibraryPage drop
@@ -13646,31 +13733,10 @@ body.admin-pu-open { overflow: hidden; }
 .admin-effects-toolbar { align-items: center; }
 .admin-effects-toolbar__spacer { flex: 1; }
 
-/* ─── v5 Batch 12 polish: Widget card layer/URL chips ────────────────────
-   Per batch12-overlay-widgets.jsx OverlayWidgetsPage. Adds L# layer chip
-   and URL display alongside the existing type + position labels. .is-on
-   on the card root gives a lime left-border for active widgets. */
+/* 使用中的小工具左緣一條綠線。L# 圖層碼與 /overlay/xxx 路徑 chip 隨
+   設計稿 08 · W1 的摘要列一併退場。 */
 .admin-widget-card.is-on {
   box-shadow: inset 3px 0 0 var(--hud-lime, #86efac);
-}
-.admin-widget-card-layer {
-  font-family: var(--hud-font-mono);
-  font-size: var(--text-caption); font-weight: 600;
-  letter-spacing: 0.5px;
-  padding: 2px 4px;
-  border-radius: var(--radius-xs);
-  border: 1px solid var(--hud-line);
-  color: var(--hud-textDim);
-}
-.admin-widget-card.is-on .admin-widget-card-layer {
-  border-color: var(--hud-cyan, #38bdf8);
-  color: var(--color-ink-accent);
-}
-.admin-widget-card-url {
-  font-family: var(--hud-font-mono);
-  font-size: var(--text-caption);
-  color: var(--hud-textDim);
-  margin-left: 4px;
 }
 
 /* ── Onboarding tour actions（D-7 2026-07-28：拆掉 .ob-btn 內聯私有階層，
