@@ -59,6 +59,10 @@
         { slug: "stickers", labelKey: "tabAssetsStickers", en: "STICKERS", section: "sec-stickers" },
         { slug: "sounds",   labelKey: "tabAssetsSounds", en: "SOUNDS",   section: "sec-sounds"   },
         { slug: "fonts",    labelKey: "tabAssetsFonts", en: "FONTS",    section: "sec-fonts"    },
+        // v8（2026-08-19 設計稿 03）：小工具歸「素材」。稿上的分組是
+        // 「素材（含字型／貼圖／音效／小工具）」——Desktop Widgets 是主持人
+        // 擺到大螢幕上的東西，跟貼圖音效同一類，不是開發者擴充。
+        { slug: "widgets",  labelKey: "adminNavWidgets", en: "WIDGETS",  section: "sec-widgets"  },
       ],
     },
     // D-6 階段 4 (2026-07-29): viewer 從 admin-display.js 自製的

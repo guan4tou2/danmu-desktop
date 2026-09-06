@@ -426,7 +426,9 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 48px;
+  /* 44 是設計稿 03 的共用元件規格（設定群組列高）。07 各頁套用寫 46–52，
+   * 指的是含副標的那種；單行列回到 44，雙行用下面的 .is-tall 52。 */
+  min-height: 44px;
   padding: 0 16px;
   font-size: var(--text-subhead);
   color: var(--admin-text);
@@ -3737,11 +3739,6 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   border-radius: 50%;
   background: #f87171;
   box-shadow: 0 0 8px #f87171;
-  animation: adminPollsLivePulse 1.4s ease-in-out infinite;
-}
-@keyframes adminPollsLivePulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
 }
 @media (prefers-reduced-motion: reduce) {
   .admin-polls-live-chip .dot { animation: none; }
@@ -4798,7 +4795,6 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   width: 16px; height: 16px; border-radius: 50%;
   background: rgba(125, 211, 252, 1);
   box-shadow: 0 0 12px rgba(125, 211, 252, 0.85);
-  animation: adminBroadcastPulse 1.6s ease-in-out infinite;
 }
 .admin-broadcast-bigdot[data-mode="standby"] .dot {
   background: rgba(244, 114, 182, 1);
@@ -4809,10 +4805,6 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: rgba(248, 113, 113, 1);
   box-shadow: 0 0 12px rgba(248, 113, 113, 0.85);
   animation: none;
-}
-@keyframes adminBroadcastPulse {
-  0%, 100% { opacity: 0.95; transform: scale(1); }
-  50%      { opacity: 0.55; transform: scale(0.86); }
 }
 @media (prefers-reduced-motion: reduce) {
   .admin-broadcast-bigdot .dot { animation: none; }
@@ -5396,8 +5388,10 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
  * 2026-07-07 UIUX polish E4 — consolidated prefers-reduced-motion fallback.
  * The targeted per-selector blocks scattered through this file (hud-dot,
  * effect-demo-text, konami HUD, etc.) predate several newer additions
- * (admin-cmdk-slide, adminBroadcastPulse, adminPollsLivePulse, bc-v4-pulse,
- * lf-v4-pulse, hud-pulse users, …) that were never added to any of them.
+ * (admin-cmdk-slide, bc-v4-pulse, lf-v4-pulse, hud-pulse users, …) that were
+ * never added to any of them.
+ * 2026-08-19：adminBroadcastPulse / adminPollsLivePulse / admin-sess-pulse
+ * 已依設計稿 03 整組移除（狀態點的環境脈動屬裝飾），不再需要 fallback。
  * A blanket rule — same convention already proven in style.css/styles.css —
  * closes every current and future gap in one place instead of hand-
  * enumerating each keyframe consumer as it's added.

@@ -1380,7 +1380,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // / sounds sub-sections kept below for editing per-type.
     // v7 IA (2026-07-28): assets gains the fonts tab (sec-fonts) — fonts are
     // the fourth uploadable asset type; tab strip defined in admin-tabs.js.
-    assets:    { title: "素材",           kicker: "ASSETS LIBRARY · 統一素材總覽", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds", "sec-fonts"] },
+    assets:    { title: "素材",           kicker: "ASSETS LIBRARY · 統一素材總覽", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds", "sec-fonts", "sec-widgets"] },
     // v5.2 Sprint 1 (2026-04-27): Extensions catalog page — Slido / Discord
     // / OBS / Bookmarklet cards + shared Fire Token UI inline.
     integrations: { title: "擴充",          kicker: "INTEGRATIONS · 第三方接入 · 共用 FIRE TOKEN", sections: ["sec-extensions-overview"] },

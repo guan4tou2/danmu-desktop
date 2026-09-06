@@ -10881,11 +10881,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 .admin-session-live-dot {
   flex-shrink: 0;
-  animation: admin-sess-pulse 2s ease-in-out infinite;
-}
-@keyframes admin-sess-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(134, 239, 172, 0.5); }
-  50%       { box-shadow: 0 0 0 5px rgba(134, 239, 172, 0); }
 }
 .admin-session-live-info {
   display: flex;
