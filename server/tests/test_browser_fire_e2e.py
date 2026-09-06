@@ -224,25 +224,68 @@ def test_viewer_poll_tab_hides_results(browser_session, server_ports):
 
     2026-09-06 設計稿 05 · V6：分段控制**有投票時才浮出**。沒有投票的時候
     首屏就只有彈幕——多一顆永遠停在「目前沒有進行中的投票」的分頁，等於
-    在首屏放一個常態性的空狀態。所以這裡不再等它「可見」，而是先注入
-    一則投票讓它浮出來，再點進去。
+    在首屏放一個常態性的空狀態。
+
+    所以這裡要先在 server 端**真的建一場投票**，不能只 dispatch 一個合成
+    事件：觀眾頁自己會輪詢 /poll/public-status，輪到的那一刻會把合成狀態
+    覆蓋掉，分段控制隨即收起來——Playwright 就會看到「resolved 到元素、
+    但點的時候 not visible」（CI 34045013476）。合成事件仍然要送，因為它
+    帶著票數與百分比，而這條測試要證明的正是「帶了也不顯示」。
     """
     http_port, _ = server_ports
+    question = "下一段要玩什麼？"
 
     context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
+    created = {}
     try:
+        page.goto(f"http://127.0.0.1:{http_port}/")
+        created = page.evaluate(
+            """async (question) => {
+                const body = new URLSearchParams();
+                body.set("password", "test");
+                const login = await fetch("/login", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-Requested-With": "fetch",
+                        "Accept": "application/json",
+                    },
+                    body: body.toString(),
+                });
+                const auth = await login.json();
+                if (!auth.ok) return { step: "login", status: login.status };
+                const res = await fetch("/admin/poll/create", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-Token": auth.csrf_token,
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        options: ["Boss Rush", "Speedrun"],
+                    }),
+                });
+                return { step: "create", status: res.status, csrf: auth.csrf_token };
+            }""",
+            question,
+        )
+        assert created["status"] < 400, f"poll setup failed: {created}"
+
         page.goto(f"http://127.0.0.1:{http_port}/?poll=1")
         # DOM 立刻就在，但 script 還沒跑——這時 dispatch 事件會掉進虛空。
         # 等 viewer-style-sheet.js（最後一個 defer script）掛好就緒旗標。
         page.wait_for_selector("body[data-viewer-ready]", timeout=8000)
 
-        page.evaluate("""() => {
+        page.evaluate(
+            """(question) => {
               window.dispatchEvent(new CustomEvent("viewer-poll-state", {
                 detail: {
                   type: "poll_update",
                   state: "active",
-                  question: "下一段要玩什麼？",
+                  question: question,
                   total_votes: 10,
                   options: [
                     { key: "A", text: "Boss Rush", count: 4, percentage: 40 },
@@ -250,7 +293,9 @@ def test_viewer_poll_tab_hides_results(browser_session, server_ports):
                   ],
                 },
               }));
-            }""")
+            }""",
+            question,
+        )
 
         # 投票一到，分段控制才浮出來（設計稿 05 · V6）
         page.wait_for_selector('[data-viewer-tab="poll"]', state="visible", timeout=5000)
@@ -258,7 +303,7 @@ def test_viewer_poll_tab_hides_results(browser_session, server_ports):
         page.wait_for_selector("#viewerPollPane", state="visible", timeout=5000)
         page.wait_for_selector('[data-vpoll-key="A"]', timeout=5000)
         poll_text = page.locator("#viewerPollPane").inner_text()
-        assert "下一段要玩什麼？" in poll_text
+        assert question in poll_text
         assert "A" in poll_text
         assert "Boss Rush" in poll_text
         assert "B" in poll_text
@@ -271,6 +316,21 @@ def test_viewer_poll_tab_hides_results(browser_session, server_ports):
         assert "60%" not in poll_text
         assert page.locator(".viewer-poll-option-stat").count() == 0
     finally:
+        # 這場投票是這條測試建的，留著會讓同一顆 server 上的其他測試看到
+        # 一個莫名其妙的進行中投票。
+        try:
+            page.evaluate(
+                """async (csrf) => {
+                    await fetch("/admin/poll/reset", {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: { "X-CSRF-Token": csrf },
+                    });
+                }""",
+                created.get("csrf"),
+            )
+        except Exception:
+            pass
         page.close()
         context.close()
 
