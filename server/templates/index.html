@@ -46,26 +46,20 @@
              right column  = 伺服器 / Overlay ConnChip stack + language picker
              Mobile uses `is-mini` chip variant. -->
         <section class="viewer-hero animate-fade-in-scale-up">
-          <!-- Decorative DanmuMarquee — 12 fake danmu scroll right→left behind
-               the hero. Pure visual; no informational role. Mask gradient on
-               left 22% so the logo stays legible. -->
-          <div class="viewer-hero-marquee" aria-hidden="true">
-            <span class="viewer-mq-item viewer-mq-i0">🔥🔥🔥</span>
-            <span class="viewer-mq-item viewer-mq-i1">+1</span>
-            <span class="viewer-mq-item viewer-mq-i2">哈哈哈</span>
-            <span class="viewer-mq-item viewer-mq-i3">👏</span>
-            <span class="viewer-mq-item viewer-mq-i4">講得好！</span>
-            <span class="viewer-mq-item viewer-mq-i5">✨ wow</span>
-            <span class="viewer-mq-item viewer-mq-i6">666</span>
-            <span class="viewer-mq-item viewer-mq-i7">💯</span>
-            <span class="viewer-mq-item viewer-mq-i8">+1 同意</span>
-            <span class="viewer-mq-item viewer-mq-i9">GG</span>
-            <span class="viewer-mq-item viewer-mq-i10">太強了</span>
-            <span class="viewer-mq-item viewer-mq-i11">謝謝</span>
-          </div>
+          <!-- 2026-08-19 設計稿 03：裝飾用的 DanmuMarquee 移除。
+               12 條假彈幕在頁首後方持續滾動，自己也註明「Pure visual;
+               no informational role」——那正是稿上要拿掉的裝飾動畫。
+               預覽區那條會留著，因為那條是功能。 -->
 
           <div class="viewer-hero-lockup">
-            <h1 class="viewer-hero-title" data-i18n="mainTitle">Danmu Fire</h1>
+            <!-- 字標只出現在 4 個品牌位置之一（設計稿 12）：觀眾頁頂欄。
+                 用轉外框的 SVG，不依賴字型下載；alt 保留可讀名稱。 -->
+            <h1 class="viewer-hero-title">
+              <img src="{{ url_for('static', filename='wordmark-dark.svg') }}"
+                   alt="Danmu Fire" class="viewer-hero-wordmark is-on-dark" width="540" height="96">
+              <img src="{{ url_for('static', filename='wordmark-light.svg') }}"
+                   alt="" aria-hidden="true" class="viewer-hero-wordmark is-on-light" width="540" height="96">
+            </h1>
             <p class="viewer-hero-subtitle" data-i18n="mainSubtitle">
               Send your message to the screen!
             </p>

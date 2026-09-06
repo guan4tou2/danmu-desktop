@@ -273,32 +273,32 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-marquee {
 /* Prototype tokens.jsx HERO_SIZE.hero = clamp(3.2rem, 8vw, 6rem).
  * Mobile in new prototype uses 'medium' = '2rem' (smaller than the prior
  * 'large' clamp). Light-theme drop-shadow (matches DanmuHero light branch). */
+/* 字標（2026-08-19 設計稿 11/12）。原本是 Bebas Neue 排的文字，靠
+ * text-transform / letter-spacing / drop-shadow 做效果；現在是轉外框的
+ * SVG，形本身就是設計——最後的 E 是三道彈幕、領頭帶火，與 app icon 同形。
+ * 稿上指定觀眾頁頂欄高度：桌面 32、手機 28。 */
 .viewer-hero-title {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(3.2rem, 8vw, 6rem);
-  font-weight: 400;
-  color: #7dd3fc;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  line-height: 1;
-  filter:
-    drop-shadow(0 10px 15px rgba(0, 0, 0, 0.45))
-    drop-shadow(0 4px 6px var(--shadow-base, rgba(0, 0, 0, 0.3)));
+  line-height: 0;
 }
 
-/* Light theme — design v4 brief 0518-v3 #3 fix (2026-05-18).
-   Dark theme's heavy black drop-shadow makes the sky-300 cyan text look
-   muddy on white. Swap to sky-600 + a subtle shadow that lifts the text
-   without competing with the page chrome. WCAG: sky-600 on slate-50 = 4.6:1 ✓ AA. */
-body.viewer-body-v2:not(.is-dark) .viewer-hero-title {
-  color: #0284c7;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+.viewer-hero-wordmark {
+  display: block;
+  width: auto;
+  height: 32px;
 }
+
+/* 深淺各一張、CSS 擇一顯示。用 content:url() 換 <img> 的 src 在各瀏覽器
+ * 行為不一致（Safari 不換、alt 也會失準），兩張圖顯隱最穩；淺色那張
+ * aria-hidden，讀屏只會讀到一次。 */
+.viewer-hero-wordmark.is-on-light { display: none; }
+
+body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-dark { display: none; }
+body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: block; }
 
 @media (max-width: 599px) {
-  .viewer-hero-title {
-    font-size: 2rem;
+  .viewer-hero-wordmark {
+    height: 28px;
   }
 }
 

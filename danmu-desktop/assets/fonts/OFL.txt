@@ -97,3 +97,11 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
+
+────────────────────────────────────────────────────────────────────────
+Unbounded (ExtraBold 800) — 字標「DANMU FIRE」專用
+Copyright (c) Nikolas Type
+SIL Open Font License 1.1 — https://openfontlicense.org
+來源：Google Fonts。本專案僅自帶 A–Z 子集（server/static/fonts/
+unbounded-800-latin.woff2，1.8 KB），供字標動態排版；靜態字標
+（wordmark-{light,dark}.svg）已轉外框，不含字型資料。
