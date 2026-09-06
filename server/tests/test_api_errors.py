@@ -71,7 +71,11 @@ def test_not_found_returns_json_error(client):
 
 
 def test_not_found_returns_html_for_browser(client):
-    """Browser navigation (Accept: text/html) gets the v4-r5 error page."""
+    """Browser navigation (Accept: text/html) gets the error page.
+
+    設計稿 09 · E1：標題改成「找不到這個頁面」（多一個「這個」，指的是
+    使用者剛剛打開的那一頁，不是抽象的「頁面」），技術訊息降到頁腳小字。
+    """
     response = client.get(
         "/non-existent-route",
         headers={"Accept": "text/html"},
@@ -80,7 +84,12 @@ def test_not_found_returns_html_for_browser(client):
     assert not response.is_json
     body = response.data.decode("utf-8")
     assert "admin-err" in body
-    assert "找不到頁面" in body
+    assert "找不到這個頁面" in body
+    # 主文要說「你可以做什麼」，不是只丟一句「不存在」
+    assert "重新掃描" in body or "回到控制台" in body
+    # 狀態碼在頁腳，不在標題下方當副標
+    assert '<div class="admin-err__foot">錯誤代碼 404</div>' in body
+    assert "NOT FOUND" not in body
 
 
 def test_health_endpoint_has_request_id(client):

@@ -210,60 +210,74 @@ def _go_online(page):
     )
 
 
-def test_sendbar_status_row_shows_offline_copy(viewer_page):
-    """overlay 離線時，#sendbarStatusRow 應顯示 overlayOfflineFire 文案"""
+def test_screen_off_shows_one_chip_one_card_one_hint(viewer_page):
+    """設計稿 05 · V4：大螢幕未開時，畫面上只有三處說明，而且是同一件事的
+    三個層級——頂欄灰 chip、一張說明卡、送出列下方一行。**沒有**紅色警語
+    橫幅（那是舊版的第四處，也是最吵的那一處）。"""
     page, live_url = viewer_page
     _go_offline(page)
     page.goto(f"{live_url}/")
-    page.wait_for_selector("#sendbarStatusRow:not([hidden])", timeout=8000)
+    page.wait_for_selector(".viewer-screenoff-card:not([hidden])", timeout=8000)
 
+    chip = page.locator("#overlayStatus")
+    assert "大螢幕未開" in chip.text_content()
+
+    card = page.locator(".viewer-screenoff-card")
+    assert card.is_visible()
+    assert "現場大螢幕還沒開啟" in card.text_content()
+
+    hint = page.locator(".viewer-sendbar-meta__hint")
+    assert "大螢幕開啟後即可送出" in hint.text_content()
+
+    # 舊的紅色警語橫幅必須留空（元素還在，給 main.js 的其他狀態用）
     status_row = page.locator("#sendbarStatusRow")
-    assert status_row.is_visible()
-    assert "彈幕牆尚未開啟" in status_row.text_content()
-    assert "訊息暫時無法送出" in status_row.text_content()
+    assert (
+        status_row.get_attribute("hidden") is not None
+        or status_row.text_content().strip() == ""
+    )
 
 
-def test_sendbar_fire_button_stays_short_label_when_offline(viewer_page):
-    """離線時 FIRE 按鈕文字應維持短版（不被離線說明文字取代），
-    這樣才不會把 input 的 flex:1 寬度擠壓，蓋住 placeholder（B2 fix）。"""
+def test_send_button_keeps_arrow_when_screen_is_off(viewer_page):
+    """設計稿 05 · V4：未開時送出鍵維持箭頭、轉灰，不把說明文字塞進按鈕
+    （那會把 input 的 flex:1 寬度擠掉、蓋住 placeholder）。"""
     page, live_url = viewer_page
     _go_offline(page)
     page.goto(f"{live_url}/")
-    page.wait_for_selector("#sendbarStatusRow:not([hidden])", timeout=8000)
+    page.wait_for_selector(".viewer-screenoff-card:not([hidden])", timeout=8000)
 
-    btn_text = page.locator("#btnSendText")
-    assert btn_text.text_content().strip() == "FIRE"
+    btn = page.locator("#btnSend")
+    assert btn.get_attribute("data-state") == "offline"
+    assert btn.is_disabled()
+    # 箭頭圖示不該被藏起來
+    assert "hidden" not in (page.locator("#btnSendIcon").get_attribute("class") or "")
 
     # Placeholder must remain intact on the input element.
     placeholder = page.locator("#danmuText").get_attribute("placeholder")
     assert placeholder, "danmuText should keep its placeholder text"
 
 
-def test_sendbar_offline_status_row_does_not_disappear(viewer_page):
-    """離線狀態列不應在數秒後自動消失（F12 迴歸保護：typing 不應清空離線提示，
-    且純粹等待也不應讓它消失，因為 overlay 仍離線）。"""
+def test_screen_off_hint_does_not_disappear(viewer_page):
+    """離線說明不應在數秒後自動消失（F12 迴歸保護：typing 不應清空它，
+    純粹等待也不應，因為 overlay 仍離線）。"""
     page, live_url = viewer_page
     _go_offline(page)
     page.goto(f"{live_url}/")
-    page.wait_for_selector("#sendbarStatusRow:not([hidden])", timeout=8000)
+    page.wait_for_selector(".viewer-screenoff-card:not([hidden])", timeout=8000)
 
-    # Wait past a full poll interval (2s) + some margin — status row must
-    # still be there since overlay_status keeps reporting 0.
+    # Wait past a full poll interval (2s) + some margin.
     page.wait_for_timeout(3000)
-    status_row = page.locator("#sendbarStatusRow")
-    assert status_row.is_visible()
-    assert status_row.text_content().strip() != ""
+    hint = page.locator(".viewer-sendbar-meta__hint")
+    assert "大螢幕開啟後即可送出" in hint.text_content()
 
-    # Typing while offline must NOT clear the persistent offline explanation
-    # (main.js only clears this row on input when _overlayOnline is true).
     page.fill("#danmuText", "test message while offline")
     page.wait_for_timeout(300)
-    assert status_row.is_visible()
-    assert "彈幕牆尚未開啟" in status_row.text_content()
+    assert "大螢幕開啟後即可送出" in hint.text_content()
+    assert page.locator(".viewer-screenoff-card").is_visible()
 
 
-def test_sendbar_status_row_clears_when_overlay_online(viewer_page):
-    """overlay 上線時，狀態列應為空/隱藏（對照組，確保上面的測試真的在測離線分支）"""
+def test_screen_on_clears_the_offline_surfaces(viewer_page):
+    """大螢幕上線時，chip 轉綠、說明卡收起、送出列下方換回「暱稱 · 改暱稱」
+    （對照組，確保上面的測試真的在測離線分支）"""
     page, live_url = viewer_page
     page.route(
         "**/overlay_status",
@@ -276,8 +290,16 @@ def test_sendbar_status_row_clears_when_overlay_online(viewer_page):
     page.goto(f"{live_url}/")
     page.wait_for_timeout(1500)
 
+    assert "大螢幕顯示中" in page.locator("#overlayStatus").text_content()
+    assert page.locator(".viewer-screenoff-card").get_attribute("hidden") is not None
+    assert page.locator(".viewer-sendbar-meta__hint").text_content().strip() == ""
+    assert page.locator(".viewer-sendbar-meta__who").is_visible()
+
     status_row = page.locator("#sendbarStatusRow")
-    assert status_row.get_attribute("hidden") is not None or status_row.text_content().strip() == ""
+    assert (
+        status_row.get_attribute("hidden") is not None
+        or status_row.text_content().strip() == ""
+    )
 
 
 # ─── 2. 投票即時確認（is-voted / 已投出 / 絕不顯示票數）───────────────────────
@@ -516,13 +538,16 @@ def test_reconnected_toast_appears_and_disappears(viewer_page):
 # ─── 4. 色票 i18n aria-label ──────────────────────────────────────────────────
 
 
+# 設計稿 05 · V2 的六顆色票。原本有 #fbbf24「琥珀」與 #ffd166「黃」兩顆
+# ——投影出去分不出來，也沒人叫得出「琥珀」。收成一顆黃，空出來的位置
+# 給紫（設計稿 17 · CB1 的色名清單：白／黃／天藍／綠／紅／紫）。
 _SWATCH_LABELS_ZH = {
     "#ffffff": "白",
     "#38bdf8": "天藍",
     "#fbbf24": "琥珀",
     "#86efac": "綠",
     "#f87171": "紅",
-    "#ffd166": "黃",
+    "#c084fc": "紫",
 }
 
 _SWATCH_LABELS_EN = {
@@ -531,8 +556,18 @@ _SWATCH_LABELS_EN = {
     "#fbbf24": "Amber",
     "#86efac": "Green",
     "#f87171": "Red",
-    "#ffd166": "Yellow",
+    "#c084fc": "Purple",
 }
+
+
+def _open_style_sheet(page):
+    """設計稿 05：色票等控制項搬進樣式抽層。桌面 ≥768 面板常駐，
+    手機要先點首屏那一列「樣式」。"""
+    page.evaluate(
+        "() => { const r = document.getElementById('viewerStyleRow');"
+        " if (r) r.click(); }"
+    )
+    page.wait_for_timeout(200)
 
 
 def test_color_swatches_have_nonempty_aria_labels(viewer_page):
@@ -540,6 +575,7 @@ def test_color_swatches_have_nonempty_aria_labels(viewer_page):
     page, live_url = viewer_page
     page.goto(f"{live_url}/")
     page.wait_for_selector(".viewer-swatch-preset", timeout=5000)
+    _open_style_sheet(page)
 
     swatches = page.locator(".viewer-swatch-preset")
     count = swatches.count()
@@ -560,6 +596,7 @@ def test_color_swatches_aria_labels_follow_language_switch(viewer_page):
     page, live_url = viewer_page
     page.goto(f"{live_url}/")
     page.wait_for_selector(".viewer-swatch-preset", timeout=5000)
+    _open_style_sheet(page)
 
     page.evaluate("() => window.ServerI18n && window.ServerI18n.setLanguage('en')")
     page.wait_for_timeout(300)
@@ -579,14 +616,15 @@ def test_color_swatches_aria_labels_follow_language_switch(viewer_page):
 
 
 def test_mobile_viewport_sendbar_no_overlap_with_status_row(viewer_page):
-    """375px 行動視口下，離線狀態列與 sendbar pill 不應有 bounding box 重疊"""
+    """375px 行動視口下，送出列下方那行說明與 sendbar pill 不應重疊。
+    （設計稿 05 · V4 之後這行說明取代了原本的紅色橫幅。）"""
     page, live_url = viewer_page
     page.set_viewport_size({"width": 375, "height": 812})
     _go_offline(page)
     page.goto(f"{live_url}/")
-    page.wait_for_selector("#sendbarStatusRow:not([hidden])", timeout=8000)
+    page.wait_for_selector(".viewer-screenoff-card:not([hidden])", timeout=8000)
 
-    status_box = page.locator("#sendbarStatusRow").bounding_box()
+    status_box = page.locator(".viewer-sendbar-meta__hint").bounding_box()
     pill_box = page.locator("#sendbarPill").bounding_box()
     assert status_box is not None, "status row should have a layout box"
     assert pill_box is not None, "sendbar pill should have a layout box"
@@ -603,6 +641,6 @@ def test_mobile_viewport_sendbar_no_overlap_with_status_row(viewer_page):
         return x_overlap and y_overlap
 
     assert not _overlaps(status_box, pill_box), (
-        f"sendbar status row overlaps sendbar pill on mobile viewport: "
+        f"sendbar hint overlaps sendbar pill on mobile viewport: "
         f"status={status_box} pill={pill_box}"
     )

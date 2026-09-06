@@ -180,3 +180,6 @@ server/webhooks.json
 # 產物不是 source，別再被 `git add -A` 掃進來。.playwright-mcp/ 另已 ignore。
 /*-after.png
 /*-before.png
+/.bvout.txt
+/.pyout.txt
+/.pwinstall.txt

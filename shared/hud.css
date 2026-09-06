@@ -2018,17 +2018,31 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-lockout-contact:hover { color: var(--color-primary-hover); text-decoration: underline; }
 
+/* 2026-09-06 設計稿 06 · L2：密碼錯誤是錯誤，不是警告——不管還剩幾次都
+ * 用同一個紅。原本 remaining > 1 時轉琥珀，等於在說「錯一次還好」，
+ * 但使用者要的是「我打錯了，還有幾次」這件事本身。
+ * 也不再全大寫等寬——那是給機器讀的排版。 */
 .admin-login-attempts {
-  margin-top: 4px;
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 1.5px;
-  color: var(--color-error);
-  text-align: center;
-  text-transform: uppercase;
+  margin-top: var(--space-1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-footnote);
+  letter-spacing: 0;
+  color: var(--color-ink-danger, var(--color-error));
+  text-align: left;
+  text-transform: none;
 }
-.admin-login-attempts.is-warn {
-  color: var(--color-ink-warning);
+
+/* 紅色小圓點：讓這行字在掃視時就被讀成「出事了」 */
+.admin-login-attempts::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  flex: 0 0 auto;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────

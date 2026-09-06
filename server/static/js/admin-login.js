@@ -42,31 +42,55 @@
     const appContainer = _ctx().appContainer || document.getElementById("app-container");
     if (!appContainer) return;
     const version = (window.DANMU_CONFIG && window.DANMU_CONFIG.appVersion) || "";
+    // 設計稿 06 · L1/L2：置中 360、圖示 → 字標 → 一個欄位 → 一顆按鈕，
+    // 底部一行伺服器狀態。原本的 grid 背景、drop-shadow 大標與全大寫等寬
+    // 按鈕移除——登入頁只有一件事要做，其他都是干擾。
     appContainer.innerHTML = `
       <div class="admin-login-shell">
         <div class="admin-login-card" id="adminLoginCard">
+          <img class="admin-login-icon" src="/static/icon.png" alt="" width="64" height="64" />
           <div class="admin-login-hero">
-            <h1 class="hud-hero-title is-large">Danmu Fire</h1>
+            <img class="admin-login-wordmark is-on-dark" src="/static/wordmark-dark.svg"
+                 alt="Danmu Fire" width="540" height="96" />
+            <img class="admin-login-wordmark is-on-light" src="/static/wordmark-light.svg"
+                 alt="" aria-hidden="true" width="540" height="96" />
             <p class="admin-login-subtitle" data-i18n="adminLoginSubtitle">${ServerI18n.t("adminLoginSubtitle")}</p>
           </div>
           <form id="loginForm" class="admin-login-form" action="/login" method="post" autocomplete="off">
             <div class="admin-login-field">
               <label class="admin-login-label" for="password" data-i18n="adminLoginPasswordLabel">${ServerI18n.t("adminLoginPasswordLabel")}</label>
-              <input class="admin-login-input" type="password" id="password" name="password" autocomplete="current-password" required />
+              <div class="admin-login-inputwrap">
+                <input class="admin-login-input" type="password" id="password" name="password" autocomplete="current-password" required />
+                <button type="button" class="admin-login-reveal" data-login-reveal
+                        data-i18n="adminLoginReveal">${ServerI18n.t("adminLoginReveal")}</button>
+              </div>
             </div>
-            <button class="admin-login-submit" type="submit" data-i18n="adminLoginSignIn">${ServerI18n.t("adminLoginSignIn")}</button>
             <div class="admin-login-attempts" id="loginAttemptsHint" hidden></div>
+            <button class="admin-login-submit" type="submit" data-i18n="adminLoginSignIn">${ServerI18n.t("adminLoginSignIn")}</button>
           </form>
           <div class="admin-login-chiprow">
-            <span class="admin-login-chip is-accent">
+            <span class="admin-login-chip">
               <span class="hud-dot is-success" aria-hidden="true"></span>
-              <span data-i18n="adminLoginServerOnline">${ServerI18n.t("adminLoginServerOnline")}</span>
+              <span data-i18n="adminLoginServerOnline">${ServerI18n.t("adminLoginServerOnline")}</span>${version ? ` · v${version}` : ""}
             </span>
-            ${version ? `<span class="admin-login-chip">v${version}</span>` : ""}
           </div>
         </div>
       </div>
     `;
+
+    // 「顯示」切換密碼可見度（設計稿 06 · L1）。輸錯密碼時最常見的原因就是
+    // 打錯字，而不給看的欄位只會讓人再錯一次。
+    const revealBtn = appContainer.querySelector("[data-login-reveal]");
+    if (revealBtn) {
+      revealBtn.addEventListener("click", () => {
+        const input = document.getElementById("password");
+        if (!input) return;
+        const showing = input.type === "text";
+        input.type = showing ? "password" : "text";
+        revealBtn.textContent = ServerI18n.t(showing ? "adminLoginReveal" : "adminLoginHide");
+        try { input.focus(); } catch (_) {}
+      });
+    }
 
     const form = document.getElementById("loginForm");
     const pwInput = document.getElementById("password");
@@ -82,7 +106,9 @@
         const remaining = Math.max(0, LOGIN_MAX_ATTEMPTS - _loginAttemptsUsed);
         if (hint && _loginAttemptsUsed > 0 && remaining > 0) {
           hint.hidden = false;
-          hint.classList.toggle("is-warn", remaining > 1);
+          // 設計稿 06 · L2：欄位同時轉紅框，錯誤指向出錯的地方。
+          const pw = document.getElementById("password");
+          if (pw) pw.classList.add("is-error");
           hint.textContent = ServerI18n.t("loginAttemptsRemaining", { n: remaining });
         }
       }

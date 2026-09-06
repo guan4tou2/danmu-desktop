@@ -55,14 +55,13 @@
       defaultTab: "overview",
       tabs: [
         { slug: "overview", labelKey: "tabAssetsOverview", en: "OVERVIEW", section: "sec-assets-overview" },
+        // 2026-09-06 設計稿 08 · T2：分段順序照稿——表情 · 貼圖 · 字型 · 音效。
+        // 「小工具」從這條 strip 移除：它 2026-09-06 起是側欄自己一列
+        // （設計稿 08/14），同一個東西不該同時是一列又是一個分頁。
         { slug: "emojis",   labelKey: "tabAssetsEmojis", en: "EMOJIS",   section: "sec-emojis"   },
         { slug: "stickers", labelKey: "tabAssetsStickers", en: "STICKERS", section: "sec-stickers" },
-        { slug: "sounds",   labelKey: "tabAssetsSounds", en: "SOUNDS",   section: "sec-sounds"   },
         { slug: "fonts",    labelKey: "tabAssetsFonts", en: "FONTS",    section: "sec-fonts"    },
-        // v8（2026-08-19 設計稿 03）：小工具歸「素材」。稿上的分組是
-        // 「素材（含字型／貼圖／音效／小工具）」——Desktop Widgets 是主持人
-        // 擺到大螢幕上的東西，跟貼圖音效同一類，不是開發者擴充。
-        { slug: "widgets",  labelKey: "adminNavWidgets", en: "WIDGETS",  section: "sec-widgets"  },
+        { slug: "sounds",   labelKey: "tabAssetsSounds", en: "SOUNDS",   section: "sec-sounds"   },
       ],
     },
     // D-6 階段 4 (2026-07-29): viewer 從 admin-display.js 自製的

@@ -2,7 +2,8 @@
 
 > **讀者**：未來要改 admin 介面的 session（包含你自己）。
 > **權威性**：與個別檔案牴觸時以本文為準。牴觸如果是本文錯了，改本文。
-> **時點**：2026-08-19，IA v8 / Apple SF 刻度落地後。
+> **時點**：2026-09-06，設計稿 04–17 全套落地中（詳見 `.design-sync/specs/`）。
+> 前一版時點是 2026-08-19（IA v8 / Apple SF 刻度）。
 > 前身 `docs/designs/design-v2/STYLE-CONTRACT.md` 講的是 `tokens.jsx` /
 > `hudTokens` / JSX 元件——那是 v2 原型時代，已被現行的 CSS token 系統取代，
 > 留作歷史。
@@ -174,6 +175,25 @@ kicker（標題上方那行全大寫英文代號）全域 34 處已移除。不�
 
 ### 5.5 文案
 
+**全域名詞表**（設計稿 14 · 文案總表，2026-09-06 拍板）：
+
+| 內部／舊稱 | 對主持人（zh） | 對主持人（en） |
+|---|---|---|
+| Desktop / Overlay | 顯示層 | Display |
+| WebSocket Token | 連線密碼 | Connection password |
+| Fingerprint / fp | 裝置識別 | Device ID |
+| 效果庫 .dme | 動畫效果 | Effects |
+| 風格主題包 | 主題 | Themes |
+| Desktop Widgets | 小工具 | Widgets |
+
+**對觀眾**再降一階：顯示層 → **大螢幕**。觀眾不需要知道主持人在跑一個
+桌面 app，也不需要學會「彈幕牆」這個我們自己發明的詞。
+
+**按鈕**只寫動詞，不加圖示符號（`▶` `■` `⚡` `⌫` `◱` 一律不要）。
+危險動作結尾加「…」代表會再確認。狀態用「已／中／未」三態。
+Toast 是動詞完成式且 ≤ 8 字：已送出 · 已清空 · 已封鎖 · 已儲存。
+錯誤三段式「發生什麼 · 可能原因 · 可以做什麼」，技術訊息降到頁腳小字。
+
 - **白話，不要術語。** 「Dry-run」→「預覽變更」；
   「WebSocket 令牌」→「顯示層連線密碼」；
   「emojis/ · stickers/ · runtime/stickers/packs.json」→「表情、貼圖、音效」。
@@ -186,17 +206,20 @@ kicker（標題上方那行全大寫英文代號）全域 34 處已移除。不�
 
 ---
 
-## 6. IA v8（側欄 3 區 12 列）
+## 6. IA（側欄 3 區 13 列）
 
 分組軸線是「活動當下 / 活動之前 / 與活動無關」，不是「功能分類」。
 
 ```
 活動中      控制台 · 顯示層 · 投票 · 審核
-外觀與素材  觀眾頁 · 動畫效果 · 主題 · 素材
+外觀與素材  觀眾頁 · 動畫效果 · 主題 · 素材 · 小工具
 系統        紀錄與匯出 · 備份與還原 · 安全 · 擴充
 ```
 
-- 五個降級的路由（`widgets` `system` `plugins` `webhooks` `api-tokens`）
+- 2026-09-06（設計稿 08/14）：`widgets` 從「擴充」hub 回到「外觀與素材」。
+  小工具是主持人活動前擺一次的東西，跟主題、素材同類；「擴充」是給
+  IT 人員的區域（Webhook / 插件 / API 金鑰 / 定時發送）。
+- 四個降級的路由（`system` `plugins` `webhooks` `api-tokens`）
   **仍是 first-class route**，深連結與 ⌘K 照常，只是不佔側欄，入口收在「擴充」。
 - **側欄名與頁面標題必須一致**——同一個東西不該有兩個名字。
   改側欄要同步改 `ADMIN_ROUTES` 的 `title` 與 `adminRouteTitle_*` i18n key。
@@ -210,6 +233,19 @@ kicker（標題上方那行全大寫英文代號）全域 34 處已移除。不�
 
 資料本來就是同一列的 slot 3（值）與 slot 0（可自訂），拆的是呈現不是資料。
 兩套標題／表頭／提示並存，用 `data-dsp-only="values|audience"` 擇一顯示。
+
+### 6.1 控制台首屏＝三塊（設計稿 06 · K1/K2）
+
+```
+① 顯示層開關卡（左半）  .admin-cockpit-overlay   ← 全頁唯一的狀態顯示
+② 一行數字（右半）      .admin-cockpit-stats     ← tabular-nums，無 sparkline
+③ 即時訊息流（撐滿）    #sec-live-feed
+```
+
+**已退場、不要復活**：KPI 四卡的 Bebas 大數字與 20 條 sparkline（20 個資料點
+畫不出趨勢，只讓每張卡長高 60px）、Quick Actions F1–F4 四張常駐面板
+（⌘K 一步就到，設計稿 15 · CK1 明講取代它）、My Actions 側欄
+（稽核用的回顧，家在「紀錄與匯出 › 操作紀錄」）。
 
 ---
 

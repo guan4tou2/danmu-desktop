@@ -78,34 +78,31 @@
     if (_tickTimer) { clearInterval(_tickTimer); _tickTimer = 0; }
   }
 
+  // 設計稿 15 · RC1：橫幅要講三件事——**發生什麼、正在做什麼、對觀眾有沒有
+  // 影響**。原本是一串全大寫技術詞（RECONNECTING · 4.2s · attempt 3 / 30），
+  // 主持人在台上讀到只會更慌：它沒回答「大螢幕還在跑嗎」這個唯一重要的問題。
   function _reconnectingHtml() {
     const left = Math.max(0, (_nextAttemptAt - Date.now()) / 1000);
     const total = _backoffMs / 1000;
     const pct = Math.min(100, ((total - left) / total) * 100);
     return `
       <span class="admin-rcb__dot"></span>
-      <span class="admin-rcb__label">RECONNECTING</span>
-      <span class="admin-rcb__sep">·</span>
-      <span class="admin-rcb__countdown">${left.toFixed(1)}s</span>
-      <span class="admin-rcb__sep">·</span>
-      <span class="admin-rcb__attempt">attempt ${_attemptCount} / ${MAX_ATTEMPTS}</span>
+      <span class="admin-rcb__label">${ServerI18n.t("rcbReconnectingTitle")}</span>
+      <span class="admin-rcb__hint">${ServerI18n.t("rcbReconnectingBody", { n: _attemptCount })}</span>
       <div class="admin-rcb__progress"><div class="admin-rcb__progress-fill" style="width:${pct}%"></div></div>
       <span class="admin-rcb__spacer"></span>
-      <button type="button" class="admin-rcb__btn admin-rcb__btn--ghost" data-rcb-action="dismiss">離線繼續工作</button>
-      <button type="button" class="admin-rcb__close" data-rcb-action="dismiss" aria-label="Dismiss">${window.AdminUtils.closeIcon}</button>`;
+      <button type="button" class="admin-rcb__btn admin-rcb__btn--retry" data-rcb-action="retry">${ServerI18n.t("rcbRetryNow")}</button>
+      <button type="button" class="admin-rcb__close" data-rcb-action="dismiss" aria-label="${ServerI18n.t("close")}">${window.AdminUtils.closeIcon}</button>`;
   }
 
   function _exhaustedHtml() {
     return `
       <span class="admin-rcb__dot admin-rcb__dot--static"></span>
-      <span class="admin-rcb__label">CONNECTION LOST</span>
-      <span class="admin-rcb__sep">·</span>
-      <span class="admin-rcb__attempt">${MAX_ATTEMPTS}/${MAX_ATTEMPTS} attempts exhausted</span>
-      <span class="admin-rcb__sep">·</span>
-      <span class="admin-rcb__hint">check network or restart server</span>
+      <span class="admin-rcb__label">${ServerI18n.t("rcbLostTitle")}</span>
+      <span class="admin-rcb__hint">${ServerI18n.t("rcbLostBody")}</span>
       <span class="admin-rcb__spacer"></span>
-      <button type="button" class="admin-rcb__btn admin-rcb__btn--retry" data-rcb-action="retry">立即重試</button>
-      <button type="button" class="admin-rcb__close" data-rcb-action="dismiss" aria-label="Dismiss">${window.AdminUtils.closeIcon}</button>`;
+      <button type="button" class="admin-rcb__btn admin-rcb__btn--retry" data-rcb-action="retry">${ServerI18n.t("rcbRetryNow")}</button>
+      <button type="button" class="admin-rcb__close" data-rcb-action="dismiss" aria-label="${ServerI18n.t("close")}">${window.AdminUtils.closeIcon}</button>`;
   }
 
   function _tick() {
@@ -115,9 +112,8 @@
     const left = Math.max(0, (_nextAttemptAt - Date.now()) / 1000);
     const total = _backoffMs / 1000;
     const pct = Math.min(100, ((total - left) / total) * 100);
-    const cd = el.querySelector(".admin-rcb__countdown");
+    // 秒數不再逐 0.1 秒跳（那是在演算法自證，不是在告知）；只推進度條。
     const fill = el.querySelector(".admin-rcb__progress-fill");
-    if (cd) cd.textContent = left.toFixed(1) + "s";
     if (fill) fill.style.width = pct + "%";
   }
 

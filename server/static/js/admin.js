@@ -636,14 +636,8 @@ document.addEventListener("DOMContentLoaded", () => {
       : "NotoSansTC";
     // settingCard 工廠已於 2026-07-30 退役（Effects 開關列改為就地模板）
 
-    const kpiBars = (seed, len = 12) => {
-      const out = [];
-      for (let i = 0; i < len; i++) {
-        const v = 3 + ((seed * 7 + i * 13) % 8) + Math.floor(i / 3);
-        out.push(`<span style="height:${Math.min(16, v * 1.1)}px;opacity:${0.3 + (v / 11) * 0.6}"></span>`);
-      }
-      return out.join("");
-    };
+    // 2026-09-06 設計稿 06：KPI sparkline 移除（20 個資料點畫不出趨勢，
+    // 只讓每張卡長高 60px），連帶這個假資料產生器一起刪。
     const telemBars = (pattern) =>
       pattern.map((b) => `<span style="height:${b * 10}%;opacity:${0.3 + b * 0.08}"></span>`).join("");
     const broadcasting = overlayMode && overlayMode !== "off";
@@ -652,9 +646,14 @@ document.addEventListener("DOMContentLoaded", () => {
     appContainer.innerHTML = `
                     <div class="admin-dash-grid" data-active-route="dashboard">
                         <aside class="admin-dash-sidebar" aria-label="Admin navigation">
+                            <!-- 2026-09-06 設計稿 06：側欄頂端＝ app icon 28px ＋
+                                 「Danmu Fire」15px 700。原本是 28px 的 Bebas 全大寫
+                                 青色大標＋等寬「ADMIN · v5.4.0」副標，兩行加起來佔掉
+                                 側欄最上面 70px，卻只在說一件所有人都已經知道的事。
+                                 版本號移到「系統」頁（設計稿 08 · S1）。 -->
                             <div class="admin-dash-brand">
-                                <span class="admin-dash-brand-hero">Danmu Fire</span>
-                                <span class="admin-dash-brand-suffix">ADMIN · v${config.appVersion || config.app_version || (window.APP_VERSION || "")}</span>
+                                <img class="admin-dash-brand-icon" src="/static/icon.png" alt="" width="28" height="28" />
+                                <span class="admin-dash-brand-name">Danmu Fire</span>
                             </div>
                             <nav class="admin-dash-nav" role="tablist" aria-label="Admin pages">
                                 <!-- IA v6 grouped nav (2026-07-28): 4-section structure
@@ -728,6 +727,14 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">▦</span>
                                     <span data-i18n="adminNavAssets">素材</span>
+                                </button>
+                                <!-- 2026-09-06 設計稿 08/14：小工具（計分板／跑馬燈／文字標籤）
+                                     回到側欄。v8 把它降級收進「擴充」hub，但那是給 IT 人員的
+                                     區域——小工具是主持人在活動前會擺一次的東西，跟主題、素材
+                                     同一類，不該跟 Webhook 混在一起。 -->
+                                <button type="button" class="admin-dash-nav-row" data-route="widgets" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">▥</span>
+                                    <span data-i18n="adminNavWidgets">小工具</span>
                                 </button>
 
                                 <!-- 系統：與活動當下無關的維運。危險操作集中在備份與還原頁最底。 -->
@@ -811,39 +818,57 @@ document.addEventListener("DOMContentLoaded", () => {
                                  colorize the value + sparkline so the strip reads
                                  as a HUD telemetry row. Sparkline contents are
                                  hydrated by admin-dashboard.js refreshKpi(). -->
-                            <section class="admin-kpi-strip is-4col" data-route-view="dashboard">
-                                <div class="admin-kpi-tile is-cyan" data-kpi="messages">
-                                    <div class="admin-kpi-tile-head">
-                                        <span class="label">${ServerI18n.t("dashKpiMsgTotal")}</span>
+                            <!-- 2026-09-06 設計稿 06 · K1/K2：控制台首屏＝三塊，一屏看完。
+                                 ① 顯示層開關卡（左半）② 一行數字（右半）③ 即時訊息流。
+
+                                 原本是四張 KPI 卡，每張帶 Bebas 大數字 ＋ 20 條 sparkline
+                                 ＋一行 delta。sparkline 在 20 個資料點上畫不出趨勢，只是
+                                 讓每張卡長高到 154px——四張加起來就把訊息流推到摺線下面，
+                                 而主持人盤中要看的就是訊息流。數字縮成一行、去掉 sparkline
+                                 之後，開關卡＋數字＋訊息流剛好一屏。 -->
+                            <section class="admin-cockpit" data-route-view="dashboard">
+                                <!-- ① 顯示層：全頁唯一的狀態顯示與主要動作 -->
+                                <div class="admin-cockpit-card admin-cockpit-overlay" data-cockpit-overlay>
+                                    <span class="admin-cockpit-overlay-icon" aria-hidden="true">▣</span>
+                                    <div class="admin-cockpit-overlay-body">
+                                        <div class="admin-cockpit-overlay-title" data-i18n="adminNavOverlay">顯示層</div>
+                                        <div class="admin-cockpit-overlay-status" role="status" aria-live="polite">
+                                            <span class="admin-cockpit-dot" data-cockpit-dot></span>
+                                            <span data-cockpit-status>—</span>
+                                        </div>
                                     </div>
-                                    <div class="admin-kpi-tile-value" data-kpi-value>—</div>
-                                    <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(6)}</div>
-                                    <div class="admin-kpi-tile-delta is-success" data-kpi-delta>${ServerI18n.t("dashKpiLoading")}</div>
+                                    <div class="admin-cockpit-overlay-actions">
+                                        <button type="button" class="admin-ui-action" data-cockpit-action="clear"
+                                                data-i18n="adminCockpitClear">清空畫面</button>
+                                        <button type="button" class="admin-ui-action is-danger" data-cockpit-action="toggle"
+                                                data-i18n="adminCockpitTurnOff">關閉</button>
+                                    </div>
                                 </div>
-                                <div class="admin-kpi-tile is-amber" data-kpi="peak">
-                                    <div class="admin-kpi-tile-head">
-                                        <span class="label">${ServerI18n.t("dashKpiPeakPerMin")}</span>
-                                        <span class="en">${ServerI18n.t("ulPeak")}</span>
+
+                                <!-- ② 一行數字（tabular-nums）＋兩顆次要動作 -->
+                                <div class="admin-cockpit-card admin-cockpit-stats">
+                                    <div class="admin-cockpit-stat" data-kpi="messages">
+                                        <div class="admin-cockpit-stat-label">${ServerI18n.t("dashKpiMsgTotal")}</div>
+                                        <div class="admin-cockpit-stat-value" data-kpi-value>—</div>
                                     </div>
-                                    <div class="admin-kpi-tile-value" data-kpi-value>—</div>
-                                    <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(6)}</div>
-                                    <div class="admin-kpi-tile-delta is-muted" data-kpi-delta>${ServerI18n.t("dashKpiCalculating")}</div>
-                                </div>
-                                <div class="admin-kpi-tile is-lime" data-kpi="unique-fp">
-                                    <div class="admin-kpi-tile-head">
-                                        <span class="label">${ServerI18n.t("dashKpiUniqueFp")}</span>
+                                    <div class="admin-cockpit-stat" data-kpi="peak">
+                                        <div class="admin-cockpit-stat-label">${ServerI18n.t("dashKpiPeakPerMin")}</div>
+                                        <div class="admin-cockpit-stat-value" data-kpi-value>—</div>
                                     </div>
-                                    <div class="admin-kpi-tile-value" data-kpi-value>—</div>
-                                    <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(7)}</div>
-                                    <div class="admin-kpi-tile-delta is-muted" data-kpi-delta>${ServerI18n.t("dashKpiLast24h")}</div>
-                                </div>
-                                <div class="admin-kpi-tile is-text" data-kpi="session">
-                                    <div class="admin-kpi-tile-head">
-                                        <span class="label">${ServerI18n.t("dashKpiSessionDuration")}</span>
+                                    <div class="admin-cockpit-stat" data-kpi="unique-fp">
+                                        <div class="admin-cockpit-stat-label">${ServerI18n.t("dashKpiUniqueFp")}</div>
+                                        <div class="admin-cockpit-stat-value" data-kpi-value>—</div>
                                     </div>
-                                    <div class="admin-kpi-tile-value" data-kpi-value>—</div>
-                                    <div class="admin-kpi-tile-bars" data-kpi-bars>${kpiBars(3)}</div>
-                                    <div class="admin-kpi-tile-delta is-muted" data-kpi-delta>${ServerI18n.t("dashSessWaiting")}</div>
+                                    <div class="admin-cockpit-stat" data-kpi="session">
+                                        <div class="admin-cockpit-stat-label">${ServerI18n.t("dashKpiSessionDuration")}</div>
+                                        <div class="admin-cockpit-stat-value" data-kpi-value>—</div>
+                                    </div>
+                                    <div class="admin-cockpit-stats-actions">
+                                        <button type="button" class="admin-ui-action" data-cockpit-action="idle-qr"
+                                                data-i18n="adminCockpitShowQr">顯示入場 QR</button>
+                                        <button type="button" class="admin-ui-action" data-cockpit-action="poll"
+                                                data-i18n="adminCockpitStartPoll">開始投票…</button>
+                                    </div>
                                 </div>
                             </section>
 
@@ -874,123 +899,12 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                             </details>
 
-                            <!-- 2026-07-29：Quick Actions / My Actions 移到 route-sections 之後。
-                                 控制台是場中主頁，主持人最該一眼看到的是即時訊息流；輔助
-                                 操作面板排在它下面。其他路由不受影響（本區塊帶
-                                 data-route-view="dashboard"，非 cockpit 路由會被隱藏）。 -->
-                            <section class="admin-dash-summary" data-route-view="dashboard">
-                              <div class="admin-dash-summary-grid">
-                                <!-- 2026-07-29：原本這裡有一張「即時訊息」卡片，與下方全寬的
-                                     「即時訊息流」（admin-live-feed.js）重疊——同名、同位置、
-                                     但資料來自 /admin/history 快照而非即時游標，篩選 chips 也
-                                     只換 is-active 不過濾資料。已移除，訊息面板以 live-feed 為
-                                     唯一來源；Quick Actions 跟著改成佔滿寬度。 -->
-                                <!-- QUICK ACTIONS (span 3) — 4 stacked sub-panels.
-                                     Effects/Blacklist/Broadcast link out to their
-                                     dedicated pages for full edit; Poll sub-panel
-                                     can launch a quick poll inline (existing
-                                     data-qp bindings still wire up to /admin/poll/create). -->
-                                <div class="admin-dash-card is-span-7 admin-dash-quickactions" data-dash-card="quickactions">
-                                  <div class="admin-dash-card-head">
-                                    <span class="title">Quick Actions</span>
-                                    <span class="kicker">F1–F4</span>
-                                  </div>
-                                  <div class="admin-dash-qa-stack">
-                                    <!-- ① EFFECTS -->
-                                    <div class="admin-dash-qa-panel is-cyan" data-qa-panel="effects">
-                                      <div class="admin-dash-qa-head">
-                                        <span class="key">① EFFECTS · F1</span>
-                                        <span class="count" data-qa-effects-count>—</span>
-                                      </div>
-                                      <div class="admin-dash-qa-chips" data-qa-effects-chips>
-                                        <span class="admin-dash-qa-chip is-loading">${ServerI18n.t("dashKpiLoading")}</span>
-                                      </div>
-                                      <a class="admin-dash-qa-link" href="#" data-route-link="effects">${ServerI18n.t("displayEditLink")}</a>
-                                    </div>
-
-                                    <!-- POLL panel (F2) - active poll status + quick launch.
-                                         data-dash-card poll-builder lives on the panel
-                                         itself so bindQuickPoll() can query the options
-                                         and foot from a single scope. populateDashboardPoll
-                                         finds the body and timer via direct attribute
-                                         selectors so no separate marker is needed. -->
-                                    <div class="admin-dash-qa-panel is-amber" data-qa-panel="poll" data-dash-card="poll-builder">
-                                      <div class="admin-dash-qa-head">
-                                        <span class="key">② POLL · F2</span>
-                                        <span class="count" data-dash-poll-timer></span>
-                                      </div>
-                                      <div class="admin-dash-qa-body" data-dash-poll-body>
-                                        <div class="admin-dash-qa-empty">${ServerI18n.t("dashQaNoPoll")}</div>
-                                      </div>
-                                      <div class="admin-dash-qa-row">
-                                        <input
-                                          type="text"
-                                          class="admin-dash-qa-input"
-                                          placeholder="${ServerI18n.t("dashQaNewPollPlaceholder")}"
-                                          maxlength="120"
-                                          data-qp="question"
-                                          aria-label="${ServerI18n.t("dashQaNewPollAria")}"
-                                        />
-                                        <button type="button" class="admin-dash-qa-cta is-amber" data-qa-poll-expand>${ServerI18n.t("dashQaCreateBtn")}</button>
-                                      </div>
-                                      <div class="admin-dash-qp-options admin-dash-qa-options" data-qp="options" hidden>
-                                        <div class="admin-dash-qp-row"><span class="key">A</span><input type="text" placeholder="${ServerI18n.t("dashOptionPlaceholder", { letter: "A" })}" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>${window.AdminUtils.closeIcon}</button></div>
-                                        <div class="admin-dash-qp-row"><span class="key">B</span><input type="text" placeholder="${ServerI18n.t("dashOptionPlaceholder", { letter: "B" })}" maxlength="60" /><button type="button" class="rm" data-qp-rm hidden>${window.AdminUtils.closeIcon}</button></div>
-                                      </div>
-                                      <div class="admin-dash-qp-foot" data-qa-poll-foot hidden>
-                                        <a href="#" class="admin-dash-qp-add" data-qp-add>${ServerI18n.t("dashQaAddOption")}</a>
-                                        <button type="button" class="admin-dash-qp-start" data-qp-start>START ▶</button>
-                                      </div>
-                                      <a class="admin-dash-qa-link" href="#" data-route-link="polls">${ServerI18n.t("dashQaMultiBuilder")}</a>
-                                    </div>
-
-                                    <!-- ③ BLACKLIST -->
-                                    <div class="admin-dash-qa-panel is-crimson" data-qa-panel="blacklist">
-                                      <div class="admin-dash-qa-head">
-                                        <span class="key">③ BLACKLIST · F3</span>
-                                        <span class="count" data-qa-blacklist-count>—</span>
-                                      </div>
-                                      <div class="admin-dash-qa-row">
-                                        <input
-                                          type="text"
-                                          class="admin-dash-qa-input"
-                                          placeholder="${ServerI18n.t("dashQaBlacklistPlaceholder")}"
-                                          maxlength="120"
-                                          data-qa-blacklist-input
-                                          aria-label="${ServerI18n.t("dashQaBlacklistAria")}"
-                                        />
-                                        <button type="button" class="admin-dash-qa-cta is-crimson" data-qa-blacklist-add>${ServerI18n.t("dashQaAddBtn")}</button>
-                                      </div>
-                                      <div class="admin-dash-qa-chips" data-qa-blacklist-chips></div>
-                                    </div>
-
-                                    <!-- ④ BROADCAST — links to broadcast subsystem -->
-                                    <div class="admin-dash-qa-panel is-cyan" data-qa-panel="broadcast">
-                                      <div class="admin-dash-qa-head">
-                                        <span class="key">④ BROADCAST · F4</span>
-                                        <span class="count" data-qa-broadcast-status>—</span>
-                                      </div>
-                                      <a class="admin-dash-qa-link" href="#" data-route-link="overlay">${ServerI18n.t("dashQaDesktopControl")}</a>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <!-- MY ACTIONS (span 2) — recent admin audit log,
-                                     mirrors v4 live-console.jsx MY ACTIONS sidebar.
-                                     Each row: action chip + target + timestamp.
-                                     Data: /admin/audit?limit=8&actor=admin (see
-                                     server/routes/admin/audit.py). -->
-                                <div class="admin-dash-card is-span-5 admin-dash-myactions" data-dash-card="myactions">
-                                  <div class="admin-dash-card-head">
-                                    <span class="title">My Actions</span>
-                                    <span class="kicker" data-dash-myactions-count>0</span>
-                                  </div>
-                                  <div class="admin-dash-myactions-body" data-dash-myactions-body>
-                                    <div class="admin-dash-empty">${ServerI18n.t("dashNoActions")}</div>
-                                  </div>
-                                </div>
-                              </div>
-                            </section>
+                            <!-- 2026-09-06 設計稿 06：Quick Actions F1–F4 與 My Actions 整區移除。
+                                 控制台首屏應該只有三塊——顯示層開關、一行數字、即時訊息流。
+                                 F1–F4 那四張常駐面板（效果／投票／黑名單／廣播）是「四個入口的
+                                 捷徑」，但主持人真正要用時是有明確目標的，⌘K 命令面板一次
+                                 就到（設計稿 15 · CK1 明講「取代 F1–F4」）；My Actions 是稽核
+                                 用的回顧，家在「紀錄與匯出 › 操作紀錄」。 -->
                         </div>
                     </div>
                 `;
@@ -1365,7 +1279,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // owns sec-history-tabs + history-v2-section + sec-history-list + sec-history.
     history:   { title: "紀錄與匯出",       kicker: "RECORDS · 場次資料切片", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history", "sec-audience-overview"] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
-    widgets:   { title: "Desktop Widgets",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
+    // 2026-09-06 設計稿 08/14：名稱去術語化 Desktop Widgets → 小工具。
+    widgets:   { title: "小工具",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
     themes:    { title: "主題",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
     // Viewer owns the page/fields/defaults/limits surface. Legacy
     // `#/viewer-config` deep-links still resolve here for backward compat.
@@ -1380,7 +1295,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // / sounds sub-sections kept below for editing per-type.
     // v7 IA (2026-07-28): assets gains the fonts tab (sec-fonts) — fonts are
     // the fourth uploadable asset type; tab strip defined in admin-tabs.js.
-    assets:    { title: "素材",           kicker: "ASSETS LIBRARY · 統一素材總覽", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds", "sec-fonts", "sec-widgets"] },
+    // 2026-09-06 設計稿 08：sec-widgets 移出——小工具回到側欄自己一列。
+    assets:    { title: "素材",           kicker: "ASSETS LIBRARY · 統一素材總覽", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds", "sec-fonts"] },
     // v5.2 Sprint 1 (2026-04-27): Extensions catalog page — Slido / Discord
     // / OBS / Bookmarklet cards + shared Fire Token UI inline.
     integrations: { title: "擴充",          kicker: "INTEGRATIONS · 第三方接入 · 共用 FIRE TOKEN", sections: ["sec-extensions-overview"] },

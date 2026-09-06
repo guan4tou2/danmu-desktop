@@ -24,11 +24,13 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   // #/messages bare-redirects to live.
   expect(adminSrc).not.toContain('data-route="messages"');
   expect(adminSrc).toMatch(/messages:\s*"live"/);
-  // 2026-08-19 v8 IA（設計稿 03）：側欄收成 3 區 12 列。
-  // widgets 降級成「素材」的分頁、system 降級進「擴充」——兩者仍是
-  // first-class route（深連結與 ⌘K 照常），只是不再各佔側欄一列。
-  expect(adminSrc).not.toContain('data-route="widgets"');
+  // 2026-08-19 v8 IA（設計稿 03）：側欄收成 3 區。system 降級進「擴充」
+  // ——仍是 first-class route（深連結與 ⌘K 照常），只是不佔側欄一列。
   expect(adminSrc).not.toContain('data-route="system"');
+  // 2026-09-06 設計稿 08/14：widgets 回到「外觀與素材」，側欄變 13 列。
+  // 小工具是主持人活動前擺一次的東西，跟主題、素材同類；「擴充」是給
+  // IT 人員的區域（Webhook／插件／API 金鑰／定時發送）。
+  expect(adminSrc).toContain('data-route="widgets"');
   // security 反過來：v8 把它提升成側欄獨立一列（安全設定是主持人會直接找的
   // 東西，藏兩層等於沒有）。
   expect(adminSrc).toContain('data-route="security"');

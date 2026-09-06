@@ -58,11 +58,14 @@ EXPECTED_NAV_ORDER = [
     "polls",
     "moderation",
     # 外觀與素材 — 先是觀眾看到的表面，再是可上傳的素材庫
-    # (v8: `widgets` 降級，收進「擴充」hub)
+    # (2026-09-06 設計稿 08/14: `widgets` 從「擴充」hub 回到這一組——
+    #  小工具是主持人活動前會擺一次的東西，跟主題、素材同類，
+    #  不屬於給 IT 人員的擴充區)
     "viewer",
     "effects",
     "themes",
     "assets",
+    "widgets",
     # 系統 — 與活動當下無關的維運
     # (v8: `security` 提升為側欄列，推翻 2026-05-13 的「不得獨立成列」決定；
     #  `system` 降級——它的分頁內容分別由 security / 擴充 承接)
@@ -152,7 +155,8 @@ def test_truly_retired_slugs_have_no_sidebar_button(admin_js: str):
         "audit",
         "fonts",
         # v8 IA (2026-08-19)：降級到「擴充」hub，路由本身保留
-        "widgets",
+        # （2026-09-06 設計稿 08/14：`widgets` 已回到「外觀與素材」，
+        #   從這份清單移出）
         "system",
         "plugins",
         "webhooks",

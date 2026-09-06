@@ -16,17 +16,7 @@
   // from 0.3 (oldest) to 1.0 (current bucket). Last bar always renders at
   // full opacity. Color comes from the .is-* tile modifier in CSS so this
   // helper stays color-agnostic.
-  function _renderSparkBars(target, values) {
-    if (!target) return;
-    if (!values || !values.length) { target.innerHTML = ""; return; }
-    const max = Math.max(1, ...values);
-    const last = values.length - 1;
-    target.innerHTML = values.map((v, i) => {
-      const h = Math.max(2, Math.round((v / max) * 14));
-      const op = i === last ? 1 : 0.3 + (i / last) * 0.55;
-      return `<span style="height:${h}px;opacity:${op.toFixed(2)}"></span>`;
-    }).join("");
-  }
+  // 2026-09-06 設計稿 06：KPI sparkline 退場，這支渲染器沒有消費者了。
 
   async function refreshDashboardKpi() {
     try {
@@ -45,7 +35,6 @@
       if (!hist) return;
       const dist = (await hourlyRes.json()).distribution || [];
       const total = (hist.stats && hist.stats.total) || 0;
-      const last24h = (hist.stats && hist.stats.last_24h) || 0;
       const peakEntry = dist.reduce((m, e) => (e.count > (m?.count || -1) ? e : m), null);
       const peakVal = peakEntry ? peakEntry.count : 0;
       const peakHour = peakEntry ? (peakEntry.hour || "").slice(-5) : "—";
@@ -53,71 +42,39 @@
       const tileMsg = document.querySelector('[data-kpi="messages"]');
       if (tileMsg) {
         tileMsg.querySelector("[data-kpi-value]").textContent = total.toLocaleString();
-        tileMsg.querySelector("[data-kpi-delta]").textContent = `+${last24h.toLocaleString()} / 24h`;
-        _renderSparkBars(tileMsg.querySelector("[data-kpi-bars]"), dist.slice(-20).map(e => e.count));
       }
       const tilePeak = document.querySelector('[data-kpi="peak"]');
       if (tilePeak) {
         tilePeak.querySelector("[data-kpi-value]").textContent = peakVal.toLocaleString();
-        tilePeak.querySelector("[data-kpi-delta]").textContent = peakEntry ? ServerI18n.t("dashKpiAtHour", { hour: peakHour }) : ServerI18n.t("dashKpiNoData");
-        _renderSparkBars(tilePeak.querySelector("[data-kpi-bars]"), dist.slice(-20).map(e => e.count));
       }
 
-      // UNIQUE FP — distinct fingerprints derived from /admin/history records.
-      // We trade a bit of payload (limit=200) for a real count without a new
-      // endpoint. Sparkline uses a synthetic per-hour-bucket fp count derived
-      // from the same record list. Falls back gracefully if records are absent.
+      // 觀眾裝置 —— 由 /admin/history 的紀錄推出不重複指紋數。多花一點
+      // payload（limit=200）換一個真數字，不必新開 endpoint。
       const tileFp = document.querySelector('[data-kpi="unique-fp"]');
       if (tileFp) {
-        const records = (hist.records || []);
         const fpSet = new Set();
-        const hourBuckets = Array(20).fill(0).map(() => new Set());
-        records.forEach((r) => {
+        (hist.records || []).forEach((r) => {
           const fp = r.fingerprint || r.fp || r.user_fingerprint;
           if (fp) fpSet.add(fp);
-          // bucket by hour-of-record vs now (slot 19 = current hour)
-          const ts = r.timestamp ? Date.parse(r.timestamp) : 0;
-          if (ts && fp) {
-            const hoursAgo = Math.floor((Date.now() - ts) / 3600000);
-            const idx = 19 - Math.min(19, Math.max(0, hoursAgo));
-            hourBuckets[idx].add(fp);
-          }
         });
-        const uniqueCount = fpSet.size;
-        tileFp.querySelector("[data-kpi-value]").textContent = uniqueCount.toLocaleString();
-        const delta = tileFp.querySelector("[data-kpi-delta]");
-        if (delta) {
-          delta.textContent = uniqueCount > 0 ? ServerI18n.t("dashKpiMsgsPerPerson", { rate: (total / Math.max(1, uniqueCount)).toFixed(1) }) : ServerI18n.t("dashKpiWaitingMsgs");
-        }
-        _renderSparkBars(tileFp.querySelector("[data-kpi-bars]"), hourBuckets.map(s => s.size));
+        tileFp.querySelector("[data-kpi-value]").textContent = fpSet.size.toLocaleString();
       }
 
-      // SESSION — current session duration. Reuses /admin/session/current.
-      // No sparkline (single-value KPI per v4 spec); we leave bars at the
-      // placeholder kpiBars output so the tile still has visual weight.
+      // 已進行 —— 目前場次時長。
       const tileSession = document.querySelector('[data-kpi="session"]');
       if (tileSession) {
         const sess = sessRes && sessRes.ok ? await sessRes.json() : null;
         const isLive = sess && sess.status === "live";
         const valEl = tileSession.querySelector("[data-kpi-value]");
-        const deltaEl = tileSession.querySelector("[data-kpi-delta]");
-        const barsEl = tileSession.querySelector("[data-kpi-bars]");
         if (isLive && sess.started_at) {
           const secs = Math.max(0, Math.floor(Date.now() / 1000 - sess.started_at));
           const h = Math.floor(secs / 3600);
           const m = Math.floor((secs % 3600) / 60);
           valEl.textContent = h > 0
-            ? `${h}:${String(m).padStart(2, "0")}`
+            ? `${h}:${String(m).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`
             : `${m}:${String(secs % 60).padStart(2, "0")}`;
-          if (deltaEl) deltaEl.textContent = _escapeHtml((sess.name || ServerI18n.t("dashSessInProgress")).slice(0, 16));
-          if (barsEl) {
-            // Steady-state bars: gentle upward ramp so the tile reads "ongoing"
-            _renderSparkBars(barsEl, [2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12]);
-          }
         } else {
           valEl.textContent = "—";
-          if (deltaEl) deltaEl.textContent = ServerI18n.t("dashSessWaiting");
-          if (barsEl) barsEl.innerHTML = "";
         }
       }
     } catch (e) {
@@ -182,338 +139,20 @@
     }
   }
 
-  // ── Quick poll inline form — prototype admin-v3.jsx:77 ─────────────────
-  const POLL_KEYS = ["A", "B", "C", "D", "E", "F"];
-
-  function _qpRow(letter, removable) {
-    return (
-      `<div class="admin-dash-qp-row">` +
-        `<span class="key">${letter}</span>` +
-        `<input type="text" placeholder="${ServerI18n.t("dashOptionPlaceholder", { letter: letter })}" maxlength="60" />` +
-        `<button type="button" class="rm" data-qp-rm ${removable ? "" : "hidden"}>${window.AdminUtils.closeIcon}</button>` +
-      `</div>`
-    );
-  }
-
-  function _qpRefreshKeys(card) {
-    const rows = card.querySelectorAll(".admin-dash-qp-row");
-    rows.forEach((row, i) => {
-      const k = POLL_KEYS[i] || "+";
-      row.querySelector(".key").textContent = k;
-      const inp = row.querySelector("input");
-      if (inp) inp.placeholder = ServerI18n.t("dashOptionPlaceholder", { letter: k });
-      const rm = row.querySelector("[data-qp-rm]");
-      // Always show remove on rows past the first 2
-      if (rm) rm.hidden = i < 2;
-    });
-    const add = card.querySelector("[data-qp-add]");
-    if (add) add.hidden = rows.length >= 6;
-  }
-
-  async function _qpSubmit(card) {
-    const startBtn = card.querySelector("[data-qp-start]");
-    const question = (card.querySelector("[data-qp='question']").value || "").trim();
-    const opts = Array.from(card.querySelectorAll(".admin-dash-qp-row input"))
-      .map((i) => (i.value || "").trim())
-      .filter(Boolean);
-    if (!question) {
-      window.showToast && window.showToast(ServerI18n.t("dashToastNeedQuestion"), false);
-      return;
-    }
-    if (opts.length < 2) {
-      window.showToast && window.showToast(ServerI18n.t("dashToastNeedOptions"), false);
-      return;
-    }
-    if (startBtn) startBtn.disabled = true;
-    try {
-      const r = await window.csrfFetch("/admin/poll/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, options: opts }),
-      });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      window.showToast && window.showToast(ServerI18n.t("dashToastPollStarted"), true);
-      // Reset form
-      card.querySelector("[data-qp='question']").value = "";
-      card.querySelectorAll(".admin-dash-qp-row input").forEach((i) => (i.value = ""));
-      // Refresh active poll card immediately
-      populateDashboardPoll();
-    } catch (e) {
-      console.error("[admin-dashboard] quick poll create failed:", e);
-      window.showToast && window.showToast(ServerI18n.t("dashToastPollCreateFailed"), false);
-    } finally {
-      if (startBtn) startBtn.disabled = false;
-    }
-  }
-
-  function bindQuickPoll() {
-    const card = document.querySelector("[data-dash-card='poll-builder']");
-    if (!card || card.dataset.bound === "1") return;
-    card.dataset.bound = "1";
-    const optionsEl = card.querySelector("[data-qp='options']");
-    const addLink = card.querySelector("[data-qp-add]");
-    if (addLink) {
-      addLink.addEventListener("click", (e) => {
-        e.preventDefault();
-        const count = optionsEl.querySelectorAll(".admin-dash-qp-row").length;
-        if (count >= 6) return;
-        optionsEl.insertAdjacentHTML("beforeend", _qpRow(POLL_KEYS[count] || "+", true));
-        _qpRefreshKeys(card);
-      });
-    }
-    optionsEl.addEventListener("click", (e) => {
-      const rm = e.target.closest("[data-qp-rm]");
-      if (!rm) return;
-      const row = rm.closest(".admin-dash-qp-row");
-      if (!row) return;
-      if (optionsEl.querySelectorAll(".admin-dash-qp-row").length <= 2) return;
-      row.remove();
-      _qpRefreshKeys(card);
-    });
-    const startBtn = card.querySelector("[data-qp-start]");
-    if (startBtn) startBtn.addEventListener("click", () => _qpSubmit(card));
-    _qpRefreshKeys(card);
-  }
-
-  // Wire up filter chips above the messages stream. Filter is purely visual
-  // (tag info isn't on /admin/history records yet) — clicking just swaps the
-  // is-active class. Idempotent: only binds once.
-
-  // Dashboard summary cards — design v4 live-console.jsx: LIVE FEED +
-  // QUICK ACTIONS (effects/poll/blacklist/broadcast) + MY ACTIONS sidebar.
+  // 2026-09-06 設計稿 06：Quick Actions F1–F4 與 My Actions 整區退場，
+  // 連帶這裡的 quick-poll 內嵌表單、黑名單快速加入、四張面板的資料填充
+  // 與操作紀錄摘要一起刪除（約 300 行）。它們的 DOM 已經不存在，留著
+  // 只會讓下一個人以為控制台還有那些面板。
+  //
+  //   · 快速投票 → 投票頁（⌘K 輸入「投票」一步就到）
+  //   · 快速黑名單 → 訊息流每列的「封鎖此人」，或審核頁
+  //   · 我的操作 → 紀錄與匯出 › 操作紀錄
   async function refreshDashboardSummary() {
-    bindQuickPoll();
-    bindQuickActions();
     refreshSidebarBadges();
     populateDashboardPoll();
-    populateQuickActions();
-    populateMyActions();
+    startCockpitPolling();
   }
 
-  // ── QUICK ACTIONS bindings (design v4 live-console.jsx:170) ────────────
-  //
-  // ① Effects panel  — read-only chip preview, link to /effects for edit.
-  // ② Poll panel     — already wired via bindQuickPoll; the "新建 ▶" CTA
-  //                    expands the options/foot so the user can type a
-  //                    question + 2 options inline without leaving dashboard.
-  // ③ Blacklist      — quick-add by fp:/@user with POST /admin/blacklist/add.
-  // ④ Broadcast      — read overlay status into the kicker chip.
-  //
-  // Failures are silent — each sub-panel falls back to its placeholder so a
-  // partial outage on one endpoint doesn't break the whole dashboard.
-
-  function bindQuickActions() {
-    // Poll expand: reveal compact options + foot when user clicks "新建 ▶".
-    const expandBtn = document.querySelector("[data-qa-poll-expand]");
-    if (expandBtn && !expandBtn.dataset.bound) {
-      expandBtn.dataset.bound = "1";
-      expandBtn.addEventListener("click", () => {
-        const panel = expandBtn.closest('[data-qa-panel="poll"]');
-        if (!panel) return;
-        const opts = panel.querySelector('[data-qp="options"]');
-        const foot = panel.querySelector("[data-qa-poll-foot]");
-        if (opts) opts.hidden = false;
-        if (foot) foot.hidden = false;
-        expandBtn.hidden = true;
-      });
-    }
-
-    // Blacklist quick-add binding.
-    const blInput = document.querySelector("[data-qa-blacklist-input]");
-    const blAddBtn = document.querySelector("[data-qa-blacklist-add]");
-    if (blAddBtn && !blAddBtn.dataset.bound) {
-      blAddBtn.dataset.bound = "1";
-      const doAdd = async () => {
-        const val = (blInput && blInput.value || "").trim();
-        if (!val) { blInput && blInput.focus(); return; }
-        blAddBtn.disabled = true;
-        try {
-          const r = await window.csrfFetch("/admin/blacklist/add", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ keyword: val }),
-          });
-          const data = await r.json().catch(() => ({}));
-          if (!r.ok) {
-            window.showToast && window.showToast(data.error || ServerI18n.t("dashToastBlacklistFailed"), false);
-            return;
-          }
-          window.showToast && window.showToast(ServerI18n.t("dashToastBlacklisted", { val: val }), true);
-          if (blInput) blInput.value = "";
-          // Refresh chips + count.
-          await populateQuickActions();
-          await refreshSidebarBadges();
-        } catch (_) {
-          window.showToast && window.showToast(ServerI18n.t("dashToastBlacklistFailed"), false);
-        } finally {
-          blAddBtn.disabled = false;
-        }
-      };
-      blAddBtn.addEventListener("click", doAdd);
-      if (blInput) {
-        blInput.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") { e.preventDefault(); doAdd(); }
-        });
-      }
-    }
-  }
-
-  async function populateQuickActions() {
-    try {
-      const boot = _bootstrap();
-      await boot.prime();
-
-      // ① Effects — count + chip preview.
-      const effectsData = boot.get("effects");
-      const effects = (effectsData && (effectsData.effects || effectsData.items)) || [];
-      const effChips = document.querySelector("[data-qa-effects-chips]");
-      const effCount = document.querySelector("[data-qa-effects-count]");
-      if (effCount) effCount.textContent = effects.length ? `${effects.length} / ${effects.length}` : "—";
-      if (effChips) {
-        if (!effects.length) {
-          effChips.innerHTML = `<span class="admin-dash-qa-chip">${ServerI18n.t("dashNoEffects")}</span>`;
-        } else {
-          effChips.innerHTML = effects.slice(0, 6).map(e => {
-            const name = _escapeHtml((e.name_zh || e.name || e.id || "?").slice(0, 4));
-            const en = _escapeHtml((e.id || e.name || "").slice(0, 8));
-            return `<span class="admin-dash-qa-chip" title="${en}">${name}</span>`;
-          }).join("");
-          if (effects.length > 6) {
-            effChips.innerHTML += `<span class="admin-dash-qa-chip">+${effects.length - 6}</span>`;
-          }
-        }
-      }
-
-      // ③ Blacklist — count + chip preview.
-      const blData = boot.get("blacklist");
-      const blacklist = Array.isArray(blData) ? blData : (blData?.keywords || []);
-      const blChips = document.querySelector("[data-qa-blacklist-chips]");
-      const blCount = document.querySelector("[data-qa-blacklist-count]");
-      if (blCount) blCount.textContent = blacklist.length ? ServerI18n.t("dashBlockedCount", { n: blacklist.length }) : "—";
-      if (blChips) {
-        if (!blacklist.length) {
-          blChips.innerHTML = "";
-        } else {
-          blChips.innerHTML = blacklist.slice(0, 5).map(b => {
-            const word = _escapeHtml(typeof b === "string" ? b : (b.keyword || b.word || ""));
-            return `<span class="admin-dash-qa-chip is-crimson">${word}</span>`;
-          }).join("");
-          if (blacklist.length > 5) {
-            blChips.innerHTML += `<span class="admin-dash-qa-chip">+${blacklist.length - 5}</span>`;
-          }
-        }
-      }
-
-      // ④ Broadcast — overlay status.
-      const bcStatusEl = document.querySelector("[data-qa-broadcast-status]");
-      if (bcStatusEl) {
-        try {
-          const r = await fetch("/admin/broadcast/status", { credentials: "same-origin" });
-          if (r.ok) {
-            const data = await r.json();
-            const mode = (data.mode || "").toLowerCase();
-            bcStatusEl.textContent = mode === "live" ? "● DESKTOP ON" : "○ DESKTOP OFF";
-            bcStatusEl.style.color = mode === "live" ? "var(--hud-lime, #86efac)" : "var(--admin-text-dim)";
-          }
-        } catch (_) { /* silent */ }
-      }
-    } catch (_) { /* silent */ }
-  }
-
-  // ── MY ACTIONS sidebar (design v4 live-console.jsx:252) ────────────────
-  //
-  // Reads /admin/audit and renders the last 8 admin-actor entries as compact
-  // rows. Each event maps to a colored chip based on its `source` field
-  // (broadcast/blacklist/poll/effects/auth → cyan/crimson/amber/lime/mute).
-  // Timestamps render as relative ("3m ago") if recent, else HH:MM:SS.
-
-  function _myActionTone(source) {
-    const s = String(source || "").toLowerCase();
-    if (s.includes("broadcast") || s.includes("overlay") || s.includes("poll")) return "cyan";
-    if (s.includes("blacklist") || s.includes("ban") || s.includes("mod"))     return "crimson";
-    if (s.includes("effect") || s.includes("widget") || s.includes("schedul")) return "amber";
-    if (s.includes("auth") || s.includes("session"))                            return "lime";
-    return "mute";
-  }
-
-  function _myActionLabel(ev) {
-    const action = String(ev.action || ev.kind || "").toLowerCase();
-    const source = String(ev.source || "").toLowerCase();
-    const map = {
-      "broadcast.push": ServerI18n.t("dashActBroadcastPush"),
-      "broadcast.toggle": ServerI18n.t("dashActBroadcastToggle"),
-      "overlay_cleared": ServerI18n.t("dashActOverlayCleared"),
-      "blacklist.add": ServerI18n.t("dashActBlacklistAdd"),
-      "blacklist.remove": ServerI18n.t("dashActBlacklistRemove"),
-      "ban": ServerI18n.t("dashActBan"),
-      "mod.approve": ServerI18n.t("dashActModApprove"),
-      "mod.reject": ServerI18n.t("dashActModReject"),
-      "poll.create": ServerI18n.t("dashActPollCreate"),
-      "poll.close": ServerI18n.t("dashActPollClose"),
-      "effect.toggle": ServerI18n.t("dashActEffectToggle"),
-      "auth.login": ServerI18n.t("dashActLogin"),
-      "auth.logout": ServerI18n.t("dashActLogout"),
-      "session.open": ServerI18n.t("dashActSessionOpen"),
-      "session.close": ServerI18n.t("dashActSessionClose"),
-    };
-    return map[`${source}.${action}`] || map[action] || action.toUpperCase() || source.toUpperCase() || "ACTION";
-  }
-
-  function _myActionTarget(ev) {
-    const meta = ev.meta || {};
-    return meta.target || meta.keyword || meta.fp || meta.fingerprint
-      || meta.name || meta.session || meta.mode || meta.effect
-      || ev.target || "—";
-  }
-
-  function _fmtAgo(ts) {
-    if (!ts) return "—";
-    const t = typeof ts === "number" ? ts : Date.parse(ts) / 1000;
-    if (!t || Number.isNaN(t)) return "—";
-    const secs = Math.max(0, Math.floor(Date.now() / 1000 - t));
-    if (secs < 60) return `${secs}s`;
-    if (secs < 3600) return `${Math.floor(secs / 60)}m`;
-    if (secs < 86400) return `${Math.floor(secs / 3600)}h`;
-    return new Date(t * 1000).toISOString().slice(11, 19);
-  }
-
-  async function populateMyActions() {
-    const body = document.querySelector("[data-dash-myactions-body]");
-    const countEl = document.querySelector("[data-dash-myactions-count]");
-    if (!body) return;
-    try {
-      const r = await fetch("/admin/audit?limit=8&actor=admin", { credentials: "same-origin" });
-      if (!r.ok) return;
-      const data = await r.json();
-      const events = data.events || [];
-      if (countEl) countEl.textContent = String(events.length);
-      // 空狀態不佔半寬（2026-07-30 場中審查）：My Actions 只在有紀錄時
-      // 展開為側欄；沒紀錄時整卡收窄、Quick Actions 佔滿。狀態掛在
-      // summary-grid 上讓 CSS 接手。
-      const grid = document.querySelector(".admin-dash-summary-grid");
-      if (grid) grid.classList.toggle("is-myactions-empty", events.length === 0);
-      if (events.length === 0) {
-        body.innerHTML = `<div class="admin-dash-empty admin-dash-myactions-empty-hint">${ServerI18n.t("dashMyActionsEmpty")}</div>`;
-        return;
-      }
-      body.innerHTML = events.map(ev => {
-        const tone = _myActionTone(ev.source);
-        const label = _escapeHtml(_myActionLabel(ev));
-        const target = _escapeHtml(String(_myActionTarget(ev)).slice(0, 22));
-        const ago = _fmtAgo(ev.ts || ev.timestamp);
-        return `
-          <div class="admin-dash-myaction-row">
-            <div class="admin-dash-myaction-head">
-              <span class="admin-dash-myaction-chip is-${tone}">${label}</span>
-              <span class="admin-dash-myaction-time">${ago}</span>
-            </div>
-            <div class="admin-dash-myaction-target">${target}</div>
-          </div>`;
-      }).join("");
-    } catch (_) {
-      body.innerHTML = `<div class="admin-dash-empty">${ServerI18n.t("dashAuditLoadFailed")}</div>`;
-    }
-  }
 
   async function populateDashboardPoll() {
     const body = document.querySelector("[data-dash-poll-body]");
@@ -612,7 +251,6 @@
           });
           if (!r.ok) throw new Error("HTTP " + r.status);
           window.showToast && window.showToast(ServerI18n.t("dashToastBlacklistedFp", { fp: fp }), true);
-          populateQuickActions();
         } catch (_) {
           window.showToast && window.showToast(ServerI18n.t("dashToastBlacklistFailed"), false);
         }
@@ -928,6 +566,100 @@
     _stopSessionTimer();
   }
 
+  // ── 控制台的顯示層卡（設計稿 06 · K1）────────────────────────────
+  //
+  // 全頁唯一的狀態顯示。狀態有兩個來源，缺一不可：
+  //   · /overlay_status → 有幾台顯示層連著（沒有裝置就沒東西可顯示）
+  //   · /admin/broadcast/status → 主持人有沒有把渲染打開
+  // 兩者都成立才算「顯示中」。
+  let _cockpitTimer = null;
+
+  async function refreshCockpitOverlay() {
+    const card = document.querySelector("[data-cockpit-overlay]");
+    if (!card || card.offsetParent === null) return;
+    let count = 0;
+    let live = false;
+    try {
+      const r = await fetch("/overlay_status", { credentials: "same-origin" });
+      if (r.ok) count = (await r.json()).overlay_count || 0;
+    } catch (_) {}
+    try {
+      const r = await fetch("/admin/broadcast/status", { credentials: "same-origin" });
+      if (r.ok) live = (await r.json()).mode === "live";
+    } catch (_) {}
+
+    const on = count > 0 && live;
+    card.classList.toggle("is-on", on);
+    const status = card.querySelector("[data-cockpit-status]");
+    if (status) {
+      status.textContent = on
+        ? ServerI18n.t("adminCockpitOn", { n: count })
+        : ServerI18n.t("adminCockpitOff");
+    }
+    const toggle = card.querySelector('[data-cockpit-action="toggle"]');
+    if (toggle) {
+      toggle.textContent = ServerI18n.t(on ? "adminCockpitTurnOff" : "adminCockpitTurnOn");
+      toggle.classList.toggle("is-danger", on);
+      toggle.classList.toggle("is-primary", !on);
+      toggle.dataset.next = on ? "standby" : "live";
+    }
+    // 沒有裝置連著時，「清空畫面」沒有作用對象
+    const clear = card.querySelector('[data-cockpit-action="clear"]');
+    if (clear) clear.disabled = count === 0;
+  }
+
+  function bindCockpit() {
+    const card = document.querySelector("[data-cockpit-overlay]");
+    if (!card || card.dataset.bound) return;
+    card.dataset.bound = "1";
+
+    card.addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-cockpit-action]");
+      if (!btn) return;
+      const action = btn.dataset.cockpitAction;
+      if (action === "clear") {
+        try {
+          const r = await window.csrfFetch("/admin/overlay/clear", { method: "POST" });
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          window.showToast && window.showToast(ServerI18n.t("toastCleared"), true);
+        } catch (_) {
+          window.showToast && window.showToast(ServerI18n.t("toastClearFailed"), false);
+        }
+        return;
+      }
+      if (action === "toggle") {
+        try {
+          const r = await window.csrfFetch("/admin/broadcast/toggle", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: btn.dataset.next || "standby" }),
+          });
+          if (!r.ok) throw new Error("HTTP " + r.status);
+        } catch (_) {
+          window.showToast && window.showToast(ServerI18n.t("broadcastToastToggleFailed", { msg: "" }), false);
+        }
+        refreshCockpitOverlay();
+      }
+    });
+
+    // 兩顆次要動作只是入口，實際頁面各自擁有完整操作
+    const qr = card.parentElement && card.parentElement.querySelector('[data-cockpit-action="idle-qr"]');
+    if (qr) qr.addEventListener("click", () => { location.hash = "#/overlay"; });
+    const poll = card.parentElement && card.parentElement.querySelector('[data-cockpit-action="poll"]');
+    if (poll) poll.addEventListener("click", () => { location.hash = "#/polls"; });
+  }
+
+  function startCockpitPolling() {
+    bindCockpit();
+    refreshCockpitOverlay();
+    if (_cockpitTimer) clearInterval(_cockpitTimer);
+    _cockpitTimer = setInterval(refreshCockpitOverlay, 5000);
+  }
+
+  function stopCockpitPolling() {
+    if (_cockpitTimer) { clearInterval(_cockpitTimer); _cockpitTimer = null; }
+  }
+
   window.AdminDashboard = {
     refreshKpi: refreshDashboardKpi,
     refreshSummary: refreshDashboardSummary,
@@ -937,5 +669,8 @@
     refreshSessionBanner,
     startSessionPolling,
     stopSessionPolling,
+    refreshCockpitOverlay,
+    startCockpitPolling,
+    stopCockpitPolling,
   };
 })();
