@@ -57,6 +57,15 @@ class BrowserTestConfig(TestConfig):
 # 門檻取 120 是要抓「整頁空白」這種回歸，不是要盯資料量的自然波動。
 MIN_CONTENT_CHARS = 120
 
+# 例外：設計稿刻意把頁面變薄的路由。
+#
+# `history` —— 設計稿 08 · H1 把場次頁收成「一張表＋匯出面板」，拿掉了 4 格
+# KPI 條與三顆頁內篩選分頁。頁面說明那一行是算在 topbar 裡被減掉的，所以
+# contentChars 只剩分段列＋表頭＋（無資料時的）空狀態卡。2026-09-07 實測：
+# 沒有任何場次時 83 字，有一列時 63 字；真正「整頁沒渲染」是 0–15 字。
+# 把全域門檻砍半會削弱其他 11 條路由的保護，所以這裡開一個具名例外。
+MIN_CONTENT_CHARS_BY_ROUTE = {"history": 50}
+
 # 刻意保留的 `[PLACEHOLDER]` 控制項配額（待 BE / 待 Design，見 admin-follow-up
 # plan Task 8 的 deferred 清單）。key 沒列到的路由一律必須是 0。
 #   polls     — 「從模板」建立投票          (admin-poll.js)
@@ -306,8 +315,9 @@ def test_route_renders_real_content(route_snapshots, slug):
     「頁面有沒有渲染」，不是「有多少資料」。
     """
     chars = route_snapshots[slug]["contentChars"]
-    assert chars >= MIN_CONTENT_CHARS, (
-        f"#/{slug} 主內容區只有 {chars} 個字（門檻 {MIN_CONTENT_CHARS}）—— " f"頁面可能整個沒渲染"
+    floor = MIN_CONTENT_CHARS_BY_ROUTE.get(slug, MIN_CONTENT_CHARS)
+    assert chars >= floor, (
+        f"#/{slug} 主內容區只有 {chars} 個字（門檻 {floor}）—— " f"頁面可能整個沒渲染"
     )
 
 
