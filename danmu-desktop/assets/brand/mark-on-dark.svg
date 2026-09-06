@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <g transform="matrix(-1 0 0 1 512 0)">
+    <path d="M400 168c15 0 28 13 28 28s-13 28-28 28H232c-36 0-70-8-116-36 30 6 48 4 48-8s-18-14-48-32c46-10 84-4 116 20h168z" fill="#38BDF8"/>
+    <rect x="176" y="256" width="240" height="56" rx="28" fill="#7DD3FC"/>
+    <rect x="120" y="344" width="160" height="56" rx="28" fill="#E0F2FE"/>
+  </g>
+</svg>
