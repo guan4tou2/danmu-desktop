@@ -4,9 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Danmu Fire Desktop</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&display=swap">
+    <!-- 2026-08-19 設計稿 12「字體規範」：介面一律系統字體。
+         先前這裡下載 9 個字族（Bebas / JetBrains Mono / Klee One /
+         Noto Sans ×4 / Noto Serif TC / Orbitron）共 20+ 個字重，
+         全部只為了排介面——系統字體本來就排得更好，中英混排也更穩。
+         顯示層啟動動畫用的 Bebas / Orbitron 由 Electron 端 child.css
+         以 woff2 自帶，不走網路。 -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/hud.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/overlay.css') }}">

@@ -48,24 +48,24 @@ body {
 }
 
 /* Per-language font priority. i18n.js updates <html lang=""> so these apply.
- * Each override promotes the matching Noto to the front so Han characters
- * render with the correct regional glyph style. */
+ *
+ * 2026-08-19 設計稿 12：改成促排各語系的**系統**字型，不再促排 Noto。
+ * 需求本身是真的——漢字有地區字形差異（直 在 zh-TW 與 ja 不同），選錯
+ * 對多語產品是品質問題；但達成它不需要下載字型：三個平台各自都內建了
+ * 正確的地區字型，只要按 lang 促排即可。Noto 保留在最後當 Linux fallback。 */
 :lang(zh) {
-  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
-  --font-brand: "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
-  --font-ui: "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei UI",
+    "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
 }
 
 :lang(ja) {
-  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
-  --font-brand: "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
-  --font-ui: "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI",
+    "Yu Gothic", "Meiryo", "Noto Sans JP", system-ui, sans-serif;
 }
 
 :lang(ko) {
-  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
-  --font-brand: "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
-  --font-ui: "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic",
+    "Noto Sans KR", system-ui, sans-serif;
 }
 
 /* Tabular figures — numbers align column-to-column in data displays.

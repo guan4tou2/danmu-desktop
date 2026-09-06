@@ -13,11 +13,12 @@
   <meta property="og:description" content="Send live danmu messages to the screen in real-time." />
   <meta property="og:image" content="{{ url_for('static', filename='icon.png') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Klee+One:wght@400;600&family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;600;700;800&family=Noto+Serif+TC:wght@400;500;600;700;900&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
-    rel="stylesheet" />
+    <!-- 2026-08-19 設計稿 12「字體規範」：介面一律系統字體。
+         先前這裡下載 9 個字族（Bebas / JetBrains Mono / Klee One /
+         Noto Sans ×4 / Noto Serif TC / Orbitron）共 20+ 個字重，
+         全部只為了排介面——系統字體本來就排得更好，中英混排也更穩。
+         顯示層啟動動畫用的 Bebas / Orbitron 由 Electron 端 child.css
+         以 woff2 自帶，不走網路。 -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/hud.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/viewer-v2.css') }}" />

@@ -236,10 +236,24 @@
    * Per-language <html lang=""> triggers :lang() overrides in style.css that
    * promote the matching Noto to the front so Han characters render with
    * the correct regional glyph style (e.g. 直 differs between zh-TW and ja). */
-  --font-display: "Bebas Neue", "Noto Sans", "Noto Sans TC", "Noto Sans JP", "Noto Sans KR", system-ui, sans-serif;
-  --font-brand: "Noto Sans", "Noto Sans TC", "Noto Sans JP", "Noto Sans KR", system-ui, sans-serif;
-  --font-ui: "Noto Sans", "Noto Sans TC", "Noto Sans JP", "Noto Sans KR", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  /* 2026-08-19 設計稿 12「字體規範」：介面一律系統字體——免下載、原生渲染、
+   * 中英混排最穩。各平台實際落到：macOS/iOS = SF Pro TC + PingFang TC；
+   * Windows = Segoe UI Variable + 微軟正黑體 UI；Android = Roboto + Noto Sans
+   * CJK（由 system-ui 帶入）；Linux = Noto Sans TC。
+   * 先前這裡把 Noto 排在系統字體之前，等於強迫每個平台都走下載字型。 */
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro TC", "PingFang TC",
+    "Segoe UI Variable", "Segoe UI", "Microsoft JhengHei UI", "Noto Sans TC",
+    system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Cascadia Mono", monospace;
+
+  /* 字標專用——整套系統唯一允許非系統字體的地方，只出現在 4 個品牌位置
+   * （觀眾頁頂欄 28/32、桌面端首次精靈 40、Admin 登入 56、入場 QR 120）。
+   * 字型未到位前 fallback 到系統字體 800，字標仍可讀。 */
+  --font-brand: "Unbounded", var(--font-ui);
+
+  /* --font-display 保留給顯示層的啟動動畫（LINK START，使用者指定保留）。
+   * Electron 端在 child.css 以 woff2 自帶，不走網路。 */
+  --font-display: "Bebas Neue", var(--font-ui);
 
   /* Backwards compat: consumers that still read --font-family / --font-sans */
   --font-family: var(--font-ui);

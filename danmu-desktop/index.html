@@ -9,20 +9,18 @@
       content="
         default-src 'self';
         script-src 'self';
-        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-        font-src https://fonts.gstatic.com;
+        style-src 'self' 'unsafe-inline';
+        font-src 'self';
         img-src 'self' data: https:;
         connect-src 'self';
       "
     />
 
-    <!-- Google Fonts: Bebas Neue (display) + Noto Sans family (pan-CJK + Latin) + JetBrains Mono -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
-      rel="stylesheet"
-    />
+    <!-- 2026-08-19 設計稿 12「字體規範」：介面一律系統字體。
+         這裡原本連 fonts.googleapis.com 抓 5 個字族——桌面應用離線時會直接
+         掉字，而系統字體本來就在本機。CSP 的 style-src / font-src 也隨之
+         收回 'self'，不再開放外部來源。
+         顯示層動畫用的 Bebas / Orbitron 由 child.css 以 woff2 自帶。 -->
     <link rel="stylesheet" href="tailwind.css" />
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="hud.css" />
