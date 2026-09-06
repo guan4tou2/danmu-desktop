@@ -2813,7 +2813,15 @@
       "helpDrawerTitle": "Help",
       "helpDrawerFieldTipLabel": "On-site tip",
       "helpDrawerModerationTip3": "Send limit: 6 per person per minute by default. For large events (>200 people) try 3; for a small class you can go to 10.",
-      "helpDrawerModerationFieldTip": "Faster than this page: hit ⋯ → Block right in the dashboard message list. ⌘K and type “block” works too."
+      "helpDrawerModerationFieldTip": "Faster than this page: hit ⋯ → Block right in the dashboard message list. ⌘K and type “block” works too.",
+      "sxTitle": "Session expired",
+      "sxBody": "Idle for over 8 hours. The big screen and your audience are unaffected — enter your password to return to what you were doing.",
+      "sxPasswordLabel": "Admin password",
+      "sxSubmit": "Sign in again",
+      "sxToastBack": "Signed in",
+      "sxWrongPassword": "Wrong password. Try again.",
+      "sxLockedOut": "Too many attempts. Wait a moment and try again.",
+      "sxNetworkError": "Can't reach the server. Check your connection and try again."
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -5619,7 +5627,15 @@
       "helpDrawerTitle": "說明",
       "helpDrawerFieldTipLabel": "現場小技巧",
       "helpDrawerModerationTip3": "發送上限：預設每人每分鐘 6 則。大型活動（>200 人）建議 3；小班可放到 10。",
-      "helpDrawerModerationFieldTip": "控制台訊息流裡按 ⋯ → 封鎖，比來這頁快。⌘K 輸入「封鎖」也可以。"
+      "helpDrawerModerationFieldTip": "控制台訊息流裡按 ⋯ → 封鎖，比來這頁快。⌘K 輸入「封鎖」也可以。",
+      "sxTitle": "登入已過期",
+      "sxBody": "閒置超過 8 小時。大螢幕與觀眾不受影響，重新輸入密碼即可回到剛才的頁面。",
+      "sxPasswordLabel": "管理密碼",
+      "sxSubmit": "重新登入",
+      "sxToastBack": "已重新登入",
+      "sxWrongPassword": "密碼不正確，再試一次。",
+      "sxLockedOut": "嘗試太多次，請稍等一下再試。",
+      "sxNetworkError": "連不上伺服器，請確認網路後再試。"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -8425,7 +8441,15 @@
       "helpDrawerTitle": "ヘルプ",
       "helpDrawerFieldTipLabel": "現場のヒント",
       "helpDrawerModerationTip3": "送信上限：既定は 1 人あたり毎分 6 件。大規模（200 人超）は 3、小人数なら 10 まで上げられます。",
-      "helpDrawerModerationFieldTip": "このページより速い方法：コントロール画面のメッセージ一覧で ⋯ → ブロック。⌘K で「封鎖」と入力しても開けます。"
+      "helpDrawerModerationFieldTip": "このページより速い方法：コントロール画面のメッセージ一覧で ⋯ → ブロック。⌘K で「封鎖」と入力しても開けます。",
+      "sxTitle": "ログインの有効期限が切れました",
+      "sxBody": "8 時間以上操作がありませんでした。大画面と観客には影響ありません。パスワードを入力すると元のページに戻れます。",
+      "sxPasswordLabel": "管理パスワード",
+      "sxSubmit": "再ログイン",
+      "sxToastBack": "再ログインしました",
+      "sxWrongPassword": "パスワードが違います。もう一度お試しください。",
+      "sxLockedOut": "試行回数が多すぎます。少し待ってからお試しください。",
+      "sxNetworkError": "サーバーに接続できません。ネットワークを確認してください。"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -11231,7 +11255,15 @@
       "helpDrawerTitle": "도움말",
       "helpDrawerFieldTipLabel": "현장 팁",
       "helpDrawerModerationTip3": "전송 제한: 기본값은 1인당 분당 6건. 대규모(200명 초과)는 3, 소규모는 10까지 올려도 됩니다.",
-      "helpDrawerModerationFieldTip": "이 페이지보다 빠른 방법: 콘솔 메시지 목록에서 ⋯ → 차단. ⌘K에 '차단'을 입력해도 됩니다."
+      "helpDrawerModerationFieldTip": "이 페이지보다 빠른 방법: 콘솔 메시지 목록에서 ⋯ → 차단. ⌘K에 '차단'을 입력해도 됩니다.",
+      "sxTitle": "로그인이 만료되었습니다",
+      "sxBody": "8시간 넘게 사용하지 않았습니다. 큰 화면과 관객에는 영향이 없습니다. 비밀번호를 입력하면 하던 페이지로 돌아갑니다.",
+      "sxPasswordLabel": "관리 비밀번호",
+      "sxSubmit": "다시 로그인",
+      "sxToastBack": "다시 로그인했습니다",
+      "sxWrongPassword": "비밀번호가 올바르지 않습니다. 다시 시도하세요.",
+      "sxLockedOut": "시도가 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "sxNetworkError": "서버에 연결할 수 없습니다. 네트워크를 확인하세요."
     }
   };
 

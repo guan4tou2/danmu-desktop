@@ -4,6 +4,7 @@ from flask import (
     Blueprint,
     current_app,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -68,6 +69,14 @@ def overlay():
     )
 
 
+def _wants_json() -> bool:
+    """True when the caller is the admin SPA rather than the login form."""
+    if request.headers.get("X-Requested-With", "").lower() == "fetch":
+        return True
+    accept = request.headers.get("Accept", "")
+    return "application/json" in accept and "text/html" not in accept
+
+
 @main_bp.route("/login", methods=["POST"])
 @rate_limit("login", "LOGIN_RATE_LIMIT", "LOGIN_RATE_WINDOW")
 def login():
@@ -96,6 +105,11 @@ def login():
             )
         except Exception:
             pass
+        if _wants_json():
+            # 設計稿 15 · EX1：登入過期是「對話框」而不是跳回登入頁，所以
+            # 前端要能就地拿到新的 CSRF token（session.clear() 已經換過一顆），
+            # 否則接下來每個 csrfFetch 都會 403。
+            return jsonify({"ok": True, "csrf_token": session["csrf_token"]})
         return redirect(url_for("admin_bp.admin"))
     try:
         from ..services import audit_log
@@ -105,6 +119,8 @@ def login():
         )
     except Exception:
         pass
+    if _wants_json():
+        return jsonify({"ok": False, "error": "wrong_password"}), 401
     flash("wrong password!")
     return redirect(url_for("admin_bp.admin"))
 

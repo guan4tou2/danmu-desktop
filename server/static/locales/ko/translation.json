@@ -2802,5 +2802,13 @@
   "helpDrawerTitle": "도움말",
   "helpDrawerFieldTipLabel": "현장 팁",
   "helpDrawerModerationTip3": "전송 제한: 기본값은 1인당 분당 6건. 대규모(200명 초과)는 3, 소규모는 10까지 올려도 됩니다.",
-  "helpDrawerModerationFieldTip": "이 페이지보다 빠른 방법: 콘솔 메시지 목록에서 ⋯ → 차단. ⌘K에 '차단'을 입력해도 됩니다."
+  "helpDrawerModerationFieldTip": "이 페이지보다 빠른 방법: 콘솔 메시지 목록에서 ⋯ → 차단. ⌘K에 '차단'을 입력해도 됩니다.",
+  "sxTitle": "로그인이 만료되었습니다",
+  "sxBody": "8시간 넘게 사용하지 않았습니다. 큰 화면과 관객에는 영향이 없습니다. 비밀번호를 입력하면 하던 페이지로 돌아갑니다.",
+  "sxPasswordLabel": "관리 비밀번호",
+  "sxSubmit": "다시 로그인",
+  "sxToastBack": "다시 로그인했습니다",
+  "sxWrongPassword": "비밀번호가 올바르지 않습니다. 다시 시도하세요.",
+  "sxLockedOut": "시도가 너무 많습니다. 잠시 후 다시 시도하세요.",
+  "sxNetworkError": "서버에 연결할 수 없습니다. 네트워크를 확인하세요."
 }

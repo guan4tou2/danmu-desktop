@@ -2802,5 +2802,13 @@
   "helpDrawerTitle": "Help",
   "helpDrawerFieldTipLabel": "On-site tip",
   "helpDrawerModerationTip3": "Send limit: 6 per person per minute by default. For large events (>200 people) try 3; for a small class you can go to 10.",
-  "helpDrawerModerationFieldTip": "Faster than this page: hit ⋯ → Block right in the dashboard message list. ⌘K and type “block” works too."
+  "helpDrawerModerationFieldTip": "Faster than this page: hit ⋯ → Block right in the dashboard message list. ⌘K and type “block” works too.",
+  "sxTitle": "Session expired",
+  "sxBody": "Idle for over 8 hours. The big screen and your audience are unaffected — enter your password to return to what you were doing.",
+  "sxPasswordLabel": "Admin password",
+  "sxSubmit": "Sign in again",
+  "sxToastBack": "Signed in",
+  "sxWrongPassword": "Wrong password. Try again.",
+  "sxLockedOut": "Too many attempts. Wait a moment and try again.",
+  "sxNetworkError": "Can't reach the server. Check your connection and try again."
 }

@@ -53,6 +53,43 @@ def test_logout_clears_session(client):
         assert not sess.get("logged_in")
 
 
+def test_login_json_returns_fresh_csrf_token(client):
+    """設計稿 15 · EX1：登入過期對話框就地重新登入，不 reload 頁面。
+
+    /login 成功時 server 會 session.clear() 再發一顆新的 CSRF token；對話框
+    必須拿得到它才能把 meta 標籤換掉，否則之後每個 csrfFetch 都會 403。
+    """
+    res = client.post(
+        "/login",
+        data={"password": "test"},
+        headers={"X-Requested-With": "fetch", "Accept": "application/json"},
+    )
+    assert res.status_code == 200
+    body = res.get_json()
+    assert body["ok"] is True
+    with client.session_transaction() as sess:
+        assert body["csrf_token"] == sess["csrf_token"]
+
+
+def test_login_json_wrong_password_is_401(client):
+    """密碼錯要能和「session 又過期了」區分開，否則對話框會遞迴開自己。"""
+    res = client.post(
+        "/login",
+        data={"password": "wrong"},
+        headers={"X-Requested-With": "fetch", "Accept": "application/json"},
+    )
+    assert res.status_code == 401
+    assert res.get_json()["ok"] is False
+    with client.session_transaction() as sess:
+        assert not sess.get("logged_in")
+
+
+def test_login_form_post_still_redirects(client):
+    """一般表單送出的路徑不能被 JSON 協商弄壞。"""
+    res = client.post("/login", data={"password": "test"})
+    assert res.status_code == 302
+
+
 def test_login_rate_limit(client):
     """Login endpoint should be rate-limited (default 5 attempts per window)."""
     for _ in range(5):

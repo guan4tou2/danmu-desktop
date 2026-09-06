@@ -171,6 +171,13 @@
     if (!document.body.classList.contains("admin-body")) return;
     const origCsrf = window.csrfFetch;
     const origFetch = window.fetch;
+    // 登入過期對話框自己要打 /login，不能走下面包過的 window.fetch——
+    // 密碼打錯時的 401 會被誤判成「session 又過期了」而遞迴開框。
+    window.__adminRawFetch = origFetch;
+    document.addEventListener("admin:session-restored", () => {
+      _authExpired = false;
+      _onSuccess();
+    });
 
     async function _track(promise) {
       try {
@@ -181,10 +188,17 @@
           // Session 過期（idle timeout / server 重啟）：已登入 shell 下
           // /admin/* 回 401 只有一種意思。原本這裡靜默漏過，使用者看到
           // 的是「頁面資料壞掉」而不是登入頁（F-102 design audit
-          // 2026-08-02 實測：401 後 SPA 繼續掛著舊畫面）。reload 讓
-          // server 端出登入頁，把壞狀態換成明確的「請重新登入」。
+          // 2026-08-02 實測：401 後 SPA 繼續掛著舊畫面）。
+          //
+          // 之後改成 location.reload()，但那會把主持人踢回一片空白的登入
+          // 頁——剛才在哪一頁、輸入到一半的東西全沒了。設計稿 15 · EX1
+          // 要的是**對話框而不是跳回登入頁，保留當前路由**。
           _authExpired = true;
-          location.reload();
+          if (window.AdminSessionExpired) {
+            window.AdminSessionExpired.open();
+          } else {
+            location.reload();
+          }
         } else if (r && r.status >= 500) {
           _onFailure();
         }

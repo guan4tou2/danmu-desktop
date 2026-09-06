@@ -389,3 +389,26 @@ def test_admin_kicker_keys_are_gone(zh):
     """
     leftovers = [k for k in zh if k.endswith("Kicker") or k.endswith("Eyebrow")]
     assert not leftovers, f"kicker key 應已清空：{leftovers}"
+
+
+def test_session_expired_is_a_dialog_not_a_redirect(zh):
+    """設計稿 15 · EX1：登入過期用**對話框而非跳回登入頁**，保留當前路由。
+
+    原本 401 走 `location.reload()`，主持人會被踢回一片空白的登入頁——剛才
+    在哪一頁、輸入到一半的東西全沒了。文案裡「大螢幕與觀眾不受影響」是刻意
+    寫的：台上看到「登入過期」的第一個念頭是「大螢幕是不是掛了」。
+    """
+    assert zh["sxTitle"] == "登入已過期"
+    assert "8 小時" in zh["sxBody"]
+    assert "大螢幕與觀眾不受影響" in zh["sxBody"]
+    assert zh["sxSubmit"] == "重新登入"
+
+    banner = _strip_comments(_read("server/static/js/admin-reconnect-banner.js"))
+    assert "AdminSessionExpired.open()" in banner
+    # reload 只剩「連對話框都沒載入」的保底分支
+    assert banner.count("location.reload()") == 1
+
+    dialog = _strip_comments(_read("server/static/js/admin-session-expired.js"))
+    # 成功後不重載，靠換 meta 的 CSRF token 就地接回去
+    assert "location.reload" not in dialog
+    assert 'meta[name="csrf-token"]' in dialog

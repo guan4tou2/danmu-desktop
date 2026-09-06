@@ -1,6 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const csrfToken =
-    document.querySelector('meta[name="csrf-token"]').content || "";
+  // 每次取用都重讀 meta，不要快取成 const。設計稿 15 · EX1 的「登入過期
+  // 對話框」會就地重新登入，而 /login 成功時 server 會 session.clear() 並
+  // 發一顆新的 CSRF token；舊寫法把 token 凍在 DOMContentLoaded，重新登入
+  // 之後每個 csrfFetch 都會 403。
+  function csrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return (meta && meta.content) || "";
+  }
 
   // Access configuration injected from HTML
   const config = window.DANMU_CONFIG || {};
@@ -10,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function csrfFetch(url, options = {}) {
     const opts = { credentials: "same-origin", ...options };
     const headers = new Headers(options.headers || {});
-    headers.set("X-CSRF-Token", csrfToken);
+    headers.set("X-CSRF-Token", csrfToken());
     opts.headers = headers;
     return fetch(url, opts);
   }

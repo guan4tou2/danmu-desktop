@@ -2802,5 +2802,13 @@
   "helpDrawerTitle": "ヘルプ",
   "helpDrawerFieldTipLabel": "現場のヒント",
   "helpDrawerModerationTip3": "送信上限：既定は 1 人あたり毎分 6 件。大規模（200 人超）は 3、小人数なら 10 まで上げられます。",
-  "helpDrawerModerationFieldTip": "このページより速い方法：コントロール画面のメッセージ一覧で ⋯ → ブロック。⌘K で「封鎖」と入力しても開けます。"
+  "helpDrawerModerationFieldTip": "このページより速い方法：コントロール画面のメッセージ一覧で ⋯ → ブロック。⌘K で「封鎖」と入力しても開けます。",
+  "sxTitle": "ログインの有効期限が切れました",
+  "sxBody": "8 時間以上操作がありませんでした。大画面と観客には影響ありません。パスワードを入力すると元のページに戻れます。",
+  "sxPasswordLabel": "管理パスワード",
+  "sxSubmit": "再ログイン",
+  "sxToastBack": "再ログインしました",
+  "sxWrongPassword": "パスワードが違います。もう一度お試しください。",
+  "sxLockedOut": "試行回数が多すぎます。少し待ってからお試しください。",
+  "sxNetworkError": "サーバーに接続できません。ネットワークを確認してください。"
 }

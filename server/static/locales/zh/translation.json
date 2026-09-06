@@ -2802,5 +2802,13 @@
   "helpDrawerTitle": "說明",
   "helpDrawerFieldTipLabel": "現場小技巧",
   "helpDrawerModerationTip3": "發送上限：預設每人每分鐘 6 則。大型活動（>200 人）建議 3；小班可放到 10。",
-  "helpDrawerModerationFieldTip": "控制台訊息流裡按 ⋯ → 封鎖，比來這頁快。⌘K 輸入「封鎖」也可以。"
+  "helpDrawerModerationFieldTip": "控制台訊息流裡按 ⋯ → 封鎖，比來這頁快。⌘K 輸入「封鎖」也可以。",
+  "sxTitle": "登入已過期",
+  "sxBody": "閒置超過 8 小時。大螢幕與觀眾不受影響，重新輸入密碼即可回到剛才的頁面。",
+  "sxPasswordLabel": "管理密碼",
+  "sxSubmit": "重新登入",
+  "sxToastBack": "已重新登入",
+  "sxWrongPassword": "密碼不正確，再試一次。",
+  "sxLockedOut": "嘗試太多次，請稍等一下再試。",
+  "sxNetworkError": "連不上伺服器，請確認網路後再試。"
 }

@@ -14487,3 +14487,75 @@ body.is-light .admin-login-wordmark.is-on-light,
   font-weight: 600;
   color: var(--color-ink-accent);
 }
+
+/* ── 登入過期對話框（設計稿 15 · EX1）───────────────────────────────
+   對話框而非跳回登入頁：hash 路由與未存的輸入都留在原地。內文刻意寫
+   「大螢幕與觀眾不受影響」——主持人在台上看到「登入過期」的第一個念頭
+   是「大螢幕是不是掛了」，這句話直接把恐慌擋掉。 */
+.admin-sx {
+  position: fixed; inset: 0; z-index: 9400;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-4);
+  font-family: var(--font-sans);
+}
+.admin-sx__backdrop {
+  position: absolute; inset: 0;
+  background: var(--color-overlay);
+  backdrop-filter: blur(var(--space-1));
+}
+.admin-sx__panel {
+  position: relative;
+  width: 100%; max-width: 26rem;
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 var(--space-4) var(--space-8) var(--shadow-base);
+}
+.admin-sx__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-title3);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.admin-sx__body {
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-footnote);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+.admin-sx__form { display: flex; flex-direction: column; gap: var(--space-2); }
+.admin-sx__label {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+.admin-sx__input {
+  width: 100%;
+  padding: var(--space-3);
+  font-size: var(--text-footnote);
+  color: var(--color-text-primary);
+  background: var(--color-bg-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.admin-sx__input:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 1px;
+}
+.admin-sx__error {
+  margin: 0;
+  font-size: var(--text-caption);
+  color: var(--color-danger);
+}
+.admin-sx__submit {
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  color: var(--color-ink-on-accent);
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.admin-sx__submit:disabled { opacity: 0.6; cursor: progress; }
