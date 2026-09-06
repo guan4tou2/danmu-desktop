@@ -6847,6 +6847,10 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 .admin-help {
   position: fixed;
   top: 0; right: 0; bottom: 0;
+  /* 寬度要寫死。改成推開版面時我原本只留 top/right/bottom，讓寬度 auto——
+     但唯一的子元素是 `width:100%`，對 auto 寬的父層貢獻 0，容器就縮成 0，
+     抽屜整個溢出到畫面外（left 落在視窗右緣）。 */
+  width: 360px;
   z-index: 9200;
   display: flex;
   pointer-events: none;
