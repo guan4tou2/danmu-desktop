@@ -93,14 +93,19 @@
         { slug: "about",     labelKey: "tabSystemAbout", en: "ABOUT",     section: "sec-about-overview" },
       ],
     },
+    // 設計稿 15 · AU1 的分段順序是「場次 / 觀眾 / 搜尋 / 操作日誌」。
+    // `replay` 稿上沒有——它的三件事已經各自有家了（依小時的整批匯出與
+    // 「重播這場」都收進場次的匯出面板、原始清單由搜尋涵蓋），但重播進行中
+    // 的暫停／停止控制項還住在 sec-history 裡，直接拿掉分頁會讓正在跑的
+    // 重播沒有地方可以停。搬那組控制項是另一件事，先讓它排在最後。
     history: {
       defaultTab: "sessions",
       tabs: [
         { slug: "sessions", labelKey: "tabHistorySessions", en: "SESSIONS", section: "sec-sessions-overview" },
+        { slug: "audience", labelKey: "tabHistoryAudience", en: "AUDIENCE", section: "sec-audience-overview" },
         { slug: "search",   labelKey: "tabHistorySearch", en: "SEARCH",   section: "sec-search-overview"   },
         { slug: "audit",    labelKey: "tabHistoryAudit", en: "AUDIT",    section: "sec-audit-overview"    },
         { slug: "replay",   labelKey: "tabHistoryReplay", en: "REPLAY",   sections: ["sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history"] },
-        { slug: "audience", labelKey: "tabHistoryAudience", en: "AUDIENCE", section: "sec-audience-overview" },
       ],
     },
   };

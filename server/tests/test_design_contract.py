@@ -459,3 +459,37 @@ def test_shortcut_sheet_lists_only_keys_that_are_bound(zh):
         "helpDrawerShortcutClearDesktop",
     ):
         assert dead not in zh, dead
+
+
+def test_session_export_panel_matches_the_spec(zh):
+    """設計稿 08 · H1：場次頁＝一張表（場次／訊息／觀眾／時長／匯出 ›）＋匯出面板。
+
+    面板三件事：格式分段（CSV 試算表／JSON 完整／SRT 字幕）、個資開關配
+    警語、以及「重播這場」與「下載」。個資開關**預設關**——匯出檔會被丟進
+    群組、貼進簡報，IP 與裝置識別不該是預設值。
+    """
+    assert "每次開啟顯示層算一場" in zh["sessionsPageNote"]
+    for key, value in {
+        "sessionsColSession": "場次",
+        "sessionsColMessages": "訊息",
+        "sessionsColViewers": "觀眾",
+        "sessionsLabelDuration": "時長",
+        "sessionsExportFmtCsv": "CSV 試算表",
+        "sessionsExportFmtJson": "JSON 完整",
+        "sessionsExportFmtSrt": "SRT 字幕",
+        "sessionsExportPii": "包含觀眾 IP 與裝置識別",
+        "sessionsExportPiiWarn": "屬個人資料，分享前請確認",
+        "sessionsReplayBtn": "重播這場",
+    }.items():
+        assert zh[key] == value, key
+
+    js = _strip_comments(_read("server/static/js/admin-sessions.js"))
+    assert "exportPii: false" in js, "個資開關預設要關"
+    # 退場的舊版元件：KPI 條、頁內篩選分頁、日期 bucket、右側預覽欄
+    for gone in (
+        "admin-kpi-strip",
+        "data-sessions-filter",
+        "admin-sessions-bucket",
+        "admin-sessions-preview",
+    ):
+        assert gone not in js, gone

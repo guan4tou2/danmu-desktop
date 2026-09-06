@@ -3,7 +3,7 @@
 import csv
 import io
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import current_app, make_response, request
 
@@ -252,6 +252,122 @@ def get_session(session_id):
             "contract": _gap_contract(),
         }
     )
+
+
+@admin_bp.route("/sessions/<session_id>/export", methods=["GET"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_login
+def export_session(session_id):
+    """Export one session as CSV / JSON / SRT（設計稿 08 · H1 的匯出面板）。
+
+    和 ``/history/export`` 的差別是「一場」而不是「最近 N 小時」——主持人
+    想的是「把校慶開幕那場給我」，不是「把最近 24 小時給我」。
+
+    ``include_pii=1`` 才會帶出 IP 與裝置識別。預設不帶：匯出檔會被丟進
+    群組、貼到簡報裡，個資不該是預設值。
+    """
+    fmt = (request.args.get("format") or "csv").strip().lower()
+    if fmt not in {"json", "csv", "srt"}:
+        return _json_response({"error": "Unsupported export format"}, 400)
+    include_pii = request.args.get("include_pii") in ("1", "true", "yes")
+
+    if not history_service.danmu_history:
+        return _json_response({"error": "No history"}, 404)
+
+    hours = _clamp_hours(request.args.get("hours", 168, type=int))
+    all_records = history_service.danmu_history.get_recent(hours=hours, limit=10000)
+    resolved = _resolve_session_window(session_id, all_records)
+    if not resolved:
+        return _json_response({"error": "Session not found"}, 404)
+    sess, start_iso, end_iso = resolved
+
+    records = [r for r in reversed(all_records) if start_iso <= r["timestamp"] <= end_iso]
+    rows = [_export_row(r, include_pii) for r in records]
+
+    stem = f"{session_id}"
+    if fmt == "csv":
+        return _download_response(
+            _rows_to_csv(rows, include_pii),
+            "text/csv; charset=utf-8",
+            f"{stem}.csv",
+        )
+    if fmt == "srt":
+        timeline = _history_timeline(list(reversed(records)))
+        return _download_response(
+            _timeline_to_srt(timeline),
+            "application/x-subrip; charset=utf-8",
+            f"{stem}.srt",
+        )
+    return _download_response(
+        json.dumps({"session": sess, "records": rows}, ensure_ascii=False, indent=2),
+        "application/json",
+        f"{stem}.json",
+    )
+
+
+def _resolve_session_window(session_id, all_records):
+    """Find a session by id in either source, and return its (sess, start, end).
+
+    場次清單是兩個來源疊起來的：``/admin/sessions`` 從歷史紀錄用 30 分鐘
+    空檔切出來的，以及 ``/admin/session/archive`` 那些有名字、有明確開關
+    生命週期的。使用者看到的是同一張表，所以匯出必須兩種都認得——只查前者
+    的話，畫面上叫得出名字的那幾場（「週五晚場」）反而匯不出來。
+
+    兩邊的時間欄位型別不同（ISO 字串 vs epoch float），統一成 ISO 再比。
+    """
+    for sess in _derive_sessions(all_records, gap_minutes=30):
+        if sess["id"] == session_id:
+            return sess, sess["started_at"], sess["ended_at"]
+
+    from ...services import session_service
+
+    candidates = list(session_service.get_archive(limit=200))
+    current = session_service.get_state()
+    if current.get("status") == "live" and current.get("id"):
+        candidates.append(current)
+
+    for sess in candidates:
+        if sess.get("id") != session_id:
+            continue
+        started = _to_iso(sess.get("started_at"))
+        if not started:
+            return None
+        ended = _to_iso(sess.get("ended_at")) or datetime.now(timezone.utc).isoformat()
+        return sess, started, ended
+    return None
+
+
+def _to_iso(value):
+    """Accept epoch seconds or an ISO string; return an ISO string (or None)."""
+    if value in (None, ""):
+        return None
+    if isinstance(value, str):
+        return value
+    try:
+        return datetime.fromtimestamp(float(value), tz=timezone.utc).isoformat()
+    except (TypeError, ValueError, OSError):
+        return None
+
+
+_EXPORT_FIELDS = ["timestamp", "text", "color", "size", "speed", "opacity", "isImage"]
+_EXPORT_PII_FIELDS = ["clientIp", "fingerprint"]
+
+
+def _export_row(record, include_pii):
+    row = {k: record.get(k, "") for k in _EXPORT_FIELDS}
+    if include_pii:
+        for k in _EXPORT_PII_FIELDS:
+            row[k] = record.get(k) or ""
+    return row
+
+
+def _rows_to_csv(rows, include_pii):
+    out = io.StringIO()
+    fields = _EXPORT_FIELDS + (_EXPORT_PII_FIELDS if include_pii else [])
+    writer = csv.DictWriter(out, fieldnames=fields, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(rows)
+    return out.getvalue()
 
 
 @admin_bp.route("/search", methods=["GET"])

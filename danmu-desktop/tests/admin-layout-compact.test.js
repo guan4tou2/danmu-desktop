@@ -618,8 +618,12 @@ test("admin Sessions detail links compose shared actions", () => {
   const sessionsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-sessions.js"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
-  expect(sessionsSrc).toContain('class="admin-ui-action admin-sessions-detail-action" data-session-id="');
-  expect(sessionsSrc).toContain('e.target.closest(".admin-sessions-detail-action")');
+  // 2026-09-07 設計稿 08 · H1：場次頁收成「一張表＋匯出面板」。列上那顆
+  // 「詳細 →」按鈕退場——整列本身就是連往場次詳情的按鈕，最後一欄留給
+  // 稿上的「匯出 ›」。
+  expect(sessionsSrc).toContain('data-sessions-export-open="');
+  expect(sessionsSrc).toContain('e.target.closest(".admin-sessions-tr")');
+  expect(sessionsSrc).not.toContain("admin-sessions-detail-action");
   expect(sessionsSrc).not.toContain("admin-sessions-detail-btn");
   expect(cssSrc).not.toContain(".admin-sessions-detail-btn");
 });
@@ -763,7 +767,9 @@ test("admin Scheduler, Replay, and Sessions chips compose shared controls", () =
   expect(replaySrc).toContain('id="replayV2Refresh" class="admin-ui-action admin-replay-toolbar-action"');
   expect(replaySrc).toContain('id="replayV2ExportJson" class="admin-ui-action admin-replay-toolbar-action"');
   expect(replaySrc).toContain('class="admin-ui-chip is-active admin-replay-refire-action"');
-  expect(sessionsSrc).toContain('class="admin-ui-chip is-active admin-sessions-live-badge"');
+  // 設計稿 08 · H1 的表列沒有「LIVE」文字 chip，只有名稱前一顆點。
+  expect(sessionsSrc).toContain('class="admin-sessions-livedot"');
+  expect(sessionsSrc).not.toContain("admin-sessions-live-badge");
   expect(schedulerSrc).not.toContain("admin-v2-chip");
   expect(replaySrc).not.toContain("admin-v2-chip");
   expect(sessionsSrc).not.toContain("admin-v2-chip");
@@ -1101,8 +1107,9 @@ test("admin tab and table primitives use admin-ui naming", () => {
   expect(styleCss).toContain(".admin-ui-tabbar {");
   expect(styleCss).toContain(".admin-ui-tab {");
   expect(styleCss).toContain(".admin-at-main .admin-ui-table-wrap {");
-  expect(sessionsSrc).toContain("admin-ui-tabbar");
-  expect(sessionsSrc).toContain("admin-ui-tab");
+  // 場次頁自己不再畫分頁列：紀錄與匯出的分段由 shell 的 AdminTabs 提供
+  // （設計稿 08 · H1），頁內那三顆「全部／進行中／已結束」稿上沒有。
+  expect(sessionsSrc).not.toContain("admin-ui-tabbar");
   expect(tokensSrc).toContain("admin-ui-table-wrap");
   expect(tokensSrc).toContain("admin-ui-table");
   [

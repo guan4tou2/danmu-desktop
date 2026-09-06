@@ -1,19 +1,18 @@
 /**
- * Admin Sessions — session list with KPI strip, filter tabs, right-panel preview.
+ * Admin · 場次（設計稿 08 · H1「紀錄與匯出」的第一個分段）
  *
- * Mirrors docs/designs/design-v2/components/admin-batch7.jsx
- * AdminSessionsPage.
+ * 稿上這一頁很單薄，那是刻意的：一張表（場次／訊息／觀眾／時長／匯出 ›）
+ * 加一個匯出面板，沒別的。之前這裡有 4 格 KPI、三顆篩選分頁、依日期收合
+ * 的 bucket 清單、右側 320px 預覽欄——那些都在回答「這個活動辦得怎麼樣」，
+ * 但主持人來這一頁只有一個目的：**把某一場的資料拿出去**。
  *
- * Layout (1fr 320px grid):
- *   TOP    — 4-tile KPI strip (場次數量 / 觀眾總人次 / 訊息總數 / 最近場次)
- *   LEFT   — filter tabs + sessions table with mini sparklines
- *   RIGHT  — quick preview panel for selected session
+ * 匯出面板照 H1：格式分段（CSV 試算表／JSON 完整／SRT 字幕）、一個
+ * 「包含觀眾 IP 與裝置識別」開關配警語、以及「重播這場」與「下載」兩顆鈕。
+ * 個資開關預設關——匯出檔會被丟進群組、貼進簡報。
  *
- * API: GET /admin/sessions?hours=168
- *      → { sessions: [{id, started_at, ended_at, duration_s, msg_count,
- *                       viewer_count, sparkline, is_live}], total: N }
- *
- * Clicking "詳細 →" or a row navigates to #/session-detail?id=<id>.
+ * API: GET /admin/sessions?hours=168 與 GET /admin/session/archive
+ *      GET /admin/sessions/<id>/export?format=&include_pii=
+ *      POST /admin/replay（重播這場）
  *
  * Loaded as <script defer> in admin.html.
  * Globals: csrfFetch, showToast, ServerI18n, AdminUtils, DANMU_CONFIG.
@@ -34,18 +33,13 @@
   var _state = {
     sessions: [],
     total: 0,
-    filter: "all",     // "all" | "live" | "ended"
-    selectedId: null,
+    // 匯出面板：開著的場次 id、選的格式、個資開關（預設關）
+    exportId: null,
+    exportFormat: "csv",
+    exportPii: false,
     // Start true so first paint shows AdminSkeletons preview instead
     // of a flash of empty container before the API responds.
     loading: true,
-    // Bucket-list reframe (design v4 brief 0518-3, 2026-05-18). Each bucket
-    // is keyed by its label ('今天', '昨天', '本週', '更早'). Default-closed
-    // for older buckets; today + yesterday open by default.
-    // D-4 (2026-08-03): keyed by the stable `range` id (THIS WEEK / EARLIER),
-    // not the translated `label` — label text now depends on ServerI18n's
-    // active language, so it can't double as a lookup key across locales.
-    bucketsCollapsed: { "THIS WEEK": true, "EARLIER": true },
   };
 
   // ── helpers ──────────────────────────────────────────────────────────────
@@ -76,210 +70,31 @@
     }
   }
 
-  function buildSparkline(data, height) {
-    // Render 20 inline <span> bars. data is an array of numbers (or undefined).
-    var H = height || 20;
-    var bars = Array.isArray(data) ? data.slice(0, 20) : [];
-    while (bars.length < 20) bars.push(0);
-    var maxV = Math.max(1, Math.max.apply(null, bars));
-    return bars.map(function (v) {
-      var pct = Math.max(10, Math.round((v / maxV) * 100));
-      return '<span style="display:inline-block;width:2px;height:' + Math.round(H * pct / 100)
-        + 'px;background:var(--color-primary);opacity:' + (v > 0 ? 0.6 + (v / maxV) * 0.4 : 0.18)
-        + ';border-radius:1px 1px 0 0;margin-right:1px;vertical-align:bottom"></span>';
-    }).join("");
-  }
-
-  function _filteredSessions() {
-    if (_state.filter === "live") {
-      return _state.sessions.filter(function (s) { return s.is_live; });
-    }
-    if (_state.filter === "ended") {
-      return _state.sessions.filter(function (s) { return !s.is_live; });
-    }
-    return _state.sessions;
-  }
-
-  // Bucket grouping (design v4 brief 0518-3, 2026-05-18).
-  // Sessions → today / yesterday / this-week / earlier. Day boundary in
-  // local time (server returns ISO; new Date parses to local).
-  function _groupIntoBuckets(sessions) {
-    var now = new Date();
-    var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    var yesterdayStart = new Date(todayStart.getTime() - 86400 * 1000);
-    var weekStart = new Date(todayStart.getTime() - 7 * 86400 * 1000);
-    // D-4: label built here (function-internal, runs post-init — safe to
-    // call t() directly, unlike a top-level constant). range stays the
-    // language-neutral lookup id (see bucketsCollapsed + _fmtDateRange).
-    var buckets = [
-      { label: ServerI18n.t("sessionsBucketToday"),     range: "TODAY",     sessions: [], from: todayStart },
-      { label: ServerI18n.t("sessionsBucketYesterday"), range: "YESTERDAY", sessions: [], from: yesterdayStart, to: todayStart },
-      { label: ServerI18n.t("sessionsBucketThisWeek"),  range: "THIS WEEK", sessions: [], from: weekStart, to: yesterdayStart },
-      { label: ServerI18n.t("sessionsBucketEarlier"),   range: "EARLIER",   sessions: [], to: weekStart },
-    ];
-    sessions.forEach(function (s) {
-      var ts = s.started_at ? new Date(s.started_at) : null;
-      if (!ts || isNaN(ts.getTime())) { buckets[3].sessions.push(s); return; }
-      if (ts >= todayStart)        buckets[0].sessions.push(s);
-      else if (ts >= yesterdayStart) buckets[1].sessions.push(s);
-      else if (ts >= weekStart)      buckets[2].sessions.push(s);
-      else                           buckets[3].sessions.push(s);
-    });
-    // Compute aggregates per bucket
-    buckets.forEach(function (b) {
-      b.count = b.sessions.length;
-      b.totalMsgs = b.sessions.reduce(function (a, s) { return a + (Number(s.msg_count) || 0); }, 0);
-      b.totalViewers = b.sessions.reduce(function (a, s) { return a + (Number(s.viewer_count) || 0); }, 0);
-    });
-    return buckets;
-  }
-
-  function _fmtDateRange(b) {
-    // D-4: compare against the stable range id, not the (now translated)
-    // label — label text no longer equals "今天"/"昨天"/"本週" outside zh.
-    if (b.range === "TODAY") {
-      return _fmtYMD(new Date());
-    }
-    if (b.range === "YESTERDAY") {
-      var y = new Date(Date.now() - 86400 * 1000);
-      return _fmtYMD(y);
-    }
-    if (b.range === "THIS WEEK") {
-      var s = new Date(Date.now() - 7 * 86400 * 1000);
-      var e = new Date(Date.now() - 2 * 86400 * 1000);
-      return _fmtMD(s) + " – " + _fmtMD(e);
-    }
-    var weekStart = new Date(Date.now() - 7 * 86400 * 1000);
-    return "< " + _fmtYMD(weekStart);
-  }
-
-  function _fmtYMD(d) {
-    var pad = function (n) { return String(n).padStart(2, "0"); };
-    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
-  }
-  function _fmtMD(d) {
-    var pad = function (n) { return String(n).padStart(2, "0"); };
-    return pad(d.getMonth() + 1) + "-" + pad(d.getDate());
-  }
-  function _fmtHM(isoStr) {
-    if (!isoStr) return "—";
-    try {
-      var d = new Date(isoStr);
-      var pad = function (n) { return String(n).padStart(2, "0"); };
-      return pad(d.getHours()) + ":" + pad(d.getMinutes());
-    } catch (_) { return ""; }
-  }
-
-  function _selectedSession() {
-    if (!_state.selectedId) return null;
-    for (var i = 0; i < _state.sessions.length; i++) {
-      if (_state.sessions[i].id === _state.selectedId) return _state.sessions[i];
-    }
-    return null;
-  }
-
-  // ── HTML template ─────────────────────────────────────────────────────────
-
   function buildSection() {
     return '<div id="' + PAGE_ID + '" class="admin-sessions-page hud-page-stack lg:col-span-2" data-tpl="B">'
-
-      // ── page header (polestar 2026-05-18 reframe: session = data slice /
-      //    time window, not "broadcast show". 內容仍是訊息 / 投票 / 統計 的
-      //    時間切片 — overlay 的開關只是切片的起點 trigger，不是切片本身。)
       + '<div class="admin-ui-page-head">'
-      // D-4: kicker EN bookends stay literal (4771242 convention); mid
-      // segment reuses broadcastDataSliceLabel — verbatim same zh text.
       +   '<h2 class="admin-ui-page-title">' + ServerI18n.t("adminRouteTitle_sessions") + '</h2>'
       +   '<p class="admin-ui-page-note">' + ServerI18n.t("sessionsPageNote") + '</p>'
       + '</div>'
-
-      // ── KPI strip (full width, 4 tiles)
-      // en sub-labels (SESSIONS/VIEWERS/MESSAGES/LATEST) are all-caps EN
-      // tile markers — stay literal per D-4 convention, not translated.
-      + '<div class="admin-kpi-strip" style="grid-template-columns:repeat(4,1fr)" data-sessions-kpi>'
-      +   _buildKpiTile(ServerI18n.t("sessionsKpiSessionCount"), "SESSIONS", "—", "data-kpi-sessions")
-      +   _buildKpiTile(ServerI18n.t("sessionsKpiTotalViewers"), "VIEWERS", "—", "data-kpi-viewers")
-      +   _buildKpiTile(ServerI18n.t("sessionsKpiTotalMessages"), "MESSAGES", "—", "data-kpi-messages")
-      +   _buildKpiTile(ServerI18n.t("sessionsKpiLatestSession"), "LATEST", "—", "data-kpi-latest")
-      + '</div>'
-
-      // ── two-column body
-      + '<div class="admin-sessions-layout" style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start">'
-
-      // LEFT: filter tabs + table
-      + '<div class="hud-page-stack" style="gap:12px">'
-
-      +   '<div class="admin-ui-tabbar" style="display:flex;gap:0">'
-      +     '<button type="button" class="admin-ui-tab is-active" data-sessions-filter="all">' + ServerI18n.t("sessionsTabAll") + '</button>'
-      +     '<button type="button" class="admin-ui-tab" data-sessions-filter="live">' + ServerI18n.t("sessionsTabLive") + '</button>'
-      +     '<button type="button" class="admin-ui-tab" data-sessions-filter="ended">' + ServerI18n.t("sessionsTabEnded") + '</button>'
-      +   '</div>'
-
-      // Bucket list container — replaces the legacy 8-col table
-      // (design v4 brief 0518-3, 2026-05-18). Each bucket has its own
-      // header + collapsible session rows; no shared table head. First
-      // paint is empty; _renderTable() injects the skeleton on first
-      // call when _state.loading=true.
-      +   '<div id="admin-sessions-table-body" class="admin-sessions-buckets" style="min-height:60px"></div>'
-
-      + '</div>'
-
-      // RIGHT: quick preview panel
-      + '<aside class="admin-ui-card hud-page-stack" style="gap:12px;position:sticky;top:16px">'
-      +   '<div class="admin-ui-monolabel">' + ServerI18n.t("sessionsPreviewLabel") + '</div>'
-      +   '<div id="admin-sessions-preview">'
-      +     '<p style="font-size:13px;color:var(--admin-text-dim);margin:0">' + ServerI18n.t("sessionsPreviewPlaceholder") + '</p>'
-      +   '</div>'
-      + '</aside>'
-
-      + '</div>' // end layout grid
-      + '</div>'; // end page
-  }
-
-  function _buildKpiTile(label, en, value, attr) {
-    return '<div class="admin-kpi-tile">'
-      + '<div class="admin-kpi-tile-head">'
-      +   '<span class="label">' + _escHtml(label) + '</span>'
-      + '</div>'
-      + '<div class="admin-kpi-tile-value" ' + attr + '>' + _escHtml(value) + '</div>'
+      + '<div class="admin-sessions-table" id="admin-sessions-table-body"></div>'
+      + '<div class="admin-sx-export" data-sessions-export hidden></div>'
       + '</div>';
   }
 
   function _buildTableHead() {
-    return '<div class="admin-sessions-table-head" style="'
-      + 'display:grid;grid-template-columns:28px 1fr 140px 80px 70px 60px 60px 80px;'
-      + 'gap:0 8px;padding:8px 12px;'
-      + 'font-family:var(--font-mono);font-size:11px;letter-spacing:1px;'
-      + 'color:var(--admin-text-dim);text-transform:uppercase;'
-      + 'border-bottom:1px solid var(--admin-line)">'
+    return '<div class="admin-sessions-th">'
+      + '<span>' + _escHtml(ServerI18n.t("sessionsColSession")) + '</span>'
+      + '<span>' + _escHtml(ServerI18n.t("sessionsColMessages")) + '</span>'
+      + '<span>' + _escHtml(ServerI18n.t("sessionsColViewers")) + '</span>'
+      + '<span>' + _escHtml(ServerI18n.t("sessionsLabelDuration")) + '</span>'
       + '<span></span>'
-      + '<span>' + ServerI18n.t("sessionsColSession") + '</span>'
-      + '<span>' + ServerI18n.t("sessionsLabelStarted") + '</span>'
-      + '<span>' + ServerI18n.t("sessionsLabelDuration") + '</span>'
-      + '<span>' + ServerI18n.t("sessionsColMessages") + '</span>'
-      + '<span>' + ServerI18n.t("sessionsColViewers") + '</span>'
-      + '<span>' + ServerI18n.t("sessionsLabelActivity") + '</span>'
-      + '<span style="text-align:right">' + ServerI18n.t("sessionsColActions") + '</span>'
       + '</div>';
   }
 
   // ── render ────────────────────────────────────────────────────────────────
 
-  function _renderKpi() {
-    var sessions = _state.sessions;
-    var total = sessions.length;
-    var totalViewers = sessions.reduce(function (a, s) { return a + (Number(s.viewer_count) || 0); }, 0);
-    var totalMsgs = sessions.reduce(function (a, s) { return a + (Number(s.msg_count) || 0); }, 0);
-    var latestStart = sessions.length ? formatTs(sessions[0].started_at) : "—";
-
-    var sessEl = document.querySelector("[data-kpi-sessions]");
-    var viewEl = document.querySelector("[data-kpi-viewers]");
-    var msgEl  = document.querySelector("[data-kpi-messages]");
-    var latEl  = document.querySelector("[data-kpi-latest]");
-    if (sessEl) sessEl.textContent = total;
-    if (viewEl) viewEl.textContent = totalViewers.toLocaleString();
-    if (msgEl)  msgEl.textContent  = totalMsgs.toLocaleString();
-    if (latEl)  latEl.textContent  = latestStart;
+  function _sessionName(s) {
+    return s.name || ServerI18n.t("sessionsFallbackName", { id: (s.id || "").slice(0, 12) });
   }
 
   function _renderTable() {
@@ -287,21 +102,16 @@
     if (!bodyEl) return;
 
     if (_state.loading) {
-      // Use AdminSkeletons.listRows when available — gives users a
-      // structural preview of the bucket-list instead of a flat spinner.
-      // (2026-05-18 polestar polish: skeleton consistency.)
       if (window.AdminSkeletons) {
         bodyEl.innerHTML = "";
         bodyEl.appendChild(window.AdminSkeletons.listRows({ rows: 5 }));
       } else {
-        bodyEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--admin-text-dim);font-size:13px">' + ServerI18n.t("sessionsLoadingText") + '</div>';
+        bodyEl.innerHTML = '<div class="admin-sessions-loading">' + ServerI18n.t("sessionsLoadingText") + '</div>';
       }
       return;
     }
 
-    var list = _filteredSessions();
-    if (!list.length) {
-      // D-6 (2026-07-28): inline-style 佔位換共用 AdminEmpty preset。
+    if (!_state.sessions.length) {
       bodyEl.innerHTML = "";
       var card = window.AdminEmpty.render("sessions");
       card.dataset.emptyKind = "sessions";
@@ -309,136 +119,131 @@
       return;
     }
 
-    // ── Bucket-grouped view (design v4 brief 0518-3, Option C) ──────
-    var buckets = _groupIntoBuckets(list);
-    var html = buckets.map(function (b) {
-      // D-4: keyed by b.range (stable id), not b.label — see bucketsCollapsed.
-      var collapsed = !!_state.bucketsCollapsed[b.range];
-      var hasSessions = b.sessions.length > 0;
-      // Empty buckets still render header (zero state) so users see structure.
-      var dateRange = _fmtDateRange(b);
-
-      var header = ''
-        // D-4: dataset key is the stable range id (see bucketsCollapsed) —
-        // the visible label span still shows the translated b.label.
-        + '<div class="admin-sessions-bucket-head" data-sessions-bucket="' + _escHtml(b.range) + '" role="button" tabindex="0">'
-        +   '<span class="admin-sessions-bucket-chev" aria-hidden="true">' + (collapsed ? '▸' : '▾') + '</span>'
-        +   '<span class="admin-sessions-bucket-label">' + _escHtml(b.label) + '</span>'
-        +   '<span class="admin-sessions-bucket-date">' + _escHtml(dateRange) + '</span>'
-        +   '<span class="admin-sessions-bucket-spacer"></span>'
-        +   '<span class="admin-sessions-bucket-stat">' + b.count + ' sessions</span>'
-        +   '<span class="admin-sessions-bucket-sep">·</span>'
-        +   '<span class="admin-sessions-bucket-stat is-accent">' + b.totalMsgs.toLocaleString() + ' msgs</span>'
-        +   '<span class="admin-sessions-bucket-sep">·</span>'
-        +   '<span class="admin-sessions-bucket-stat is-lime">' + b.totalViewers.toLocaleString() + ' viewers</span>'
+    var rows = _state.sessions.map(function (s) {
+      var sid = _escHtml(s.id || "");
+      return ''
+        + '<div class="admin-sessions-tr' + (s.is_live ? ' is-live' : '') + '" data-session-id="' + sid + '"'
+        +      ' role="button" tabindex="0">'
+        +   '<span class="admin-sessions-td-name">'
+        +     (s.is_live ? '<span class="admin-sessions-livedot" aria-hidden="true"></span>' : '')
+        +     _escHtml(_sessionName(s))
+        +     '<span class="admin-sessions-td-sub">' + _escHtml(formatTs(s.started_at)) + '</span>'
+        +   '</span>'
+        +   '<span class="admin-sessions-td-num">' + (Number(s.msg_count) || 0).toLocaleString() + '</span>'
+        +   '<span class="admin-sessions-td-num">' + (Number(s.viewer_count) || 0).toLocaleString() + '</span>'
+        +   '<span class="admin-sessions-td-num">' + _escHtml(formatDuration(s.duration_s)) + '</span>'
+        +   '<button type="button" class="admin-sessions-export-btn" data-sessions-export-open="' + sid + '">'
+        +     _escHtml(ServerI18n.t("sessionsExportBtn")) + ' ›</button>'
         + '</div>';
-
-      var rows = "";
-      if (!collapsed && hasSessions) {
-        rows = b.sessions.map(function (s) {
-          var live    = !!s.is_live;
-          var sid     = _escHtml(s.id || "");
-          var idShort = _escHtml((s.id || "").slice(0, 12));
-          var startHM = _fmtHM(s.started_at);
-          var dur     = formatDuration(s.duration_s);
-          var msgs    = Number(s.msg_count) || 0;
-          var viewers = Number(s.viewer_count) || 0;
-          var spark   = buildSparkline(s.sparkline, 18);
-          var isSelected = _state.selectedId === s.id;
-          var name    = _escHtml(s.name || ServerI18n.t("sessionsFallbackName", { id: idShort }));
-          return ''
-            + '<div class="admin-sessions-bucket-row' + (isSelected ? ' is-selected' : '') + '"'
-            +      ' data-session-id="' + sid + '" role="button" tabindex="0">'
-            +   '<span class="admin-sessions-bucket-dot' + (live ? ' is-live' : '') + '"></span>'
-            +   '<div class="admin-sessions-bucket-row-main">'
-            +     '<div class="admin-sessions-bucket-row-title">'
-            +       '<span class="admin-sessions-bucket-row-name">' + name + '</span>'
-            +       (live ? '<span class="admin-sessions-bucket-row-live">LIVE</span>' : '')
-            +     '</div>'
-            +     '<div class="admin-sessions-bucket-row-meta">'
-            +       _escHtml(startHM) + ' · ' + _escHtml(dur) + ' · ' + idShort
-            +     '</div>'
-            +   '</div>'
-            +   '<div class="admin-sessions-bucket-row-stats">'
-            +     '<div class="admin-sessions-bucket-row-stat">'
-            +       ''
-            +       '<div class="admin-sessions-bucket-row-stat-v is-accent">' + msgs.toLocaleString() + '</div>'
-            +     '</div>'
-            +     '<div class="admin-sessions-bucket-row-stat">'
-            +       '<div class="admin-sessions-bucket-row-stat-en">FP</div>'
-            +       '<div class="admin-sessions-bucket-row-stat-v is-lime">' + viewers + '</div>'
-            +     '</div>'
-            +     '<span class="admin-sessions-bucket-row-spark">' + spark + '</span>'
-            +   '</div>'
-            +   '<button type="button" class="admin-ui-action admin-sessions-detail-action" data-session-id="' + sid + '">→</button>'
-            + '</div>';
-        }).join("");
-      } else if (!collapsed && !hasSessions) {
-        rows = '<div class="admin-sessions-bucket-empty">' + ServerI18n.t("sessionsBucketEmptyPeriod") + '</div>';
-      }
-
-      return '<div class="admin-sessions-bucket' + (collapsed ? ' is-collapsed' : '') + '">' + header + rows + '</div>';
     }).join("");
 
-    bodyEl.innerHTML = html;
+    bodyEl.innerHTML = _buildTableHead() + rows;
   }
 
-  function _renderPreview() {
-    var previewEl = document.getElementById("admin-sessions-preview");
-    if (!previewEl) return;
+  // ── 匯出面板（設計稿 08 · H1）────────────────────────────────────────────
 
-    var s = _selectedSession();
-    if (!s) {
-      previewEl.innerHTML = '<p style="font-size:13px;color:var(--admin-text-dim);margin:0">' + ServerI18n.t("sessionsPreviewPlaceholder") + '</p>';
+  var _FORMATS = [
+    { id: "csv",  labelKey: "sessionsExportFmtCsv" },
+    { id: "json", labelKey: "sessionsExportFmtJson" },
+    { id: "srt",  labelKey: "sessionsExportFmtSrt" },
+  ];
+
+  function _renderExport() {
+    var el = document.querySelector("[data-sessions-export]");
+    if (!el) return;
+    if (!_state.exportId) {
+      el.hidden = true;
+      el.innerHTML = "";
       return;
     }
+    var sess = _state.sessions.find(function (s) { return s.id === _state.exportId; });
+    if (!sess) { _state.exportId = null; el.hidden = true; el.innerHTML = ""; return; }
 
-    var dur  = formatDuration(s.duration_s);
-    var ts   = formatTs(s.started_at);
-    var msgs = Number(s.msg_count) || 0;
-    var views = Number(s.viewer_count) || 0;
-    var spark = buildSparkline(s.sparkline, 28);
-    var live = !!s.is_live;
-    var idFull = _escHtml(s.id || "");
+    var segs = _FORMATS.map(function (f) {
+      return '<button type="button" class="admin-sx-export__seg'
+        + (f.id === _state.exportFormat ? ' is-active' : '') + '"'
+        + ' data-sessions-export-fmt="' + f.id + '"'
+        + ' aria-pressed="' + (f.id === _state.exportFormat ? 'true' : 'false') + '">'
+        + _escHtml(ServerI18n.t(f.labelKey)) + '</button>';
+    }).join("");
 
-    previewEl.innerHTML =
-      '<div style="display:flex;flex-direction:column;gap:10px">'
-      + '<div style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text-dim);word-break:break-all">'
-      +   idFull
+    el.hidden = false;
+    el.innerHTML = ''
+      + '<div class="admin-sx-export__head">'
+      +   '<h3 class="admin-sx-export__title">'
+      +     _escHtml(ServerI18n.t("sessionsExportTitle", { name: _sessionName(sess) })) + '</h3>'
+      +   '<button type="button" class="admin-sx-export__close" data-sessions-export-close'
+      +     ' aria-label="' + _escHtml(ServerI18n.t("closeBtn")) + '">×</button>'
       + '</div>'
-      + (live ? '<span class="admin-ui-chip is-active admin-sessions-live-badge" style="align-self:flex-start">● LIVE</span>' : '')
-      + _previewKv(ServerI18n.t("sessionsLabelStarted"), ts)
-      + _previewKv(ServerI18n.t("sessionsLabelDuration"), dur)
-      + _previewKv(ServerI18n.t("sessionsPreviewMsgCount"), msgs.toLocaleString())
-      + _previewKv(ServerI18n.t("sessionsPreviewViewerCount"), views.toLocaleString())
-      + '<div>'
-      +   '<div style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text-dim);'
-      +               'text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">' + ServerI18n.t("sessionsLabelActivity") + '</div>'
-      +   '<div style="display:flex;align-items:flex-end;height:28px;gap:1px">' + spark + '</div>'
-      + '</div>'
-      + '<button type="button"'
-      +         ' data-sessions-go-detail="' + _escHtml(s.id || "") + '"'
-      +         ' style="'
-      +           'margin-top:4px;padding:7px 0;width:100%;'
-      +           'background:transparent;border:1px solid var(--color-primary);'
-      +           'color: var(--color-ink-accent);border-radius:4px;'
-      +           'font-family:var(--font-mono);font-size:11px;letter-spacing:0.5px;'
-      +           'cursor:pointer">' + ServerI18n.t("sessionsDetailArrowBtn") + '</button>'
+      + '<div class="admin-sx-export__segs" role="group">' + segs + '</div>'
+      + '<label class="admin-sx-export__pii">'
+      +   '<input type="checkbox" data-sessions-export-pii' + (_state.exportPii ? ' checked' : '') + ' />'
+      +   '<span>'
+      +     '<span class="admin-sx-export__pii-label">' + _escHtml(ServerI18n.t("sessionsExportPii")) + '</span>'
+      +     '<span class="admin-sx-export__pii-warn">' + _escHtml(ServerI18n.t("sessionsExportPiiWarn")) + '</span>'
+      +   '</span>'
+      + '</label>'
+      + '<div class="admin-sx-export__actions">'
+      +   '<button type="button" class="admin-sx-export__secondary" data-sessions-replay>'
+      +     _escHtml(ServerI18n.t("sessionsReplayBtn")) + '</button>'
+      +   '<button type="button" class="admin-sx-export__primary" data-sessions-download>'
+      +     _escHtml(ServerI18n.t("sessionsDownloadBtn", { fmt: _state.exportFormat.toUpperCase() })) + '</button>'
       + '</div>';
   }
 
-  function _previewKv(label, value) {
-    return '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">'
-      + '<span style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text-dim);'
-      +               'text-transform:uppercase;letter-spacing:1px">' + _escHtml(label) + '</span>'
-      + '<span style="font-size:13px;color:var(--admin-text)">' + _escHtml(value) + '</span>'
-      + '</div>';
+  function _download() {
+    if (!_state.exportId) return;
+    var url = "/admin/sessions/" + encodeURIComponent(_state.exportId) + "/export"
+      + "?format=" + encodeURIComponent(_state.exportFormat)
+      + "&include_pii=" + (_state.exportPii ? "1" : "0");
+    // 走一次性的 <a download>，不用 fetch+blob：檔案可能上萬列，讓瀏覽器
+    // 自己串流比在記憶體裡組一份再交出去省事。
+    var a = document.createElement("a");
+    a.href = url;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  async function _replay() {
+    var id = _state.exportId;
+    if (!id) return;
+    try {
+      // 用 JSON 匯出當來源，不要用 /admin/sessions/<id>：後者只認得從歷史
+      // 切出來的場次，畫面上那些有名字的（來自 session archive）會 404。
+      // 匯出端點兩種來源都認得，且回傳的欄位正是 replay 要的。
+      var r = await fetch(
+        "/admin/sessions/" + encodeURIComponent(id) + "/export?format=json",
+        { credentials: "same-origin" }
+      );
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      var data = await r.json();
+      var records = (data.records || []).slice(0, 500);
+      if (!records.length) {
+        window.showToast && window.showToast(ServerI18n.t("sessionsReplayEmpty"), false);
+        return;
+      }
+      var res = await window.csrfFetch("/admin/replay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ records: records, speedMultiplier: 1.0 }),
+      });
+      if (res.status === 503) {
+        // 沒有大螢幕接著的時候重播沒有觀眾——講清楚，不要只說「失敗」。
+        window.showToast && window.showToast(ServerI18n.t("sessionsReplayNoOverlay"), false);
+        return;
+      }
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      window.showToast && window.showToast(ServerI18n.t("sessionsReplayStarted"), true);
+    } catch (e) {
+      window.showToast && window.showToast(ServerI18n.t("sessionsReplayFailed"), false);
+    }
   }
 
   function _renderAll() {
-    _renderKpi();
     _renderTable();
-    _renderPreview();
+    _renderExport();
   }
 
   // ── data fetching ─────────────────────────────────────────────────────────
@@ -516,89 +321,58 @@
 
   // ── event wiring ─────────────────────────────────────────────────────────
 
-  function _selectSession(id) {
-    _state.selectedId = id;
-    _renderTable();
-    _renderPreview();
-  }
-
   function _goToDetail(id) {
     if (!id) return;
     window.location.hash = "#/session-detail?id=" + encodeURIComponent(id);
+  }
+
+  function _openExport(id) {
+    _state.exportId = id;
+    _renderExport();
+    var panel = document.querySelector("[data-sessions-export]");
+    if (panel) panel.scrollIntoView({ block: "nearest" });
   }
 
   function _bind() {
     var page = document.getElementById(PAGE_ID);
     if (!page) return;
 
-    // Filter tabs
     page.addEventListener("click", function (e) {
-      // Filter tab buttons
-      var tab = e.target.closest("[data-sessions-filter]");
-      if (tab) {
-        _state.filter = tab.dataset.sessionsFilter || "all";
-        page.querySelectorAll("[data-sessions-filter]").forEach(function (t) {
-          t.classList.toggle("is-active", t === tab);
-        });
-        _renderTable();
-        return;
-      }
-
-      // "詳細 →" button — detail navigation (highest priority, stop propagation)
-      var detailBtn = e.target.closest("[data-sessions-go-detail]");
-      if (detailBtn) {
+      var openBtn = e.target.closest("[data-sessions-export-open]");
+      if (openBtn) {
         e.stopPropagation();
-        _goToDetail(detailBtn.dataset.sessionsGoDetail);
+        _openExport(openBtn.dataset.sessionsExportOpen);
         return;
       }
+      if (e.target.closest("[data-sessions-export-close]")) {
+        _state.exportId = null;
+        _renderExport();
+        return;
+      }
+      var fmtBtn = e.target.closest("[data-sessions-export-fmt]");
+      if (fmtBtn) {
+        _state.exportFormat = fmtBtn.dataset.sessionsExportFmt;
+        _renderExport();
+        return;
+      }
+      if (e.target.closest("[data-sessions-replay]")) { _replay(); return; }
+      if (e.target.closest("[data-sessions-download]")) { _download(); return; }
 
-      // "詳細 →" button inside table row
-      var detailRowBtn = e.target.closest(".admin-sessions-detail-action");
-      if (detailRowBtn) {
-        e.stopPropagation();
-        _goToDetail(detailRowBtn.dataset.sessionId);
-        return;
-      }
-
-      // Bucket header toggle (design v4 brief 0518-3)
-      var bucketHead = e.target.closest("[data-sessions-bucket]");
-      if (bucketHead) {
-        var key = bucketHead.dataset.sessionsBucket;
-        _state.bucketsCollapsed[key] = !_state.bucketsCollapsed[key];
-        _renderTable();
-        return;
-      }
-
-      // Bucket row click → select for right-rail preview
-      var bucketRow = e.target.closest(".admin-sessions-bucket-row");
-      if (bucketRow) {
-        _selectSession(bucketRow.dataset.sessionId || null);
-        return;
-      }
-
-      // Legacy row click (kept defensively if any consumer still produces it)
-      var row = e.target.closest(".admin-sessions-row");
-      if (row) {
-        _selectSession(row.dataset.sessionId || null);
-        return;
-      }
+      var row = e.target.closest(".admin-sessions-tr");
+      if (row) _goToDetail(row.dataset.sessionId || null);
     });
 
-    // Keyboard navigation on rows + bucket headers
+    page.addEventListener("change", function (e) {
+      var pii = e.target.closest("[data-sessions-export-pii]");
+      if (pii) _state.exportPii = !!pii.checked;
+    });
+
     page.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
-      var bucketHead = e.target.closest("[data-sessions-bucket]");
-      if (bucketHead) {
-        e.preventDefault();
-        var key = bucketHead.dataset.sessionsBucket;
-        _state.bucketsCollapsed[key] = !_state.bucketsCollapsed[key];
-        _renderTable();
-        return;
-      }
-      var row = e.target.closest(".admin-sessions-bucket-row, .admin-sessions-row");
+      var row = e.target.closest(".admin-sessions-tr");
       if (row) {
         e.preventDefault();
-        _selectSession(row.dataset.sessionId || null);
+        _goToDetail(row.dataset.sessionId || null);
       }
     });
   }

@@ -279,6 +279,54 @@ def test_history_requires_auth(client):
 # ---------------------------------------------------------------------------
 
 
+def test_export_session_omits_pii_by_default(client):
+    """設計稿 08 · H1：匯出面板的個資開關預設關。
+
+    匯出檔會被丟進群組、貼進簡報。IP 與裝置識別要主持人明確勾選才帶出去。
+    """
+    login(client)
+    from server.services import history as history_service
+
+    history_service.danmu_history.add(
+        {"text": "hi", "color": "ffffff", "clientIp": "10.1.2.3", "fingerprint": "fp_abc"}
+    )
+    sessions = json.loads(client.get("/admin/sessions").data)["sessions"]
+    assert sessions, "一則彈幕就該切出一場"
+    sid = sessions[0]["id"]
+
+    plain = client.get(f"/admin/sessions/{sid}/export?format=csv")
+    assert plain.status_code == 200
+    body = plain.data.decode("utf-8")
+    assert "10.1.2.3" not in body and "fp_abc" not in body
+    assert "clientIp" not in body
+
+    with_pii = client.get(f"/admin/sessions/{sid}/export?format=csv&include_pii=1")
+    assert with_pii.status_code == 200
+    pii_body = with_pii.data.decode("utf-8")
+    assert "10.1.2.3" in pii_body and "fp_abc" in pii_body
+
+
+def test_export_session_formats_and_404(client):
+    login(client)
+    from server.services import history as history_service
+
+    history_service.danmu_history.add({"text": "hi", "color": "ffffff"})
+    sid = json.loads(client.get("/admin/sessions").data)["sessions"][0]["id"]
+
+    for fmt, ctype in (
+        ("csv", "text/csv"),
+        ("json", "application/json"),
+        ("srt", "application/x-subrip"),
+    ):
+        res = client.get(f"/admin/sessions/{sid}/export?format={fmt}")
+        assert res.status_code == 200, fmt
+        assert ctype in res.headers["Content-Type"], fmt
+        assert "attachment" in res.headers.get("Content-Disposition", ""), fmt
+
+    assert client.get(f"/admin/sessions/{sid}/export?format=xlsx").status_code == 400
+    assert client.get("/admin/sessions/sess_nope/export").status_code == 404
+
+
 def test_export_history_empty(client):
     login(client)
     res = client.get("/admin/history/export?hours=1")
