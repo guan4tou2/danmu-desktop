@@ -1016,13 +1016,13 @@ document.addEventListener("DOMContentLoaded", () => {
           <p class="admin-ui-page-note" data-i18n="themesSectionDesc">${ServerI18n.t("themesSectionDesc")}</p>
         </div>
         <div class="admin-ui-card" style="padding:14px;margin-top:12px">
-          <!-- Reload 原本獨佔一行（2026-08-01：併入 toolbar 右側，省一行高度） -->
+          <!-- 2026-09-07 設計稿 08 · T1：toolbar 只剩重新載入。
+               「4 個主題（4 內建）」那行字數量資訊卡片自己就看得到，
+               「ACTIONS」那個欄位標題則是在標一欄根本不存在的表格。 -->
           <div class="theme-pack-toolbar">
-            <span class="theme-pack-count" data-theme-pack-count>—</span>
-            <span class="theme-pack-actions-head">${ServerI18n.t("themesActionsHead")}</span>
             <button id="themeReloadBtn" class="admin-ui-action admin-theme-reload-action">
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              Reload
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              ${ServerI18n.t("themesReloadBtn")}
             </button>
           </div>
           <div id="themesList">

@@ -171,14 +171,23 @@ class TestThemesService:
         assert "retro" in names
         assert "cinema" in names
 
-    def test_load_all_meta_only(self):
+    def test_load_all_includes_presentation_fields(self):
+        """設計稿 08 · T1：主題卡要把一行彈幕畫成那個主題的樣子。
+
+        原本這裡釘的是「meta only，不得有 styles」。那條在卡片只顯示名稱與
+        描述的年代成立；現在卡片的主體就是「彈幕範例」，前端拿不到
+        styles/font/bg 就只能猜，四張卡會長得一模一樣。effects_preset 這種
+        執行期才用得到的東西仍然只在 get_theme 裡。
+        """
         themes = load_all(force=True)
         for t in themes:
             assert "name" in t
             assert "label" in t
             assert "description" in t
-            # Should NOT include full styles in meta
-            assert "styles" not in t
+            assert "styles" in t
+            assert "font" in t
+            assert "bg" in t
+            assert "effects_preset" not in t
 
     def test_get_theme_returns_full_data(self):
         load_all(force=True)

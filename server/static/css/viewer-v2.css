@@ -41,10 +41,8 @@ body.viewer-body-v2{
   --viewer-ink-warning: light-dark(var(--amber-700), var(--amber-400));
   --viewer-ink-error: light-dark(var(--red-700), var(--red-400));
 
-  /* 舞台（大螢幕）底色。預覽區與樣式抽層的預覽都是同一塊畫面，
-   * 定義一次；值取自設計稿 05／09。恆定深底，不隨主題翻轉。 */
-  --viewer-stage-bg: linear-gradient(135deg, #02060f, #0a1628);
-  --viewer-stage-ink: #f1f5f9;
+  /* 舞台底色搬到 shared/tokens.css：主題卡的「彈幕範例」也是同一塊畫面，
+   * 而 admin 不載入 viewer-v2.css。 */
 
   background: var(--color-bg-deep);
   color: var(--color-text-primary);

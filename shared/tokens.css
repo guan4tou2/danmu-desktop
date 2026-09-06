@@ -227,6 +227,13 @@
   /* Scrollbar */
   --color-scrollbar: rgba(71, 85, 105, 0.7);
 
+  /* 舞台（大螢幕）底色。觀眾頁的預覽、樣式抽層的預覽、以及 admin 主題卡的
+   * 「彈幕範例」都是同一塊畫面，定義一次；值取自設計稿 05／09。
+   * 恆定深底，不隨淺／深色主題翻轉——彈幕真正的舞台就是暗的，在白底上預覽
+   * 描邊與發光會完全看不出差別。 */
+  --viewer-stage-bg: linear-gradient(135deg, #02060f, #0a1628);
+  --viewer-stage-ink: #f1f5f9;
+
   /* Shadow */
   --shadow-base: rgba(0, 0, 0, 0.3);
 

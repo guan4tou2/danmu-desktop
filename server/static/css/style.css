@@ -827,100 +827,47 @@ button:disabled,
   background: rgba(56, 189, 248, 0.04);
 }
 
-.theme-pack-card-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.theme-pack-swatches {
-  display: flex;
-  gap: 0;
-}
-
-.theme-pack-swatch {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 2px solid var(--admin-panel);
-  margin-left: -4px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.theme-pack-swatch:first-child { margin-left: 0; }
-
-.theme-pack-title { display: flex; flex-direction: column; min-width: 0; }
-.theme-pack-title .zh { font-size: var(--text-footnote); font-weight: 600; color: var(--admin-text); }
-.theme-pack-title .en {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 2px;
-  color: var(--admin-text-dim);
-}
-
-.theme-pack-status {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 1.5px;
-  color: var(--admin-text-dim);
-}
-
-.theme-pack-status.is-active { color: var(--color-ink-accent); }
-
-.theme-pack-desc {
-  margin: 0;
+/* 設計稿 08 · T1：卡片＝主題名＋彈幕範例＋一顆動作。色票列、全大寫英文
+   代號、「○ 未使用」、字型／排版／FX 三行 meta、BUILT-IN 標籤全數退場——
+   使用者要決定的是「這個主題長什麼樣」，那只有直接畫一行彈幕能回答。 */
+.theme-pack-name {
   font-size: var(--text-footnote);
-  color: var(--admin-text-dim);
-  line-height: 1.5;
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
-.theme-pack-meta {
+.theme-pack-sample {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md-sm);
+  /* 主題檔沒帶 bg.gradient 時的中性底：彈幕真正的舞台是暗的，
+     在白底上預覽描邊與發光會完全看不出差別。 */
+  background: var(--viewer-stage-bg);
 }
 
-.theme-pack-meta .row { display: flex; gap: 8px; }
-.theme-pack-meta .k { width: 48px; color: var(--admin-text-dim); letter-spacing: 1.5px; }
-.theme-pack-meta .v { flex: 1; color: var(--admin-text); display: flex; flex-wrap: wrap; gap: 4px; }
-
-.theme-pack-chip {
-  display: inline-block;
-  padding: 1px 4px;
-  border: 1px solid var(--admin-line);
-  border-radius: var(--radius-xs);
+.theme-pack-sample-label {
   font-size: var(--text-caption);
-  letter-spacing: 1px;
-  color: var(--admin-text-dim);
-  text-transform: uppercase;
+  /* 舞台永遠是暗的，所以這裡不跟主題色走：用舞台自己的字色壓透明度。
+     直接寫 --slate-400 會被 lint-css 擋（那是原始色階，不是語意 token）。 */
+  color: var(--viewer-stage-ink);
+  opacity: 0.6;
+}
+
+.theme-pack-sample-line {
+  font-size: var(--text-title3);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.theme-pack-sample-nick {
+  margin-right: var(--space-2);
+  opacity: 0.75;
+  font-size: var(--text-footnote);
 }
 
 .theme-pack-muted { color: var(--admin-text-dim); }
-
-.theme-pack-foot {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px solid var(--admin-line);
-}
-
-.theme-pack-badge {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 1.5px;
-  padding: 2px 4px;
-  border-radius: var(--radius-xs);
-  border: 1px solid var(--admin-line);
-  color: var(--admin-text-dim);
-}
-
-.theme-pack-badge.is-builtin { color: var(--color-ink-accent); border-color: rgba(56, 189, 248, 0.35); }
 
 .theme-pack-actions { margin-left: auto; display: flex; gap: 8px; }
 

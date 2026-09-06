@@ -167,7 +167,13 @@ def _bundle_flags(theme: Dict[str, Any]) -> Dict[str, bool]:
 
 
 def load_all(force: bool = False) -> List[Dict[str, Any]]:
-    """Return list of all themes (meta only) + bundle flags."""
+    """Return list of all themes (meta + presentation) + bundle flags.
+
+    ``styles`` / ``font`` / ``bg`` 是給 admin 主題卡畫「彈幕範例」用的
+    （設計稿 08 · T1）。稿上每張卡都要直接把一行彈幕畫成那個主題的樣子——
+    只回 meta 的話前端只能猜，四張卡會長得一模一樣。這些欄位本來就是要
+    送到大螢幕上的視覺參數，不是機密。
+    """
     if force or not _cache:
         _scan()
     with _lock:
@@ -176,6 +182,9 @@ def load_all(force: bool = False) -> List[Dict[str, Any]]:
                 "name": t["name"],
                 "label": t["label"],
                 "description": t["description"],
+                "styles": t.get("styles") or {},
+                "font": t.get("font") or {},
+                "bg": t.get("bg") or {},
                 "bundle": _bundle_flags(t),
             }
             for t in _cache.values()

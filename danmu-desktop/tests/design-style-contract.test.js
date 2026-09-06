@@ -118,14 +118,18 @@ test("implementation frontend files do not reintroduce design-v2 forbidden palet
 // 是深色圖層，所以色票在預覽裡的對比＝上場後的真實對比（改後 6.71–18.57）。
 test("viewer preview stage is one dark stage in both themes", () => {
   const css = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/viewer-v2.css"), "utf8");
+  // 2026-09-07：兩個 token 搬到 shared/tokens.css——admin 的主題卡「彈幕範例」
+  // 也是同一塊舞台，而 admin 不載入 viewer-v2.css。值仍然只能有一份。
+  const tokens = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/tokens.css"), "utf8");
 
   // 深色舞台寫在 .viewer-preview 本體，不再分主題臂。
   // 2026-09-06 設計稿 05/09：舞台底色與字色抽成 --viewer-stage-bg /
   // --viewer-stage-ink，因為樣式抽層裡的預覽是同一塊畫面，值只能有一份。
-  expect(css).toMatch(
+  expect(tokens).toMatch(
     /--viewer-stage-bg:\s*linear-gradient\(135deg,\s*#02060f,\s*#0a1628\)/,
   );
-  expect(css).toMatch(/--viewer-stage-ink:\s*#f1f5f9;/);
+  expect(tokens).toMatch(/--viewer-stage-ink:\s*#f1f5f9;/);
+  expect(css).not.toMatch(/--viewer-stage-bg:\s*linear-gradient/);
   const previewRule = css.match(/\n\.viewer-preview\s*\{(?<body>[^}]*)\}/s);
   expect(previewRule).not.toBeNull();
   expect(previewRule.groups.body).toMatch(/background:\s*var\(--viewer-stage-bg\)/s);

@@ -38,25 +38,63 @@
     }
   }
 
+  // ── 卡片（設計稿 08 · T1）────────────────────────────────────────────
+  //
+  // 稿上的卡片只有三樣東西：主題名、**彈幕範例**、以及「使用中」或「套用」。
+  // 之前這張卡有色票列、全大寫英文代號、「○ 未使用」狀態字、字型／排版／FX
+  // 三行 meta、還有 BUILT-IN / CUSTOM 標籤——那些是在描述主題的規格，但使用者
+  // 要決定的是「這個主題長什麼樣」，而那件事只有直接畫一行彈幕能回答。
+
+  var SAMPLE_NICK = "小明";
+  var SAMPLE_TEXT = "講得好！+1";
+
+  // 顏色來自 repo 內的 theme YAML，但它終究是要塞進 style 屬性的字串——
+  // 只放行 hex 與 rgb()/rgba()，其餘一律退回預設，免得哪天主題檔變成
+  // 使用者可上傳的東西時這裡變成注入點。
+  function _safeColor(value, fallback) {
+    var v = String(value || "").trim();
+    return /^(#[0-9a-fA-F]{3,8}|rgba?\([\d\s.,%]+\))$/.test(v) ? v : fallback;
+  }
+
+  function _sampleStyle(theme) {
+    var st = theme.styles || {};
+    var parts = ["color:" + _safeColor(st.color, "#ffffff")];
+    if (st.textStroke) {
+      var w = Math.max(0, Math.min(6, Number(st.strokeWidth) || 0));
+      parts.push("-webkit-text-stroke:" + w + "px " + _safeColor(st.strokeColor, "#000000"));
+      parts.push("paint-order:stroke fill");
+    }
+    if (st.textShadow) {
+      var blur = Math.max(0, Math.min(40, Number(st.shadowBlur) || 0));
+      parts.push("text-shadow:0 0 " + blur + "px " + _safeColor(st.color, "#ffffff"));
+    }
+    var fam = theme.font && theme.font.family;
+    if (fam && /^[\w\s-]{1,40}$/.test(fam)) parts.push("font-family:'" + fam + "', var(--font-sans)");
+    if (theme.font && Number(theme.font.weight)) {
+      parts.push("font-weight:" + Math.max(100, Math.min(900, Number(theme.font.weight))));
+    }
+    return parts.join(";");
+  }
+
+  function _stageStyle(theme) {
+    var grad = theme.bg && theme.bg.gradient;
+    // gradient 同樣只放行「認得出來的」寫法
+    if (grad && /^linear-gradient\([^;"'<>]{1,200}\)$/.test(String(grad).trim())) {
+      return "background:" + String(grad).trim();
+    }
+    return "";
+  }
+
   function renderThemesList(themes, activeName) {
     const container = document.getElementById("themesList");
     if (!container) return;
     container.innerHTML = "";
-
-    const count = document.querySelector("[data-theme-pack-count]");
-    if (count) {
-      const builtin = themes.filter(t => t.bundled !== false).length;
-      const custom = themes.length - builtin;
-      count.textContent = ServerI18n.t("themesCountLine", { n: themes.length, builtin: builtin, custom: custom > 0 ? ServerI18n.t("themesCountCustomSuffix", { n: custom }) : "" });
-    }
 
     if (themes.length === 0) {
       container.innerHTML = '<span class="theme-pack-muted" style="padding:14px">' + ServerI18n.t("noThemesFound") + '</span>';
       return;
     }
 
-    // Theme pack card — prototype admin-theme-packs.jsx ThemePackCard.
-    // Each card: swatches + name/en + desc + font/layout/effects/bg + actions.
     themes.forEach((theme) => {
       const isActive = theme.name === activeName;
       const label = escapeHtml(
@@ -64,54 +102,23 @@
           ? ServerI18n.t("theme_" + theme.name)
           : (theme.label || theme.name)
       );
-      const desc = escapeHtml(
-        ServerI18n.t("theme_" + theme.name + "_desc") !== "theme_" + theme.name + "_desc"
-          ? ServerI18n.t("theme_" + theme.name + "_desc")
-          : (theme.description || "")
-      );
-      const palette = theme.palette && theme.palette.length
-        ? theme.palette.slice(0, 3)
-        : [theme.styles?.color || "#ffffff", "#38bdf8", "#e879f9"];
-      const effects = (theme.effects_preset || [])
-        .map(e => typeof e === "string" ? e : (e.name || ""))
-        .filter(Boolean);
-      const fontFam = theme.font?.family || "Noto Sans TC";
-      const layout = theme.layout || ServerI18n.t("themesLayoutFallback");
-      const builtin = theme.bundled !== false;
 
       const card = document.createElement("div");
       card.className = `theme-pack-card${isActive ? " is-active" : ""}`;
       card.innerHTML = `
-        <div class="theme-pack-card-head">
-          <div class="theme-pack-swatches">
-            ${palette.map(c => `<span class="theme-pack-swatch" style="background:${escapeHtml(c)}"></span>`).join("")}
-          </div>
-          <div class="theme-pack-title">
-            <span class="zh">${label}</span>
-            <span class="en">${escapeHtml((theme.name || "").toUpperCase())}</span>
-          </div>
-          <span class="theme-pack-status${isActive ? " is-active" : ""}">
-            ${isActive ? "● " + ServerI18n.t("lbActive") : "○ " + ServerI18n.t("lbInactive")}
+        <div class="theme-pack-name">${label}</div>
+        <div class="theme-pack-sample" style="${escapeHtml(_stageStyle(theme))}">
+          <span class="theme-pack-sample-label">${ServerI18n.t("themesSampleLabel")}</span>
+          <span class="theme-pack-sample-line" style="${escapeHtml(_sampleStyle(theme))}">
+            <span class="theme-pack-sample-nick">${escapeHtml(SAMPLE_NICK)}</span>
+            ${escapeHtml(SAMPLE_TEXT)}
           </span>
         </div>
-        <p class="theme-pack-desc">${desc}</p>
-        <div class="theme-pack-meta">
-          <div class="row"><span class="k">${ServerI18n.t("lbFont")}</span><span class="v">${escapeHtml(fontFam)}</span></div>
-          <div class="row"><span class="k">${ServerI18n.t("lbLayoutRow")}</span><span class="v">${escapeHtml(layout)}</span></div>
-          <div class="row"><span class="k">FX</span><span class="v">${
-            effects.length
-              ? effects.map(e => `<span class="theme-pack-chip">${escapeHtml(e)}</span>`).join(" ")
-              : '<span class="theme-pack-muted">—</span>'
-          }</span></div>
-        </div>
-        <div class="theme-pack-foot">
-          <span class="theme-pack-badge${builtin ? " is-builtin" : ""}">${builtin ? "BUILT-IN" : "CUSTOM"}</span>
-          <div class="theme-pack-actions">
-            ${isActive
-              ? '<span class="admin-ui-chip admin-theme-pack-status is-active">' + ServerI18n.t("themesActiveChip") + '</span>'
-              : `<button class="admin-ui-action is-primary admin-theme-pack-action theme-activate-btn" data-theme="${escapeHtml(theme.name)}">${ServerI18n.t("themesActivateBtn")}</button>`
-            }
-          </div>
+        <div class="theme-pack-actions">
+          ${isActive
+            ? '<span class="admin-ui-chip admin-theme-pack-status is-active">' + ServerI18n.t("themesActiveChip") + '</span>'
+            : `<button class="admin-ui-action is-primary admin-theme-pack-action theme-activate-btn" data-theme="${escapeHtml(theme.name)}">${ServerI18n.t("themesActivateBtn")}</button>`
+          }
         </div>
       `;
       container.appendChild(card);
@@ -128,7 +135,10 @@
             body: JSON.stringify({ name: themeName }),
           });
           if (res.ok) {
-            showToast(ServerI18n.t("themeActivated").replace("{name}", themeName));
+            // 設計稿 14：toast 是動詞完成式且 ≤ 8 字。原本是「主題「retro」已
+            // 啟用」——把內部 slug 唸給使用者聽，而且他剛剛才點的那張卡就在
+            // 眼前，不需要複述是哪一個。
+            showToast(ServerI18n.t("themeActivated"), true);
             _adminActiveTheme = themeName;
             renderThemesList(themes, themeName);
           } else {

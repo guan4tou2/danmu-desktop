@@ -493,3 +493,34 @@ def test_session_export_panel_matches_the_spec(zh):
         "admin-sessions-preview",
     ):
         assert gone not in js, gone
+
+
+def test_theme_cards_show_a_danmu_sample(zh):
+    """設計稿 08 · T1：每張主題卡都要**直接把一行彈幕畫成那個主題的樣子**。
+
+    卡片之前是色票列＋全大寫英文代號＋「○ 未使用」＋字型／排版／FX 三行
+    meta＋BUILT-IN 標籤——那是在描述主題的規格。使用者要決定的是「這個主題
+    長什麼樣」，而那件事只有直接畫一行彈幕能回答。
+    """
+    assert "決定所有彈幕的字型、描邊與陰影" in zh["themesSectionDesc"]
+    assert zh["themesActiveChip"] == "使用中"
+    assert zh["themesActivateBtn"] == "套用"  # 「啟用 ▶」的 ▶ 是設計稿 14 禁用的圖示
+    assert not re.search(r"[⌫▶■⚡◱]", zh["themesActivateBtn"])
+    assert zh["styleThemePacks"] == "主題"  # 設計稿 14 詞彙表：風格主題包 → 主題
+
+    js = _strip_comments(_read("server/static/js/admin-themes.js"))
+    assert "theme-pack-sample-line" in js
+    assert "_sampleStyle" in js and "-webkit-text-stroke" in js
+    for gone in (
+        "theme-pack-swatch",
+        "theme-pack-badge",
+        "theme-pack-meta",
+        "theme-pack-title",
+        "BUILT-IN",
+    ):
+        assert gone not in js, gone
+
+    # 範例要畫得出來，後端就得把 styles/font/bg 一起送出（只回 meta 的話四張
+    # 卡會長得一模一樣）。
+    svc = _read("server/services/themes.py")
+    assert '"styles": t.get("styles")' in svc
