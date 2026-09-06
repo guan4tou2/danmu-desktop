@@ -678,14 +678,14 @@ document.addEventListener("DOMContentLoaded", () => {
                                      3 區 12 列，取代 v7 的 4 區 15 列。分組軸線從「頻率×對象」改成
                                      「活動當下 / 活動之前 / 與活動無關」——主持人問的是「現在要用還是
                                      先設好」，不是「這功能屬於哪一類」。
-                                
+
                                      兩個提升：overlay（顯示層）與 security（安全）本來就是 first-class
                                      route，只是不在側欄；設計稿把它們放回來。
-                                
+
                                      五個降級：widgets / system / plugins / webhooks / api-tokens 離開側欄
                                      但**路由全部保留**——深連結、⌘K、既有書籤都照常，只是不再各佔一列。
                                      它們的入口收在「擴充」這個 hub 頁。
-                                
+
                                      命名去術語化：效果庫 .dme → 動畫效果（副檔名只在匯入時才需要出現）、
                                      風格主題包 → 主題、素材庫 → 素材、Desktop 控制 → 顯示層。 -->
                                 <div class="admin-dash-nav-label" data-i18n="adminNavGroupLive">活動中</div>
@@ -1662,7 +1662,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // Active state — prefer the alias button (matching rawName) over the
       // resolved-nav button so the user's clicked sidebar item stays lit
       // after alias redirect. Falls back to currentRoute match otherwise.
-      const _allBtns = Array.from(shell.querySelectorAll("[data-route]"));
+      // 只掃側欄的 nav row。頂欄的顯示層狀態鈕也帶 data-route="overlay"
+      // （它是導航捷徑），用寬的 [data-route] 選擇器會讓 #/overlay 同時點亮
+      // 兩顆，違反「該 slug 的按鈕唯一亮起」這條契約。
+      const _allBtns = Array.from(shell.querySelectorAll(".admin-dash-nav-row[data-route]"));
       const _aliasBtn = (rawName !== currentRoute)
         ? _allBtns.find((b) => b.dataset.route === rawName)
         : null;

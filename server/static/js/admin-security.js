@@ -32,7 +32,7 @@
     // 所有 sec2-* id 原樣保留，行為邏輯完全沒動。
     const t = (k) => ServerI18n.t(k);
     return `
-        <div id="${PAGE_ID}" class="admin-security-page hud-page-stack lg:col-span-2">
+        <div id="${PAGE_ID}" class="admin-security-page hud-page-stack lg:col-span-2" data-tpl="C">
         <div class="admin-ui-page-head">
           <h2 class="admin-ui-page-title">${t("security2PageTitle")}</h2>
           <p class="admin-ui-page-note">${t("security2PageNote")}</p>

@@ -390,9 +390,10 @@ def test_ia_tab_strip_renders_for_moderation(admin_page):
     """Slice 3: tabbed nav routes mount a tab strip in the topbar host."""
     _go_to_route(admin_page, "moderation")
     admin_page.wait_for_selector(".admin-tabs-strip", state="attached", timeout=5000)
-    # 6 tabs per design v4 brief 0518-v3 (queue / bans / blacklist /
-    # filters / ratelimit / fingerprints — bans + queue added 5.1.0)
-    assert admin_page.locator(".admin-tabs-btn").count() == 6
+    # v8 IA (2026-08-19 設計稿 03 · R3)：6 分頁併成 4，依「你在管什麼」分
+    # （審核佇列 / 封鎖字＝blacklist+filters / 被封鎖的觀眾＝bans+fingerprints
+    # / 發送上限＝ratelimit）。被併掉的 slug 由 _tabAliases 落到正確分頁。
+    assert admin_page.locator(".admin-tabs-btn").count() == 4
     # Default tab = queue (locked decision in admin-tabs.js TabConfig.moderation)
     active = admin_page.locator(".admin-tabs-btn.is-active").get_attribute("data-tab")
     assert active == "queue"
@@ -444,12 +445,19 @@ def test_ia_system_legacy_leaf_deeplinks_rehome(admin_page):
 def test_ia_deep_link_preserves_tab(admin_page):
     """Slice 2 + 3: deep-linking #/<nav>/<tab> activates the tab directly,
     skipping the default."""
+    # v8 IA (2026-08-19)：filters 併入「封鎖字」分頁後，這條同時驗證
+    # _tabAliases——舊 deep link 必須落到承接它的分頁，而不是退回預設頁。
     admin_page.evaluate('() => { window.location.hash = "#/moderation/filters"; }')
     admin_page.wait_for_timeout(400)
     active = admin_page.locator(".admin-tabs-btn.is-active").get_attribute("data-tab")
-    assert active == "filters"
-    # Inactive tab section hidden
+    assert active == "blacklist"
+    # filters 併入「封鎖字」後，sec-blacklist 正是這個分頁的內容之一，
+    # 應該可見；改抓另一個分頁（發送上限）的 section 驗證「非作用中隱藏」。
     blacklist_display = admin_page.evaluate(
         '() => document.getElementById("sec-blacklist").style.display'
     )
-    assert blacklist_display == "none"
+    assert blacklist_display != "none"
+    ratelimit_display = admin_page.evaluate(
+        '() => document.getElementById("sec-ratelimit").style.display'
+    )
+    assert ratelimit_display == "none"

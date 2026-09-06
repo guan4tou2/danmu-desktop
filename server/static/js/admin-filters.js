@@ -136,7 +136,7 @@
               <div class="hud-inspector-head">
                 <span class="hud-status-dot is-live"></span>
                 <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${t("addFilterRule", "Add Rule")}</span>
-                
+
               </div>
               <div id="filterRuleForm" style="padding:14px;display:flex;flex-direction:column;gap:10px">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">

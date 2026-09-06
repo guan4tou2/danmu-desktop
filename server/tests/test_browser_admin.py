@@ -125,12 +125,15 @@ SECTION_TO_ROUTE = {
     # Phase A IA (2026-05-06): viewer/display defaults are now reached
     # through the canonical viewer route. Legacy #/viewer-config still works
     # via router aliases, but tests should exercise the visible sidebar home.
-    "sec-color": "viewer",
-    "sec-opacity": "viewer",
-    "sec-fontsize": "viewer",
-    "sec-speed": "viewer",
-    "sec-fontfamily": "viewer",
-    "sec-layout": "viewer",
+    # v8（2026-08-19 設計稿 07 · R1/R4 拆分）：這六列的「值」現在歸顯示層，
+    # 觀眾頁只留「觀眾能不能自己改」的開關欄。兩頁共用同一份面板，靠
+    # data-dsp-mode 決定露哪一欄——要驗值編輯器就得走 overlay。
+    "sec-color": "overlay",
+    "sec-opacity": "overlay",
+    "sec-fontsize": "overlay",
+    "sec-speed": "overlay",
+    "sec-fontfamily": "overlay",
+    "sec-layout": "overlay",
     "sec-viewer-theme": "viewer",
     "sec-themes": "themes",
     # v5: emojis / stickers / sounds bundled into the "assets" route.
@@ -441,6 +444,13 @@ def test_change_password_section_exists(admin_page):
     # keeps the whole password card off-screen — so use the canonical
     # #/system/security path the sidebar actually navigates to.
     admin_page.evaluate('() => { window.location.hash = "#/system/security"; }')
+    admin_page.wait_for_selector(
+        '[data-sec-disclose="sec2-pw-form"]', state="visible", timeout=5000
+    )
+    # v8（2026-08-19 設計稿 07 · R7）：改密碼表單預設收合——三個輸入框攤在
+    # 設定列表裡會打斷「一列一設定」的節奏，而改密碼是低頻動作。
+    # 先點「變更密碼…」展開；這一步同時驗證了收合機制本身。
+    admin_page.click('[data-sec-disclose="sec2-pw-form"]')
     admin_page.wait_for_selector("#sec2-pw-current", state="visible", timeout=5000)
     assert admin_page.is_visible("#sec2-pw-current")
     assert admin_page.is_visible("#sec2-pw-new")
@@ -452,6 +462,13 @@ def test_change_password_wrong_current_calls_api(admin_page):
     flow replaced standalone changePasswordBtn click)."""
     # IA v5 5-section: Security is the `security` leaf under the System route.
     admin_page.evaluate('() => { window.location.hash = "#/system/security"; }')
+    admin_page.wait_for_selector(
+        '[data-sec-disclose="sec2-pw-form"]', state="visible", timeout=5000
+    )
+    # v8（2026-08-19 設計稿 07 · R7）：改密碼表單預設收合——三個輸入框攤在
+    # 設定列表裡會打斷「一列一設定」的節奏，而改密碼是低頻動作。
+    # 先點「變更密碼…」展開；這一步同時驗證了收合機制本身。
+    admin_page.click('[data-sec-disclose="sec2-pw-form"]')
     admin_page.wait_for_selector("#sec2-pw-current", state="visible", timeout=5000)
 
     responses = []
