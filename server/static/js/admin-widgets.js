@@ -53,24 +53,23 @@
         <div class="admin-ui-page-head">
           <h2 class="admin-ui-page-title">${escapeHtml(i18n("widgetsTitle"))}</h2>
           <p class="admin-ui-page-note">${escapeHtml(i18n("widgetsDesc"))}</p>
+          <!-- 設計稿 08 · W1：主要動作在頁首右側。頁首在標題與路由同名時會被
+               併進 topbar，shell 的 [data-route-action] 插槽會把這一塊接過去
+               （見 admin.js 的 _dedupSectionTitles）。 -->
+          <div class="admin-ui-page-actions admin-ow-addrow">
+            <button id="widget-add" type="button" class="admin-ui-action is-primary">
+              ${escapeHtml(i18n("widgetsAddBtn"))}
+            </button>
+            <div class="admin-ow-addmenu" data-ow-addmenu hidden>
+              <button type="button" data-ow-add="scoreboard">${escapeHtml(i18n("widgetScoreboard"))}</button>
+              <button type="button" data-ow-add="ticker">${escapeHtml(i18n("widgetTicker"))}</button>
+              <button type="button" data-ow-add="label">${escapeHtml(i18n("widgetLabel"))}</button>
+            </div>
+          </div>
         </div>
 
         <div class="hud-page-grid-2">
           <div class="hud-page-stack" style="gap:12px">
-            <!-- 稿上這顆鈕在頁首右側，但 admin shell 會把「標題與路由同名」的
-                 頁首整塊併進 topbar（is-merged-into-topbar），放進去會直接消失。
-                 把「路由主要動作」做成 shell 的插槽是一次要為所有頁面做的事，
-                 不該夾帶在這一頁裡，所以先靠右擺在清單上方。 -->
-            <div class="admin-ow-addrow">
-              <button id="widget-add" type="button" class="admin-ui-action is-primary">
-                ${escapeHtml(i18n("widgetsAddBtn"))}
-              </button>
-              <div class="admin-ow-addmenu" data-ow-addmenu hidden>
-                <button type="button" data-ow-add="scoreboard">${escapeHtml(i18n("widgetScoreboard"))}</button>
-                <button type="button" data-ow-add="ticker">${escapeHtml(i18n("widgetTicker"))}</button>
-                <button type="button" data-ow-add="label">${escapeHtml(i18n("widgetLabel"))}</button>
-              </div>
-            </div>
             <div id="widgets-list" class="admin-widgets-list"></div>
             <div class="admin-widgets-actions">
               <button id="widget-clear-all" type="button" class="admin-ui-action is-danger admin-widget-toolbar-action">
@@ -116,7 +115,7 @@
         createWidget(kind);
       });
       document.addEventListener("click", (e) => {
-        if (!addMenu.hidden && !e.target.closest(".admin-ow-addrow")) addMenu.hidden = true;
+        if (!addMenu.hidden && !e.target.closest(".admin-ui-page-actions")) addMenu.hidden = true;
       });
       document.getElementById("widget-clear-all").addEventListener("click", clearAllWidgets);
 

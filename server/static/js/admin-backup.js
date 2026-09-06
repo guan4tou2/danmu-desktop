@@ -43,12 +43,12 @@
         <div class="admin-ui-page-head">
           <h2 class="admin-ui-page-title">${t("backupPageTitle")}</h2>
           <p class="admin-ui-page-note">${t("backupPageNote")}</p>
-        </div>
-
-        <!-- 主動作放在頁首「外面」：標題與路由標題相同時，_dedupSectionTitles
-             會把整個 .admin-ui-page-head 收起來，擺在裡面的按鈕會跟著消失。 -->
-        <div class="admin-ui-inline-toolbar admin-ui-page-actions">
-          <button type="button" id="bk2-pack-export" class="admin-ui-action is-primary">${t("backupPackExportBtn")}</button>
+          <!-- 2026-09-07：搬回頁首裡。頁首被併進 topbar 時，shell 的
+               [data-route-action] 插槽會把這一塊接過去（見 admin.js 的
+               _dedupSectionTitles），不會再跟著消失。 -->
+          <div class="admin-ui-inline-toolbar admin-ui-page-actions">
+            <button type="button" id="bk2-pack-export" class="admin-ui-action is-primary">${t("backupPackExportBtn")}</button>
+          </div>
         </div>
 
         <div class="admin-ui-group-label">${t("backupGroupDownload")}</div>

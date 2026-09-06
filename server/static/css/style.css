@@ -13670,12 +13670,24 @@ body.admin-pu-open { overflow: hidden; }
 .admin-ow-box.is-bottom-right { bottom: var(--space-2); right: var(--space-2); }
 .admin-ow-box.is-center       { top: 50%; left: 50%; transform: translate(-50%, -50%); }
 
-/* 新增小工具：一顆鈕靠右，按下去才展開三個種類 */
-.admin-ow-addrow {
+/* 頁面主要動作（設計稿 07/08：每一頁的主要動作在頁首右側）。
+   頁首被併進 topbar 時，shell 會把這一塊搬進 [data-route-action]；
+   兩個位置都要靠右、都要能容納下拉，所以定位規則寫在這裡而不是任一容器上。 */
+.admin-ui-page-actions {
   position: relative;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
 }
+.admin-dash-topbar-action {
+  display: flex;
+  align-items: center;
+}
+.admin-dash-topbar-action:empty { display: none; }
+
+/* 新增小工具：按下去才展開三個種類 */
+.admin-ow-addrow { position: relative; }
 .admin-ow-addmenu {
   position: absolute;
   top: 100%; right: 0;

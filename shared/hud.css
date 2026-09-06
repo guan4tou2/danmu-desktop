@@ -362,7 +362,14 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: var(--admin-panel);
   border: 1px solid var(--admin-line);
   border-radius: var(--radius-md-sm);
+  /* 設計稿 07/08：標題與說明在左、主要動作在右。說明用 flex-basis:100%
+     強制換到第二列，跟 topbar 的 note 同一招——留在第一列會把動作擠掉。 */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-4);
 }
+.admin-ui-page-head > .admin-ui-page-note { flex-basis: 100%; }
 
 .admin-ui-page-kicker {
   font-family: var(--font-mono);

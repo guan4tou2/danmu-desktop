@@ -786,6 +786,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <h1 data-route-title>控制台</h1>
                                 </div>
                                 <div class="admin-dash-topbar-actions">
+                                    <!-- 2026-09-07 設計稿 07/08：每一頁的主要動作都在頁首右側
+                                         （主題「新主題」、素材「上傳」、小工具「新增小工具」、
+                                         擴充「新增 Webhook」）。但區塊頁首在標題與路由同名時
+                                         會整塊併進 topbar，動作放在裡面就跟著消失了。這個插槽
+                                         接住它們：_dedupSectionTitles 會把被併掉的頁首裡的
+                                         .admin-ui-page-actions 搬過來，換路由時再搬回去。 -->
+                                    <div class="admin-dash-topbar-action" data-route-action></div>
                                     <!-- 2026-08-19 設計稿 03：頂欄收斂成「狀態 + 搜尋圖示」。
                                          · ⌘K 提示文字移除、只留圖示——提示文字對用過一次的人
                                            是永久噪音，圖示本身已足夠。
@@ -953,10 +960,10 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="admin-ui-page-head">
           <h2 class="admin-ui-page-title">${ServerI18n.t("adminRouteTitle_effects")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("fxPageNote")}</p>
-        </div>
-        <div class="admin-ui-page-actions">
-          <span class="admin-ui-summary"><span data-eflib-active>—</span> / <span data-eflib-total>—</span> ${ServerI18n.t("fxOpenToAudience")}</span>
-          <span hidden data-eflib-cats>—</span><span hidden data-eflib-user>—</span>
+          <div class="admin-ui-page-actions">
+            <span class="admin-ui-summary"><span data-eflib-active>—</span> / <span data-eflib-total>—</span> ${ServerI18n.t("fxOpenToAudience")}</span>
+            <span hidden data-eflib-cats>—</span><span hidden data-eflib-user>—</span>
+          </div>
         </div>
         <div class="hud-page-grid-2">
           <div class="hud-page-stack" style="gap:16px">
@@ -1408,6 +1415,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const routeTitle = shell.querySelector("[data-route-title]")
         ?.textContent?.trim().replace(/\s+/g, " ");
       const noteSlot = shell.querySelector("[data-route-note]");
+      const actionSlot = shell.querySelector("[data-route-action]");
+      // 先把上一條路由借走的動作還回去。搬 DOM 節點不會弄丟 listener，
+      // 所以來回搬是安全的；用 clone 反而會讓按鈕變成死的。
+      if (actionSlot) {
+        Array.prototype.slice.call(actionSlot.children).forEach((node) => {
+          if (node._adminHomeHead) node._adminHomeHead.appendChild(node);
+          else node.remove();
+        });
+      }
       if (!routeTitle) return;
       // 2026-07-30（全掃後定案）：分頁式路由（審核/素材庫/觀眾頁/系統/紀錄）
       // 的 section page-head 一律是多餘——分頁列本身就是 section 的標題，
@@ -1442,6 +1458,11 @@ document.addEventListener("DOMContentLoaded", () => {
         // 就是當前分頁真正顯示的那個 —— 只取它的 note。
         if (mergedNote === null && head.offsetParent !== null) {
           mergedNote = head.querySelector(".admin-ui-page-note")?.innerHTML || "";
+          const actions = head.querySelector(".admin-ui-page-actions");
+          if (actions && actionSlot) {
+            actions._adminHomeHead = head;
+            actionSlot.appendChild(actions);
+          }
         }
         head.classList.add("is-merged-into-topbar");
       });

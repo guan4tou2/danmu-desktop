@@ -576,3 +576,27 @@ def test_widget_rows_are_summaries_and_the_preview_is_real(zh):
         "Desktop preview",
     ):
         assert gone not in js, gone
+
+
+def test_page_primary_action_has_a_home_in_the_shell(zh):
+    """設計稿 07/08：每一頁的主要動作在頁首右側。
+
+    admin shell 會把「標題與路由同名」的區塊頁首整塊併進 topbar，所以擺在
+    頁首裡的按鈕會跟著消失。在這之前每一頁各自繞過：備份把按鈕移到頁首
+    外面、動畫效果把摘要移到頁首外面、小工具本來要三顆並排的工具列——
+    每加一頁就多一種繞法。
+
+    現在 shell 有 [data-route-action] 插槽：被併掉的頁首裡的
+    .admin-ui-page-actions 會被搬進去，換路由時搬回原位。搬 DOM 節點不會
+    弄丟 listener，所以不能改用 clone。
+    """
+    js = _strip_comments(_read("server/static/js/admin.js"))
+    assert "data-route-action" in js
+    assert "_adminHomeHead" in js
+    assert ".admin-ui-page-actions" in js
+
+    # 兩個原本繞過去的頁面已經搬回頁首裡
+    backup = _strip_comments(_read("server/static/js/admin-backup.js"))
+    head_start = backup.index('class="admin-ui-page-head"')
+    head_end = backup.index("admin-ui-group-label", head_start)
+    assert "admin-ui-page-actions" in backup[head_start:head_end]
