@@ -53,18 +53,21 @@ class BrowserTestConfig(TestConfig):
 
 # ─── Baseline（2026-07-26 於 main 85103c6 實跑量測）──────────────────────────
 
-# 主內容區最少字元數。實測最低是 messages 的 191（空訊息狀態），其餘都在 280+；
-# 門檻取 120 是要抓「整頁空白」這種回歸，不是要盯資料量的自然波動。
-MIN_CONTENT_CHARS = 120
-
-# 例外：設計稿刻意把頁面變薄的路由。
+# 主內容區最少字元數。這條測的是「頁面有沒有渲染」，不是「有多少資料」。
 #
-# `history` —— 設計稿 08 · H1 把場次頁收成「一張表＋匯出面板」，拿掉了 4 格
-# KPI 條與三顆頁內篩選分頁。頁面說明那一行是算在 topbar 裡被減掉的，所以
-# contentChars 只剩分段列＋表頭＋（無資料時的）空狀態卡。2026-09-07 實測：
-# 沒有任何場次時 83 字，有一列時 63 字；真正「整頁沒渲染」是 0–15 字。
-# 把全域門檻砍半會削弱其他 11 條路由的保護，所以這裡開一個具名例外。
-MIN_CONTENT_CHARS_BY_ROUTE = {"history": 50}
+# 2026-09-07 重新校準：120 → 60。原本的 120 是 2026-07-26 量出來的，那時每頁
+# 都有一條 4 格 KPI、頁內篩選分頁、以及中英對照的欄位標題。設計稿 07/08 系統性
+# 地把那些拿掉——KPI 條、色票列、meta 三行、全大寫英文代號——頁面本來就會變薄，
+# 而頁面說明那一行是算在 topbar 裡被減掉的。
+#
+# 當天實測十三條路由（都是完整渲染的頁面，本機有資料）：
+#   themes 91 · widgets 241 · live 267 · moderation 322 · integrations 422 ·
+#   polls 422 · backup 442 · effects 481 · security 481 · assets 603 ·
+#   history 712 · overlay 979 · viewer 2833
+# 加上 CI 的空資料情境：history 83（分段列＋空狀態卡＋行動呼籲）。
+# 真正「整頁沒渲染」是 0–15 字（只剩分段列），60 仍然擋得住，而且不必為了
+# 每一頁的瘦身開一個具名例外——那只會變成每次改版都在調的數字。
+MIN_CONTENT_CHARS = 60
 
 # 刻意保留的 `[PLACEHOLDER]` 控制項配額（待 BE / 待 Design，見 admin-follow-up
 # plan Task 8 的 deferred 清單）。key 沒列到的路由一律必須是 0。
@@ -311,13 +314,13 @@ def test_route_declares_page_template(route_snapshots, slug):
 def test_route_renders_real_content(route_snapshots, slug):
     """主內容區不能是白頁。
 
-    門檻刻意訂得比實測最低值（messages 191 字，空狀態）低一截，因為這條測的是
-    「頁面有沒有渲染」，不是「有多少資料」。
+    門檻刻意訂得比任何一頁的實測值低一截，因為這條測的是「頁面有沒有渲染」，
+    不是「有多少資料」，更不是「頁面該有多少 chrome」。校準過程見
+    MIN_CONTENT_CHARS 的註解。
     """
     chars = route_snapshots[slug]["contentChars"]
-    floor = MIN_CONTENT_CHARS_BY_ROUTE.get(slug, MIN_CONTENT_CHARS)
-    assert chars >= floor, (
-        f"#/{slug} 主內容區只有 {chars} 個字（門檻 {floor}）—— " f"頁面可能整個沒渲染"
+    assert chars >= MIN_CONTENT_CHARS, (
+        f"#/{slug} 主內容區只有 {chars} 個字（門檻 {MIN_CONTENT_CHARS}）—— " f"頁面可能整個沒渲染"
     )
 
 
