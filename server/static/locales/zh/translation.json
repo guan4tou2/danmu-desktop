@@ -2077,13 +2077,12 @@
   "histStateMasked": "已遮罩",
   "histListHeader": "訊息清單 · 近 24 小時",
   "histListCount": "● {n} 筆",
-  "emojisPageTitle": "Emoji 庫",
-  "emojisPageNote": "觀眾在彈幕內用 :name: 語法插入表情；上傳 PNG 後即時生效。",
-  "emojisUpTitle": "拖入 PNG / GIF / WEBP 上傳新 Emoji · 或填表單",
-  "emojisUpSub": "64×64 推薦 · 最大 128KB · 支援動圖 GIF",
-  "emojisUploadBtn": "+ 上傳",
+  "emojisPageTitle": "表情",
+  "emojisPageNote": "觀眾在訊息裡輸入 :名稱: 就會變成表情。PNG／GIF，建議 64×64。",
+  "emojisUpTitle": "把圖片拖到這裡上傳，或選擇檔案",
+  "emojisUpSub": "PNG／GIF／WEBP，建議 64×64，單檔最大 500KB",
+  "emojisUploadBtn": "上傳",
   "emojisQuotaUsed": "已用 {n} / {max}",
-  "emojisQuotaSize": "總計 {size}",
   "emojisSearchPlaceholder": ":name 過濾",
   "emojisPreviewLabel": "觀眾預覽",
   "emojisPreviewEmpty": "上傳第一個 emoji 後此處會出現預覽。",
@@ -2812,5 +2811,8 @@
   "sessionsReplayNoOverlay": "大螢幕沒開，重播沒有人看得到。先開啟顯示層再重播。",
   "sessionsReplayFailed": "重播失敗",
   "themesSampleLabel": "彈幕範例",
-  "themesReloadBtn": "重新載入"
+  "themesReloadBtn": "重新載入",
+  "emojisUsedCount": "用過 {n} 次",
+  "emojisNeverUsed": "尚未使用",
+  "emojisFootNote": "點卡片可改名或刪除。「字型」分段可上傳 .woff2／.ttf 並自動子集化；「音效」分段含關鍵字觸發規則。"
 }

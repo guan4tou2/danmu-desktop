@@ -1398,6 +1398,14 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-size: var(--text-footnote); padding: 0 8px;
 }
 
+/* 設計稿 08 · T2 底部註記 */
+.admin-em-v4__footnote {
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
 .admin-em-v4__preview {
   padding: 12px 16px; border-radius: var(--radius-md-sm);
   background: var(--hud-bg1);

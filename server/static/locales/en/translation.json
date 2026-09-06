@@ -2077,13 +2077,12 @@
   "histStateMasked": "Masked",
   "histListHeader": "Message list · last 24 h",
   "histListCount": "● {n}",
-  "emojisPageTitle": "Emoji Library",
-  "emojisPageNote": "Viewers insert emoji in danmu with :name: syntax; uploads take effect instantly.",
-  "emojisUpTitle": "Drop PNG / GIF / WEBP to upload · or use the form",
-  "emojisUpSub": "64×64 recommended · 128KB max · animated GIF ok",
-  "emojisUploadBtn": "+ Upload",
+  "emojisPageTitle": "Emoji",
+  "emojisPageNote": "Type :name: in a message and it becomes an emoji. PNG or GIF, 64×64 recommended.",
+  "emojisUpTitle": "Drop images here to upload, or choose a file",
+  "emojisUpSub": "PNG / GIF / WEBP, 64×64 recommended, 500KB per file",
+  "emojisUploadBtn": "Upload",
   "emojisQuotaUsed": "Used {n} / {max}",
-  "emojisQuotaSize": "Total {size}",
   "emojisSearchPlaceholder": "Filter by :name",
   "emojisPreviewLabel": "Audience preview",
   "emojisPreviewEmpty": "Upload your first emoji to see the preview here.",
@@ -2812,5 +2811,8 @@
   "sessionsReplayNoOverlay": "The big screen is off, so nobody would see the replay. Turn the display on first.",
   "sessionsReplayFailed": "Replay failed",
   "themesSampleLabel": "Sample",
-  "themesReloadBtn": "Reload"
+  "themesReloadBtn": "Reload",
+  "emojisUsedCount": "Used {n} times",
+  "emojisNeverUsed": "Never used",
+  "emojisFootNote": "Click a card to rename or delete it. The Fonts tab takes .woff2 / .ttf and subsets them automatically; the Sounds tab holds keyword triggers."
 }

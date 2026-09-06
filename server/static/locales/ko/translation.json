@@ -2077,13 +2077,12 @@
   "histStateMasked": "마스킹됨",
   "histListHeader": "메시지 목록 · 최근 24시간",
   "histListCount": "● {n}건",
-  "emojisPageTitle": "Emoji 라이브러리",
-  "emojisPageNote": "시청자는 :name: 문법으로 탄막에 이모지 삽입; 업로드 즉시 적용.",
-  "emojisUpTitle": "PNG / GIF / WEBP 드롭 업로드 · 또는 폼 입력",
-  "emojisUpSub": "64×64 권장 · 최대 128KB · 움직이는 GIF 지원",
-  "emojisUploadBtn": "+ 업로드",
+  "emojisPageTitle": "이모티콘",
+  "emojisPageNote": "메시지에 :이름: 을 입력하면 이모티콘이 됩니다. PNG 또는 GIF, 64×64 권장.",
+  "emojisUpTitle": "여기에 이미지를 끌어다 놓거나 파일을 선택하세요",
+  "emojisUpSub": "PNG／GIF／WEBP, 64×64 권장, 파일당 최대 500KB",
+  "emojisUploadBtn": "업로드",
   "emojisQuotaUsed": "사용 {n} / {max}",
-  "emojisQuotaSize": "총 {size}",
   "emojisSearchPlaceholder": ":name 필터",
   "emojisPreviewLabel": "시청자 미리보기",
   "emojisPreviewEmpty": "첫 emoji를 업로드하면 여기에 미리보기가 표시됩니다.",
@@ -2812,5 +2811,8 @@
   "sessionsReplayNoOverlay": "큰 화면이 꺼져 있어 재생해도 아무도 볼 수 없습니다. 먼저 표시 레이어를 켜세요.",
   "sessionsReplayFailed": "재생에 실패했습니다",
   "themesSampleLabel": "탄막 예시",
-  "themesReloadBtn": "다시 불러오기"
+  "themesReloadBtn": "다시 불러오기",
+  "emojisUsedCount": "{n}번 사용",
+  "emojisNeverUsed": "사용 안 함",
+  "emojisFootNote": "카드를 누르면 이름을 바꾸거나 삭제할 수 있습니다. 「글꼴」 탭은 .woff2／.ttf 를 올리면 자동으로 서브셋합니다. 「효과음」 탭에는 키워드 트리거 규칙이 있습니다."
 }

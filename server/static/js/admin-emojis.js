@@ -51,7 +51,6 @@
         <div class="admin-em-v4__toolbar">
           <span class="admin-em-v4__quota-label" data-em-quota-label>${ServerI18n.t("emojisQuotaUsed", { n: 0, max: 100 })}</span>
           <div class="admin-em-v4__quota-bar"><div class="admin-em-v4__quota-fill" data-em-quota-fill style="width:0%"></div></div>
-          <span class="admin-em-v4__quota-size" data-em-quota-size>${ServerI18n.t("emojisQuotaSize", { size: "0 KB" })}</span>
           <span class="admin-em-v4__spacer"></span>
           <input id="emojiSearchInput" type="search" placeholder="${ServerI18n.t("emojisSearchPlaceholder")}" class="admin-em-v4__search" />
           <span class="admin-em-v4__count" id="emojiCount">0</span>
@@ -60,9 +59,12 @@
         <!-- 8-col emoji grid (initial state: skeleton, swapped by renderGrid) -->
         <div id="emojiGrid" class="admin-em-v4__grid"></div>
 
+        <p class="admin-em-v4__footnote">${ServerI18n.t("emojisFootNote")}</p>
+
         <!-- Audience preview row -->
         <div class="admin-em-v4__preview" data-em-preview>
-          <div class="admin-em-v4__preview-label">${ServerI18n.t("emojisPreviewLabel")} · AUDIENCE PREVIEW</div>
+          <!-- 設計稿 14：中文已經是標籤，旁邊再擺一行大寫英文是同一件事說兩次 -->
+          <div class="admin-em-v4__preview-label">${ServerI18n.t("emojisPreviewLabel")}</div>
           <div class="admin-em-v4__preview-body" data-em-preview-body>
             <span class="admin-em-v4__preview-empty">${ServerI18n.t("emojisPreviewEmpty")}</span>
           </div>
@@ -73,18 +75,17 @@
 
   // ─── Render Emoji Card ─────────────────────────────────────────────
 
-  // Design v4 tile: image + :name: + dimensions/size + green dot (always on
-  // for now — backend has no per-emoji enable toggle yet). Copy/delete on
-  // hover via overlay actions.
+  // 設計稿 08 · T2：卡片寫的是「用過 128 次」或「尚未使用」。
+  //
+  // 之前這一行是「64×64 · 12KB」——在描述檔案，而主持人在這一頁要決定的是
+  // 「這個表情要不要留著」，那只有使用次數能回答。（而且 /emojis/list 從來
+  // 沒有回過 size_bytes 與 width/height，所以那一行實際上永遠只印一個「—」。）
   function emojiCard(emoji) {
     const label = ":" + emoji.name + ":";
-    const sizeKB = emoji.size_bytes
-      ? Math.round(emoji.size_bytes / 1024) + "KB"
-      : "—";
-    const dims = (emoji.width && emoji.height)
-      ? emoji.width + "×" + emoji.height
-      : "";
-    const meta = [dims, sizeKB].filter(Boolean).join(" · ");
+    const used = Number(emoji.used) || 0;
+    const meta = used > 0
+      ? ServerI18n.t("emojisUsedCount", { n: used })
+      : ServerI18n.t("emojisNeverUsed");
     return (
       '<div class="admin-em-v4__tile" data-em-name="' + escapeAttr(emoji.name) + '">' +
       '<div class="admin-em-v4__tile-thumb">' +
@@ -101,17 +102,17 @@
     );
   }
 
+  // 配額看的是「幾個」，不是「幾 KB」——上限本來就是 100 個檔。
+  // 原本旁邊還有一個總大小的字，但它加總的是 /emojis/list 從來沒回過的
+  // size_bytes，所以永遠印「0 KB」。永遠是 0 的數字比沒有數字更糟。
   function _updateQuota(emojis) {
     const label = document.querySelector("[data-em-quota-label]");
     const fill  = document.querySelector("[data-em-quota-fill]");
-    const sizeEl = document.querySelector("[data-em-quota-size]");
-    if (!label || !fill || !sizeEl) return;
+    if (!label || !fill) return;
     const n = emojis.length;
     const max = 100;
     label.textContent = ServerI18n.t("emojisQuotaUsed", { n: n, max: max });
     fill.style.width = Math.min(100, (n / max) * 100) + "%";
-    const totalKB = emojis.reduce((s, e) => s + (e.size_bytes || 0), 0) / 1024;
-    sizeEl.textContent = ServerI18n.t("emojisQuotaSize", { size: totalKB < 1024 ? totalKB.toFixed(0) + " KB" : (totalKB / 1024).toFixed(1) + " MB" });
   }
 
   function _renderPreview(emojis) {

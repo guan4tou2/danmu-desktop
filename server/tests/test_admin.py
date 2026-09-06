@@ -822,3 +822,27 @@ def test_live_block_fingerprint_success(client):
     # Different fingerprint should pass
     result = filter_engine.check("any text", fingerprint="fp_other")
     assert result.action == "pass"
+
+
+def test_emoji_list_reports_usage_counts(client):
+    """設計稿 08 · T2：表情卡寫的是「用過 N 次」，不是「64×64 · 12KB」。
+
+    次數掃歷史算出來，沒有另一份計數器要維護、也不會跟歷史對不起來。
+    """
+    login(client)
+    from server.services import history as history_service
+
+    history_service.danmu_history.add({"text": "太強了 :fire: :fire:", "color": "ffffff"})
+    history_service.danmu_history.add({"text": "推 :fire:", "color": "ffffff"})
+    history_service.danmu_history.add({"text": "沒有表情", "color": "ffffff"})
+
+    from server.routes.admin.emojis import _usage_counts
+
+    counts = _usage_counts()
+    assert counts["fire"] == 3
+    assert counts["never_used_one"] == 0
+
+    res = client.get("/admin/emojis/list")
+    assert res.status_code == 200
+    for emoji in json.loads(res.data)["emojis"]:
+        assert "used" in emoji, emoji

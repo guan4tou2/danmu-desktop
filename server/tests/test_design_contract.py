@@ -524,3 +524,23 @@ def test_theme_cards_show_a_danmu_sample(zh):
     # 卡會長得一模一樣）。
     svc = _read("server/services/themes.py")
     assert '"styles": t.get("styles")' in svc
+
+
+def test_emoji_cards_answer_should_i_keep_this(zh):
+    """設計稿 08 · T2：表情卡上寫的是「用過 N 次」或「尚未使用」。
+
+    之前那一行是「64×64 · 12KB」——在描述檔案。主持人在這一頁要決定的是
+    「這個表情要不要留著」，那只有使用次數能回答。（何況 /emojis/list 從來
+    沒回過 size_bytes 與 width/height，所以那一行實際上永遠只印一個「—」。）
+    """
+    assert zh["emojisPageTitle"] == "表情"  # 設計稿 14 詞彙表：Emoji 庫 → 表情
+    assert "輸入 :名稱: 就會變成表情" in zh["emojisPageNote"]
+    assert zh["emojisUpTitle"] == "把圖片拖到這裡上傳，或選擇檔案"
+    assert zh["emojisUsedCount"] == "用過 {n} 次"
+    assert zh["emojisNeverUsed"] == "尚未使用"
+
+    js = _strip_comments(_read("server/static/js/admin-emojis.js"))
+    assert "emojisUsedCount" in js and "emojisNeverUsed" in js
+    assert "size_bytes" not in js
+    # 中文標籤旁邊不再擺一行大寫英文（設計稿 14）
+    assert "AUDIENCE PREVIEW" not in js
