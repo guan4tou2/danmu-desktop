@@ -140,6 +140,9 @@
     const row = document.createElement("div");
     row.className = "admin-live-feed-row" + (entry.muted ? " is-muted" : "");
     row.dataset.id = entry.id;
+    // J/K 走訪需要列本身可 focus。順帶讓 `:focus-within` 把只在 hover
+    // 浮現的動作鈕叫出來——鍵盤使用者才看得到自己正在對哪一列動手。
+    row.tabIndex = -1;
 
     // Bulk-select checkbox
     const cb = document.createElement("input");
@@ -777,9 +780,54 @@
     }, { passive: true });
   }
 
-  // Expose for admin-message-drawer.js to read same-fp messages.
+  // ── 鍵盤操作（設計稿 15 · KS1）──────────────────────────────────
+  // 快速鍵的實作留在這裡而不是 admin-shortcuts.js：訊息流的 DOM 與
+  // paused/entries 狀態都在這個模組裡，隔一層去戳只會生出兩份真相。
+
+  function _rows() {
+    return listEl ? Array.from(listEl.querySelectorAll(".admin-live-feed-row")) : [];
+  }
+
+  function _focusedRow() {
+    const rows = _rows();
+    const active = document.activeElement;
+    for (const row of rows) {
+      if (row === active || row.contains(active)) return row;
+    }
+    return null;
+  }
+
+  function moveFocus(delta) {
+    const rows = _rows();
+    if (!rows.length) return false;
+    const cur = _focusedRow();
+    let idx = cur ? rows.indexOf(cur) + delta : (delta > 0 ? 0 : rows.length - 1);
+    idx = Math.max(0, Math.min(rows.length - 1, idx));
+    rows[idx].focus();
+    rows[idx].scrollIntoView({ block: "nearest" });
+    return true;
+  }
+
+  function blockFocused(kind) {
+    const row = _focusedRow();
+    if (!row) return false;
+    const entry = entries.find((e) => e.id === row.dataset.id);
+    if (!entry) return false;
+    const value = kind === "keyword" ? entry.data.text : entry.data.fingerprint;
+    if (!value) return false;
+    blockAction(kind, value, entry.id);
+    return true;
+  }
+
+  // Expose for admin-message-drawer.js to read same-fp messages, and for
+  // admin-shortcuts.js to drive J / K / B / ⇧B / Space.
   window.AdminLiveFeed = {
     getEntries: function () { return entries.slice(); },
+    isVisible: function () { return !!(listEl && listEl.offsetParent !== null); },
+    isPaused: function () { return paused; },
+    moveFocus: moveFocus,
+    blockFocused: blockFocused,
+    togglePause: function () { togglePause(); },
   };
 
   if (document.readyState === "loading") {

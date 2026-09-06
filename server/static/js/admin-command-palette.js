@@ -586,14 +586,7 @@
     return !!(_root && !_root.hasAttribute("hidden"));
   }
 
-  // Global ⌘K / Ctrl+K toggle.
-  document.addEventListener("keydown", (e) => {
-    const cmdk = (e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K");
-    if (cmdk) {
-      e.preventDefault();
-      isOpen() ? close() : open();
-    }
-  });
-
-  window.AdminCommandPalette = { open, close, isOpen };
+  // ⌘K 的綁定在 admin-shortcuts.js——快速鍵一覽（設計稿 15 · KS1）那張表
+  // 和實際綁定必須是同一份清單，兩邊各綁一次會讓表變成猜測。
+  window.AdminCommandPalette = { open, close, isOpen, toggle: () => (isOpen() ? close() : open()) };
 })();

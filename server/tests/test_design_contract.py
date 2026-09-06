@@ -412,3 +412,50 @@ def test_session_expired_is_a_dialog_not_a_redirect(zh):
     # 成功後不重載，靠換 meta 的 CSRF token 就地接回去
     assert "location.reload" not in dialog
     assert 'meta[name="csrf-token"]' in dialog
+
+
+def test_shortcut_sheet_lists_only_keys_that_are_bound(zh):
+    """設計稿 15 · KS1：`?` 叫出快速鍵一覽，表上每個鍵都要真的接線。
+
+    這條擋的是「表跟綁定各寫一份」。說明抽屜以前就是這樣：它 advertise 了
+    ⌘⇧L／⌘⇧S／⌘⇧C 三個**從來沒有被綁定過**的鍵。按下去沒反應的表比沒有表
+    更糟——使用者試過一次之後，整份表都不再可信。
+    """
+    js = _strip_comments(_read("server/static/js/admin-shortcuts.js"))
+    # 表與派送讀同一個陣列
+    assert "var SHORTCUTS = [" in js
+    assert "_rowsHtml" in js and "s.match(e)" in js and "s.run(e)" in js
+
+    for label in (
+        "ksOpenPalette",
+        "ksThisSheet",
+        "ksToggleDisplay",
+        "ksClearScreen",
+        "ksFeedMove",
+        "ksFeedBlock",
+        "ksFeedPause",
+        "ksFeedPoll",
+    ):
+        assert label in js, label
+        assert label in zh, label
+    assert zh["ksNote"].startswith("Windows")
+
+    # 綁定只有一處：命令面板與說明抽屜都已交出自己的全域監聽
+    palette = _strip_comments(_read("server/static/js/admin-command-palette.js"))
+    assert 'document.addEventListener("keydown"' not in palette.replace(
+        '_input.addEventListener("keydown", _onKey);', ""
+    )
+    drawer = _strip_comments(_read("server/static/js/admin-help-drawer.js"))
+    assert "helpDrawerShortcutLiveFeed" not in drawer
+    assert "data-help-shortcuts" in drawer  # 改成指向 KS1 的一列
+
+    # 抽屜要有滑鼠入口——在這之前它只有 F1 能開，等於對滑鼠使用者不存在
+    assert "data-open-help" in _read("server/static/js/admin.js")
+
+    # 那三個假的 i18n key 一併退場
+    for dead in (
+        "helpDrawerShortcutLiveFeed",
+        "helpDrawerShortcutDesktopOff",
+        "helpDrawerShortcutClearDesktop",
+    ):
+        assert dead not in zh, dead

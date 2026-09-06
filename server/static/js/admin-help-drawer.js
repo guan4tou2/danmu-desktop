@@ -190,17 +190,9 @@
     },
   };
 
-  // Global shortcuts — constant across all routes per the v5 spec.
-  // `keys` are literal key-cap glyphs (language-neutral, not moved).
-  const SHORTCUTS = [
-    { keys: ["⌘", "K"],        descKey: "helpDrawerShortcutGlobalSearch" },
-    { keys: ["F1"],            descKey: "helpDrawerShortcutOpenHelp" },
-    { keys: ["⌘", "/"],        descKey: "helpDrawerShortcutOpenHelpAlt" },
-    { keys: ["⌘", "⇧", "L"],  descKey: "helpDrawerShortcutLiveFeed" },
-    { keys: ["⌘", "⇧", "S"],  descKey: "helpDrawerShortcutDesktopOff" },
-    { keys: ["⌘", "⇧", "C"],  descKey: "helpDrawerShortcutClearDesktop" },
-    { keys: ["Esc"],           descKey: "helpDrawerShortcutCloseDrawer" },
-  ];
+  // 快速鍵清單搬到「快速鍵一覽」（設計稿 15 · KS1，admin-shortcuts.js），
+  // 那裡的表和實際綁定是同一份陣列。這裡原本列的 ⌘⇧L / ⌘⇧S / ⌘⇧C 三個鍵
+  // **從來沒有被綁定過**——advertise 了按下去沒反應的鍵，比不列更糟。
 
   // Terminology cheat-sheet — clarifies post-pivot vocabulary that
   // operators commonly confuse with adjacent web concepts. `term` is the
@@ -263,14 +255,6 @@
         <span>${_esc(ServerI18n.t(entry.fieldTipKey))}</span>
       </div>` : "";
 
-    const shortcutsHtml = SHORTCUTS.map((s) => `
-      <div class="admin-help__shortcut">
-        <div class="admin-help__keys">
-          ${s.keys.map((k) => `<kbd class="admin-help__kbd">${_esc(k)}</kbd>`).join("")}
-        </div>
-        <span class="admin-help__shortcut-desc">${_esc(ServerI18n.t(s.descKey))}</span>
-      </div>`).join("");
-
     const glossaryHtml = GLOSSARY.map((g) => `
       <div class="admin-help__glossary-row">
         <div class="admin-help__glossary-term">${_esc(g.term)}</div>
@@ -287,7 +271,7 @@
     return `
       <header class="admin-help__head">
         <span class="admin-help__title" id="admin-help-title">${ServerI18n.t("helpDrawerTitle")}</span>
-        <kbd class="admin-help__kbd admin-help__head-kbd">⌘/</kbd>
+        <kbd class="admin-help__kbd admin-help__head-kbd">F1</kbd>
         <span class="admin-help__spacer"></span>
         <button type="button" class="admin-help__close" data-help-close aria-label="Close">${window.AdminUtils.closeIcon}</button>
       </header>
@@ -305,7 +289,10 @@
 
         <section class="admin-help__section">
           <div class="admin-help__sec-label">${ServerI18n.t("helpDrawerShortcutsLabel")}</div>
-          <div class="admin-help__shortcuts">${shortcutsHtml}</div>
+          <button type="button" class="admin-help__shortcut" data-help-shortcuts>
+            <div class="admin-help__keys"><kbd class="admin-help__kbd">?</kbd></div>
+            <span class="admin-help__shortcut-desc">${_esc(ServerI18n.t("ksTitle"))}</span>
+          </button>
         </section>
 
         <section class="admin-help__section">
@@ -330,7 +317,11 @@
       document.body.insertAdjacentHTML("beforeend", _renderShell());
       root = document.getElementById(ROOT_ID);
       root.addEventListener("click", (e) => {
-        if (e.target.closest("[data-help-close]")) close();
+        if (e.target.closest("[data-help-close]")) { close(); return; }
+        if (e.target.closest("[data-help-shortcuts]")) {
+          close();
+          if (window.AdminShortcuts) window.AdminShortcuts.open();
+        }
       });
     }
     root.querySelector("[data-help-body]").innerHTML = _renderBody();
@@ -359,9 +350,9 @@
     // Don't intercept when user is typing.
     const t = e.target;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
-    // F1 / ? toggle (legacy) + ⌘/ (v5 spec).
-    const isSlash = e.key === "/" && (e.metaKey || e.ctrlKey);
-    if (e.key === "F1" || (e.key === "?" && !e.ctrlKey && !e.metaKey) || isSlash) {
+    // 設計稿 15：`?` 與 ⌘/ 歸「快速鍵一覽」（KS1，admin-shortcuts.js），
+    // 這裡只留 F1；滑鼠使用者走頂欄的「?」按鈕（data-open-help）。
+    if (e.key === "F1") {
       e.preventDefault();
       toggle();
     }

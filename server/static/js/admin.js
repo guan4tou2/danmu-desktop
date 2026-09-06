@@ -797,6 +797,14 @@ document.addEventListener("DOMContentLoaded", () => {
                                          title="${escapeHtml(ServerI18n.t("adminSearchHint"))} ⌘K">
                                         <span aria-hidden="true">⌕</span>
                                     </button>
+                                    <!-- 設計稿 15 · HD1：說明抽屜由「?」按鈕開。
+                                         在這之前抽屜只有鍵盤（F1）能開，等於對滑鼠使用者
+                                         不存在。鍵盤的 ? 已改成叫「快速鍵一覽」（KS1）。 -->
+                                    <button class="admin-dash-search is-icon-only" type="button" data-open-help
+                                         aria-label="${escapeHtml(ServerI18n.t("helpDrawerTitle"))}"
+                                         title="${escapeHtml(ServerI18n.t("helpDrawerTitle"))} F1">
+                                        <span aria-hidden="true">?</span>
+                                    </button>
                                     <!-- 誠實的狀態燈＋捷徑：它是導航（前往顯示層頁），
                                          不是開關。 -->
                                     <button class="admin-dash-broadcast ${broadcasting ? "is-on" : "is-off"}" type="button" aria-live="polite"
@@ -1836,6 +1844,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Topbar search chip opens the ⌘K palette — it must behave like the
     // shortcut it advertises, or it reads as a dead control.
+    const helpBtn = document.querySelector("[data-open-help]");
+    if (helpBtn) {
+      helpBtn.addEventListener("click", () => {
+        if (window.AdminHelp) window.AdminHelp.toggle();
+      });
+    }
+
     const searchChip = document.querySelector("[data-open-palette]");
     if (searchChip) {
       const openPalette = () => {
