@@ -21,15 +21,20 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(adminSrc).toContain('data-route="viewer"');
   expect(adminSrc).not.toContain('data-route="dashboard"');
   // 2026-07-28 v7 IA: messages retired (same sec-live-feed as the console);
-  // #/messages bare-redirects to live. widgets stays first-class.
+  // #/messages bare-redirects to live.
   expect(adminSrc).not.toContain('data-route="messages"');
   expect(adminSrc).toMatch(/messages:\s*"live"/);
-  expect(adminSrc).toContain('data-route="widgets"');
-  // security is not a standalone nav button.
-  expect(adminSrc).not.toContain('data-route="security"');
+  // 2026-08-19 v8 IA（設計稿 03）：側欄收成 3 區 12 列。
+  // widgets 降級成「素材」的分頁、system 降級進「擴充」——兩者仍是
+  // first-class route（深連結與 ⌘K 照常），只是不再各佔側欄一列。
+  expect(adminSrc).not.toContain('data-route="widgets"');
+  expect(adminSrc).not.toContain('data-route="system"');
+  // security 反過來：v8 把它提升成側欄獨立一列（安全設定是主持人會直接找的
+  // 東西，藏兩層等於沒有）。
+  expect(adminSrc).toContain('data-route="security"');
+  expect(adminSrc).toContain('data-route="overlay"');
   // Secondary surfaces remain reachable through tabs / aliases.
   expect(adminSrc).toContain('data-route="moderation"');
-  expect(adminSrc).toContain('data-route="system"');
   // Alias entries route legacy hashes to the new IA.
   // 2026-05-18 v5: ratelimit promoted to first-class slug (no longer alias).
   expect(adminSrc).toMatch(/"viewer-config":\s*\{\s*nav:\s*"viewer"/);
@@ -59,15 +64,15 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   const zhLocaleSrc = fs.readFileSync(
     path.join(staticDir, "..", "locales", "zh", "translation.json"), "utf8");
   expect(displaySrc).toContain('t("displayViewerDefaultsNote")');
-  expect(zhLocaleSrc).toContain("Display 控制 Desktop / client / 目標顯示器");
+  expect(zhLocaleSrc).toContain("決定觀眾打開網頁時看到什麼、能改什麼");
   expect(securitySrc).toContain('route === "system"');
   expect(securitySrc).toContain('leaf === "security"');
   // 2026-05-19 v5 Batch 12-3: security page title shortened from
   // "System › Security" to just "安全性" per batch12-system.jsx.
   // D-4：頁面標題走 security2PageTitle key，原文改釘 zh locale
   expect(securitySrc).toContain('t("security2PageTitle")');
-  expect(zhLocaleSrc).toContain('"security2PageTitle": "安全性"');
-  expect(securitySrc).toContain("SECURITY · AUTH · ACCESS · TOKENS");
+  expect(zhLocaleSrc).toContain('"security2PageTitle": "安全"');
+  // kicker 已隨設計稿 03 全域移除（見下方 admin-ui-page-kicker 斷言）。
   expect(systemTabsSrc).toContain("slug: \"security\"");
   expect(systemTabsSrc).toContain("section: \"admin-security-v2-page\"");
   expect(viewerThemeSrc).toContain('SECTION_ID = "sec-viewer-theme"');
@@ -116,7 +121,8 @@ test("admin Viewer surface exposes language/copy and defaults/limits guidance", 
   // override lives in Viewer › Page Theme. Fields panel labels this
   // section ADMIN CONTROLLED (no in-viewer toggle) instead of the
   // earlier LANGUAGE / COPY heading.
-  expect(displaySrc).toContain("ADMIN CONTROLLED");
+  // 2026-08-19 設計稿 03：英文對照標籤全面移除（可見殘留已歸零）。
+  expect(displaySrc).not.toContain("ADMIN CONTROLLED");
   expect(displaySrc).not.toContain("LANGUAGE / COPY");
   expect(displaySrc).toContain("UI language");
   expect(displaySrc).toContain("Auto (follow browser)");
@@ -148,10 +154,12 @@ test("admin Viewer surface exposes language/copy and defaults/limits guidance", 
   // viewer 現在跟其他四個分頁 nav 一樣走 admin-tabs.js 的 TabConfig。
   // 契約沒變（viewer 有 defaults / limits 兩個分頁、各自對應哪個 section），
   // 只是搬到唯一的宣告處，所以改釘那裡。
-  expect(tabsSrc).toContain('slug: "defaults"');
-  expect(tabsSrc).toContain('slug: "limits"');
-  expect(tabsSrc).toContain('section: "sec-viewer-config-defaults"');
-  expect(tabsSrc).toContain('section: "sec-viewer-config-limits"');
+  // 2026-08-19 設計稿 R4：觀眾頁四個分頁退場，改單頁三群組。
+  expect(tabsSrc).not.toContain('slug: "defaults"');
+  expect(tabsSrc).not.toContain('slug: "limits"');
+  // 分頁退場後 sec-viewer-config-defaults 改由 ADMIN_ROUTES.viewer 直接持有。
+  expect(adminSrc).toContain('sec-viewer-config-defaults');
+  expect(adminSrc).toContain('sec-viewer-config-limits');
   // 釘「不再自己生一條 strip」。比對 className 賦值而非裸字串，因為退役理由
   // 就寫在該檔的註解裡，提到類名不該讓這條測試變紅。
   expect(displaySrc).not.toMatch(/className\s*=\s*"admin-tabstrip/);
@@ -164,7 +172,7 @@ test("editable viewer defaults now live under Viewer > Defaults, not Display", (
   const displaySrc = fs.readFileSync(path.join(staticDir, "admin-display.js"), "utf8");
 
   expect(displaySrc).toContain('const tab = (document.body.dataset.viewerConfigTab) || "defaults";');
-  expect(displaySrc).toContain('page.style.display = (isViewerOwner && tab === "defaults") ? "" : "none";');
+  expect(displaySrc).toContain('page.style.display = showPanel ? "" : "none";');
   expect(displaySrc).toContain('document.body.dataset.viewerConfigTab = "defaults"');
 });
 
@@ -242,7 +250,7 @@ test("admin About server-info values wrap long URLs inside their grid cells", ()
   const cssSrc = fs.readFileSync(cssPath, "utf8");
 
   // D-1 (2026-07-28): 間距全面 snap 到 4px 格，margin-top 10→8。
-  expect(cssSrc).toContain(".admin-about-oss-list { margin-top: 8px; font-family: var(--font-mono); font-size: 11px; line-height: 1.7; min-width: 0; }");
+  expect(cssSrc).toContain(".admin-about-oss-list { margin-top: 8px; font-family: var(--font-mono); font-size: var(--text-caption); line-height: 1.7; min-width: 0; }");
   expect(cssSrc).toMatch(/\.admin-about-oss-row \.v,\s*\.admin-about-oss-row \.l \{[\s\S]*?overflow-wrap:\s*anywhere;/);
 });
 
@@ -434,17 +442,19 @@ test("admin Security actions compose shared admin-ui controls instead of page-lo
   const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
-  expect(securitySrc).toContain('class="admin-ui-action is-primary admin-sec-action"');
+  expect(securitySrc).toContain('class="admin-ui-action is-primary"');
   expect(securitySrc).toContain('id="sec2-wsa-reveal" class="admin-ui-action admin-sec-token-action"');
   expect(securitySrc).toContain('id="sec2-wsa-copy" class="admin-ui-action admin-sec-token-action"');
-  expect(securitySrc).toContain('id="sec2-wsa-rotate" class="admin-ui-action is-warn admin-sec-token-action"');
-  expect(securitySrc).toContain('id="sec2-wsa-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end"');
-  expect(securitySrc).toContain('id="sec2-ip-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end"');
-  expect(securitySrc).toContain('id="sec2-cors-save" class="admin-ui-action is-primary admin-sec-action admin-sec-action--end"');
-  expect(securitySrc).toContain('href="#/audit" class="admin-ui-action admin-sec-card__link"');
-  expect(securitySrc).toContain('class="admin-ui-action is-danger admin-sec-danger" data-sec-danger="revoke-tokens"');
-  expect(securitySrc).toContain('class="admin-ui-action is-danger admin-sec-danger" data-sec-danger="revoke-firetoken"');
-  expect(securitySrc).toContain('class="admin-ui-action is-warn admin-sec-danger" data-sec-danger="reset-ws"');
+  expect(securitySrc).toContain('id="sec2-wsa-rotate" class="admin-ui-danger-btn"');
+  expect(securitySrc).toContain('id="sec2-wsa-save" class="admin-ui-action is-primary"');
+  expect(securitySrc).toContain('id="sec2-ip-save" class="admin-ui-action is-primary"');
+  expect(securitySrc).toContain('id="sec2-cors-save" class="admin-ui-action is-primary"');
+  expect(securitySrc).toContain('href="#/audit" class="admin-ui-action"');
+  // 2026-08-19 設計稿 03/07：破壞性動作用淡底紅字（.admin-ui-danger-btn），
+  // 不再用實心紅，也不再帶 page-local 的 admin-sec-danger。
+  expect(securitySrc).toContain('class="admin-ui-danger-btn" data-sec-danger="revoke-tokens"');
+  expect(securitySrc).toContain('class="admin-ui-danger-btn" data-sec-danger="revoke-firetoken"');
+  expect(securitySrc).toContain('class="admin-ui-danger-btn" data-sec-danger="reset-ws"');
   expect(securitySrc).not.toContain('class="admin-poll-btn');
   expect(securitySrc).not.toContain('id="sec2-wsa-reveal" class="admin-v2-chip"');
   expect(securitySrc).not.toContain('id="sec2-wsa-copy" class="admin-v2-chip"');
@@ -486,13 +496,13 @@ test("admin Backup actions compose shared admin-ui controls", () => {
   const backupSrc = fs.readFileSync(path.join(staticDir, "js", "admin-backup.js"), "utf8");
   const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
 
-  expect(backupSrc).toContain('id="bk2-hist-download" class="admin-ui-action is-primary admin-bk-action"');
-  expect(backupSrc).toContain('id="bk2-settings-download" class="admin-ui-action is-primary admin-bk-action"');
-  expect(backupSrc).toContain('id="bk2-pack-export" class="admin-ui-action is-primary admin-bk-action"');
-  expect(backupSrc).toContain('id="bk2-assets-export" class="admin-ui-action is-primary admin-bk-action"');
-  expect(backupSrc).toContain('id="bk2-settings-dryrun" class="admin-ui-action admin-bk-action"');
+  expect(backupSrc).toContain('id="bk2-hist-download" class="admin-ui-action is-primary"');
+  expect(backupSrc).toContain('id="bk2-settings-download" class="admin-ui-action is-primary"');
+  expect(backupSrc).toContain('id="bk2-pack-export" class="admin-ui-action is-primary"');
+  expect(backupSrc).toContain('id="bk2-assets-export" class="admin-ui-action is-primary"');
+  expect(backupSrc).toContain('id="bk2-settings-dryrun" class="admin-ui-action"');
   // D-4：title 文案搬進 i18n key，契約改釘「危險鈕 + disabled + 有 title 提示」的形狀
-  expect(backupSrc).toContain('id="bk2-settings-apply" class="admin-ui-action is-danger admin-bk-action" disabled title="${ServerI18n.t("backupApplyDisabledTitle")}"');
+  expect(backupSrc).toContain('id="bk2-settings-apply" class="admin-ui-danger-btn" disabled title="${t("backupApplyDisabledTitle")}"');
   expect(backupSrc).toContain('"/admin/settings/restore"');
   expect(backupSrc).toContain('"/admin/backup/assets/export"');
   expect(backupSrc).toContain('"/admin/backup/assets/manifest"');
@@ -501,16 +511,16 @@ test("admin Backup actions compose shared admin-ui controls", () => {
   expect(backupSrc).not.toContain('即將支援 (需後端 endpoint)');
   expect(backupSrc).not.toContain('no backend route yet');
   expect(backupSrc).not.toContain('仍走 client-side 包');
-  expect(backupSrc).toContain('id="bk2-pack-dryrun" class="admin-ui-action admin-bk-action"');
-  expect(backupSrc).toContain('id="bk2-pack-apply" class="admin-ui-action is-danger admin-bk-action" disabled');
-  expect(backupSrc).toContain('id="bk2-assets-dryrun" class="admin-ui-action admin-bk-action"');
-  expect(backupSrc).toContain('id="bk2-assets-apply" class="admin-ui-action is-danger admin-bk-action" disabled');
-  expect(backupSrc).toContain('id="bk2-clear-history" class="admin-ui-action is-danger admin-bk-action"');
+  expect(backupSrc).toContain('id="bk2-pack-dryrun" class="admin-ui-action"');
+  expect(backupSrc).toContain('id="bk2-pack-apply" class="admin-ui-danger-btn" disabled');
+  expect(backupSrc).toContain('id="bk2-assets-dryrun" class="admin-ui-action"');
+  expect(backupSrc).toContain('id="bk2-assets-apply" class="admin-ui-danger-btn" disabled');
+  expect(backupSrc).toContain('id="bk2-clear-history" class="admin-ui-danger-btn"');
   // 2026-07-30：END SESSION（登出管理員）已拆——頂欄 Logout 的重複入口，
   // 且「session」在本產品指彈幕場次，紅色 END SESSION 站在 DANGER 區
   // 極易誤讀成「結束場次」。契約反向釘住不得回歸。
   expect(backupSrc).not.toContain("bk2-end-session");
-  expect(backupSrc).toContain('id="bk2-factory-reset" class="admin-ui-action is-danger admin-bk-action" disabled');
+  expect(backupSrc).toContain('id="bk2-factory-reset" class="admin-ui-danger-btn" disabled');
   expect(backupSrc).toContain('"/admin/backup/factory-reset"');
   expect(backupSrc).not.toContain("Factory reset 即將支援");
   expect(backupSrc).not.toContain("FACTORY RESET · 回復原廠 (即將支援)");
@@ -797,12 +807,12 @@ test("admin shell and Viewer Theme residual controls compose shared primitives",
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
   const viewerThemeSrc = fs.readFileSync(path.join(staticDir, "admin-viewer-theme.js"), "utf8");
 
-  expect(adminSrc).toContain('id="logoutButton" class="admin-ui-action is-danger admin-logout-action"');
+  expect(adminSrc).toContain('id="logoutButton" class="admin-dash-account-logout"');
   expect(adminSrc).toContain('id="effectReloadBtn" class="admin-ui-action admin-effects-action"');
   expect(adminSrc).toContain('class="admin-ui-action admin-effects-inspector-action" id="effectsInspectorReload"');
   expect(adminSrc).toContain('class="admin-ui-action is-primary admin-effects-inspector-action" id="effectsInspectorEdit"');
   expect(adminSrc).toContain('id="themeReloadBtn" class="admin-ui-action admin-theme-reload-action"');
-  expect(adminSrc).toContain('id="addKeywordBtn" type="button" class="admin-ui-action is-primary admin-mod-keyword-action"');
+  expect(adminSrc).toContain('id="addKeywordBtn" type="button" class="admin-ui-action is-primary"');
   expect(adminSrc).toContain('id="refreshHistoryBtn" class="admin-ui-action is-primary admin-history-action"');
   expect(adminSrc).toContain('id="clearHistoryBtn" class="admin-ui-action is-danger admin-history-action"');
   expect(adminSrc).toContain('id="replayStopBtn" class="admin-ui-action is-danger admin-replay-control-action hidden"');
@@ -1033,11 +1043,14 @@ test("admin page shell primitives use admin-ui naming", () => {
 
   [
     "admin-ui-page-head",
-    "admin-ui-page-kicker",
     "admin-ui-page-title",
     "admin-ui-page-note",
     "admin-ui-card",
   ].forEach((className) => expect(jsFiles).toContain(className));
+
+  // 2026-08-19 設計稿 03：頁首 kicker 全域移除（34 處、34 個檔案）。
+  // CSS 規則暫留（上面那組斷言仍檢查），但 JS 端不該再有任何消費者。
+  expect(jsFiles).not.toContain("admin-ui-page-kicker");
 
   [
     "admin-v2-head",
@@ -1289,8 +1302,8 @@ test("admin Backup exposes implemented history export formats", () => {
 
   expect(backupSrc).toContain('format=" + encodeURIComponent(format)');
   // D-4：option 標籤走 i18n；value 契約不變
-  expect(backupSrc).toContain('<option value="csv">${ServerI18n.t("backupFormatCsv")}');
-  expect(backupSrc).toContain('<option value="srt">${ServerI18n.t("backupFormatSrt")}');
+  expect(backupSrc).toContain('<option value="csv">${t("backupFormatCsv")}');
+  expect(backupSrc).toContain('<option value="srt">${t("backupFormatSrt")}');
   expect(backupSrc).not.toContain('value="csv" disabled');
   expect(backupSrc).not.toContain('value="srt" disabled');
   expect(backupSrc).not.toContain("CSV / SRT history export formats  (backend returns JSON only)");
