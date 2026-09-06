@@ -74,7 +74,10 @@
           </div>
           <div class="client-banner-actions">
             <button type="button" class="client-action-btn" data-conn-banner-retry data-i18n="clientRetry">重試</button>
-            <button type="button" class="client-action-btn" data-client-action="edit-conn" data-i18n="clientChangeAddress">變更位址</button>
+            <!-- 用自己的 attribute，不跟設定群組裡的伺服器列共用同一個
+                 名字：兩個元素同名會讓選擇器變成「命中兩個，取第一個」，
+                 而第一個（這顆）平常是隱藏的——e2e 就這樣逾時了。 -->
+            <button type="button" class="client-action-btn" data-conn-banner-edit data-i18n="clientChangeAddress">變更位址</button>
           </div>
         </div>
 

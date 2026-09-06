@@ -102,7 +102,7 @@ test.describe("Server ↔ Client 系統互動", () => {
     // 2026-09-06 設計稿 04：單頁版面，先關掉首次啟動精靈。
     const _skip = main.locator("[data-onboarding-skip]");
     if (await _skip.isVisible().catch(() => false)) await _skip.click();
-    await main.locator('[data-client-action="edit-conn"]').first().click();
+    await main.locator('[data-client-action="edit-conn"]').click();
     await main.waitForSelector("#conn-server-input", { state: "visible" });
     await main.evaluate(({ h, p }) => {
       const sv = document.getElementById("conn-server-input");

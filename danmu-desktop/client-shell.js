@@ -56,16 +56,13 @@
     if (settings && !settings.hidden) { e.preventDefault(); closeSettings(); }
   });
 
-  // 「變更位址」在橫幅上，按了要開設定並跳到伺服器區。編輯模式本身由
-  // conn-section-wire.js 的 data-client-action="edit-conn" 契約負責，
-  // 這裡只確保面板是開的。
-  $$('[data-client-action="edit-conn"]').forEach(function (el) {
-    if (el.closest("#client-conn-banner")) {
-      el.addEventListener("click", function () {
-        var host = $('[data-conn-display] [data-client-action="edit-conn"]');
-        if (host) host.click();
-      });
-    }
+  // 橫幅上的「變更位址」轉發到設定群組裡那一列——編輯模式本身由
+  // conn-section-wire.js 的 data-client-action="edit-conn" 契約負責。
+  $$("[data-conn-banner-edit]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      var host = $('[data-client-action="edit-conn"]');
+      if (host) host.click();
+    });
   });
 
   // 系統匣的「偏好設定…／關於」導覽（client-nav.js 轉發）。分頁沒了之後，

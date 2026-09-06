@@ -118,6 +118,13 @@ def test_desktop_is_one_page_not_a_sidebar_shell():
     assert "data-client-main-card" in html
     assert 'id="client-settings"' in html  # 連線與關於收進 ⚙
 
+    # `data-client-action="edit-conn"` 必須唯一：S4 橫幅上的「變更位址」
+    # 用自己的 attribute。兩個元素同名時 Playwright 會「命中兩個取第一個」
+    # ——而第一個（橫幅那顆）平常是隱藏的，e2e 就這樣逾時。
+    body = _strip_comments(html)
+    assert body.count('data-client-action="edit-conn"') == 1
+    assert "data-conn-banner-edit" in body
+
     wm = _read("danmu-desktop/main-modules/window-manager.js")
     assert "width: 560, height: 440" in wm
     assert "minWidth: 360" in wm and "maxWidth: 720" in wm
@@ -264,6 +271,43 @@ def test_command_palette_is_three_groups_actions_first():
     # 輔助文字是來源頁，不是端點
     assert "POST /effects/reload" not in js
     assert "route → " not in js
+
+
+def test_help_drawer_pushes_instead_of_covering(zh):
+    """設計稿 15 · HD1：說明抽屜**不蓋內容，推開版面**。
+
+    說明的用途是「一邊看說明一邊操作」——蓋住畫面等於逼使用者記住說明
+    再關掉。改成推開之後遮罩也不需要了。每段 ≤ 60 字、講白話，
+    結尾一個「現場小技巧」（通常是「其實有更快的做法」）。
+    """
+    js = _strip_comments(_read("server/static/js/admin-help-drawer.js"))
+    css = _strip_comments(_read("server/static/css/style.css"))
+
+    assert "admin-help__backdrop" not in js, "遮罩應已退場"
+    assert 'aria-modal="true"' not in js, "推開版面就不是 modal"
+    assert 'classList.add("is-help-open")' in js
+    assert "body.is-help-open .admin-dash-grid" in css
+    assert "padding-right: 360px" in css
+
+    # 現場小技巧
+    assert "admin-help__fieldtip" in js
+    assert "helpDrawerFieldTipLabel" in js
+    assert zh["helpDrawerFieldTipLabel"] == "現場小技巧"
+
+    # 中英對照的段落標籤退場（設計稿 14 文案規則）
+    for bilingual in ("· SHORTCUTS", "· GLOSSARY", "· RESOURCES"):
+        assert bilingual not in js, bilingual
+
+    # 審核頁的說明必須是白話，不是內部術語
+    assert "含有這些字的訊息不會上大螢幕" in zh["helpDrawerModerationTip1"]
+    assert "裝置識別" in zh["helpDrawerModerationTip2"]
+    assert "每人每分鐘" in zh["helpDrawerModerationTip3"]
+    help_copy = json.dumps(
+        {k: v for k, v in zh.items() if k.startswith("helpDrawer")},
+        ensure_ascii=False,
+    )
+    for jargon in ("Quick Filters", "filter action", "block / replace", "chip"):
+        assert jargon not in help_copy, jargon
 
 
 def test_reconnect_banner_answers_the_only_question_that_matters(zh):

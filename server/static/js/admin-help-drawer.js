@@ -1,9 +1,13 @@
 /**
  * Admin · Help Drawer (Batch 12-1, 2026-05-19 v5).
  *
- * Slide-in right drawer with contextual help for the active route.
+ * 右側 360px 的說明抽屜，內容跟著目前的路由走。
+ *
+ * 2026-09-06 設計稿 15 · HD1：**不蓋內容，推開版面**。原本是 modal-lite
+ * （半透明遮罩 ＋ 浮在上層），但說明的用途是「一邊看說明一邊操作」——
+ * 蓋住畫面等於逼使用者記住說明再關掉。改成推開之後遮罩也不需要了。
  * Triggered by F1 / ? / ⌘/ when no input is focused, or via
- * `window.AdminHelp.open()`. Closes on Esc / backdrop / ✕.
+ * `window.AdminHelp.open()`. Closes on Esc / ✕.
  *
  * v5 layout per batch12-help.jsx:
  *   ┌─ 360px ────────────────────────────┐
@@ -13,16 +17,16 @@
  *   │   → tip 1                          │
  *   │   → tip 2                          │
  *   │                                    │
- *   │ 鍵盤快捷鍵 · SHORTCUTS             │  ← global section
+ *   │ 鍵盤快捷鍵                          │  ← global section
  *   │   ⌘ K     全域搜尋                 │
    *   │   ⌘ ⇧ O  Desktop 開關              │
  *   │   ...                              │
  *   │                                    │
- *   │ 術語 · GLOSSARY                    │  ← global section
+ *   │ 術語                                │  ← global section
    *   │   Desktop  Electron/OBS 上的彈幕… │
  *   │   ...                              │
  *   │                                    │
- *   │ 資源 · RESOURCES                   │  ← global section
+ *   │ 資源                                │  ← global section
  *   │   API 文件   docs.danmufire.dev ↗ │
  *   │   ...                              │
  *   ├────────────────────────────────────┤
@@ -88,13 +92,15 @@
 
     moderation: {
       titleKey: "helpDrawerModerationTitle",
+      // 2026-09-06 設計稿 15 · HD1：每段 ≤ 60 字、講白話，結尾一個
+      // 「現場小技巧」。原本三條是 `Quick Filters chip 為臨時規則` /
+      // `filter action：block / replace / review / allow` 這種內部術語——
+      // 說明頁的讀者正是不知道那些詞是什麼意思的人。
+      fieldTipKey: "helpDrawerModerationFieldTip",
       tipKeys: [
         "helpDrawerModerationTip1",
         "helpDrawerModerationTip2",
-        // Latin-only (no Chinese) — kept literal, resolved in the tips
-        // map step below via the `literal` escape hatch.
-        { literal: "filter action：block / replace / review / allow" },
-        "helpDrawerModerationTip4",
+        "helpDrawerModerationTip3",
       ],
     },
 
@@ -231,8 +237,7 @@
 
   function _renderShell() {
     return `
-      <div id="${ROOT_ID}" class="admin-help" role="dialog" aria-modal="true" aria-labelledby="admin-help-title">
-        <div class="admin-help__backdrop" data-help-close></div>
+      <div id="${ROOT_ID}" class="admin-help" role="complementary" aria-labelledby="admin-help-title">
         <aside class="admin-help__drawer" data-help-body></aside>
       </div>`;
   }
@@ -249,6 +254,14 @@
         <span class="admin-help__tip-arrow">→</span>
         <span>${_esc(typeof tipKey === "string" ? ServerI18n.t(tipKey) : tipKey.literal)}</span>
       </div>`).join("");
+
+    // 設計稿 15 · HD1：每頁的說明結尾放一個「現場小技巧」——通常是
+    // 「其實有更快的做法」，而不是這一頁本身的功能說明。
+    const fieldTipHtml = entry.fieldTipKey ? `
+      <div class="admin-help__fieldtip">
+        <span class="admin-help__fieldtip-label">${ServerI18n.t("helpDrawerFieldTipLabel")}</span>
+        <span>${_esc(ServerI18n.t(entry.fieldTipKey))}</span>
+      </div>` : "";
 
     const shortcutsHtml = SHORTCUTS.map((s) => `
       <div class="admin-help__shortcut">
@@ -273,8 +286,8 @@
 
     return `
       <header class="admin-help__head">
-        <span class="admin-help__title" id="admin-help-title">Help</span>
-        <kbd class="admin-help__kbd admin-help__head-kbd">⌘ /</kbd>
+        <span class="admin-help__title" id="admin-help-title">${ServerI18n.t("helpDrawerTitle")}</span>
+        <kbd class="admin-help__kbd admin-help__head-kbd">⌘/</kbd>
         <span class="admin-help__spacer"></span>
         <button type="button" class="admin-help__close" data-help-close aria-label="Close">${window.AdminUtils.closeIcon}</button>
       </header>
@@ -287,20 +300,21 @@
             <span class="admin-help__route-tag">${ServerI18n.t("helpDrawerCurrentPageTag")}</span>
           </div>
           <div class="admin-help__tips">${tipsHtml}</div>
+          ${fieldTipHtml}
         </section>
 
         <section class="admin-help__section">
-          <div class="admin-help__sec-label">${ServerI18n.t("helpDrawerShortcutsLabel")} · SHORTCUTS</div>
+          <div class="admin-help__sec-label">${ServerI18n.t("helpDrawerShortcutsLabel")}</div>
           <div class="admin-help__shortcuts">${shortcutsHtml}</div>
         </section>
 
         <section class="admin-help__section">
-          <div class="admin-help__sec-label">${ServerI18n.t("helpDrawerGlossaryLabel")} · GLOSSARY</div>
+          <div class="admin-help__sec-label">${ServerI18n.t("helpDrawerGlossaryLabel")}</div>
           <div class="admin-help__glossary">${glossaryHtml}</div>
         </section>
 
         <section class="admin-help__section">
-          <div class="admin-help__sec-label">${ServerI18n.t("helpDrawerResourcesLabel")} · RESOURCES</div>
+          <div class="admin-help__sec-label">${ServerI18n.t("helpDrawerResourcesLabel")}</div>
           <div class="admin-help__resources">${resourcesHtml}</div>
         </section>
 
@@ -320,12 +334,16 @@
       });
     }
     root.querySelector("[data-help-body]").innerHTML = _renderBody();
+    // 設計稿 15 · HD1：推開版面而不是蓋住它。CSS 讀這個 class 給主容器
+    // 一個 360 的右側留白，抽屜就落在讓出來的位置上。
+    document.body.classList.add("is-help-open");
     document.addEventListener("keydown", _onKey);
   }
 
   function close() {
     const root = document.getElementById(ROOT_ID);
     if (root) root.remove();
+    document.body.classList.remove("is-help-open");
     document.removeEventListener("keydown", _onKey);
   }
 

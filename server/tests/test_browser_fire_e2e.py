@@ -172,14 +172,14 @@ def test_browser_submit_danmu_reaches_overlay(browser_session, server_ports):
 
 
 def test_viewer_identity_label_uses_nickname(browser_session, server_ports):
-    """Viewer identity field label should be 昵称/暱稱 semantics, not generic 身分.
+    """暱稱這個欄位要叫「暱稱」，不是泛稱的「身分」。
 
-    Page may render in en or zh depending on browser locale at test time; the
-    semantic check is that data-i18n="nickname" — accept either translation.
+    2026-09-06 設計稿 05：暱稱從首屏的 chip popover 搬進樣式抽層的一列
+    （#nicknameControl 現在是那一列本身，點它進第二層編輯）。標籤還在，
+    只是不再包在 <label> 裡——所以這裡改成問那一列自己。
 
-    5.1.0 (brief 0518-4c): nickname moved into a chip popover. The hidden
-    #nicknameInput remains in the DOM as the data source for the fire flow,
-    but the visible label now lives inside #nicknameControl > label > span.
+    語系由瀏覽器 locale 決定，zh 或 en 都算通過；真正要釘的是
+    data-i18n="nickname" 這個語意。
     """
     http_port, _ = server_ports
 
@@ -187,12 +187,10 @@ def test_viewer_identity_label_uses_nickname(browser_session, server_ports):
     page = context.new_page()
     try:
         page.goto(f"http://127.0.0.1:{http_port}/")
-        # Wait for the visible chip control rather than the hidden input.
-        page.wait_for_selector("#nicknameControl", timeout=8000)
-        label_span = page.locator('#nicknameControl label span[data-i18n="nickname"]').first
+        page.wait_for_selector("#nicknameControl", state="attached", timeout=8000)
+        label_span = page.locator('#nicknameControl span[data-i18n="nickname"]').first
         label_text = label_span.text_content() or ""
         i18n_key = label_span.get_attribute("data-i18n") or ""
-        # Either zh ("暱稱") or en ("Nickname") satisfies the semantic intent.
         assert i18n_key == "nickname"
         assert "暱稱" in label_text or "Nickname" in label_text
     finally:
@@ -222,16 +220,20 @@ def test_viewer_poll_tab_hidden_by_default(browser_session, server_ports):
 
 
 def test_viewer_poll_tab_hides_results(browser_session, server_ports):
-    """Viewer poll tab should show the prompt/options without vote counts or percentages."""
+    """觀眾看得到題目與選項，但永遠看不到票數與百分比。
+
+    2026-09-06 設計稿 05 · V6：分段控制**有投票時才浮出**。沒有投票的時候
+    首屏就只有彈幕——多一顆永遠停在「目前沒有進行中的投票」的分頁，等於
+    在首屏放一個常態性的空狀態。所以這裡不再等它「可見」，而是先注入
+    一則投票讓它浮出來，再點進去。
+    """
     http_port, _ = server_ports
 
     context = browser_session.new_context(locale="zh-TW")
     page = context.new_page()
     try:
         page.goto(f"http://127.0.0.1:{http_port}/?poll=1")
-        page.wait_for_selector('[data-viewer-tab="poll"]', timeout=8000)
-        page.locator('[data-viewer-tab="poll"]').click()
-        page.wait_for_selector("#viewerPollPane", state="visible", timeout=5000)
+        page.wait_for_selector('[data-viewer-tab="poll"]', state="attached", timeout=8000)
 
         page.evaluate("""() => {
               window.dispatchEvent(new CustomEvent("viewer-poll-state", {
@@ -248,6 +250,10 @@ def test_viewer_poll_tab_hides_results(browser_session, server_ports):
               }));
             }""")
 
+        # 投票一到，分段控制才浮出來（設計稿 05 · V6）
+        page.wait_for_selector('[data-viewer-tab="poll"]', state="visible", timeout=5000)
+        page.locator('[data-viewer-tab="poll"]').click()
+        page.wait_for_selector("#viewerPollPane", state="visible", timeout=5000)
         page.wait_for_selector('[data-vpoll-key="A"]', timeout=5000)
         poll_text = page.locator("#viewerPollPane").inner_text()
         assert "下一段要玩什麼？" in poll_text

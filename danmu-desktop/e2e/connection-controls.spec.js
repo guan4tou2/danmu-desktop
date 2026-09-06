@@ -27,7 +27,7 @@ test.describe("Connection Controls", () => {
     // 首次啟動精靈會蓋住主畫面，先按「稍後設定」關掉。
     const _skip = page.locator("[data-onboarding-skip]");
     if (await _skip.isVisible().catch(() => false)) await _skip.click();
-    await page.locator('[data-client-action="edit-conn"]').first().click();
+    await page.locator('[data-client-action="edit-conn"]').click();
     await page.waitForSelector("#conn-server-input", { state: "visible", timeout: 5000 });
   });
 

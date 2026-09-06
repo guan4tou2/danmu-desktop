@@ -6840,28 +6840,40 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 /* ─── Admin Help Drawer (F1) — design v4 follow-up 2026-05-18 ──────
    Slide-in right-side panel with contextual help per route. Triggered
    by F1 / `?` keystroke. See admin-help-drawer.js. */
+/* 2026-09-06 設計稿 15 · HD1：**不蓋內容，推開版面**。
+ * 原本是 modal-lite（半透明遮罩 ＋ 浮在上層），但說明的用途是「一邊看說明
+ * 一邊操作」——蓋住畫面等於逼使用者記住說明再關掉。改成推開之後遮罩也
+ * 不需要了（`.admin-help__backdrop` 隨之退場）。 */
 .admin-help {
-  position: fixed; inset: 0; z-index: 9200;
-  display: flex; justify-content: flex-end;
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  z-index: 9200;
+  display: flex;
   pointer-events: none;
   font-family: var(--font-sans);
 }
-.admin-help__backdrop {
-  position: absolute; inset: 0;
-  background: rgba(5, 9, 16, 0.50);
-  pointer-events: auto;
-  animation: hud-fade-in 160ms ease-out;
+
+/* 主容器讓出 360 的位置；抽屜就落在讓出來的地方，不覆蓋任何內容。 */
+body.is-help-open .admin-dash-grid {
+  padding-right: 360px;
+  transition: padding-right var(--motion-normal) ease;
 }
+
+@media (max-width: 1023px) {
+  /* 窄螢幕沒有 360 可以讓——退回覆蓋，並補回遮罩的視覺分隔（陰影）。 */
+  body.is-help-open .admin-dash-grid { padding-right: 0; }
+}
+
 .admin-help__drawer {
   /* v5 Batch 12-1 (2026-05-19): width tightened 460 → 360 per
      batch12-help.jsx HelpDrawer spec. */
   position: relative;
   width: 100%; max-width: 360px;
   height: 100vh; height: 100dvh;
-  background: var(--hud-bg1);
+  background: var(--admin-panel);
   color: var(--color-text-strong);
-  border-left: 2px solid var(--color-primary);
-  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.5);
+  border-left: 1px solid var(--admin-line);
+  box-shadow: var(--shadow-lg);
   display: flex; flex-direction: column;
   pointer-events: auto;
   animation: admin-help-slide 220ms cubic-bezier(0.32, 1.2, 0.34, 1);
@@ -7023,7 +7035,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .admin-help__drawer, .admin-help__backdrop { animation: none; }
+  .admin-help__drawer { animation: none; }
 }
 
 /* ─── Admin WS Reconnect Banner (design v4-r6 2026-05-18) ──────────
@@ -14450,4 +14462,24 @@ body.is-light .admin-login-wordmark.is-on-light,
   /* 窄一點時數字換行，動作跟著沉到下面——比橫向捲動好讀 */
   .admin-cockpit-stats { flex-wrap: wrap; gap: var(--space-4); }
   .admin-cockpit-stats-actions { margin-left: 0; flex-direction: row; width: 100%; }
+}
+
+/* 說明抽屜的「現場小技巧」（設計稿 15 · HD1）。
+   每頁說明的結尾放一句「其實有更快的做法」——它不是這一頁的功能說明，
+   所以視覺上要跟上面那幾條 tip 分開。 */
+.admin-help__fieldtip {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md-sm);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  font-size: var(--text-footnote);
+  line-height: 1.6;
+  color: var(--admin-text);
+}
+
+.admin-help__fieldtip-label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-weight: 600;
+  color: var(--color-ink-accent);
 }

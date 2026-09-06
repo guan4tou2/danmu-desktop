@@ -986,8 +986,13 @@ def test_cockpit_shows_status_once_and_no_retired_blocks(admin_page):
         ).fontVariantNumeric""")
     assert "tabular-nums" in variant
 
-    # 退場的區塊
-    for sel in (".admin-kpi-strip", ".admin-dash-summary", "[data-dash-myactions-body]"):
+    # 退場的區塊。注意範圍：`.admin-kpi-strip` 是可重用元件，插件頁與場次頁
+    # 還在用它——退場的是**控制台上的那一條**，不是這個 class 本身。
+    for sel in (
+        '[data-route-view="dashboard"] .admin-kpi-strip',
+        ".admin-dash-summary",
+        "[data-dash-myactions-body]",
+    ):
         assert admin_page.locator(sel).count() == 0, sel
 
 
