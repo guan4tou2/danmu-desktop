@@ -233,7 +233,9 @@ def test_viewer_poll_tab_hides_results(browser_session, server_ports):
     page = context.new_page()
     try:
         page.goto(f"http://127.0.0.1:{http_port}/?poll=1")
-        page.wait_for_selector('[data-viewer-tab="poll"]', state="attached", timeout=8000)
+        # DOM 立刻就在，但 script 還沒跑——這時 dispatch 事件會掉進虛空。
+        # 等 viewer-style-sheet.js（最後一個 defer script）掛好就緒旗標。
+        page.wait_for_selector("body[data-viewer-ready]", timeout=8000)
 
         page.evaluate("""() => {
               window.dispatchEvent(new CustomEvent("viewer-poll-state", {

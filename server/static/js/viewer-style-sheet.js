@@ -433,6 +433,14 @@
   }
   boot();
   DESKTOP.addEventListener("change", syncSheetMode);
+
+  // 明確的就緒訊號。這支是 index.html 最後一個 defer script，跑到這裡代表
+  // main.js 的監聽器（含 viewer-poll-state）與這支的 observer 都掛好了。
+  //
+  // 測試需要這個訊號：`page.goto()` 之後 DOM 立刻就在，但 script 還沒跑；
+  // 這時 dispatch `viewer-poll-state` 會直接掉進虛空，然後在 8 秒後以
+  // 「分頁沒有變可見」的形式失敗——看起來像版面 bug，其實是時序。
+  try { document.body.dataset.viewerReady = "1"; } catch (_) {}
   // main.js 是 defer 載入且會非同步補上效果按鈕，等它一輪再算一次摘要。
   setTimeout(boot, 300);
   setTimeout(refreshSummary, 1200);
