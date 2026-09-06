@@ -231,10 +231,7 @@ def test_screen_off_shows_one_chip_one_card_one_hint(viewer_page):
 
     # 舊的紅色警語橫幅必須留空（元素還在，給 main.js 的其他狀態用）
     status_row = page.locator("#sendbarStatusRow")
-    assert (
-        status_row.get_attribute("hidden") is not None
-        or status_row.text_content().strip() == ""
-    )
+    assert status_row.get_attribute("hidden") is not None or status_row.text_content().strip() == ""
 
 
 def test_send_button_keeps_arrow_when_screen_is_off(viewer_page):
@@ -296,10 +293,7 @@ def test_screen_on_clears_the_offline_surfaces(viewer_page):
     assert page.locator(".viewer-sendbar-meta__who").is_visible()
 
     status_row = page.locator("#sendbarStatusRow")
-    assert (
-        status_row.get_attribute("hidden") is not None
-        or status_row.text_content().strip() == ""
-    )
+    assert status_row.get_attribute("hidden") is not None or status_row.text_content().strip() == ""
 
 
 # ─── 2. 投票即時確認（is-voted / 已投出 / 絕不顯示票數）───────────────────────
@@ -564,8 +558,7 @@ def _open_style_sheet(page):
     """設計稿 05：色票等控制項搬進樣式抽層。桌面 ≥768 面板常駐，
     手機要先點首屏那一列「樣式」。"""
     page.evaluate(
-        "() => { const r = document.getElementById('viewerStyleRow');"
-        " if (r) r.click(); }"
+        "() => { const r = document.getElementById('viewerStyleRow');" " if (r) r.click(); }"
     )
     page.wait_for_timeout(200)
 

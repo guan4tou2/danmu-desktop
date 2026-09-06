@@ -23,8 +23,11 @@ test.describe("Connection Controls", () => {
     // compat fields synced from the public `#conn-server-input` via the
     // conn-parser. The edit panel is still gated behind ⚙ 更改 so we open
     // it once for the per-test interactions below.
-    await page.locator('[data-nav="conn"]').click();
-    await page.locator('[data-client-action="edit-conn"]').click();
+    // 2026-09-06 設計稿 04：三分區側欄退場，東西都在同一頁。
+    // 首次啟動精靈會蓋住主畫面，先按「稍後設定」關掉。
+    const _skip = page.locator("[data-onboarding-skip]");
+    if (await _skip.isVisible().catch(() => false)) await _skip.click();
+    await page.locator('[data-client-action="edit-conn"]').first().click();
     await page.waitForSelector("#conn-server-input", { state: "visible", timeout: 5000 });
   });
 
@@ -175,7 +178,6 @@ test.describe("Connection Controls", () => {
   });
 
   test("sync multi-display checkbox works", async () => {
-    await page.locator('[data-nav="overlay"]').click();
     const checkbox = page.locator("#sync-multi-display-checkbox");
     const isChecked = await checkbox.isChecked();
 

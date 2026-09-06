@@ -99,8 +99,10 @@ test.describe("Server ↔ Client 系統互動", () => {
     await main.waitForSelector("#main-content.loaded", { timeout: 15000 });
 
     // 設定連線目標 = TLS 前端
-    await main.locator('[data-nav="conn"]').click();
-    await main.locator('[data-client-action="edit-conn"]').click();
+    // 2026-09-06 設計稿 04：單頁版面，先關掉首次啟動精靈。
+    const _skip = main.locator("[data-onboarding-skip]");
+    if (await _skip.isVisible().catch(() => false)) await _skip.click();
+    await main.locator('[data-client-action="edit-conn"]').first().click();
     await main.waitForSelector("#conn-server-input", { state: "visible" });
     await main.evaluate(({ h, p }) => {
       const sv = document.getElementById("conn-server-input");
@@ -112,7 +114,6 @@ test.describe("Server ↔ Client 系統互動", () => {
     }, { h: "127.0.0.1", p: proxy.port });
 
     // 開 overlay，等 child 視窗出現
-    await main.locator('[data-nav="overlay"]').click();
     await main.evaluate(() => window.OverlayControl.start());
     await expect.poll(async () => {
       const pages = electronApp.windows();

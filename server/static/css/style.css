@@ -9298,11 +9298,6 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   letter-spacing: 0.3px; line-height: 1.6;
   color: var(--color-text-muted);
 }
-.admin-notif-tip .kicker {
-  display: inline-block;
-  margin-bottom: 4px;
-  color: var(--color-ink-accent);
-}
 
 .admin-notif-main {
   display: flex; flex-direction: column;

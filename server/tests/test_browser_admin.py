@@ -923,20 +923,23 @@ def test_block_confirm_shows_message_text_verbatim(admin_page, live_url):
     assert admin_page.evaluate("() => window.__xss") == 0
 
 
-# ─── KPI strip 響應式欄數 ─────────────────────────────────────────────────────
+# ─── 控制台首屏（設計稿 06 · K1/K2）─────────────────────────────────────────────
 
 
-def test_kpi_strip_column_count_per_breakpoint(browser_session, live_url):
-    """KPI strip 在三個斷點分別是 4 / 2 / 1 欄。
+def test_cockpit_is_two_cards_and_collapses_on_narrow(browser_session, live_url):
+    """控制台首屏的兩張卡：顯示層開關（左）＋一行數字（右），窄螢幕疊成一欄。
 
-    回歸保護：`.admin-kpi-strip.is-4col` 是兩個類別，會蓋過 media query 裡的
-    單類別規則，跟原始碼順序無關。tablet 那條當初用 !important 繞過去了，
-    mobile 那條沒有 —— 於是手機上四個 KPI 擠成四欄。現在兩個斷點都用對等特異性
-    (`.admin-kpi-strip, .admin-kpi-strip.is-4col`)，不再依賴 !important。
+    2026-09-06 取代原本的 `test_kpi_strip_column_count_per_breakpoint`。
+    KPI 四卡（Bebas 大數字 ＋ 20 條 sparkline）退場——20 個資料點畫不出趨勢，
+    只讓每張卡長高 60px，四張加起來把即時訊息流推到摺線以下，而主持人盤中
+    要看的就是訊息流。設計稿 06 把首屏收成三塊：開關卡、一行數字、訊息流。
+
+    這裡同時保留原測試真正在防的東西：**兩個類別的選擇器會蓋過 media query
+    裡的單類別規則**，跟原始碼順序無關。所以窄螢幕那條必須真的生效。
     """
-    expected = {1440: 4, 800: 2, 375: 1}
+    expected = {1440: 2, 800: 1}
     actual = {}
-    for width, _ in expected.items():
+    for width in expected:
         context = browser_session.new_context(
             locale="zh-TW", viewport={"width": width, "height": 900}
         )
@@ -948,23 +951,44 @@ def test_kpi_strip_column_count_per_breakpoint(browser_session, live_url):
             page.locator("#loginForm button[type=submit]").click()
             # v8（2026-08-19）：登出移進側欄帳號列，而 <=768px 側欄整個
             # display:none（改用底部導覽）。這裡只需要「已登入」的訊號，
-            # 不需要它可見——用 attached，否則 375px 這圈必定逾時。
+            # 不需要它可見。
             page.wait_for_selector("#logoutButton", state="attached", timeout=15000)
             page.evaluate(
                 '() => { try { localStorage.setItem("danmu.onboarding.done", "1"); }'
                 " catch (_) {} }"
             )
             page.evaluate('() => { window.location.hash = "#/live"; }')
-            page.wait_for_selector(".admin-kpi-strip", state="visible", timeout=8000)
+            page.wait_for_selector(".admin-cockpit", state="visible", timeout=8000)
             actual[width] = page.evaluate("""() => {
-                    const el = document.querySelector(".admin-kpi-strip");
+                    const el = document.querySelector(".admin-cockpit");
                     return getComputedStyle(el).gridTemplateColumns.split(" ").length;
                 }""")
         finally:
             page.close()
             context.close()
 
-    assert actual == expected, f"KPI 欄數不符：{actual}（預期 {expected}）"
+    assert actual == expected, f"控制台欄數不符：{actual}（預期 {expected}）"
+
+
+def test_cockpit_shows_status_once_and_no_retired_blocks(admin_page):
+    """狀態只出現在主卡一處；退場的三個區塊不要復活。"""
+    admin_page.evaluate('() => { window.location.hash = "#/live"; }')
+    admin_page.wait_for_selector(".admin-cockpit", state="visible", timeout=8000)
+
+    # 顯示層卡：色點 ＋ 一行文字
+    assert admin_page.locator("[data-cockpit-dot]").count() == 1
+    assert admin_page.locator("[data-cockpit-status]").count() == 1
+
+    # 一行數字，四格，等寬數字
+    assert admin_page.locator(".admin-cockpit-stat").count() == 4
+    variant = admin_page.evaluate("""() => getComputedStyle(
+            document.querySelector(".admin-cockpit-stats")
+        ).fontVariantNumeric""")
+    assert "tabular-nums" in variant
+
+    # 退場的區塊
+    for sel in (".admin-kpi-strip", ".admin-dash-summary", "[data-dash-myactions-body]"):
+        assert admin_page.locator(sel).count() == 0, sel
 
 
 # ─── Metrics API ───────────────────────────────────────────────────────────────

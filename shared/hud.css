@@ -2435,7 +2435,6 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   .admin-lf-v4__density-label { display: none; }
 }
 
-
 .admin-live-feed-row {
   display: grid;
   grid-template-columns: 20px 64px 72px 1fr 160px auto;
@@ -3068,40 +3067,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   from { transform: translateY(-12px); opacity: 0; }
   to   { transform: translateY(0);     opacity: 1; }
 }
-.admin-cmdk-scope {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--admin-line, #1e293b);
-  flex-wrap: wrap;
-}
-.admin-cmdk-chip {
-  padding: 4px 8px;
-  border-radius: var(--radius-pill);
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  border: 1px solid var(--admin-line, #1e293b);
-  background: transparent;
-  color: var(--admin-text-dim, #94a3b8);
-  cursor: pointer;
-  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
-}
-.admin-cmdk-chip:hover { color: var(--admin-text, #e2e8f0); }
-.admin-cmdk-chip.is-on {
-  border-color: var(--color-primary);
-  color: var(--color-ink-accent);
-  background: rgba(56, 189, 248, 0.1);
-}
-.admin-cmdk-hint {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  color: var(--admin-text-dim, #94a3b8);
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-}
+
 .admin-cmdk-search {
   display: flex;
   align-items: center;
@@ -3150,27 +3116,15 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: rgba(56, 189, 248, 0.12);
   border-left-color: var(--color-primary);
 }
-.admin-cmdk-prefix {
-  flex: 0 0 auto;
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 1px;
-  color: var(--color-ink-accent);
-  background: rgba(56, 189, 248, 0.08);
-  border: 1px solid rgba(56, 189, 248, 0.18);
-  padding: 2px 4px;
-  border-radius: var(--radius-xs);
-  white-space: nowrap;
-  text-transform: uppercase;
-}
+
 .admin-cmdk-label {
   flex: 1 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.admin-cmdk-empty,
-.admin-cmdk-more {
+
+.admin-cmdk-empty{
   list-style: none;
   padding: 12px 16px;
   font-size: var(--text-footnote);
@@ -4760,7 +4714,6 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 .admin-bc-v5__session-link:hover { text-decoration: underline; }
 
-
 .admin-broadcast-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -5272,13 +5225,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   width: 18px;
   text-align: center;
 }
-.admin-cmdk-chip { display: inline-flex; align-items: center; gap: 4px; }
-.admin-cmdk-chip .num {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  opacity: 0.6;
-  letter-spacing: 0;
-}
+
 .admin-cmdk-row {
   display: grid;
   grid-template-columns: 28px 1fr auto;
@@ -5303,19 +5250,7 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   background: rgba(56, 189, 248, 0.12);
   border-color: rgba(56, 189, 248, 0.36);
 }
-.admin-cmdk-body {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.admin-cmdk-body .admin-cmdk-label {
-  font-size: var(--text-footnote);
-  font-weight: 500;
-  color: var(--admin-text, #e2e8f0);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+
 .admin-cmdk-sub {
   font-family: var(--font-mono);
   font-size: var(--text-caption);
@@ -5341,15 +5276,6 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 .admin-cmdk-shortcut:empty {
   border-color: transparent;
   background: transparent;
-}
-.admin-cmdk-note {
-  padding: 8px 16px;
-  background: rgba(56, 189, 248, 0.04);
-  border-top: 1px solid var(--admin-line, #1e293b);
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  color: var(--admin-text-dim, #94a3b8);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -5494,4 +5420,59 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   margin-top: var(--space-2);
   color: var(--color-ink-danger);
   text-decoration: none;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * ⌘K 三段結果（設計稿 15 · CK1）
+ *
+ * 七顆 scope chip ＋ 依分數排序的扁平清單 → **動作 › 頁面 › 訊息** 三段，
+ * 順序固定。chip 是七個「先分類」的決定，而使用者只是想做一件事；
+ * 扁平排序會讓「封鎖關鍵字」排在第七筆——現場最常按 ⌘K 是要做事。
+ * ═══════════════════════════════════════════════════════════════════════ */
+.admin-cmdk-group {
+  list-style: none;
+  padding: var(--space-3) var(--space-4) var(--space-1);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--admin-text-dim, #94a3b8);
+}
+
+.admin-cmdk-group:first-child { padding-top: var(--space-2); }
+
+.admin-cmdk-row {
+  gap: var(--space-3);
+  font-size: var(--text-subhead);
+}
+
+.admin-cmdk-row .admin-cmdk-label {
+  flex: 0 1 auto;
+  font-weight: 400;
+}
+
+/* 輔助資訊（來源頁 / 數量）靠右，主標與它之間留白由 margin-left:auto 撐開 */
+.admin-cmdk-row .admin-cmdk-sub {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: var(--text-footnote);
+  color: var(--admin-text-dim, #94a3b8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 45%;
+}
+
+.admin-cmdk-shortcut {
+  flex: 0 0 auto;
+  width: 16px;
+  text-align: right;
+  color: var(--color-ink-accent);
+}
+
+.admin-cmdk-empty {
+  list-style: none;
+  padding: var(--space-4);
+  font-size: var(--text-footnote);
+  color: var(--admin-text-dim, #94a3b8);
+  text-align: center;
 }

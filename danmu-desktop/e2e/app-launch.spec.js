@@ -44,14 +44,15 @@ test.describe("App Launch", () => {
     expect(title).toBe("Danmu Fire");
   });
 
-  // Post v5.0.0 P0-0 IA: start/stop buttons live in the Overlay section
-  // (sidebar tab `Overlay`) which is hidden by default. Navigate first.
-  async function openOverlayTab() {
-    await mainWindow.locator('[data-nav="overlay"]').click();
+  // 2026-09-06 設計稿 04：三分區側欄退場，全部東西都在同一頁上。
+  // 首次啟動精靈會蓋住主畫面，所以先把它關掉（等同使用者按「稍後設定」）。
+  async function dismissOnboarding() {
+    const skip = mainWindow.locator("[data-onboarding-skip]");
+    if (await skip.isVisible().catch(() => false)) await skip.click();
   }
 
-  test("Overlay section exposes the visible overlay action button", async () => {
-    await openOverlayTab();
+  test("main card exposes the visible overlay action button", async () => {
+    await dismissOnboarding();
     const overlayBtn = mainWindow.locator("[data-client-overlay-button]");
     await expect(overlayBtn).toBeVisible();
     await expect(overlayBtn).toHaveAttribute("data-state", "stopped");
@@ -61,21 +62,20 @@ test.describe("App Launch", () => {
     // L3 2026-07-29: #start-button/#stop-button removed from index.html;
     // the visible overlay button drives window.OverlayControl directly and
     // boots in the stopped state.
-    await openOverlayTab();
+    await dismissOnboarding();
     expect(await mainWindow.locator("#start-button").count()).toBe(0);
     expect(await mainWindow.locator("#stop-button").count()).toBe(0);
     const overlayBtn = mainWindow.locator("[data-client-overlay-button]");
     await expect(overlayBtn).toHaveAttribute("data-state", "stopped");
   });
 
-  // Post design-v2: host / port / token / display live inside the Conn
-  // section (sidebar tab `連線`), expanded via ⚙ 更改. Navigate first.
+  // 2026-09-06 設計稿 04：伺服器位址是主畫面設定群組裡的一列，點整列進編輯。
   // beforeAll keeps the same page across tests so we may already be in
   // edit mode from a prior test — in which case data-conn-display is
   // hidden and clicking edit-conn would time out. Check first and
   // short-circuit if #conn-server-input is already visible.
   async function openConnEdit() {
-    await mainWindow.locator('[data-nav="conn"]').click();
+    await dismissOnboarding();
     const serverInput = mainWindow.locator("#conn-server-input");
     if (await serverInput.isVisible().catch(() => false)) return;
     await mainWindow.waitForSelector(
@@ -89,7 +89,7 @@ test.describe("App Launch", () => {
     });
   }
 
-  test("Conn section host:port input is reachable", async () => {
+  test("server address input is reachable", async () => {
     // 5.0.0 collapsed host + port into one #conn-server-input (combined
     // hostname[:port] field). The legacy #host-input / #port-input compat
     // inputs still exist in the DOM but are intentionally hidden — they get
@@ -123,8 +123,8 @@ test.describe("App Launch", () => {
     expect(await advanced.count()).toBe(0);
   });
 
-  test("Overlay section screen picker is reachable", async () => {
-    await openOverlayTab();
+  test("screen picker is reachable on the main page", async () => {
+    await dismissOnboarding();
     const screenChip = mainWindow.locator("[data-client-screens] .client-screen-chip").first();
     await expect(screenChip).toBeVisible();
   });

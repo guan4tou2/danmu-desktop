@@ -513,14 +513,14 @@ body.viewer-body-v2.is-dark{
 @keyframes dm-preview-scroll {/* 0% — track sits one container-width to the right of its origin, so
      the left edge is exactly at the container's right edge (fully off-
      screen on the right). */
-  
+
   0%{ transform: translateX(100cqw); }/* 100% — track moves -100% of its own width, so the right edge ends
      at the container's left edge (fully off-screen on the left). */
-  
+
   100%{ transform: translateX(-100%); }}
 
 @media (prefers-reduced-motion: reduce) {/* Respect users who prefer no motion — keep the panel static. */
-  
+
   .viewer-preview-track{ animation: none; transform: none; }}/* 舞台上的暱稱：繼承 .viewer-preview 的 #f1f5f9。2026-07-29 拿掉淺色臂——
  * 它會把暱稱刷成 slate-600，在深色舞台上等於消失。 */
 
@@ -564,7 +564,7 @@ body.viewer-body-v2.is-dark{
 @keyframes vp-zoom    { 0%, 100%{ transform: scale(1); } 50%{ transform: scale(var(--vp-zoom-max, 1.5)); }}
 
 @media (prefers-reduced-motion: reduce) {/* All decorative preview effects respect the system motion preference. */
-  
+
   .viewer-preview-text{ animation: none !important; }}/* 2026-05-17 design v3-r10: per-effect parameter cards. Sits under the
    8 effect pill buttons; each selected effect renders one cyan-tinted
    card with a 2-col slider grid (1-col when only one param). */

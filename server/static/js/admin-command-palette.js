@@ -74,14 +74,20 @@
   // labelKey (resolved lazily in _build()/_scoreXxx — ServerI18n isn't
   // init'd yet at module-parse time). messages/settings/themes reuse
   // existing generic keys (messagesLabel/settings/navTabThemes).
-  const SCOPES = [
-    { id: "all",      labelKey: "cmdkScopeAll" },
-    { id: "messages", labelKey: "messagesLabel" },
-    { id: "users",    labelKey: "cmdkScopeUsers" },
-    { id: "settings", labelKey: "settings" },
-    { id: "routes",   labelKey: "cmdkScopeRoutes" },
-    { id: "themes",   labelKey: "navTabThemes" },
-    { id: "actions",  labelKey: "cmdkScopeActions" },
+  // 2026-09-06 設計稿 15 · CK1：結果收成**三段，動作優先**。
+  //
+  // 原本是七顆 scope chip（全部／訊息／使用者／設定／路由／主題／動作）＋
+  // 一條依分數排序的扁平清單。問題有兩個：七個 chip 是七個要先分類的決定，
+  // 而使用者只是想做一件事；扁平排序讓「封鎖關鍵字」這種動作可能排在
+  // 第七筆。稿上的順序是固定的——**現場最常按 ⌘K 是要做事，不是要導頁**。
+  //
+  //   動作  可以做的事（含 F1–F4 那四張面板原本的功能）
+  //   頁面  導到哪一頁 / 哪一段設定
+  //   訊息  最近的訊息與觀眾
+  const GROUPS = [
+    { id: "actions",  labelKey: "cmdkGroupActions",  types: ["action"] },
+    { id: "pages",    labelKey: "cmdkGroupPages",    types: ["route", "setting", "theme"] },
+    { id: "messages", labelKey: "cmdkGroupMessages", types: ["message", "user"] },
   ];
 
   // Predefined quick-action corpus — no fetch needed. Each entry's `action`
@@ -105,15 +111,14 @@
   }
   // D-4: labelKey/subKey on every entry that carries hardcoded Chinese
   // (top-level literal — module-parse time, ServerI18n not init'd yet).
-  // The `action` closures themselves stay plain `sub`/literal strings
-  // where the field is Latin-only (URLs, "Cmd+R"); the Chinese toast
-  // strings *inside* those closures call ServerI18n.t() directly since
-  // closures only run later, well after init.
+  // 2026-09-06 設計稿 15 · CK1：subKey 改成**這個動作住在哪一頁**
+  // （審核／顯示層／投票／紀錄），不再是 `POST /effects/reload` 這種端點。
+  // 端點對主持人沒有意義，而「這是審核的東西」有。
   const ACTIONS = [
     {
       id: "restart-effects",
       labelKey: "cmdkActionReloadEffects",
-      sub: "POST /effects/reload",
+      subKey: "adminNavEffects",
       action: () => _csrfFetch("/effects/reload", { method: "POST" })
         .then((r) => _toast(r.ok ? ServerI18n.t("effectsReloadFallback") : ServerI18n.t("cmdkToastEffectsReloadFailed"), r.ok))
         .catch(() => _toast(ServerI18n.t("cmdkToastEffectsReloadFailed"), false)),
@@ -121,7 +126,7 @@
     {
       id: "overlay-off",
       labelKey: "cmdkActionOverlayOff",
-      subKey: "cmdkActionOverlayOffSub",
+      subKey: "adminNavOverlay",
       action: () => _csrfFetch("/admin/broadcast/toggle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -133,7 +138,7 @@
     {
       id: "reset-poll",
       labelKey: "cmdkActionResetPoll",
-      sub: "POST /admin/poll/reset",
+      subKey: "adminNavPolls",
       action: () => _csrfFetch("/admin/poll/reset", { method: "POST" })
         .then((r) => _toast(r.ok ? ServerI18n.t("cmdkToastPollReset") : ServerI18n.t("cmdkToastPollResetFailed"), r.ok))
         .catch(() => _toast(ServerI18n.t("cmdkToastPollResetFailed"), false)),
@@ -141,7 +146,7 @@
     {
       id: "clear-history",
       labelKey: "cmdkActionClearHistory",
-      subKey: "cmdkActionClearHistorySub",
+      subKey: "adminNavHistory",
       action: async () => {
         const ok = await window.HudConfirm?.open({
           icon: "⊘",
@@ -160,14 +165,14 @@
     {
       id: "logout",
       labelKey: "logout",
-      sub: "POST /logout",
+      sub: "",
       action: () => fetch("/logout", { method: "POST", credentials: "same-origin" })
         .finally(() => location.reload()),
     },
     {
       id: "reload-page",
       labelKey: "cmdkActionReloadPage",
-      sub: "Cmd+R",
+      sub: "",
       action: () => location.reload(),
     },
   ];
@@ -175,10 +180,10 @@
   let _root = null;
   let _input = null;
   let _list = null;
-  let _scopeRow = null;
-  let _scope = "all";
   let _query = "";
   let _items = [];
+  // 三段的邊界：[{id, labelKey, from, count}]，_renderList 用它插段標題。
+  let _groups = [];
   let _activeIdx = 0;
   // Caches for messages (history), users (fingerprints) and themes so search
   // is client-side fuzzy filtering — endpoints don't accept `q`.
@@ -223,39 +228,21 @@
           <input type="text" class="admin-cmdk-input" placeholder="${ServerI18n.t("cmdkSearchPlaceholder")}" autocomplete="off" spellcheck="false" />
           <span class="admin-cmdk-prompt">⌘K</span>
         </div>
-        <div class="admin-cmdk-scope" role="tablist">
-          ${SCOPES.map(s => `
-            <button type="button" class="admin-cmdk-chip ${s.id === "all" ? "is-on" : ""}"
-                    data-scope="${s.id}" role="tab" aria-selected="${s.id === "all"}">
-              <span class="lbl">${_esc(ServerI18n.t(s.labelKey))}</span>
-              <span class="num" data-scope-count="${s.id}">·</span>
-            </button>
-          `).join("")}
-          <span class="admin-cmdk-hint">Tab · Esc</span>
-        </div>
         <ul class="admin-cmdk-list" role="listbox"></ul>
         <div class="admin-cmdk-foot">
           <span><kbd>↑↓</kbd> ${ServerI18n.t("cmdkFootSelect")}</span>
-          <span><kbd>Enter</kbd> ${ServerI18n.t("cmdkFootJump")}</span>
-          <span><kbd>Tab</kbd> ${ServerI18n.t("cmdkFootSwitchScope")}</span>
-          <span><kbd>Esc</kbd> ${ServerI18n.t("cmdkFootClose")}</span>
+          <span><kbd>↵</kbd> ${ServerI18n.t("cmdkFootRun")}</span>
+          <span><kbd>⌘K</kbd> ${ServerI18n.t("cmdkFootToggle")}</span>
         </div>
-        <div class="admin-cmdk-note">${ServerI18n.t("cmdkFooterNote")}</div>
       </div>
     `;
     document.body.appendChild(root);
     _root = root;
     _input = root.querySelector(".admin-cmdk-input");
     _list = root.querySelector(".admin-cmdk-list");
-    _scopeRow = root.querySelector(".admin-cmdk-scope");
 
     root.addEventListener("click", (e) => {
       if (e.target.matches("[data-cmdk-close]")) close();
-    });
-    _scopeRow.addEventListener("click", (e) => {
-      const chip = e.target.closest("[data-scope]");
-      if (!chip) return;
-      _setScope(chip.dataset.scope);
     });
     _input.addEventListener("input", (e) => {
       _query = e.target.value;
@@ -270,28 +257,11 @@
     });
   }
 
-  function _setScope(id) {
-    _scope = id;
-    _scopeRow.querySelectorAll("[data-scope]").forEach((c) => {
-      const on = c.dataset.scope === id;
-      c.classList.toggle("is-on", on);
-      c.setAttribute("aria-selected", on ? "true" : "false");
-    });
-    _refresh();
-  }
-
   function _onKey(e) {
     if (e.key === "Escape") { e.preventDefault(); close(); return; }
     if (e.key === "ArrowDown") { e.preventDefault(); _moveActive(1); return; }
     if (e.key === "ArrowUp") { e.preventDefault(); _moveActive(-1); return; }
     if (e.key === "Enter") { e.preventDefault(); _activate(); return; }
-    if (e.key === "Tab") { e.preventDefault(); _cycleScope(e.shiftKey ? -1 : 1); return; }
-  }
-
-  function _cycleScope(dir) {
-    const idx = SCOPES.findIndex((s) => s.id === _scope);
-    const next = (idx + dir + SCOPES.length) % SCOPES.length;
-    _setScope(SCOPES[next].id);
   }
 
   function _moveActive(dir) {
@@ -359,18 +329,37 @@
     }
   }
 
+  // 設計稿 15 · CK1：輔助文字是**來源頁**或**數量**，不是端點與 kicker。
+  // `route → LIVE · 操作艙 · 即時狀態` 這種字串是寫給開發者看的路由表，
+  // 主持人按 ⌘K 時要的是「這是哪一區的東西」。
+  const ROUTE_GROUP = {
+    live: "adminNavGroupLive", overlay: "adminNavGroupLive",
+    polls: "adminNavGroupLive", moderation: "adminNavGroupLive",
+    viewer: "adminNavGroupAppearance", effects: "adminNavGroupAppearance",
+    themes: "adminNavGroupAppearance", assets: "adminNavGroupAppearance",
+    widgets: "adminNavGroupAppearance",
+    history: "adminNavGroupSystem", backup: "adminNavGroupSystem",
+    security: "adminNavGroupSystem", integrations: "adminNavGroupSystem",
+  };
+
   function _scoreRoutes(q) {
     return Object.entries(_routes()).map(([id, r]) => {
-      const score = Math.max(_fuzzyScore(r.title, q), _fuzzyScore(id, q), _fuzzyScore(r.kicker, q));
+      const score = Math.max(_fuzzyScore(r.title, q), _fuzzyScore(id, q));
+      const groupKey = ROUTE_GROUP[id];
       return {
         type: "route",
         route: id,
         label: r.title,
-        sub: `route → ${r.kicker}`,
+        sub: groupKey ? ServerI18n.t(groupKey) : "",
         icon: "◇",
         score,
       };
     }).filter((x) => x.score >= 0);
+  }
+
+  function _routeTitle(id) {
+    const r = _routes()[id];
+    return r ? r.title : "";
   }
 
   function _scoreSettings(q) {
@@ -383,8 +372,10 @@
         route: s.route,
         tab: s.tab,
         section: s.section,
-        label: label,
-        sub: `setting · ${(s.tab || s.section).replace("sec-", "")} · ${s.route}`,
+        // 設計稿 15 · CK1 的範例是「審核 › 封鎖字」——把它住在哪一頁
+        // 寫進標籤本身，使用者才知道按下去會跳到哪。
+        label: _routeTitle(s.route) ? `${_routeTitle(s.route)} › ${label}` : label,
+        sub: "",
         icon: "⚙",
         score: _fuzzyScore(label, q),
       };
@@ -464,7 +455,7 @@
   async function _ensureCaches() {
     const now = Date.now();
     const tasks = [];
-    if (_scope === "messages" || _scope === "all") {
+    {
       if (!_msgCache || now - _msgCache.at > CACHE_TTL_MS) {
         tasks.push(fetch("/admin/history?hours=24&limit=50", { credentials: "same-origin" })
           .then((r) => r.ok ? r.json() : null)
@@ -472,7 +463,7 @@
           .catch(() => { _msgCache = { at: now, records: [] }; }));
       }
     }
-    if (_scope === "users" || _scope === "all") {
+    {
       if (!_userCache || now - _userCache.at > CACHE_TTL_MS) {
         tasks.push(fetch("/admin/fingerprints?limit=50", { credentials: "same-origin" })
           .then((r) => r.ok ? r.json() : null)
@@ -480,7 +471,7 @@
           .catch(() => { _userCache = { at: now, records: [] }; }));
       }
     }
-    if (_scope === "themes" || _scope === "all") {
+    {
       if (!_themeCache || now - _themeCache.at > CACHE_TTL_MS) {
         tasks.push(fetch("/admin/themes", { credentials: "same-origin" })
           .then((r) => r.ok ? r.json() : null)
@@ -497,53 +488,37 @@
     if (tasks.length) await Promise.all(tasks);
   }
 
+  // 每段最多顯示幾筆。動作給多一點（它排最前，也最常被用），訊息給少一點
+  // （那是「找得到」而不是「掃視」用的）。
+  const GROUP_LIMIT = { actions: 5, pages: 5, messages: 4 };
+
   async function _refresh() {
     await _ensureCaches();
     const q = _query.trim();
-    // Always compute per-scope candidate counts so chip badges stay live, even
-    // when the active scope filter restricts the visible result set.
-    const byScope = {
-      routes:   _scoreRoutes(q),
-      settings: _scoreSettings(q),
-      messages: _scoreMessages(q),
-      users:    _scoreUsers(q),
-      themes:   _scoreThemes(q),
-      actions:  _scoreActions(q),
+    const byType = {
+      action:  _scoreActions(q),
+      route:   _scoreRoutes(q),
+      setting: _scoreSettings(q),
+      theme:   _scoreThemes(q),
+      message: _scoreMessages(q),
+      user:    _scoreUsers(q),
     };
-    const all = [].concat(
-      byScope.routes,
-      byScope.settings,
-      byScope.messages,
-      byScope.users,
-      byScope.themes,
-      byScope.actions,
-    );
-    let pool;
-    if (_scope === "all") pool = all;
-    else if (byScope[_scope]) pool = byScope[_scope];
-    else pool = [];
 
-    pool.sort((a, b) => b.score - a.score);
-    _items = pool.slice(0, 50);
+    // 三段固定順序（設計稿 15 · CK1）。段內才依分數排，段跟段之間不比分數
+    // ——「動作永遠在前」是這輪的決定，不是分數算出來的結果。
+    _items = [];
+    _groups = [];
+    GROUPS.forEach((g) => {
+      const rows = g.types
+        .reduce((acc, t) => acc.concat(byType[t] || []), [])
+        .sort((a, b) => b.score - a.score)
+        .slice(0, GROUP_LIMIT[g.id] || 5);
+      if (!rows.length) return;
+      _groups.push({ id: g.id, labelKey: g.labelKey, from: _items.length, count: rows.length });
+      _items = _items.concat(rows);
+    });
     _activeIdx = 0;
     _renderList();
-    _updateScopeCounts({
-      all: all.length,
-      routes: byScope.routes.length,
-      settings: byScope.settings.length,
-      messages: byScope.messages.length,
-      users: byScope.users.length,
-      themes: byScope.themes.length,
-      actions: byScope.actions.length,
-    });
-  }
-
-  function _updateScopeCounts(counts) {
-    if (!_scopeRow) return;
-    Object.entries(counts).forEach(([id, n]) => {
-      const el = _scopeRow.querySelector(`[data-scope-count="${id}"]`);
-      if (el) el.textContent = `· ${n}`;
-    });
   }
 
   // Per-result icon chip glyph by item type. Falls back to the row's own
@@ -564,24 +539,27 @@
       _list.innerHTML = `<li class="admin-cmdk-empty">${ServerI18n.t("cmdkEmptyResults")}</li>`;
       return;
     }
-    _list.innerHTML = _items.slice(0, 10).map((item, i) => {
-      const isActive = i === _activeIdx;
-      const shortcut = isActive ? "ENTER" : "";
-      return `
+    // 設計稿 15 · CK1：三段各自帶標題，段內才排序。輔助資訊（來源頁 /
+    // 數量）靠右對齊，選中那列右邊顯示 ↵——不用全大寫的 "ENTER"。
+    const html = [];
+    _groups.forEach((g) => {
+      html.push(
+        `<li class="admin-cmdk-group" role="presentation">${_esc(ServerI18n.t(g.labelKey))}</li>`
+      );
+      for (let i = g.from; i < g.from + g.count; i++) {
+        const item = _items[i];
+        const isActive = i === _activeIdx;
+        html.push(`
         <li class="admin-cmdk-row ${isActive ? "is-active" : ""}"
             data-cmdk-idx="${i}" role="option" aria-selected="${isActive}">
           <span class="admin-cmdk-icon" aria-hidden="true">${_esc(_iconFor(item))}</span>
-          <span class="admin-cmdk-body">
-            <span class="admin-cmdk-label">${_esc(item.label)}</span>
-            <span class="admin-cmdk-sub">${_esc(item.sub || "")}</span>
-          </span>
-          <span class="admin-cmdk-shortcut">${_esc(shortcut)}</span>
-        </li>
-      `;
-    }).join("");
-    if (_items.length > 10) {
-      _list.insertAdjacentHTML("beforeend", `<li class="admin-cmdk-more">${ServerI18n.t("cmdkMoreResults", { n: _items.length - 10 })}</li>`);
-    }
+          <span class="admin-cmdk-label">${_esc(item.label)}</span>
+          <span class="admin-cmdk-sub">${_esc(item.sub || "")}</span>
+          <span class="admin-cmdk-shortcut" aria-hidden="true">${isActive ? "↵" : ""}</span>
+        </li>`);
+      }
+    });
+    _list.innerHTML = html.join("");
   }
 
   function open() {
@@ -591,7 +569,9 @@
     _root.classList.add("is-open");
     _query = "";
     _input.value = "";
-    _setScope("all");
+    // 開啟時就先算一輪：設計稿 15 · CK1 的「動作」段在空查詢下也要有內容，
+    // 使用者按 ⌘K 常常不是為了搜尋，而是為了看有哪些事可以做。
+    _refresh();
     setTimeout(() => _input.focus(), 20);
   }
 

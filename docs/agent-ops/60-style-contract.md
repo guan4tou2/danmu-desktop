@@ -264,10 +264,18 @@ grep -n "\-\-text-subhead\|\.admin-ui-group\b" shared/tokens.css shared/hud.css
 
 ```bash
 make lint-css
+cd server && PYTHONPATH=.. uv run python -m pytest tests/test_design_contract.py -q
 ```
 
-擋新增的裸 hex、裸 rgba、可 token 化的 px、離格間距、theme-blind 色彩。
-刻意的 baseline 變動才用 `node scripts/check-css-tokens.mjs --update`。
+`make lint-css` 擋新增的裸 hex、裸 rgba、可 token 化的 px、離格間距、
+theme-blind 色彩。刻意的 baseline 變動才用
+`node scripts/check-css-tokens.mjs --update`。
+
+`test_design_contract.py`（2026-09-06 新增）釘住**設計稿上的文案與結構**：
+關鍵字串在不在、退場的元素有沒有真的退場。它不是像素比對，也不取代看畫面
+——它擋的是「有人為了修別的東西，把『大螢幕未開』改回『彈幕牆 · 未開啟』，
+或把 KPI sparkline 加回控制台，而沒有人發現」。設計契約變了就更新那份清單，
+並在 commit 說明為什麼；不要為了讓它變綠而繞過去。
 
 **視覺驗證用可見節點量，不要用 `innerText`。**
 admin 有大量 `display:none` 的隱藏面板（開發者覆寫工具、未啟用分頁），

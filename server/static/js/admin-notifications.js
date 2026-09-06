@@ -265,10 +265,9 @@
               <button type="button" class="admin-ui-chip admin-notif-src" data-notif-sev="good">OK<span class="admin-notif-count cnt" data-cnt-sev-good>—</span></button>
             </div>
 
-            <div class="admin-notif-tip">
-              <span class="kicker">${ServerI18n.t("notifTipKicker")}</span>
-              ${ServerI18n.t("notifTipBody")}
-            </div>
+            <!-- 2026-09-06 設計稿 14 刪除清單：kicker 全面退場。中文說明
+                 旁邊再擺一行大寫英文標籤是同一件事說兩次。 -->
+            <div class="admin-notif-tip">${ServerI18n.t("notifTipBody")}</div>
           </aside>
 
           <main class="admin-notif-main">
