@@ -2375,7 +2375,11 @@ body.viewer-body-v2:not(.is-dark) .viewer-topbar-wordmark.is-on-light { display:
     grid-template-rows: auto 1fr auto;
   }
 
+  /* 主欄的每一塊都要明確指定 grid-column。漏掉任何一個，它會被自動排到
+     第 2 欄（樣式面板那欄）或另起一列——`.viewer-tabbar` 就這樣在桌面寬度
+     下被排到面板後面，投票分頁「存在但不可見」，CI 的 e2e 逾時。 */
   .viewer-topbar,
+  .viewer-tabbar,
   .viewer-pane,
   .viewer-sendbar { grid-column: 1; }
 

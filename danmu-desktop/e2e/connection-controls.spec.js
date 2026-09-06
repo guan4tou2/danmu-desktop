@@ -164,9 +164,12 @@ test.describe("Connection Controls", () => {
     expect(port).toBe("443");
   });
 
-  test("ws token input lives in the collapsible auth panel and accepts input", async () => {
-    // Open the <details> auth panel first so the input is visible.
+  test("connection password lives in the settings panel and accepts input", async () => {
+    // 2026-09-06 設計稿 04 · P1：連線密碼（原 WebSocket Token）搬進 ⚙ 面板
+    // 的「伺服器」區，且收在一個 <details> 裡。要先開面板、再展開那一段。
     await page.evaluate(() => {
+      const gear = document.getElementById("client-settings-btn");
+      if (gear) gear.click();
       const panel = document.querySelector("[data-conn-auth-panel]");
       if (panel) panel.open = true;
     });
@@ -177,16 +180,26 @@ test.describe("Connection Controls", () => {
     expect(value).toBe("my-secret-token");
   });
 
-  test("sync multi-display checkbox works", async () => {
+  test("sync multi-display switch works", async () => {
+    // 2026-09-06 設計稿 04：這顆 checkbox 是視覺開關（.client-switch）底下
+    // 那個 opacity:0 / 0×0 的真 input——Playwright 不會去點零尺寸元素。
+    // 點它外層的 <label>（也就是使用者實際會點的那一列）。
+    // 它在主畫面上，所以前一個測試開著的 ⚙ 面板要先關掉。
+    await page.evaluate(() => {
+      const panel = document.getElementById("client-settings");
+      if (panel && !panel.hidden) {
+        const done = panel.querySelector("[data-settings-close]");
+        if (done) done.click();
+      }
+    });
     const checkbox = page.locator("#sync-multi-display-checkbox");
-    const isChecked = await checkbox.isChecked();
+    const row = page.locator("label.client-group-row:has(#sync-multi-display-checkbox)");
+    const before = await checkbox.isChecked();
 
-    // Toggle
-    if (isChecked) {
-      await checkbox.uncheck();
+    await row.click();
+    if (before) {
       await expect(checkbox).not.toBeChecked();
     } else {
-      await checkbox.check();
       await expect(checkbox).toBeChecked();
     }
   });
