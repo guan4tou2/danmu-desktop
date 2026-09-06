@@ -5449,6 +5449,11 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
 }
 
 .admin-dash-account-logout {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
   color: var(--admin-text-dim);
   text-decoration: none;
   white-space: nowrap;
@@ -5466,4 +5471,13 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   justify-content: center;
   border: none;
   cursor: pointer;
+}
+
+/* 手機「更多」抽屜的登出列 — 與導覽項目分隔開，語意上不是導航
+   （2026-08-19：側欄在手機 display:none，登出需要這個入口） */
+.admin-mobile-nav__o-logout {
+  border-top: 1px solid var(--admin-line);
+  margin-top: var(--space-2);
+  color: var(--color-ink-danger);
+  text-decoration: none;
 }

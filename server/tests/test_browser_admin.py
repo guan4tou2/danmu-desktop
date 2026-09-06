@@ -334,8 +334,16 @@ def test_settings_speed_reflects_new_value(admin_page):
 
 
 def test_settings_color_toggle_calls_api(admin_page):
-    """切換 Color 的 audience toggle 應發送 /admin/Set 請求（回 200）"""
-    _open_section(admin_page, "sec-color")
+    """切換 Color 的 audience toggle 應發送 /admin/Set 請求（回 200）
+
+    v8（2026-08-19 設計稿 07 · R1/R4 拆分）：「觀眾能不能自己改」的開關欄
+    只在**觀眾頁**露出（顯示層那邊露的是值欄）。SECTION_TO_ROUTE 把
+    sec-color 指向 overlay 是為了值編輯器，這條測的是開關，得自己走 viewer。
+    """
+    admin_page.evaluate('() => { window.location.hash = "#/viewer"; }')
+    admin_page.wait_for_selector(
+        '[data-dsp-mode="audience"] [data-toggle-key="Color"]', state="visible", timeout=5000
+    )
     responses = []
     admin_page.on("response", lambda r: responses.append(r) if "/admin/Set" in r.url else None)
 
@@ -938,7 +946,10 @@ def test_kpi_strip_column_count_per_breakpoint(browser_session, live_url):
             page.wait_for_selector("#loginForm", timeout=8000)
             page.fill("#password", "test")
             page.locator("#loginForm button[type=submit]").click()
-            page.wait_for_selector("#logoutButton", timeout=15000)
+            # v8（2026-08-19）：登出移進側欄帳號列，而 <=768px 側欄整個
+            # display:none（改用底部導覽）。這裡只需要「已登入」的訊號，
+            # 不需要它可見——用 attached，否則 375px 這圈必定逾時。
+            page.wait_for_selector("#logoutButton", state="attached", timeout=15000)
             page.evaluate(
                 '() => { try { localStorage.setItem("danmu.onboarding.done", "1"); }'
                 " catch (_) {} }"

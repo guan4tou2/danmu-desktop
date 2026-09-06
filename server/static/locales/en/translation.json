@@ -2770,5 +2770,7 @@
   "sohLanguageLabel": "Interface language",
   "adminAccountLabel": "Admin",
   "statusOn": "On",
-  "statusOff": "Off"
+  "statusOff": "Off",
+  "mnavDescOverlay": "How danmu look on the big screen",
+  "mnavDescSecurity": "Passwords and panel access"
 }

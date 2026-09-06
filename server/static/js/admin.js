@@ -758,7 +758,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="admin-dash-account">
                                 <span class="admin-dash-account-avatar" aria-hidden="true">管</span>
                                 <span class="admin-dash-account-name">${ServerI18n.t("adminAccountLabel")}</span>
-                                <a href="/logout" id="logoutButton" class="admin-dash-account-logout">${ServerI18n.t("logout")}</a>
+                                <button type="button" id="logoutButton" class="admin-dash-account-logout">${ServerI18n.t("logout")}</button>
                             </div>
                         </aside>
 

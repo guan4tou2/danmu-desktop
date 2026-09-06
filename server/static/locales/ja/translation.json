@@ -2770,5 +2770,7 @@
   "sohLanguageLabel": "表示言語",
   "adminAccountLabel": "管理者",
   "statusOn": "オン",
-  "statusOff": "オフ"
+  "statusOff": "オフ",
+  "mnavDescOverlay": "大画面での弾幕の見え方",
+  "mnavDescSecurity": "パスワードと管理画面へのアクセス"
 }

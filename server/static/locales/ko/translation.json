@@ -2770,5 +2770,7 @@
   "sohLanguageLabel": "인터페이스 언어",
   "adminAccountLabel": "관리자",
   "statusOn": "켬",
-  "statusOff": "끔"
+  "statusOff": "끔",
+  "mnavDescOverlay": "큰 화면에서의 탄막 모양",
+  "mnavDescSecurity": "비밀번호와 관리 페이지 접근"
 }

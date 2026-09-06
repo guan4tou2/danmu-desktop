@@ -36,18 +36,19 @@
   // tabs (live / moderation / polls / assets) don't. The old list had a
   // Display/Viewer duplicate (both landed on #/viewer) and reached only
   // 9 of the sidebar's items.
+  // v8 IA（2026-08-19 設計稿 03）：與側欄的 3 區 12 列對齊。
+  // 補上 overlay（顯示層）與 security（安全）——兩者在 v8 是側欄一等公民；
+  // 移除 widgets / plugins / webhooks / api-tokens——它們已收進素材與擴充，
+  // 手機這層再列一次等於兩個入口。
   const OVERFLOW = [
-    { route: "viewer",     icon: "◑", labelKey: "adminRouteTitle_viewer", descKey: "mnavDescViewer" },
-    { route: "widgets",    icon: "⬚", label: "Widgets",     descKey: "mnavDescWidgets" },
-    { route: "effects",    icon: "✦", labelKey: "mnavEffects", descKey: "mnavDescEffects" },
-    { route: "themes",     icon: "❖", labelKey: "mnavThemes", descKey: "mnavDescThemes" },
-    { route: "system",     icon: "⚙", labelKey: "adminRouteTitle_system", descKey: "mnavDescSystem" },
-    { route: "history",    icon: "◷", labelKey: "adminRouteTitle_history", descKey: "mnavDescHistory" },
-    { route: "backup",     icon: "⇪", labelKey: "mnavBackup", descKey: "mnavDescBackup" },
-    { route: "extensions", icon: "⌬", label: "Extensions",  desc: "Slido · Discord · OBS" },
-    { route: "plugins",    icon: "⬢", labelKey: "mnavPlugins", descKey: "mnavDescPlugins" },
-    { route: "webhooks",   icon: "⇌", label: "Webhooks",    descKey: "mnavDescWebhooks" },
-    { route: "api-tokens", icon: "⚿", label: "API Tokens",  descKey: "mnavDescApiTokens" },
+    { route: "overlay",      icon: "▣", labelKey: "adminRouteTitle_overlay", descKey: "mnavDescOverlay" },
+    { route: "viewer",       icon: "◐", labelKey: "adminRouteTitle_viewer", descKey: "mnavDescViewer" },
+    { route: "effects",      icon: "✦", labelKey: "mnavEffects", descKey: "mnavDescEffects" },
+    { route: "themes",       icon: "❖", labelKey: "mnavThemes", descKey: "mnavDescThemes" },
+    { route: "history",      icon: "◷", labelKey: "adminRouteTitle_history", descKey: "mnavDescHistory" },
+    { route: "backup",       icon: "⇪", labelKey: "mnavBackup", descKey: "mnavDescBackup" },
+    { route: "security",     icon: "⚿", labelKey: "adminRouteTitle_security", descKey: "mnavDescSecurity" },
+    { route: "integrations", icon: "⌬", labelKey: "adminNavIntegrations", desc: "Slido · Discord · OBS" },
   ];
 
   let _overflowOpen = false;
@@ -67,6 +68,15 @@
               </span>
               <span class="admin-mobile-nav__o-chev">›</span>
             </button>`).join("")}
+          <!-- 2026-08-19：登出依設計稿 03 移到側欄左下帳號列，但手機的側欄
+               整個 display:none（改用底部導覽），登出因此變成摸不到。
+               收在「更多」抽屜最底——低頻動作本來就該在這一層。 -->
+          <button type="button" class="admin-mobile-nav__o-row admin-mobile-nav__o-logout" data-mn-logout>
+            <span class="admin-mobile-nav__o-icon">⏻</span>
+            <span class="admin-mobile-nav__o-txt">
+              <span class="admin-mobile-nav__o-label">${ServerI18n.t("logout")}</span>
+            </span>
+          </button>
         </div>
         <div class="admin-mobile-nav__bar">
           ${TABS.map((t) => `
@@ -110,6 +120,14 @@
 
   function _onClick(e) {
     if (e.target.closest("[data-mn-backdrop]")) { _setOverflow(false); return; }
+    // 登出走 POST + CSRF（與側欄那顆同一條路徑）。用裸 <a href="/logout">
+    // 會變成 GET，且與 handler 的導航打架。
+    if (e.target.closest("[data-mn-logout]")) {
+      _setOverflow(false);
+      const btn = document.getElementById("logoutButton");
+      if (btn) btn.click();
+      return;
+    }
     const tab = e.target.closest("[data-mn-tab]");
     if (tab) {
       const id = tab.dataset.mnTab;

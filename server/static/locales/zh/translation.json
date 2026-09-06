@@ -2770,5 +2770,7 @@
   "sohLanguageLabel": "介面語言",
   "adminAccountLabel": "管理員",
   "statusOn": "開",
-  "statusOff": "關"
+  "statusOff": "關",
+  "mnavDescOverlay": "彈幕在大螢幕上的樣子",
+  "mnavDescSecurity": "密碼與後台存取"
 }

@@ -2781,7 +2781,9 @@
       "sohLanguageLabel": "Interface language",
       "adminAccountLabel": "Admin",
       "statusOn": "On",
-      "statusOff": "Off"
+      "statusOff": "Off",
+      "mnavDescOverlay": "How danmu look on the big screen",
+      "mnavDescSecurity": "Passwords and panel access"
     },
     "zh": {
       "mainTitle": "Danmu Fire",
@@ -5555,7 +5557,9 @@
       "sohLanguageLabel": "介面語言",
       "adminAccountLabel": "管理員",
       "statusOn": "開",
-      "statusOff": "關"
+      "statusOff": "關",
+      "mnavDescOverlay": "彈幕在大螢幕上的樣子",
+      "mnavDescSecurity": "密碼與後台存取"
     },
     "ja": {
       "mainTitle": "Danmu Fire",
@@ -8329,7 +8333,9 @@
       "sohLanguageLabel": "表示言語",
       "adminAccountLabel": "管理者",
       "statusOn": "オン",
-      "statusOff": "オフ"
+      "statusOff": "オフ",
+      "mnavDescOverlay": "大画面での弾幕の見え方",
+      "mnavDescSecurity": "パスワードと管理画面へのアクセス"
     },
     "ko": {
       "mainTitle": "Danmu Fire",
@@ -11103,7 +11109,9 @@
       "sohLanguageLabel": "인터페이스 언어",
       "adminAccountLabel": "관리자",
       "statusOn": "켬",
-      "statusOff": "끔"
+      "statusOff": "끔",
+      "mnavDescOverlay": "큰 화면에서의 탄막 모양",
+      "mnavDescSecurity": "비밀번호와 관리 페이지 접근"
     }
   };
 
