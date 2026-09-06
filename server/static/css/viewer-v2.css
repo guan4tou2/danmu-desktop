@@ -1503,7 +1503,10 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   background: transparent;
   border: none;
   outline: none;
-  font-size: var(--text-footnote);
+  /* 用正文級而非次要級：輸入框是 iOS 自動放大的觸發點，而 --text-subhead
+   * 在 767px 以下會升到 16px（設計稿 12 §2），剛好跨過 Safari 的門檻。
+   * 這裡若停在 13px，手機一點輸入框整頁就會被放大且推不回去。 */
+  font-size: var(--text-subhead);
   padding: 8px 0;
   font-weight: 500;
   color: var(--color-text-primary);

@@ -427,8 +427,9 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   justify-content: space-between;
   gap: 12px;
   /* 44 是設計稿 03 的共用元件規格（設定群組列高）。07 各頁套用寫 46–52，
-   * 指的是含副標的那種；單行列回到 44，雙行用下面的 .is-tall 52。 */
-  min-height: 44px;
+   * 指的是含副標的那種；單行列回到 44，雙行用下面的 .is-tall 52。
+   * 手機自動升到 52（--row-h 在 767px 以下改值），手指目標才夠大。 */
+  min-height: var(--row-h, 44px);
   padding: 0 16px;
   font-size: var(--text-subhead);
   color: var(--admin-text);
