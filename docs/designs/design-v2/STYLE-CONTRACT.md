@@ -1,5 +1,10 @@
 # Design v2 · Style Contract
 
+> **已由 [docs/agent-ops/60-style-contract.md](../../agent-ops/60-style-contract.md)
+> 取代（2026-08-19）。** 本文講的 `tokens.jsx` / `hudTokens` / JSX 元件是 v2
+> 原型時代的東西；出貨系統早已改用 CSS token（`shared/tokens.css`）與
+> `admin-ui-*` class 詞彙。本文留作歷史，**不要當現行權威**。
+
 **Audience.** Claude Design (claude.ai/design) when iterating on this project.
 **Authority.** Overrides anything in component files where they disagree.
 

@@ -18,6 +18,7 @@
 | [30-delegation-templates.md](30-delegation-templates.md) | 五種派工 prompt 模板（搜尋/實作/重構/研究/審查），可複製填空 | 要寫派工 prompt |
 | [40-maintenance-protocol.md](40-maintenance-protocol.md) | 怎麼安全更新這些制度檔（可自改/先問/踩坑回寫/精簡） | 要改這裡任何一個檔 |
 | [50-letter-to-future-sessions.md](50-letter-to-future-sessions.md) | 建立者留給未來 session 的信：三件最重要的事＋退化預防 | 想理解制度初衷；定期回看防退化 |
+| [60-style-contract.md](60-style-contract.md) | admin UI 的設計詞彙：Apple SF 字級刻度、4px 間距格、ink/surface 兩層色彩、設定群組卡片版型、IA v8、文案規則 | 要改 admin 介面樣式或版型前 |
 | [90-hook-suggestions.md](90-hook-suggestions.md) | 用 hooks 強制關鍵規則的建議清單（尚未安裝） | 使用者想加 harness 級強制防線 |
 
 ## 核心不變量（維護時不能破壞，動它們先問使用者）
