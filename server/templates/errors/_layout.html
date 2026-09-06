@@ -1,13 +1,12 @@
-{# Error page layout — design v4-r5 admin-errors.jsx _ErrorPage shell.
-   Used by 500.html / 503.html / 502.html. Differentiates viewer vs admin
-   by passing `surface="viewer"|"admin"` (template var, falls back to
-   inspecting request.path).
+{# 錯誤頁版型 —— 設計稿 09 · E1/E2。
 
-   Renders a full-screen dark HUD page with: subtle cyan grid bg,
-   icon block, title, mono subtitle, description, optional retry CTA
-   with countdown, optional secondary link, optional inline children
-   passed in via {% block extra %}. CSP-nonce-safe (no inline style
-   blocks that need extra plumbing). #}
+   結構固定四段：app icon → 標題 → 兩行說明「發生什麼、你可以做什麼」→
+   主按鈕一顆（必要時加一顆次要）。技術訊息（狀態碼、時間、trace）一律
+   降到頁腳小字——先前那版把 `HTTP 500 · INTERNAL SERVER ERROR` 放在標題
+   下方當副標，對觀眾來說那行字只是噪音，對工程師來說又不夠。
+
+   viewer / admin 共用同一份版型，差別只在文案（各頁自己 set）。
+   CSP-nonce-safe：沒有需要額外 plumbing 的 inline style。 #}
 {% set _is_admin = surface == "admin" or request.path.startswith("/admin") %}
 <!doctype html>
 <html lang="zh-Hant">
@@ -19,39 +18,29 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/hud.css') }}" />
   </head>
   <body class="admin-err {{ 'admin-err--full' if _is_admin else 'admin-err--viewer' }}">
-    <div class="admin-err__grid" aria-hidden="true"></div>
     <div class="admin-err__center">
-      <div class="admin-err__icon" data-tone="{{ tone|default('crimson') }}">{{ icon|default('⚠') }}</div>
+      <img class="admin-err__logo" src="{{ url_for('static', filename='icon.png') }}"
+           alt="" width="64" height="64" />
       <h1 class="admin-err__title">{{ title|default("錯誤") }}</h1>
-      {% if subtitle %}<div class="admin-err__subtitle" data-tone="{{ tone|default('crimson') }}">{{ subtitle }}</div>{% endif %}
       {% if desc %}<p class="admin-err__desc">{{ desc }}</p>{% endif %}
       {% block extra %}{% endblock %}
-      {% if retry_label %}
-      <div class="admin-err__retry">
-        <button type="button" class="admin-err__retry-btn" data-tone="{{ tone|default('crimson') }}" onclick="location.reload()">{{ retry_label }}</button>
-        {% if retry_countdown %}
-        <span class="admin-err__retry-meta">自動重試 · <span data-err-countdown>{{ retry_countdown }}</span></span>
+      <div class="admin-err__actions">
+        {% if retry_label %}
+        <button type="button" class="admin-err__btn is-primary" onclick="location.reload()">{{ retry_label }}</button>
+        {% endif %}
+        {% if secondary %}
+        <a class="admin-err__btn" href="{{ secondary_href|default('/') }}">{{ secondary }}</a>
         {% endif %}
       </div>
-      {% endif %}
-      {% if secondary %}
-      <div class="admin-err__secondary">
-        <a class="admin-err__secondary-link" href="{{ secondary_href|default('/') }}">{{ secondary }}</a>
-      </div>
-      {% endif %}
     </div>
+
+    {# 技術訊息：頁腳小字。工程師需要，觀眾不需要看到它佔版位。 #}
+    <div class="admin-err__foot">{% block foot %}{% endblock %}</div>
+
     {% if retry_countdown_sec %}
     <script {% if csp_nonce %}nonce="{{ csp_nonce }}"{% endif %}>
       (function () {
-        var span = document.querySelector("[data-err-countdown]");
-        if (!span) return;
-        var left = {{ retry_countdown_sec|int }};
-        span.textContent = left + "s";
-        var id = setInterval(function () {
-          left -= 1;
-          if (left <= 0) { clearInterval(id); location.reload(); return; }
-          span.textContent = left + "s";
-        }, 1000);
+        setTimeout(function () { location.reload(); }, {{ retry_countdown_sec|int }} * 1000);
       })();
     </script>
     {% endif %}

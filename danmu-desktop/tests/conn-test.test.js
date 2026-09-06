@@ -21,7 +21,7 @@ describe("ConnTest state machine", () => {
   test("initial state is idle", () => {
     const ct = createConnTest({ api: { testConnection: jest.fn() } });
     expect(ct.getState()).toBe("idle");
-    expect(ct.getChipLabel()).toBe("LAST TEST · —");
+    expect(ct.getChipLabel()).toBe("");
   });
 
   test("start() transitions idle → testing → ok with latency in chip", async () => {
@@ -32,12 +32,12 @@ describe("ConnTest state machine", () => {
 
     const promise = ct.start({ host: "danmu.local", port: 443 });
     expect(ct.getState()).toBe("testing");
-    expect(ct.getChipLabel()).toBe("⟳ 測試中…");
+    expect(ct.getChipLabel()).toBe("測試中…");
 
     resolve();
     await promise;
     expect(ct.getState()).toBe("ok");
-    expect(ct.getChipLabel()).toMatch(/^✓ \d{2}:\d{2}:\d{2} · 23ms$/);
+    expect(ct.getChipLabel()).toBe("✓ 23ms");
     expect(states).toEqual(["testing", "ok"]);
   });
 
@@ -51,7 +51,7 @@ describe("ConnTest state machine", () => {
     resolve();
     await promise;
     expect(ct.getState()).toBe("fail");
-    expect(ct.getChipLabel()).toMatch(/^✗ \d{2}:\d{2}:\d{2} · 1008 Unauthorized$/);
+    expect(ct.getChipLabel()).toBe("✗ 1008 Unauthorized");
   });
 
   test("error code map covers documented vocabulary", async () => {
@@ -70,7 +70,7 @@ describe("ConnTest state machine", () => {
       const p = ct.start({ host: "danmu.local", port: 443 });
       resolve();
       await p;
-      expect(ct.getChipLabel()).toMatch(new RegExp(`^✗ \\d{2}:\\d{2}:\\d{2} · ${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
+      expect(ct.getChipLabel()).toBe(`✗ ${label}`);
     }
   });
 

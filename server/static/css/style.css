@@ -14485,3 +14485,102 @@ body.admin-pu-open { overflow: hidden; }
   display: inline-flex;
   align-items: center;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * 設計稿 09 · E1/E2 —— 錯誤頁
+ *
+ * 主文改成「發生什麼、你可以做什麼」，技術訊息（狀態碼、時間、trace）
+ * 降到頁腳小字，主按鈕只留一顆。原本的 cyan 網格背景、80px tone icon
+ * 與 `HTTP 500 · INTERNAL SERVER ERROR` 副標移除——那三樣加起來把
+ * 「我現在該做什麼」擠到了畫面第四順位。
+ * ═══════════════════════════════════════════════════════════════════════ */
+.admin-err {
+  background: var(--admin-bg);
+  color: var(--color-text-primary);
+  flex-direction: column;
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+}
+
+/* 網格背景是裝飾（設計稿 03）：移除。 */
+.admin-err__grid { display: none; }
+
+.admin-err__center {
+  max-width: 420px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.admin-err--viewer .admin-err__center { max-width: 380px; }
+
+.admin-err__logo {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  opacity: 0.5;
+}
+
+.admin-err__title {
+  margin-top: var(--space-6);
+  font-size: var(--text-title1);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.admin-err--viewer .admin-err__title { font-size: var(--text-title2); }
+
+.admin-err__desc {
+  margin-top: var(--space-3);
+  font-size: var(--text-subhead);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.admin-err__actions {
+  margin-top: var(--space-7);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.admin-err__actions:empty { display: none; }
+
+.admin-err__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--admin-line);
+  background: var(--admin-panel);
+  color: var(--color-text-primary);
+  font-size: var(--text-subhead);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.admin-err__btn.is-primary {
+  border-color: transparent;
+  background: var(--color-accent);
+  color: var(--color-ink-on-accent);
+  font-weight: 600;
+}
+
+.admin-err__btn:hover { filter: brightness(1.05); }
+
+/* 頁腳小字：狀態碼、時間戳、trace ref */
+.admin-err__foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.admin-err__foot:empty { display: none; }

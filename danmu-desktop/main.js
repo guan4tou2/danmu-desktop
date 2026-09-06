@@ -168,7 +168,7 @@ app.whenReady().then(() => {
     return delivered;
   }
 
-  // Shared by the tray "顯示 Desktop" checkbox and the ⌘⇧D global shortcut.
+  // Shared by the tray「開啟／關閉顯示層」項目與 ⌘⇧D 全域快速鍵。
   // Recomputes hasOverlay each call — the shortcut fires with no overlay too.
   function toggleOverlayVisibility() {
     const hasOverlay = childWindows.some((cw) => cw && !cw.isDestroyed());
@@ -210,7 +210,7 @@ app.whenReady().then(() => {
     const hasOverlay = childWindows.some((cw) => cw && !cw.isDestroyed());
     const overlayCount = childWindows.filter((cw) => cw && !cw.isDestroyed()).length;
     const version = app.getVersion();
-    const pkgName = "Danmu Desktop";
+    const pkgName = "Danmu Fire";
 
     // Connection-state: derive status dot + server submenu hint.
     // Connected = status text contains "Connected" or "連線" but NOT "中斷".
@@ -247,17 +247,23 @@ app.whenReady().then(() => {
       updateEntries.push({ type: "separator" });
     }
 
+    // ── 設計稿 09「系統匣」：9 項 → 6 項 ─────────────────────────────
+    // 原本的 9 項裡有 3 項是唯讀資訊（狀態列、Desktop 視窗數、伺服器位址），
+    // 各佔一行卻不能點。收成**一行狀態**（色點＋文字＋視窗數＋伺服器），
+    // 主要動作永遠是第一項並帶快速鍵，「更改連線」「關於」收進「設定…」。
+    const statusLine = [
+      hasOverlay && overlayVisible ? "顯示中" : "未開啟",
+      overlayCount > 1 ? `${overlayCount} 個畫面` : "",
+      trayServerUrl || trayStatusText,
+    ].filter(Boolean).join(" · ");
+
     const template = [
-      // ── Header: dot + name + version + status ──
-      { label: `${statusDot} ${pkgName}    v${version}`, enabled: false },
-      { label: trayServerUrl ? `${trayStatusText} · ${trayServerUrl}` : trayStatusText, enabled: false },
+      { label: `${statusDot} ${statusLine}`, enabled: false },
       { type: "separator" },
-      // ── Overlay controls ──
       ...updateEntries,
+      // ── 主要動作永遠第一項 ──
       {
-        label: "顯示 Desktop",
-        type: "checkbox",
-        checked: hasOverlay && overlayVisible,
+        label: hasOverlay && overlayVisible ? "關閉顯示層" : "開啟顯示層",
         // Tray accelerators are display-only; the actual binding is the
         // globalShortcut.register below. Hide the hint when registration
         // failed so the menu doesn't advertise a dead shortcut.
@@ -265,9 +271,8 @@ app.whenReady().then(() => {
         enabled: hasOverlay,
         click: toggleOverlayVisibility,
       },
-      { label: `Desktop 視窗：${overlayCount} 個`, enabled: false },
       {
-        label: "  入場 QR 畫面",  // 與控制視窗按鈕、QR 場景關閉鈕同一詞彙
+        label: "顯示入場 QR",  // 與控制視窗按鈕、QR 場景關閉鈕同一詞彙
         type: "checkbox",
         checked: idleActive && hasOverlay,
         enabled: hasOverlay,
@@ -279,30 +284,27 @@ app.whenReady().then(() => {
           rebuildTrayMenu();
         },
       },
-      { type: "separator" },
-      // ── Server submenu — inline status in label (design v3) ──
       {
-        label: `伺服器　　${serverHint}`,
-        submenu: [
-          { label: trayServerUrl || "—", enabled: false },
-          { type: "separator" },
-          { label: "更改連線…", click: showMainWindow },
-        ],
+        label: "清空畫面",
+        enabled: hasOverlay,
+        click: () => {
+          [...childWindows].forEach((win) => {
+            if (win && !win.isDestroyed()) {
+              try { win.webContents.send("overlay-clear"); } catch (_) { /* window died */ }
+            }
+          });
+        },
       },
       { type: "separator" },
-      // ── System actions ──
       {
         label: "開啟控制視窗…",
         click: showMainWindow,
       },
       {
-        label: "偏好設定…",
-        click: showMainWindow,
-      },
-      {
-        // Single About surface: the main window's About section (richer than
-        // the retired about.html modal — includes the update card).
-        label: `關於 ${pkgName}…`,
+        // 「更改連線」與「關於」都收進這裡（設計稿 09）：⚙ 面板同時是
+        // 連線設定與關於的家，所以系統匣只需要一個入口。
+        label: "設定…",
+        accelerator: "CommandOrControl+,",
         click: () => {
           showMainWindow();
           if (mainWindow && !mainWindow.isDestroyed()) {
@@ -312,7 +314,7 @@ app.whenReady().then(() => {
       },
       { type: "separator" },
       {
-        label: "結束 Danmu",
+        label: `結束 ${pkgName}`,
         click: () => {
           [...childWindows].forEach((win) => {
             if (win && !win.isDestroyed()) win.destroy();

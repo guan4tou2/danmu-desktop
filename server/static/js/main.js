@@ -128,6 +128,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let _overlayOnline = true; // optimistic — flips false after first poll says 0
   let _cooldownEnd = 0;
   let _cooldownTimer = null;
+  // 冷卻總長，給送出鍵的環形進度換算比例用（設計稿 05 · V5）。
+  let _cooldownTotalMs = 0;
   let _bannerTimer = null;
   let _burstTimer = null;
   // selectedEffects: { [name]: {params} } — multi-select effect state
@@ -495,7 +497,9 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.previewText.appendChild(document.createTextNode(text.slice(lastIndex)));
       }
     } else {
-      elements.previewText.textContent = text || ServerI18n.t("preview");
+      // 空輸入時放一句範例彈幕，不是「預覽」兩個字（設計稿 05 · V1：
+      // 預覽區本身已有「預覽」kicker，裡面該是彈幕長什麼樣）。
+      elements.previewText.textContent = text || ServerI18n.t("viewerPreviewSample");
     }
 
     // Apply styles
@@ -1590,18 +1594,15 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.title = eff.description || "";
       var effI18nKey = "effect_" + eff.name;
       var label = ServerI18n.t(effI18nKey) !== effI18nKey ? ServerI18n.t(effI18nKey) : (eff.label || eff.name);
-      var bullet = document.createElement("span");
-      bullet.className = "viewer-chip-bullet";
-      bullet.textContent = "\u25CB"; // ○ off
-      btn.appendChild(bullet);
-      btn.appendChild(document.createTextNode(" " + label));
+      // 設計稿 05 · V2：效果是純文字 pill，選中＝主色填滿。
+      // 原本前綴的 ○/● 小圓點是多餘的第二套狀態指示，移除。
+      btn.textContent = label;
       btn.setAttribute("aria-pressed", "false");
       btn.addEventListener("click", () => {
         if (selectedEffects[eff.name]) {
           delete selectedEffects[eff.name];
           btn.classList.remove("effect-btn--active", "is-active");
           btn.setAttribute("aria-pressed", "false");
-          bullet.textContent = "\u25CB";
         } else {
           const defaults = {};
           for (const [k, v] of Object.entries(eff.params || {})) defaults[k] = v.default;
@@ -1614,7 +1615,6 @@ document.addEventListener("DOMContentLoaded", () => {
           selectedEffects[eff.name] = defaults;
           btn.classList.add("effect-btn--active", "is-active");
           btn.setAttribute("aria-pressed", "true");
-          bullet.textContent = "\u25CF"; // ● on
         }
         _updateEffectsCount();
         _refreshParamsPanel();
@@ -1667,13 +1667,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!_overlayOnline) {
       elements.btnSend.disabled = true;
       elements.btnSend.dataset.state = "offline";
-      // Keep the button label short ("FIRE") — the full offline copy goes
-      // in the persistent status row above the pill so it never squeezes
-      // the input (flex:1) down and hides its placeholder (B2 fix).
+      // 設計稿 05 · V4：大螢幕未開時不再出紅色警語橫幅。畫面上只留
+      // 一顆灰狀態 chip、一張說明卡，以及送出列下方的一行說明——
+      // 三處狀態收成一處是這一輪的重點。送出鍵維持箭頭、轉灰即可。
       if (elements.btnSendText) elements.btnSendText.textContent = ServerI18n.t("fireDanmu");
-      if (elements.btnSendIcon) elements.btnSendIcon.classList.add("hidden");
-      _setSendbarHint("", "");
-      _setSendbarStatusRow(ServerI18n.t("overlayOfflineFire"));
+      if (elements.btnSendIcon) elements.btnSendIcon.classList.remove("hidden");
+      _setSendbarHint(ServerI18n.t("viewerOfflineHint"), "offline");
+      _setSendbarStatusRow("");
       return;
     }
     if (elements.btnSend.dataset.state === "offline") delete elements.btnSend.dataset.state;
@@ -1767,11 +1767,24 @@ document.addEventListener("DOMContentLoaded", () => {
       if (elements.danmuText) elements.danmuText.placeholder = _DEFAULT_PLACEHOLDER;
       if (elements.btnSendText) elements.btnSendText.textContent = ServerI18n.t("fireDanmu");
       if (elements.btnSendIcon) elements.btnSendIcon.classList.remove("hidden");
+      if (elements.btnSend) elements.btnSend.classList.remove("is-cooldown");
       _setSendbarHint(ServerI18n.t("sendbarHint"), "");
       _refreshSendButtonGate();
       return;
     }
     const fmt = left.toFixed(1);
+    // 設計稿 05 · V5：送出鍵在冷卻時整顆變成倒數（整數秒 ＋ 環形進度），
+    // 不是把 "3.0s" 塞進原本的文字槽。
+    if (elements.btnSend) {
+      elements.btnSend.classList.add("is-cooldown");
+      const cd = elements.btnSend.querySelector("[data-cooldown-count]");
+      if (cd) cd.textContent = String(Math.ceil(left));
+      const total = _cooldownTotalMs > 0 ? _cooldownTotalMs : 3000;
+      elements.btnSend.style.setProperty(
+        "--viewer-cooldown-progress",
+        String(Math.max(0, Math.min(1, (left * 1000) / total))),
+      );
+    }
     if (elements.btnSendText) elements.btnSendText.textContent = `${fmt}s`;
     if (elements.btnSendIcon) elements.btnSendIcon.classList.add("hidden");
     if (elements.danmuText) elements.danmuText.placeholder = ServerI18n.t("placeholderCooldown").replace("{n}", fmt);
@@ -1780,6 +1793,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function _startCooldown(ms) {
+    _cooldownTotalMs = Math.max(0, ms);
     _cooldownEnd = Date.now() + Math.max(0, ms);
     if (_cooldownTimer) clearInterval(_cooldownTimer);
     _cooldownTimer = setInterval(_tickCooldown, 100);
@@ -2652,21 +2666,24 @@ document.addEventListener("DOMContentLoaded", () => {
         inlineInput.addEventListener("blur", () => { commit(); });
       })();
 
-      // Layout mode buttons
+      // 位置分段控制（設計稿 05 · V2：飄過／停在上方／停在下方）。
+      // 2026-09-06：原本這裡直接掛 tailwind 色票（bg-sky-500/20 …），
+      // 換成分段控制後改由 .viewer-seg-item.is-active 出樣式，JS 只管狀態。
       const layoutBtns = document.querySelectorAll(".layout-btn");
       const layoutSelect = document.getElementById("layoutSelect");
       if (layoutBtns.length > 0 && layoutSelect) {
         layoutBtns.forEach((btn) => {
           btn.addEventListener("click", () => {
             layoutBtns.forEach((b) => {
-              b.classList.remove("active", "is-active", "bg-sky-500/20", "text-sky-300", "border-sky-500/30");
-              b.classList.add("bg-slate-700/50", "text-slate-300", "border-slate-600/30");
+              b.classList.remove("active", "is-active");
               b.setAttribute("aria-pressed", "false");
+              if (b.getAttribute("role") === "radio") b.setAttribute("aria-checked", "false");
             });
-            btn.classList.remove("bg-slate-700/50", "text-slate-300", "border-slate-600/30");
-            btn.classList.add("active", "is-active", "bg-sky-500/20", "text-sky-300", "border-sky-500/30");
+            btn.classList.add("active", "is-active");
             btn.setAttribute("aria-pressed", "true");
+            if (btn.getAttribute("role") === "radio") btn.setAttribute("aria-checked", "true");
             layoutSelect.value = btn.dataset.layout;
+            document.dispatchEvent(new CustomEvent("viewer:style-changed"));
           });
         });
       }

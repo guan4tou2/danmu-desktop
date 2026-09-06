@@ -255,13 +255,15 @@
     initOverlayCards();
 
     // Tray「關於」(and any future main-process navigation) lands here.
-    // Key is validated against the actual DOM sections, not a hard-coded
-    // whitelist.
+    // 設計稿 04 把分頁收成單頁，所以除了 overlay（就是主畫面本身）之外，
+    // 其餘 key 都導向 ⚙ 設定面板——client-shell.js 監聽這個事件。
     if (window.API && typeof window.API.onNavigateSection === "function") {
       window.API.onNavigateSection(function (key) {
-        if (typeof key !== "string" || !activateFn) return;
-        if (!document.querySelector('.client-section[data-section="' + key + '"]')) return;
-        activateFn(key);
+        if (typeof key !== "string") return;
+        document.dispatchEvent(
+          new CustomEvent("client:navigate-section", { detail: key }),
+        );
+        if (activateFn) activateFn(key);
       });
     }
 

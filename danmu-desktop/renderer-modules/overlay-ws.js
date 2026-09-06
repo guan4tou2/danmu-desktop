@@ -601,7 +601,10 @@ function initOverlayWs(config) {
             return;
           }
 
-          // 投票系統：即時顯示投票面板
+          // 投票結果推上大螢幕（設計稿 09 · D3 ＋ 16 · OS3）。
+          // 原本是右上角一張 280px 小面板、字 11–14px——投影出去後排讀不到。
+          // 現在是置中 560px 毛玻璃卡：題目 30px、選項 22px、百分比等寬對齊，
+          // 結果條同色（最高票不另外標色，讓數字說話），結束後 15 秒自動收起。
           if (data.type === "poll_update") {
             let panel = document.getElementById("poll-panel");
 
@@ -613,70 +616,59 @@ function initOverlayWs(config) {
             if (!panel) {
               panel = document.createElement("div");
               panel.id = "poll-panel";
-              panel.style.cssText =
-                "position:fixed; top:20px; right:20px; background:rgba(15,23,42,0.9); color:white; padding:16px 20px; border-radius:12px; font-family:sans-serif; z-index:9999; min-width:280px; backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.1);";
               document.body.appendChild(panel);
             }
+            panel.style.opacity = "";
 
-            const maxCount = Math.max(1, ...data.options.map(function (o) { return o.count; }));
-
-            // DOM-based rendering to prevent XSS
             while (panel.firstChild) panel.removeChild(panel.firstChild);
 
-            const icon = data.state === "ended" ? "\u{1F4CA} " : "\u{1F5F3}\uFE0F ";
-            const header = document.createElement("div");
-            header.style.cssText = "font-size:14px;font-weight:bold;margin-bottom:12px;color:#22d3ee;";
-            header.textContent = icon + (data.question || "");
-            panel.appendChild(header);
+            var kicker = document.createElement("div");
+            kicker.className = "overlay-poll-kicker";
+            kicker.textContent =
+              (data.state === "ended" ? "投票結果" : "投票進行中") +
+              " · " + (data.total_votes || 0) + " 票";
+            panel.appendChild(kicker);
 
+            var question = document.createElement("div");
+            question.className = "overlay-poll-question";
+            question.textContent = data.question || "";
+            panel.appendChild(question);
+
+            var rows = document.createElement("div");
+            rows.className = "overlay-poll-rows";
             (data.options || []).forEach(function (o) {
-              const row = document.createElement("div");
-              row.style.marginBottom = "8px";
+              var row = document.createElement("div");
+              row.className = "overlay-poll-row";
 
-              const labelRow = document.createElement("div");
-              labelRow.style.cssText =
-                "display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;";
+              var label = document.createElement("span");
+              label.className = "overlay-poll-label";
+              label.textContent = o.text;
 
-              const labelLeft = document.createElement("span");
-              const keyBold = document.createElement("b");
-              keyBold.textContent = o.key + ".";
-              labelLeft.appendChild(keyBold);
-              labelLeft.appendChild(document.createTextNode(" " + o.text));
+              var track = document.createElement("span");
+              track.className = "overlay-poll-track";
+              var fill = document.createElement("span");
+              fill.className = "overlay-poll-fill";
+              fill.style.width = (Number(o.percentage) || 0) + "%";
+              track.appendChild(fill);
 
-              const labelRight = document.createElement("span");
-              labelRight.textContent = o.count + " (" + o.percentage + "%)";
+              var pct = document.createElement("span");
+              pct.className = "overlay-poll-pct";
+              pct.textContent = (Number(o.percentage) || 0) + "%";
 
-              labelRow.appendChild(labelLeft);
-              labelRow.appendChild(labelRight);
-
-              const barBg = document.createElement("div");
-              barBg.style.cssText =
-                "background:rgba(255,255,255,0.1);border-radius:4px;height:6px;overflow:hidden;";
-
-              const barFill = document.createElement("div");
-              barFill.style.cssText =
-                "background:linear-gradient(90deg,#06b6d4,#22d3ee);height:100%;border-radius:4px;transition:width 0.3s;";
-              barFill.style.width = (o.count / maxCount * 100) + "%";
-
-              barBg.appendChild(barFill);
-              row.appendChild(labelRow);
-              row.appendChild(barBg);
-              panel.appendChild(row);
+              row.appendChild(label);
+              row.appendChild(track);
+              row.appendChild(pct);
+              rows.appendChild(row);
             });
-
-            const footer = document.createElement("div");
-            footer.style.cssText = "font-size:11px;color:#94a3b8;margin-top:8px;";
-            footer.textContent = "Total: " + (data.total_votes || 0) + " votes";
-            panel.appendChild(footer);
+            panel.appendChild(rows);
 
             if (data.state === "ended") {
+              // 設計稿 09 · D3：15 秒後自動收起（原本 5 秒開始淡出、7 秒移除，
+              // 對「剛剛發生什麼」來說太短，後排的人常常還沒看完）。
               setTimeout(function () {
-                if (panel) {
-                  panel.style.opacity = "0";
-                  panel.style.transition = "opacity 2s";
-                }
-              }, 5000);
-              setTimeout(function () { if (panel) panel.remove(); }, 7000);
+                if (panel) panel.style.opacity = "0";
+              }, 15000);
+              setTimeout(function () { if (panel) panel.remove(); }, 15600);
             }
             return;
           }
@@ -822,11 +814,14 @@ function initOverlayWs(config) {
     var subtitleEl = document.querySelector(".overlay-idle-subtitle");
     var urlEl = document.querySelector(".overlay-idle-url");
     var qrContainer = document.querySelector(".overlay-idle-qr");
-    if (subtitleEl) {
-      subtitleEl.textContent = "掃描 QR code 或打開 " + host + " — 開始送彈幕";
+    // 設計稿 09 · D1：副標是一句白話「打字，就會飛到這個螢幕上」（寫死在
+    // child.html），網址單獨一行用等寬大字——原本把網址塞在副標句子中間，
+    // 10 公尺外根本讀不出來。所以這裡只灌網址。
+    if (subtitleEl && !subtitleEl.textContent.trim()) {
+      subtitleEl.textContent = "打字，就會飛到這個螢幕上";
     }
     if (urlEl) {
-      urlEl.textContent = host.toUpperCase();
+      urlEl.textContent = host;
     }
     if (qrSvg && qrContainer) {
       qrContainer.innerHTML = qrSvg;

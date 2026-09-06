@@ -47,6 +47,12 @@ const FORBIDDEN_PATTERNS = [
   { label: "forbidden purple token/copy", pattern: /\bpurple\b/i },
 ];
 
+// 2026-09-06 設計稿 05/17：觀眾可選的彈幕色多了「紫 #c084fc」，i18n 因此
+// 有一顆 `swatchPurple` 標籤。禁色清單管的是**介面色**別再飄回 design-v1 的
+// violet／magenta，不是觀眾自己挑的彈幕顏色——那是內容，且設計稿 17 · CB1
+// 明確要求每個色點旁邊都有名稱。只放行這一顆 key，不放寬 pattern 本身。
+const FORBIDDEN_EXEMPT = [/\bswatchPurple\b/];
+
 function shouldSkip(fullPath) {
   const rel = path.relative(REPO_ROOT, fullPath);
   const parts = rel.split(path.sep);
@@ -93,6 +99,7 @@ test("implementation frontend files do not reintroduce design-v2 forbidden palet
     const src = path.extname(file) === ".css" ? stripCssComments(rawSrc) : rawSrc;
     const lines = src.split(/\r?\n/);
     lines.forEach((line, i) => {
+      if (FORBIDDEN_EXEMPT.some((re) => re.test(line))) return;
       FORBIDDEN_PATTERNS.forEach(({ label, pattern }) => {
         if (pattern.test(line)) failures.push(`${rel}:${i + 1} ${label}`);
       });
@@ -112,11 +119,17 @@ test("implementation frontend files do not reintroduce design-v2 forbidden palet
 test("viewer preview stage is one dark stage in both themes", () => {
   const css = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/viewer-v2.css"), "utf8");
 
-  // 深色舞台寫在 .viewer-preview 本體，不再分主題臂
+  // 深色舞台寫在 .viewer-preview 本體，不再分主題臂。
+  // 2026-09-06 設計稿 05/09：舞台底色與字色抽成 --viewer-stage-bg /
+  // --viewer-stage-ink，因為樣式抽層裡的預覽是同一塊畫面，值只能有一份。
+  expect(css).toMatch(
+    /--viewer-stage-bg:\s*linear-gradient\(135deg,\s*#02060f,\s*#0a1628\)/,
+  );
+  expect(css).toMatch(/--viewer-stage-ink:\s*#f1f5f9;/);
   const previewRule = css.match(/\n\.viewer-preview\s*\{(?<body>[^}]*)\}/s);
   expect(previewRule).not.toBeNull();
-  expect(previewRule.groups.body).toMatch(/background:\s*linear-gradient\(135deg,\s*#000814/s);
-  expect(previewRule.groups.body).toMatch(/color:\s*#f1f5f9;/);
+  expect(previewRule.groups.body).toMatch(/background:\s*var\(--viewer-stage-bg\)/s);
+  expect(previewRule.groups.body).toMatch(/color:\s*var\(--viewer-stage-ink\)/);
 
   // 舊的淺色臂必須整組消失（台、掃描線、kicker、speed、暱稱、字影）
   for (const sel of [
@@ -227,27 +240,31 @@ test("API Tokens admin page has production CSS for its generated surface", () =>
   expect(adminCss).not.toContain(".admin-at-scope-badge,");
 });
 
-// 2026-07-29 觀眾端文案：這個 chip 是給觀眾看的，所以用觀眾想像得到的
-// 「彈幕牆 / Screen」，而不是內部名詞（Desktop / overlay / 主持端）——
-// 觀眾不需要知道主持人在跑一個桌面 app。後台仍一律用 Desktop。
-test("viewer offline send gate uses Desktop copy and red button state", () => {
+// 2026-09-06 設計稿 05/14：觀眾端狀態從三處（兩顆 chip ＋底部紅色警語）
+// 收成**一顆** chip。詞彙是觀眾想像得到的「大螢幕」，不是內部名詞
+// （Desktop / overlay / 彈幕牆）。未開時不再出紅色橫幅，改成灰狀態 chip、
+// 一張說明卡，加上送出列下方一行說明——設計稿 05 · V4。
+test("viewer screen-off state is one chip plus one inline hint", () => {
   const zh = readJson("server/static/locales/zh/translation.json");
   const en = readJson("server/static/locales/en/translation.json");
   const mainJs = fs.readFileSync(path.join(REPO_ROOT, "server/static/js/main.js"), "utf8");
   const css = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/viewer-v2.css"), "utf8");
 
-  expect(zh.overlayNone).toBe("彈幕牆 · 未開啟");
-  expect(zh.overlayConnected).toBe("彈幕牆 · {n} 個");
-  expect(zh.overlayOfflineFire).toBe("彈幕牆尚未開啟 · 訊息暫時無法送出");
-  expect(zh.overlayOfflineHint).toBe("");
-  expect(en.overlayNone).toBe("Screen · –");
-  expect(en.overlayConnected).toBe("Screen · {n}");
-  expect(en.overlayOfflineFire).toBe("The screen isn't up yet · messages can't be sent right now");
-  expect(en.overlayOfflineHint).toBe("");
+  expect(zh.overlayNone).toBe("大螢幕未開");
+  expect(zh.overlayConnected).toBe("大螢幕顯示中");
+  expect(zh.viewerOfflineHint).toBe("大螢幕開啟後即可送出");
+  expect(en.overlayNone).toBe("Screen is off");
+  expect(en.overlayConnected).toBe("On the big screen");
+  expect(en.viewerOfflineHint).toBe("You can send once the screen is on");
+  // 內部名詞不該漏到觀眾端
+  expect(zh.overlayNone).not.toMatch(/Desktop|overlay|彈幕牆/i);
+  expect(zh.overlayConnected).not.toMatch(/Desktop|overlay|彈幕牆/i);
   expect(JSON.stringify(zh)).not.toContain("請等候 overlay 連線後再發送");
 
   expect(mainJs).toMatch(/elements\.btnSend\.dataset\.state\s*=\s*"offline";/);
-  expect(mainJs).toMatch(/_setSendbarHint\("",\s*""\);/);
+  // 未開時走的是送出列下方那一行說明，不是紅色橫幅（狀態列必須清空）
+  expect(mainJs).toMatch(/_setSendbarHint\(ServerI18n\.t\("viewerOfflineHint"\), "offline"\);/);
+  expect(mainJs).toMatch(/_setSendbarStatusRow\(""\);\n\s*return;/);
   // 2026-07-29：原本釘死 #ff4d4f，那是**深色臂專用**的亮紅——淺色主題下
   // FIRE 離線態只有 2.72:1。改吃 --viewer-ink-error（light-dark：淺色 red-700
   // ／深色 red-400），淺色 5.38、深色 4.90，兩邊都過 AA。契約現在釘「必須是
@@ -284,19 +301,41 @@ test("Desktop runtime shells do not expose old Overlay labels", () => {
   expect(overlayTemplate).not.toContain("DANMU FIRE · OVERLAY");
 });
 
-test("desktop-facing Overlay labels are renamed to Desktop", () => {
+// 2026-09-06 設計稿 14 文案總表：全域名詞 Desktop / Overlay → 顯示層（en:
+// Display）。「Desktop」原本同時指桌面 app 和它投出去的那層畫面，主持人問
+// 「Desktop 開了沒」時兩邊都說得通——這輪把畫面那一層固定叫顯示層。
+// 按鈕只留動詞（開啟／關閉），不再把名詞塞進按鈕標籤。
+test("desktop client speaks 顯示層 / Display, not Desktop or Overlay", () => {
   const langs = ["en", "zh", "ja", "ko"];
+  const OLD_WORDS = /Overlay|overlay|オーバーレイ|오버레이/;
+
+  const expectedStart = { zh: "開啟", en: "Turn on", ja: "オンにする", ko: "켜기" };
+  const expectedStop = { zh: "關閉", en: "Turn off", ja: "オフにする", ko: "끄기" };
 
   for (const lang of langs) {
     const locale = readJson(`danmu-desktop/locales/${lang}/translation.json`);
-    expect(locale.overlaySectionTitle).toBe("Desktop");
-    expect(locale.clientNavOverlay).toBe("Desktop");
-    expect(locale.overlayButtonStart).toContain("Desktop");
-    expect(locale.overlayButtonStop).toContain("Desktop");
-    expect(locale.windowPickerHint).toContain("Desktop");
-    expect(locale.overlayCardTitle).not.toMatch(/Overlay|overlay|オーバーレイ|오버레이/);
-    expect(locale.overlayNoteBody).not.toMatch(/Overlay|overlay|オーバーレイ|오버레이/);
-    expect(locale.connTestHint).not.toMatch(/Overlay|overlay|オーバーレイ|오버레이/);
-    expect(locale.aboutDesc).not.toMatch(/Overlay|overlay|オーバーレイ|오버레이/);
+
+    // 主要動作是純動詞，不帶名詞也不帶 ▶ / ■ 圖示（設計稿 14 文案規則）
+    expect(locale.overlayButtonStart).toBe(expectedStart[lang]);
+    expect(locale.overlayButtonStop).toBe(expectedStop[lang]);
+    expect(locale.overlayActionClear).not.toMatch(/[⌫▶■⚡◱]/);
+    expect(locale.overlayActionTestDanmu).not.toMatch(/[⌫▶■⚡◱]/);
+    expect(locale.overlayActionIdleQr).not.toMatch(/[⌫▶■⚡◱]/);
+
+    // 舊詞彙整組退場：不再有 overlay，也不再拿 Desktop 當畫面的名字
+    for (const key of Object.keys(locale)) {
+      expect(String(locale[key])).not.toMatch(OLD_WORDS);
+    }
+    expect(locale.clientOverlayTitle).toBe(
+      { zh: "顯示層", en: "Display", ja: "表示レイヤー", ko: "표시 레이어" }[lang],
+    );
+
+    // 設計稿 14 刪除清單：kicker 與併頁後的 key 不該再存在
+    for (const dead of [
+      "overlaySectionTitle", "overlaySectionKicker", "clientNavOverlay",
+      "clientNavConn", "clientNavAbout", "connSectionKicker", "updateKicker",
+    ]) {
+      expect(locale).not.toHaveProperty(dead);
+    }
   }
 });

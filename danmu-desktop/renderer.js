@@ -21,7 +21,6 @@ const {
   initConnectionStatusHandler,
 } = require("./renderer-modules/ws-manager");
 const { initGlobalEffects } = require("./renderer-modules/konami");
-const { initParticleBg } = require("./renderer-modules/particle-bg");
 const { initUpdateStatus } = require("./renderer-modules/update-status");
 const { initConnSection } = require("./renderer-modules/conn-section-wire");
 const { initWindowPicker } = require("./renderer-modules/window-picker");
@@ -85,11 +84,6 @@ const initRenderer = async () => {
     initUpdateStatus({ t, showToast });
     initWindowPicker(api);
     initAppShellMeta({ api });
-
-    // Canvas 2D particle network background (main window only)
-    if (document.getElementById("vanta-bg")) {
-      initParticleBg("#vanta-bg");
-    }
 
     // Settings export / import buttons (main window only)
     const exportBtn = document.getElementById("export-settings-btn");

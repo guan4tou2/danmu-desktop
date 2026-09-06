@@ -65,34 +65,7 @@ img{
   overflow: hidden;
 }
 
-/* In-flight danmu counter.
- * The overlay window is transparent and floats over whatever the user has on
- * screen, so this chip has to carry its own backplate rather than lean on a
- * dark capture. The old 0.25 plate measured 1.60:1 on pure white and 1.70:1
- * on slate-100 — invisible on a white slide deck. 0.72 / 0.92 gives 8.15:1
- * on white and 8.57:1 on slate-100, and the dark case only improves
- * (10.82 → 17.01 on a slate-950 stage). */
-#danmu-counter {
-  position: fixed;
-  bottom: 8px;
-  right: 12px;
-  /* 高於 #overlay-idle(10)：入場 QR 顯示中也要看得到流量計數 */
-  z-index: 20;
-  font-family: monospace;
-  font-size: var(--text-caption);
-  color: rgba(255, 255, 255, 0.92);
-  background: rgba(0, 0, 0, 0.72);
-  padding: 2px 4px;
-  border-radius: var(--radius-sm);
-  pointer-events: none;
-  user-select: none;
-  letter-spacing: 0.5px;
-  transition: opacity var(--motion-slow) ease;
-}
 
-#danmu-counter:empty {
-  display: none;
-}
 
 /* ───────── Overlay Idle (Hero Lockup) ─────────
  * Prototype hero-scenes.jsx:86 OverlayIdle (dark theme).
@@ -105,10 +78,10 @@ img{
   display: none;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
   padding: 40px;
   color: #fff;
-  background: radial-gradient(ellipse at 50% 40%, #0b1220 0%, #000 80%);
+  /* 設計稿 09 · D1 的入場底色 */
+  background: linear-gradient(160deg, #0a1628 0%, #02060f 100%);
   overflow: hidden;
   pointer-events: none;
   transition: opacity 500ms ease;
@@ -146,99 +119,28 @@ img{
 }
 #overlay-idle.is-fading  { opacity: 0; }
 
-.overlay-idle-backdrop {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.2;
-  background-image:
-    linear-gradient(rgba(56, 189, 248, 0.45) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56, 189, 248, 0.45) 1px, transparent 1px);
-  background-size: 40px 40px;
-  -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 70%);
-          mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 70%);
-}
+/* 設計稿 09 · D1：掃描線網格移除。那是裝飾，而入場畫面唯一的工作是
+   讓 10 公尺外的人掃得到 QR、看得懂網址。 */
+.overlay-idle-backdrop { display: none; }
 
 .overlay-idle-inner {
   position: relative;
   z-index: 1;
-  text-align: center;
-}
-
-.overlay-idle-hero {
-  /* Reset global h1 styles (position:absolute, overflow:hidden, white-space:nowrap)
-     which are meant for flying danmu text, not the idle hero lockup. */
-  position: static;
-  overflow: visible;
-  white-space: normal;
-  padding: 0;
-  margin: 0;
-  font-family: "Bebas Neue", "Noto Sans TC", "Noto Sans CJK TC", sans-serif;
-  font-size: clamp(3.2rem, 8vw, 6rem);
-  font-weight: 400;
-  color: var(--color-primary-light, #7dd3fc);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  line-height: 1;
-  filter:
-    drop-shadow(0 10px 15px rgba(0, 0, 0, 0.45))
-    drop-shadow(0 4px 6px var(--shadow-base, rgba(0, 0, 0, 0.3)));
-}
-
-.overlay-idle-subtitle {
-  margin: 12px auto 0;
-  max-width: 40rem;
-  color: var(--color-text-bright, #e2e8f0);
-  font-size: clamp(1rem, 2vw, 1.25rem);
-  line-height: 1.6;
-  font-weight: 400;
-  font-family: "Zen Kaku Gothic New", "Noto Sans TC", -apple-system, system-ui, sans-serif;
-}
-
-.overlay-idle-chip {
-  margin-top: 24px;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: var(--space-4);
-  padding: 8px 20px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
-  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
+  gap: 64px;
+  text-align: left;
 }
 
-.overlay-idle-chip-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-primary, #38bdf8);
-  box-shadow: 0 0 8px var(--color-primary, #38bdf8), 0 0 16px rgba(56, 189, 248, 0.33);
-  animation: overlay-idle-pulse 2s ease-in-out infinite;
-}
-
-.overlay-idle-chip-label {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: var(--text-xs);
-  letter-spacing: 2px;
-  color: var(--color-primary, #38bdf8);
-  text-transform: uppercase;
-}
-
-.overlay-idle-chip-suffix {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 1px;
-  color: var(--color-text-bright, #e2e8f0);
-}
-
+/* QR：260 白卡、圓角 24、內距 20（設計稿 09 · D1） */
 .overlay-idle-qr {
-  margin: 32px auto 0;
-  width: 140px;
-  height: 140px;
+  flex: 0 0 auto;
+  width: 260px;
+  height: 260px;
+  padding: var(--space-5);
+  box-sizing: border-box;
   background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  position: relative;
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -246,22 +148,80 @@ img{
 
 .overlay-idle-qr svg {
   display: block;
-  width: 108px;
-  height: 108px;
+  width: 100%;
+  height: 100%;
 }
 
+.overlay-idle-copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.overlay-idle-wordmark {
+  display: block;
+  width: auto;
+  height: 60px;
+}
+
+.overlay-idle-lead {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #fff;
+}
+
+/* 網址是全場最需要被讀出來的一串字：等寬、粗、加一層底讓它自成一塊 */
 .overlay-idle-url {
-  margin-top: var(--space-3);
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 2px;
-  color: var(--color-text-bright, #e2e8f0);
-  text-transform: uppercase;
+  display: inline-block;
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-4);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-weight: 700;
+  color: #fff;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
-@keyframes overlay-idle-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: 0.6; transform: scale(0.9); }
+.overlay-idle-subtitle {
+  margin: 0;
+  max-width: 40rem;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #94a3b8;
+  font-family: inherit;
+}
+
+.overlay-idle-ready {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 18px;
+  font-weight: 600;
+  color: #34d399;
+}
+
+.overlay-idle-ready-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 12px #34d399;
+}
+
+/* 主持人專用的一行小字，壓在右下角，不跟 QR 搶注意力 */
+.overlay-idle-hint {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  font-size: 14px;
+  color: rgba(148, 163, 184, 0.7);
 }
 
 /* Respect user's motion preference — same convention as styles.css.
@@ -276,4 +236,122 @@ img{
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * 設計稿 09 · D3 ＋ 16 · OS1/OS2/OS3 —— 大螢幕上的三件事
+ *
+ *   · 投影安全區：投影機常裁掉邊 2–5%，所有內容內縮到安全區裡
+ *   · 淺色簡報上的自動描邊：亮底時淺色彈幕加深描邊、深色彈幕加白光暈
+ *   · 投票結果卡：主持人一鍵推上大螢幕，15 秒自動收起
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 投影安全區（設計稿 16 · OS1）─────────────────────────────────────
+ * 預設內縮 5%。彈幕軌道、投票卡、入場 QR 都以安全區為邊界，不貼螢幕邊。
+ * Admin › 顯示層 › 安全區 可設 0% / 5% / 8%，由 JS 寫 --overlay-safe。 */
+:root {
+  --overlay-safe: 5%;
+}
+
+#overlay-idle,
+#poll-panel {
+  inset: var(--overlay-safe);
+}
+
+/* ── 淺底自動描邊（設計稿 16 · OS2）───────────────────────────────────
+ * 顯示層每 2 秒取樣背景平均亮度；> 60% 視為淺底，body 掛 .is-light-stage。
+ * paint-order:stroke fill 讓描邊畫在字的**後面**，字形不會變胖。 */
+body.is-light-stage h1.danmu {
+  -webkit-text-stroke: 1.5px rgba(15, 23, 42, 0.9);
+  paint-order: stroke fill;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* 深色彈幕在淺底上改加白光暈——深描邊只會讓它更看不見 */
+body.is-light-stage h1.danmu.is-dark-ink {
+  -webkit-text-stroke: 0;
+  text-shadow: 0 0 2px #fff, 0 0 8px rgba(255, 255, 255, 0.9);
+}
+
+/* ── 投票結果卡（設計稿 09 · D3）─────────────────────────────────────
+ * 原本是右上角一張 280px 的小面板，字 11–14px——投影出去在後排讀不到。
+ * 改成置中 560px 毛玻璃卡，題目 30px、選項 22px、百分比等寬對齊。 */
+#poll-panel {
+  position: fixed;
+  inset: auto;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  width: 560px;
+  max-width: calc(100% - 2 * var(--overlay-safe));
+  box-sizing: border-box;
+  padding: var(--space-8) 36px;
+  border-radius: 24px;
+  background: var(--overlay-poll-bg, rgba(2, 6, 15, 0.88));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--overlay-poll-shadow, 0 30px 80px rgba(0, 0, 0, 0.5));
+  color: var(--color-text-primary);
+  font-family: inherit;
+  transition: opacity 600ms ease;
+}
+
+.overlay-poll-kicker {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.overlay-poll-question {
+  margin-top: var(--space-1);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.overlay-poll-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.overlay-poll-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.overlay-poll-label {
+  width: 96px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overlay-poll-track {
+  flex: 1 1 auto;
+  height: 32px;
+  border-radius: var(--radius-lg);
+  background: var(--overlay-poll-track, rgba(255, 255, 255, 0.12));
+  overflow: hidden;
+}
+
+/* 設計稿 16 · OS3：結果條同色，最高票不另外標色——讓數字說話 */
+.overlay-poll-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+  transition: width 300ms ease;
+}
+
+.overlay-poll-pct {
+  width: 60px;
+  flex: 0 0 auto;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }

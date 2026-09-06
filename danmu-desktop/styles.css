@@ -1,45 +1,40 @@
 @import "./tokens.css";
-/* styles.css */
+/* styles.css *//* Native form controls (scrollbar, date picker, select) render in dark mode */
 
-/* Native form controls (scrollbar, date picker, select) render in dark mode */
-html {
+html{
   color-scheme: dark;
-}
+}/* Respect user's motion preference — disable animation for vestibular safety */
 
-/* Respect user's motion preference — disable animation for vestibular safety */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
-  *::after {
+  *::after{
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-}
+  }}
 
-body {
+body{
   font-family: var(--font-family);
   overflow-y: auto;
   overflow-x: hidden;
-}
+}/* Every interactive element shows a pointer — no more default arrow */
 
-/* Every interactive element shows a pointer — no more default arrow */
 button:not(:disabled),
 [role="button"]:not([aria-disabled="true"]),
 summary,
 label[for],
-select:not(:disabled) {
+select:not(:disabled){
   cursor: pointer;
 }
 
 button:disabled,
-[role="button"][aria-disabled="true"] {
+[role="button"][aria-disabled="true"]{
   cursor: not-allowed;
-}
+}/* Skip link — visible only when focused via keyboard */
 
-/* Skip link — visible only when focused via keyboard */
-.skip-link {
+.skip-link{
   position: fixed;
   top: 0.75rem;
   left: 0.75rem;
@@ -53,114 +48,110 @@ button:disabled,
   transition: transform var(--motion-normal) ease;
 }
 
-.skip-link:focus-visible {
+.skip-link:focus-visible{
   transform: translateY(0);
   outline: 2px solid var(--color-text-primary);
   outline-offset: 2px;
-}
+}/* Per-language font priority — :lang() overrides from server style.css */
 
-/* Per-language font priority — :lang() overrides from server style.css */
-:lang(zh) {
+:lang(zh){
   --font-display: "Bebas Neue", "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
   --font-brand: "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
   --font-ui: "Noto Sans", "Noto Sans TC", system-ui, sans-serif;
 }
 
-:lang(ja) {
+:lang(ja){
   --font-display: "Bebas Neue", "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
   --font-brand: "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
   --font-ui: "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
 }
 
-:lang(ko) {
+:lang(ko){
   --font-display: "Bebas Neue", "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
   --font-brand: "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
   --font-ui: "Noto Sans", "Noto Sans KR", system-ui, sans-serif;
 }
 
-.glass-effect {
+.glass-effect{
   background: var(--color-bg-card);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid var(--color-border);
 }
 
-.form-input {
+.form-input{
   background-color: var(--color-bg-input);
   border: 1px solid var(--color-border-strong);
   color: var(--color-text-primary);
   transition: all var(--motion-slow) ease;
 }
-.form-input:focus {
+.form-input:focus{
   background-color: var(--color-bg-input-solid);
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--glow-primary-ring);
   outline: none;
 }
-.form-input::placeholder {
+.form-input::placeholder{
   color: var(--color-text-secondary);
   opacity: 1;
 }
-.form-input:disabled {
+.form-input:disabled{
   opacity: 0.7;
   cursor: not-allowed;
   background-color: var(--color-bg-input-disabled);
 }
 
-.btn-primary {
+.btn-primary{
   background-image: linear-gradient(to right, var(--color-primary), var(--color-secondary));
   box-shadow: 0 4px 6px var(--shadow-base);
 }
 
-.btn-primary:hover:not(:disabled) {
+.btn-primary:hover:not(:disabled){
   box-shadow: 0 6px 12px var(--glow-primary);
   transform: translateY(-1px);
 }
 
-.btn-primary:active:not(:disabled) {
+.btn-primary:active:not(:disabled){
   transform: translateY(0);
   box-shadow: 0 2px 4px var(--shadow-base);
-}
-
-/* Button states.
+}/* Button states.
    No !important needed: ws-manager.js removes .btn-primary before adding a
    state class and re-adds it when clearing one, so they never coexist — and
    even if they did, these rules sit after .btn-primary at equal specificity,
    so source order already wins. */
-.btn-connecting {
+
+.btn-connecting{
   background-image: linear-gradient(to right, var(--color-accent), var(--color-accent-dark));
   animation: pulse-connecting 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.btn-connected {
+.btn-connected{
   background-image: linear-gradient(to right, var(--color-connected), var(--color-connected-dark));
   box-shadow: 0 0 20px var(--glow-connected);
 }
 
-.btn-active {
+.btn-active{
   background-image: linear-gradient(to right, var(--color-primary), var(--color-secondary));
   box-shadow: 0 0 20px var(--glow-primary);
 }
 
-.btn-stopped {
+.btn-stopped{
   background-image: linear-gradient(to right, var(--color-surface-muted), var(--color-border-strong));
   box-shadow: 0 0 10px rgba(71, 85, 105, 0.2);
 }
 
 @keyframes pulse-connecting {
   0%,
-  100% {
+  100%{
     opacity: 1;
     box-shadow: 0 0 0 0 var(--glow-accent);
   }
-  50% {
+  50%{
     opacity: 0.9;
     box-shadow: 0 0 0 10px transparent;
-  }
-}
+  }}/* Toast notification styles */
 
-/* Toast notification styles */
-#toast-container {
+#toast-container{
   position: fixed;
   top: 1rem;
   right: 1rem;
@@ -171,14 +162,12 @@ button:disabled,
   pointer-events: none;
 }
 
-.toast {
+.toast{
   pointer-events: auto;
   min-width: 300px;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-}
-
-/* Input validation styles.
+}/* Input validation styles.
    These four !important ARE load-bearing — verified, do not strip them in a
    future sweep. The only element that shows them is #conn-server-input, which
    is styled by `.client-conn-edit-row input` (0,1,1) setting both border and
@@ -186,34 +175,32 @@ button:disabled,
    without !important the validation ring never renders. Removing it would
    need the rule scoped to `.client-conn-edit-row input.input-valid`, which
    trades away the "shared affordance" intent (conn-section-wire.js:117). */
-.input-valid {
+
+.input-valid{
   border-color: var(--color-success) !important;
   box-shadow: 0 0 0 2px var(--ring-success) !important;
 }
 
-.input-invalid {
+.input-invalid{
   border-color: var(--color-error) !important;
   box-shadow: 0 0 0 2px var(--ring-error) !important;
-}
+}/* Loading spinner */
 
-/* Loading spinner */
 @keyframes spin {
-  to {
+  to{
     transform: rotate(360deg);
-  }
-}
+  }}
 
-.spinner {
+.spinner{
   animation: spin 1s linear infinite;
-}
+}/* Custom range slider styles */
 
-/* Custom range slider styles */
-input[type="range"] {
+input[type="range"]{
   -webkit-appearance: none;
   appearance: none;
 }
 
-input[type="range"]::-webkit-slider-thumb {
+input[type="range"]::-webkit-slider-thumb{
   -webkit-appearance: none;
   appearance: none;
   width: 18px;
@@ -225,12 +212,12 @@ input[type="range"]::-webkit-slider-thumb {
   transition: all var(--motion-normal) ease;
 }
 
-input[type="range"]::-webkit-slider-thumb:hover {
+input[type="range"]::-webkit-slider-thumb:hover{
   transform: scale(1.2);
   box-shadow: 0 4px 12px var(--glow-primary-lg);
 }
 
-input[type="range"]::-moz-range-thumb {
+input[type="range"]::-moz-range-thumb{
   width: 18px;
   height: 18px;
   border-radius: 50%;
@@ -241,59 +228,55 @@ input[type="range"]::-moz-range-thumb {
   transition: all var(--motion-normal) ease;
 }
 
-input[type="range"]::-moz-range-thumb:hover {
+input[type="range"]::-moz-range-thumb:hover{
   transform: scale(1.2);
   box-shadow: 0 4px 12px var(--glow-primary-lg);
-}
+}/* Details/Summary styling */
 
-/* Details/Summary styling */
-details summary {
+details summary{
   list-style: none;
 }
 
-details summary::-webkit-details-marker {
+details summary::-webkit-details-marker{
   display: none;
 }
 
-details[open] summary svg {
+details[open] summary svg{
   transform: rotate(180deg);
 }
 
-details summary svg {
+details summary svg{
   transition: transform var(--motion-slow) ease;
-}
+}/* Main content fade-in on load */
 
-/* Main content fade-in on load */
-.main-content {
+.main-content{
   opacity: 0;
   transition: opacity var(--motion-normal) ease;
 }
 
-.main-content.loaded {
+.main-content.loaded{
   opacity: 1;
 }
 
 @media (min-width: 1280px) {
-  .settings-scroll {
+  .settings-scroll{
     max-height: 62vh;
     overflow-y: auto;
     padding-right: 0.25rem;
   }
 
-  .settings-scroll::-webkit-scrollbar {
+  .settings-scroll::-webkit-scrollbar{
     width: 8px;
   }
 
-  .settings-scroll::-webkit-scrollbar-thumb {
+  .settings-scroll::-webkit-scrollbar-thumb{
     background: var(--color-scrollbar);
     border-radius: var(--radius-pill);
-  }
-}
-
-/* ───────────── Title bar (prototype desktop.jsx ControlWindow:152) ─────────────
+  }}/* ───────────── Title bar (prototype desktop.jsx ControlWindow:152) ─────────────
  * Sticky macOS-style bar at the top: traffic lights + label + CONNECTED dot.
  * Uses position: sticky so it stays visible while content scrolls. */
-.client-titlebar {
+
+.client-titlebar{
   position: sticky;
   top: 0;
   z-index: 20;
@@ -309,41 +292,27 @@ details summary svg {
   font-family: "JetBrains Mono", ui-monospace, monospace;
   /* Make the title bar draggable like a native chrome */
   -webkit-app-region: drag;
-}
-
-/* On macOS the window uses titleBarStyle:"hidden" so native traffic
+}/* On macOS the window uses titleBarStyle:"hidden" so native traffic
    lights overlap the top-left of this region — leave 80px padding so
    our title text + status pill don't sit underneath them. Windows /
    Linux keep their default frame above this area, so 12px is enough. */
-body[data-os="mac"] .client-titlebar {
-  padding-left: 80px;
-}
 
-/* Buttons / status / interactive elements inside titlebar opt out of drag */
+body[data-os="mac"] .client-titlebar{
+  padding-left: 80px;
+}/* Buttons / status / interactive elements inside titlebar opt out of drag */
+
 .client-titlebar button,
-.client-titlebar .client-titlebar-status,
-.client-titlebar .client-titlebar-update {
+.client-titlebar .client-titlebar-status{
   -webkit-app-region: no-drag;
 }
 
-/* Title + status centered together as one group; update badge sits right.
-   The center wrapper is flex:1 so absolute-positioned siblings (badge)
-   don't shift the centered group when toggled. */
-.client-titlebar-center {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-}
-
-.client-titlebar-label {
+.client-titlebar-label{
   font-size: var(--text-xs);
   letter-spacing: 1px;
   color: rgba(148, 163, 184, 0.9);
 }
 
-.client-titlebar-status {
+.client-titlebar-status{
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -353,7 +322,7 @@ body[data-os="mac"] .client-titlebar {
   text-transform: uppercase;
 }
 
-.client-titlebar-status-dot {
+.client-titlebar-status-dot{
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -361,196 +330,31 @@ body[data-os="mac"] .client-titlebar {
   box-shadow: 0 0 6px rgba(148, 163, 184, 0.4);
 }
 
-.client-titlebar-status-dot[data-client-status="connected"] {
+.client-titlebar-status-dot[data-client-status="connected"]{
   background: var(--color-primary);
   box-shadow: 0 0 6px var(--color-primary), 0 0 12px rgba(56, 189, 248, 0.4);
   animation: client-titlebar-pulse 2s ease-in-out infinite;
 }
 
-.client-titlebar-status-dot[data-client-status="connecting"] {
+.client-titlebar-status-dot[data-client-status="connecting"]{
   background: var(--color-warning);
   box-shadow: 0 0 6px var(--color-warning);
 }
 
 .client-titlebar-status[data-client-status="connected"] .client-titlebar-status-text,
-.client-titlebar-status-dot[data-client-status="connected"] + .client-titlebar-status-text {
+.client-titlebar-status-dot[data-client-status="connected"] + .client-titlebar-status-text{
   color: var(--color-primary);
 }
 
 @keyframes client-titlebar-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: 0.6; transform: scale(0.85); }
-}
-
-/* ───────────── Title bar update badge (P2-3) ─────────────
- * Small chip beside the centered label. Pulses when an update is staged. */
-.client-titlebar-update {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
-  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
-  color: var(--color-primary);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease;
-}
-
-.client-titlebar-update[hidden] { display: none; }
-
-.client-titlebar-update:hover {
-  background: rgba(56, 189, 248, 0.22);
-  border-color: var(--color-primary);
-}
-
-.client-titlebar-update .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  box-shadow: 0 0 6px var(--color-primary), 0 0 12px rgba(56, 189, 248, 0.5);
-  animation: client-titlebar-pulse 1.6s ease-in-out infinite;
-}
-
-/* ───────────── Update card (P2-3) — about section ─────────────
- * Inline release-notes + progress bar + Restart/Skip/Later buttons. */
-.client-update-card {
-  margin-top: 12px;
-  padding: 12px 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.client-update-card[hidden] { display: none; }
-
-.client-update-card .head {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.client-update-card .title-row {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  width: 100%;
-}
-
-.client-update-card .kicker {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 2px;
-  color: var(--color-primary);
-  text-transform: uppercase;
-}
-
-.client-update-card .title {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: rgba(241, 245, 249, 0.95);
-}
-
-.client-update-card .version {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  color: rgba(148, 163, 184, 0.85);
-  letter-spacing: 0.5px;
-}
-
-.client-update-card .notes {
-  margin-top: 8px;
-  padding: 8px 12px;
-  border-radius: var(--radius-md-sm);
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
-  font-size: var(--text-xs);
-  line-height: 1.6;
-  color: rgba(241, 245, 249, 0.85);
-  white-space: pre-wrap;
-  max-height: 160px;
-  overflow-y: auto;
-}
-
-.client-update-card .notes[hidden] { display: none; }
-
-.client-update-card .progress {
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.client-update-card .progress[hidden] { display: none; }
-
-.client-update-card .progress-track {
-  flex: 1 1 auto;
-  height: 6px;
-  border-radius: var(--radius-pill);
-  background: var(--hud-line, rgba(148, 163, 184, 0.18));
-  overflow: hidden;
-}
-
-.client-update-card .progress-fill {
-  height: 100%;
-  background: linear-gradient(to right, var(--color-primary), var(--color-primary-hover));
-  transition: width var(--motion-normal) ease;
-  border-radius: var(--radius-pill);
-}
-
-.client-update-card .progress-label {
-  flex: 0 0 auto;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  color: rgba(241, 245, 249, 0.85);
-  min-width: 40px;
-  text-align: right;
-}
-
-.client-update-card .error {
-  margin-top: var(--space-2);
-  font-size: var(--text-xs);
-  color: var(--color-error-lighter);
-}
-
-.client-update-card .error[hidden] { display: none; }
-
-.client-update-card .actions {
-  margin-top: var(--space-3);
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-
-.client-update-card .actions .client-action-btn[hidden] { display: none; }
-
-.client-update-card .actions .client-action-btn.is-primary {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: var(--btn-text-on-primary);
-  font-weight: 600;
-}
-
-.client-update-card .actions .client-action-btn.is-primary:hover {
-  background: var(--color-primary-light);
-  border-color: var(--color-primary-light);
-  color: var(--btn-text-on-primary);
-}
+  0%, 100%{ opacity: 1; transform: scale(1); }
+  50%{ opacity: 0.6; transform: scale(0.85); }}
 
 /* ───────────── Client Shell (prototype desktop.jsx ControlWindow:151) ─────────────
  * Flex row: Sidebar (168px) + Main (flex 1, scroll). Sits below title bar.
  * Sits on top of the #vanta-bg particle layer via z-index.  */
-.client-shell {
+
+.client-shell{
   position: relative;
   z-index: 10;
   display: flex;
@@ -558,392 +362,14 @@ body[data-os="mac"] .client-titlebar {
   width: 100%;
 }
 
-.client-sidebar {
-  flex: 0 0 168px;
-  background: rgba(15, 23, 42, 0.85);
-  border-right: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  align-self: stretch;
-}
-
-.client-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.client-nav-btn {
-  all: unset;
-  box-sizing: border-box;
-  padding: 8px 12px;
-  border-radius: var(--radius-md-sm);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: rgba(241, 245, 249, 0.9);
-  transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
-}
-
-.client-nav-btn:hover {
-  background: rgba(148, 163, 184, 0.08);
-}
-
-/* Keyboard focus ring for the sidebar nav buttons. `all: unset` above wipes
-   the UA outline, so restore a visible focus affordance for Tab navigation. */
-.client-nav-btn:focus-visible {
-  box-shadow: 0 0 0 3px var(--glow-primary, rgba(56, 189, 248, 0.4));
-  border-radius: inherit;
-}
-
-.client-nav-btn.is-active {
-  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
-  color: var(--color-primary);
-}
-
-.client-nav-icon {
-  width: 14px;
-  text-align: center;
-  font-size: var(--text-sm);
-  flex-shrink: 0;
-}
-
-.client-nav-label {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
-  min-width: 0;
-}
-
-.client-nav-label .zh {
-  font-size: var(--text-xs);
-  font-weight: 500;
-}
-
-.client-nav-btn.is-active .client-nav-label .zh {
-  font-weight: 600;
-}
-
-.client-nav-label .en {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 1px;
-  color: rgba(148, 163, 184, 0.8);
-  margin-top: 1px;
-}
-
-.client-sidebar-foot {
-  margin-top: auto;
-  padding: 8px 12px;
-  border-top: 1px solid rgba(148, 163, 184, 0.14);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  color: rgba(148, 163, 184, 0.85);
-  line-height: 1.6;
-}
-
-.client-sidebar-foot .ver { color: rgba(241, 245, 249, 0.9); }
-
-.client-sidebar-foot .status {
-  color: var(--color-success-light);
-  margin-top: 2px;
-  letter-spacing: 1px;
-}
-
-.client-sidebar-foot .status .dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-success-light);
-  margin-right: var(--space-1);
-  vertical-align: 0;
-  box-shadow: 0 0 6px rgba(134, 239, 172, 0.5);
-}
-
-.client-main {
+.client-main{
   flex: 1 1 0;
   min-width: 0;
   padding: 20px;
   overflow: auto;
 }
 
-.client-toprow {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--space-3);
-  margin-bottom: 12px;
-}
-
-.client-section {
-  display: block;
-}
-
-.client-section[hidden] {
-  display: none;
-}
-
-.client-section-head {
-  margin-bottom: 12px;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.client-section-title {
-  font-size: var(--text-lg);
-  font-weight: 600;
-  letter-spacing: -0.2px;
-  color: rgba(241, 245, 249, 0.95);
-}
-
-.client-section-kicker {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 2px;
-  color: rgba(148, 163, 184, 0.8);
-  text-transform: uppercase;
-}
-
-/* Shortcuts list */
-.client-keys-card {
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
-  border-radius: var(--radius-md);
-  padding: 12px;
-  backdrop-filter: blur(8px);
-}
-
-.client-keys-row {
-  display: flex;
-  align-items: center;
-  padding: 8px 4px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-}
-
-.client-keys-row:last-child { border-bottom: none; }
-
-.client-keys-row .act {
-  flex: 1;
-  font-size: var(--text-footnote);
-  color: rgba(241, 245, 249, 0.9);
-}
-
-.client-keys-row .kbd {
-  padding: 4px 8px;
-  border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
-  border-radius: var(--radius-sm);
-  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-xs);
-  letter-spacing: 1px;
-  color: var(--color-primary);
-}
-
-.client-keys-hint {
-  margin-top: 12px;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  color: rgba(148, 163, 184, 0.8);
-}
-
-/* ── Update section (5.1.0 — closes prototype gap UpdateSection:389) ── */
-.client-update-status {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: var(--space-4);
-  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
-  border-radius: var(--radius-md);
-  background: rgba(15, 23, 42, 0.5);
-  margin-bottom: 12px;
-}
-.client-update-status-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--text-title2);
-  background: rgba(134, 239, 172, 0.12);
-  border: 1px solid rgba(134, 239, 172, 0.45);
-  color: var(--color-success-light);
-  flex-shrink: 0;
-}
-.client-update-status-icon[data-update-icon="warn"] {
-  background: rgba(251, 191, 36, 0.12);
-  border-color: rgba(251, 191, 36, 0.45);
-  color: var(--color-warning);
-}
-.client-update-status-body { flex: 1; min-width: 0; }
-.client-update-status-title {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: rgba(241, 245, 249, 0.95);
-}
-.client-update-status-meta {
-  margin-top: 4px;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  color: rgba(148, 163, 184, 0.85);
-}
-.client-update-status-meta .sep { margin: 0 4px; opacity: 0.5; }
-.client-update-check-btn {
-  padding: var(--space-2) var(--space-4);
-  background: transparent;
-  border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
-  border-radius: var(--radius-md-sm);
-  color: var(--color-primary);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
-}
-.client-update-check-btn:hover {
-  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
-  color: var(--color-text-primary);
-}
-
-.client-update-prefs {
-  padding: 12px 16px;
-  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
-  border-radius: var(--radius-md);
-  background: rgba(15, 23, 42, 0.5);
-  margin-bottom: 12px;
-}
-.client-update-prefs-kicker {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 1.5px;
-  color: rgba(148, 163, 184, 0.85);
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
-.client-update-pref {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: var(--space-2) 0;
-  cursor: pointer;
-}
-.client-update-pref input[type="checkbox"] {
-  margin-top: 4px;
-  flex-shrink: 0;
-}
-.client-update-pref-body { display: flex; flex-direction: column; gap: 2px; }
-.client-update-pref-label {
-  font-size: var(--text-footnote);
-  color: rgba(241, 245, 249, 0.9);
-}
-.client-update-pref-hint {
-  font-size: var(--text-caption);
-  color: rgba(148, 163, 184, 0.85);
-}
-
-.client-update-changelog {
-  padding: 12px 16px;
-  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
-  border-radius: var(--radius-md);
-  background: rgba(15, 23, 42, 0.5);
-}
-.client-update-changelog-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: 8px;
-}
-.client-update-changelog-kicker {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 1.5px;
-  color: rgba(148, 163, 184, 0.85);
-  text-transform: uppercase;
-}
-.client-update-changelog-link {
-  margin-left: auto;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  color: var(--color-primary);
-  text-decoration: none;
-}
-.client-update-changelog-link:hover { color: var(--color-primary-light); }
-.client-update-changelog-empty {
-  padding: var(--space-3) 0;
-  font-size: var(--text-xs);
-  color: rgba(148, 163, 184, 0.7);
-  text-align: center;
-}
-
-/* About card */
-.client-about-card {
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
-  border-radius: var(--radius-md);
-  padding: var(--space-5);
-  display: flex;
-  gap: var(--space-4);
-  align-items: center;
-  margin-bottom: 12px;
-  backdrop-filter: blur(8px);
-}
-
-.client-about-logo object,
-.client-about-logo img {
-  display: block;
-  width: 56px;
-  height: 56px;
-  border-radius: 10px;
-}
-
-.client-about-body .title {
-  font-size: var(--text-base);
-  font-weight: 600;
-  color: rgba(241, 245, 249, 0.95);
-}
-
-.client-about-body .meta {
-  margin-top: 2px;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  color: rgba(148, 163, 184, 0.85);
-}
-
-.client-about-body .status {
-  margin-top: var(--space-1);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 1px;
-  color: var(--color-success-light);
-}
-
-.client-about-body .status .dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-success-light);
-  margin-right: var(--space-1);
-  vertical-align: 0;
-  box-shadow: 0 0 6px rgba(134, 239, 172, 0.5);
-}
-
-.client-about-actions {
-  margin-left: auto;
-}
-
-.client-action-btn {
+.client-action-btn{
   padding: 8px 16px;
   border-radius: var(--radius-md-sm);
   cursor: pointer;
@@ -955,118 +381,13 @@ body[data-os="mac"] .client-titlebar {
   transition: border-color var(--motion-fast) ease, color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
-.client-action-btn:hover {
+.client-action-btn:hover{
   border-color: var(--color-primary);
   color: var(--color-primary);
   background: rgba(56, 189, 248, 0.06);
 }
 
-.client-about-desc {
-  padding: 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
-  background: rgba(15, 23, 42, 0.45);
-  font-size: var(--text-xs);
-  line-height: 1.7;
-  color: rgba(241, 245, 249, 0.85);
-  backdrop-filter: blur(6px);
-}
-
-/* Copyright inline inside .client-about-desc per design AboutSection
-   (single card, <br /> separator). Tone-down via textDim color. */
-.client-about-copyright {
-  color: rgba(148, 163, 184, 0.7);
-  font-size: var(--text-caption);
-}
-
-
-/* ───────────── Connection section (prototype ConnSection:250) ─────────────
- * Server summary only; TLS is implicit because runtime always uses WSS.
- * Legacy host/port/token inputs hidden behind the ⚙ 更改 action. */
-.client-conn-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-@media (max-width: 780px) {
-  .client-conn-grid { grid-template-columns: 1fr; }
-}
-
-.client-conn-card {
-  padding: 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
-  background: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(8px);
-}
-
-.client-conn-kicker {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 2px;
-  color: rgba(148, 163, 184, 0.8);
-  text-transform: uppercase;
-}
-
-.client-conn-url {
-  margin-top: 4px;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-footnote);
-  font-weight: 600;
-  color: rgba(241, 245, 249, 0.95);
-  word-break: break-all;
-}
-
-.client-conn-meta {
-  margin-top: var(--space-1);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  color: rgba(148, 163, 184, 0.8);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: baseline;
-}
-
-.client-conn-meta .sep { color: rgba(148, 163, 184, 0.5); }
-.client-conn-meta b { font-weight: 500; color: rgba(241, 245, 249, 0.95); }
-
-.client-conn-note {
-  margin-top: var(--space-1);
-  font-size: var(--text-caption);
-  line-height: 1.5;
-  color: rgba(148, 163, 184, 0.8);
-}
-
-.client-conn-actions {
-  margin-top: 8px;
-  display: flex;
-  gap: 4px;
-}
-
-/* 2026-05-16 conn-section impl alignment — configure-only model.
-   Three always-visible cards: Server / WebSocket Token / LAST USED SERVER.
-   The grid container (.client-conn-grid above) already stacks single
-   column with gap; nothing more to do here. */
-
-.client-conn-card-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.client-conn-card-meta {
-  margin-left: auto;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  color: rgba(148, 163, 184, 0.7);
-}
-
-.client-conn-host-row {
+.client-conn-host-row{
   margin-top: var(--space-2);
   display: flex;
   align-items: center;
@@ -1079,30 +400,25 @@ body[data-os="mac"] .client-titlebar {
   transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
-.client-conn-host-row:hover {
+.client-conn-host-row:hover{
   border-color: rgba(56, 189, 248, 0.4);
   background: rgba(56, 189, 248, 0.04);
 }
 
-.client-conn-host-row:focus {
+.client-conn-host-row:focus{
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
-}
-
-/* Stronger keyboard focus ring for the role="button" host row — the plain
+}/* Stronger keyboard focus ring for the role="button" host row — the plain
    :focus above stays subtle for mouse/text focus, :focus-visible is the
    visible Tab affordance. */
-.client-conn-host-row:focus-visible {
+
+.client-conn-host-row:focus-visible{
   box-shadow: 0 0 0 3px var(--glow-primary, rgba(56, 189, 248, 0.4));
   border-radius: inherit;
 }
 
-.client-conn-host-row:hover .client-conn-edit-pencil {
-  color: var(--color-primary);
-}
-
-.client-conn-host {
+.client-conn-host{
   flex: 1;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: var(--text-footnote);
@@ -1111,22 +427,7 @@ body[data-os="mac"] .client-titlebar {
   word-break: break-all;
 }
 
-.client-conn-edit-pencil {
-  flex: none;
-  font-size: var(--text-caption);
-  color: rgba(148, 163, 184, 0.7);
-  pointer-events: none;
-  transition: color var(--motion-fast) ease;
-}
-
-.client-conn-preview-row {
-  margin-top: var(--space-2);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.client-conn-preview {
+.client-conn-preview{
   flex: 1;
   padding: 4px 12px;
   border-radius: var(--radius-sm);
@@ -1139,7 +440,7 @@ body[data-os="mac"] .client-titlebar {
   word-break: break-all;
 }
 
-.client-conn-test-chip {
+.client-conn-test-chip{
   margin-top: 0;
   display: inline-flex;
   align-items: center;
@@ -1154,25 +455,25 @@ body[data-os="mac"] .client-titlebar {
   color: rgba(148, 163, 184, 0.8);
 }
 
-.client-conn-test-chip[data-state="testing"] {
+.client-conn-test-chip[data-state="testing"]{
   border-color: rgba(56, 189, 248, 0.4);
   background: rgba(56, 189, 248, 0.06);
   color: var(--color-primary);
 }
 
-.client-conn-test-chip[data-state="ok"] {
+.client-conn-test-chip[data-state="ok"]{
   border-color: rgba(56, 189, 248, 0.4);
   background: rgba(56, 189, 248, 0.06);
   color: var(--color-primary);
 }
 
-.client-conn-test-chip[data-state="fail"] {
+.client-conn-test-chip[data-state="fail"]{
   border-color: rgba(239, 68, 68, 0.45);
   background: rgba(239, 68, 68, 0.08);
   color: var(--color-error);
 }
 
-.client-conn-test-btn {
+.client-conn-test-btn{
   flex: none;
   padding: 4px 12px;
   border-radius: var(--radius-sm);
@@ -1185,15 +486,14 @@ body[data-os="mac"] .client-titlebar {
   transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
-.client-conn-test-btn:hover {
+.client-conn-test-btn:hover{
   background: var(--color-primary);
   color: var(--color-bg-base, #0f172a);
-}
+}/* In-place edit row inside the Server card. */
 
-/* In-place edit row inside the Server card. */
-[data-conn-edit][hidden] { display: none; }
+[data-conn-edit][hidden]{ display: none; }
 
-.client-conn-edit-label {
+.client-conn-edit-label{
   margin-top: var(--space-2);
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: var(--text-caption);
@@ -1202,14 +502,14 @@ body[data-os="mac"] .client-titlebar {
   text-transform: uppercase;
 }
 
-.client-conn-edit-row {
+.client-conn-edit-row{
   margin-top: 4px;
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.client-conn-edit-row input {
+.client-conn-edit-row input{
   flex: 1;
   padding: 8px 12px;
   background: rgba(15, 23, 42, 0.55);
@@ -1221,202 +521,12 @@ body[data-os="mac"] .client-titlebar {
   outline: none;
   box-sizing: border-box;
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
-}
-
-.client-conn-edit-save {
-  padding: 8px 12px;
-  border-radius: var(--radius-md-sm);
-  border: none;
-  background: var(--color-primary);
-  color: var(--color-bg-base, #0f172a);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  font-weight: 600;
-  letter-spacing: 1px;
-  cursor: pointer;
-}
-
-.client-conn-edit-save:hover { background: var(--color-primary-light); }
-
-.client-conn-edit-cancel {
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md-sm);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: transparent;
-  color: rgba(148, 163, 184, 0.8);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  cursor: pointer;
-}
-
-.client-conn-edit-cancel:hover { color: rgba(241, 245, 249, 0.95); border-color: rgba(148, 163, 184, 0.5); }
-
-/* LAST USED SERVER row */
-.client-conn-last-row {
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  background: rgba(15, 23, 42, 0.4);
-  border-radius: var(--radius-md-sm);
-  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
-}
-
-.client-conn-last-addr {
-  flex: 1;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-xs);
-  color: rgba(241, 245, 249, 0.95);
-  word-break: break-all;
-}
-
-.client-conn-last-when {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  color: rgba(148, 163, 184, 0.7);
-}
-
-.client-conn-hint {
-  margin-top: var(--space-2);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 0.3px;
-  line-height: 1.5;
-  color: rgba(148, 163, 184, 0.7);
-}
-
-.client-conn-edit-help {
-  margin-top: 4px;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 0.3px;
-  line-height: 1.5;
-  color: rgba(148, 163, 184, 0.7);
-}
-
-/* AUTH card uses <details>. Inherits .client-conn-card padding/border
-   from the shared card class; nothing extra needed for the container. */
-.client-conn-auth-panel { padding: 12px; }
-.client-conn-auth-panel[open] .client-conn-auth-status { display: none; }
-/* The "✓ 已設定" confirmation badge stays visible even when the panel is
+}/* The "✓ 已設定" confirmation badge stays visible even when the panel is
    expanded, so the configured-token signal is always present (A5). */
-.client-conn-auth-panel[open] .client-conn-auth-status.is-set { display: inline; }
-.client-conn-auth-status.is-set { color: var(--color-success); }
-
-.client-conn-auth-summary {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  cursor: pointer;
-  font-size: var(--text-footnote);
-  font-weight: 500;
-  color: rgba(241, 245, 249, 0.95);
-  list-style: none;
-}
-
-.client-conn-auth-title { flex: none; }
-
-.client-conn-auth-status {
-  margin-left: auto;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  color: rgba(148, 163, 184, 0.7);
-}
-
-.client-conn-auth-summary::-webkit-details-marker { display: none; }
-
-.client-conn-auth-summary::before {
-  content: "▸";
-  font-size: var(--text-xs);
-  color: rgba(148, 163, 184, 0.8);
-  transition: transform var(--motion-fast) ease;
-}
-
-.client-conn-auth-panel[open] .client-conn-auth-summary::before {
-  transform: rotate(90deg);
-}
-
-.client-conn-auth-kicker {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 2px;
-  color: rgba(148, 163, 184, 0.8);
-  text-transform: uppercase;
-}
-
-.client-conn-auth-panel input[type="password"] {
-  width: 100%;
-  margin-top: 8px;
-  padding: 8px 12px;
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  border-radius: var(--radius-md-sm);
-  color: rgba(241, 245, 249, 0.95);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-footnote);
-  outline: none;
-  box-sizing: border-box;
-}
-
-.client-conn-auth-panel input[type="password"]:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
-}
-
-.client-mini-btn {
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(15, 23, 42, 0.35);
-  color: rgba(241, 245, 249, 0.9);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, color var(--motion-fast) ease;
-}
-
-.client-mini-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.08);
-}
-
-/* Message flow sparkline card */
-.client-conn-flow .client-conn-sparkline {
-  display: block;
-  width: 100%;
-  height: 56px;
-  margin-top: 8px;
-}
-
-.client-conn-sparkline .fill { fill: var(--color-primary); opacity: 0.12; }
-.client-conn-sparkline .stroke {
-  fill: none;
-  stroke: var(--color-primary);
-  stroke-width: 1.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.client-conn-flow-stats {
-  margin-top: var(--space-2);
-  display: flex;
-  gap: var(--space-5);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  color: rgba(148, 163, 184, 0.8);
-}
-
-.client-conn-flow-stats b { font-weight: 500; color: rgba(241, 245, 249, 0.95); }
-.client-conn-flow-stats b.is-accent { color: var(--color-primary); }
 
 /* Connection edit form — expanded via ⚙ 更改 */
-.client-conn-edit {
+
+.client-conn-edit{
   margin-top: 12px;
   padding: 12px;
   border-radius: var(--radius-md);
@@ -1425,109 +535,9 @@ body[data-os="mac"] .client-titlebar {
   backdrop-filter: blur(8px);
 }
 
-.client-conn-edit[hidden] { display: none; }
+.client-conn-edit[hidden]{ display: none; }
 
-.client-conn-edit-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: var(--space-3);
-}
-
-.client-conn-edit-head .client-mini-btn { margin-left: auto; }
-
-.client-conn-edit-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
-}
-
-@media (max-width: 640px) {
-  .client-conn-edit-grid { grid-template-columns: 1fr; }
-}
-
-.client-conn-edit-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: var(--text-xs);
-  color: rgba(241, 245, 249, 0.9);
-}
-
-.client-conn-edit-field > span {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 1.5px;
-  color: rgba(148, 163, 184, 0.8);
-  text-transform: uppercase;
-}
-
-.client-conn-edit-field input,
-.client-conn-edit-field select {
-  padding: 8px 8px;
-  border-radius: var(--radius-md-sm);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(15, 23, 42, 0.6);
-  color: rgba(241, 245, 249, 0.95);
-  font-size: var(--text-xs);
-  outline: none;
-  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
-}
-
-.client-conn-edit-field input:focus,
-.client-conn-edit-field select:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
-}
-
-.client-conn-edit-check {
-  grid-column: span 2;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-xs);
-  color: rgba(241, 245, 249, 0.9);
-  cursor: pointer;
-}
-
-@media (max-width: 640px) {
-  .client-conn-edit-check { grid-column: span 1; }
-}
-
-.client-conn-edit-check input[type="checkbox"] {
-  accent-color: var(--color-primary);
-}
-
-/* ───────────── Overlay section (prototype OverlaySection:203) ─────────────
- * Show/hide primary button + display picker + action buttons + NOTE.
- * Legacy Preview & Settings accordion is tucked away in client-overlay-advanced. */
-.client-overlay-card {
-  padding: 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
-  background: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.client-overlay-card .client-overlay-card-body { flex: 1; }
-
-.client-overlay-card .title {
-  font-size: var(--text-footnote);
-  font-weight: 600;
-  color: rgba(241, 245, 249, 0.95);
-}
-
-.client-overlay-card .dim {
-  margin-top: 2px;
-  font-size: var(--text-caption);
-  color: rgba(148, 163, 184, 0.85);
-}
-
-.client-overlay-button {
+.client-overlay-button{
   min-width: 132px;
   padding: 8px 16px;
   border-radius: 7px;
@@ -1542,58 +552,32 @@ body[data-os="mac"] .client-titlebar {
   flex-shrink: 0;
 }
 
-.client-overlay-button:hover {
+.client-overlay-button:hover{
   background: var(--color-primary-light);
   border-color: var(--color-primary-light);
   box-shadow: 0 10px 24px rgba(56, 189, 248, 0.18);
   transform: translateY(-1px);
 }
 
-.client-overlay-button.is-running {
+.client-overlay-button.is-running{
   background: rgba(239, 68, 68, 0.16);
   border-color: rgba(248, 113, 113, 0.7);
   color: #fecaca;
 }
 
-.client-overlay-button.is-running:hover {
+.client-overlay-button.is-running:hover{
   background: rgba(239, 68, 68, 0.24);
   border-color: rgba(252, 165, 165, 0.85);
   box-shadow: 0 10px 24px rgba(239, 68, 68, 0.14);
 }
 
-/* Display picker (prototype ScreenChip row) */
-.client-overlay-screens {
-  display: block;
-}
-
-.client-overlay-screens .head {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.client-overlay-screens .head .label {
-  font-size: var(--text-xs);
-  font-weight: 500;
-  color: rgba(241, 245, 249, 0.9);
-}
-
-.client-overlay-screens .head .kicker {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 2px;
-  color: rgba(148, 163, 184, 0.8);
-  text-transform: uppercase;
-}
-
-.client-screen-row {
+.client-screen-row{
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.client-screen-chip {
+.client-screen-chip{
   flex: 1 1 200px;
   padding: 8px 12px;
   border-radius: var(--radius-md-sm);
@@ -1606,14 +590,14 @@ body[data-os="mac"] .client-titlebar {
   font: inherit;
 }
 
-.client-screen-chip .head {
+.client-screen-chip .head{
   display: flex;
   align-items: center;
   gap: var(--space-2);
   margin-bottom: var(--space-1);
 }
 
-.client-screen-chip .box {
+.client-screen-chip .box{
   width: 26px;
   height: 18px;
   border-radius: var(--radius-2xs);
@@ -1622,13 +606,13 @@ body[data-os="mac"] .client-titlebar {
   flex-shrink: 0;
 }
 
-.client-screen-chip .name {
+.client-screen-chip .name{
   font-size: var(--text-xs);
   font-weight: 500;
   color: rgba(241, 245, 249, 0.9);
 }
 
-.client-screen-chip .check {
+.client-screen-chip .check{
   margin-left: auto;
   color: var(--color-primary);
   font-family: "JetBrains Mono", ui-monospace, monospace;
@@ -1636,48 +620,34 @@ body[data-os="mac"] .client-titlebar {
   opacity: 0;
 }
 
-.client-screen-chip .meta {
+.client-screen-chip .meta{
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(148, 163, 184, 0.8);
 }
 
-.client-screen-chip.is-active {
+.client-screen-chip.is-active{
   border-color: var(--color-primary);
   background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
 }
 
-.client-screen-chip.is-active .box {
+.client-screen-chip.is-active .box{
   background: var(--color-primary);
   border-color: var(--color-primary);
 }
 
-.client-screen-chip.is-active .name { color: var(--color-primary); font-weight: 600; }
-.client-screen-chip.is-active .check { opacity: 1; }
+.client-screen-chip.is-active .name{ color: var(--color-primary); font-weight: 600; }
+.client-screen-chip.is-active .check{ opacity: 1; }/* Overlay action buttons (secondary actions only; start/stop uses the primary button) */
 
-.client-overlay-sync {
-  margin-top: var(--space-3);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: rgba(203, 213, 225, 0.86);
-  font-size: var(--text-xs);
-}
-
-.client-overlay-sync input {
-  accent-color: var(--color-primary);
-}
-
-/* Overlay action buttons (secondary actions only; start/stop uses the primary button) */
-.client-overlay-actions {
+.client-overlay-actions{
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
   margin-bottom: 12px;
 }
 
-.client-overlay-actions .client-action-btn {
+.client-overlay-actions .client-action-btn{
   padding: 8px 16px;
   border-radius: var(--radius-md-sm);
   border: 1px solid rgba(148, 163, 184, 0.2);
@@ -1692,59 +662,26 @@ body[data-os="mac"] .client-titlebar {
   gap: 4px;
 }
 
-.client-overlay-actions .client-action-btn:hover {
+.client-overlay-actions .client-action-btn:hover{
   border-color: var(--color-primary);
   color: var(--color-primary);
   background: rgba(56, 189, 248, 0.06);
 }
 
-.client-overlay-actions .client-action-btn.is-primary {
+.client-overlay-actions .client-action-btn.is-primary{
   border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--btn-text-on-primary);
   font-weight: 600;
 }
 
-.client-overlay-actions .client-action-btn.is-primary:hover {
+.client-overlay-actions .client-action-btn.is-primary:hover{
   background: var(--color-primary-light);
   border-color: var(--color-primary-light);
   color: var(--btn-text-on-primary);
 }
 
-/* NOTE panel (prototype OverlaySection:239) */
-.client-overlay-note {
-  padding: var(--space-3);
-  background: rgba(30, 41, 59, 0.5);
-  border-radius: var(--radius-md-sm);
-  font-size: var(--text-caption);
-  line-height: 1.6;
-  color: rgba(148, 163, 184, 0.85);
-  margin-bottom: 12px;
-}
-
-.client-overlay-note .kicker {
-  display: inline-block;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--text-caption);
-  letter-spacing: 2px;
-  color: var(--color-primary);
-  text-transform: uppercase;
-}
-
-.client-overlay-note p {
-  margin: var(--space-1) 0 0;
-}
-
-.client-overlay-note b { color: rgba(241, 245, 249, 0.95); font-weight: 600; }
-
-/* ── Window Picker (#117) ─────────────────────────────────────────── */
-.client-window-picker-btn {
-  margin-top: var(--space-2);
-  width: 100%;
-  font-size: var(--text-xs);
-}
-
-.wp-backdrop {
+.wp-backdrop{
   position: fixed;
   inset: 0;
   z-index: 9000;
@@ -1755,7 +692,7 @@ body[data-os="mac"] .client-titlebar {
   backdrop-filter: blur(4px);
 }
 
-.wp-modal {
+.wp-modal{
   width: 90%;
   max-width: 640px;
   max-height: 80vh;
@@ -1768,7 +705,7 @@ body[data-os="mac"] .client-titlebar {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
-.wp-header {
+.wp-header{
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1776,14 +713,14 @@ body[data-os="mac"] .client-titlebar {
   border-bottom: 1px solid var(--color-border);
 }
 
-.wp-title {
+.wp-title{
   font-size: var(--text-base);
   font-weight: 700;
   color: var(--color-text-bright, #f8fafc);
   margin: 0;
 }
 
-.wp-close {
+.wp-close{
   background: none;
   border: none;
   color: var(--color-text-muted, #64748b);
@@ -1793,15 +730,15 @@ body[data-os="mac"] .client-titlebar {
   border-radius: var(--radius-md-sm);
   line-height: 1;
 }
-.wp-close:hover { color: var(--color-text-bright); background: var(--hover-tint-strong); }
+.wp-close:hover{ color: var(--color-text-bright); background: var(--hover-tint-strong); }
 
-.wp-tabs {
+.wp-tabs{
   display: flex;
   gap: 2px;
   padding: var(--space-2) var(--space-4) 0;
 }
 
-.wp-tab {
+.wp-tab{
   flex: 1;
   padding: var(--space-2);
   border: none;
@@ -1814,13 +751,13 @@ body[data-os="mac"] .client-titlebar {
   cursor: pointer;
   transition: background var(--motion-fast), color var(--motion-fast);
 }
-.wp-tab:hover { color: var(--color-text-secondary); }
-.wp-tab.active {
+.wp-tab:hover{ color: var(--color-text-secondary); }
+.wp-tab.active{
   background: var(--color-bg-elevated, #1e293b);
   color: var(--color-primary, #38bdf8);
 }
 
-.wp-grid {
+.wp-grid{
   flex: 1;
   overflow-y: auto;
   padding: var(--space-3) var(--space-4);
@@ -1830,7 +767,7 @@ body[data-os="mac"] .client-titlebar {
   align-content: start;
 }
 
-.wp-loading, .wp-empty {
+.wp-loading, .wp-empty{
   grid-column: 1 / -1;
   text-align: center;
   padding: 40px 16px;
@@ -1838,7 +775,7 @@ body[data-os="mac"] .client-titlebar {
   font-size: var(--text-footnote);
 }
 
-.wp-card {
+.wp-card{
   background: var(--color-bg-elevated, #1e293b);
   border: 2px solid transparent;
   border-radius: var(--radius-md);
@@ -1852,15 +789,15 @@ body[data-os="mac"] .client-titlebar {
   font-family: inherit;
   color: inherit;
 }
-.wp-card:hover {
+.wp-card:hover{
   border-color: var(--color-primary, #38bdf8);
   transform: translateY(-1px);
 }
-.wp-card:active {
+.wp-card:active{
   transform: translateY(0);
 }
 
-.wp-thumb {
+.wp-thumb{
   width: 100%;
   aspect-ratio: 16/9;
   object-fit: cover;
@@ -1868,7 +805,7 @@ body[data-os="mac"] .client-titlebar {
   display: block;
 }
 
-.wp-card-label {
+.wp-card-label{
   display: flex;
   align-items: center;
   gap: 4px;
@@ -1876,12 +813,12 @@ body[data-os="mac"] .client-titlebar {
   min-height: 30px;
 }
 
-.wp-card-icon {
+.wp-card-icon{
   flex-shrink: 0;
   border-radius: var(--radius-2xs);
 }
 
-.wp-card-name {
+.wp-card-name{
   font-size: var(--text-caption);
   color: var(--color-text-secondary, #94a3b8);
   overflow: hidden;
@@ -1889,17 +826,516 @@ body[data-os="mac"] .client-titlebar {
   white-space: nowrap;
 }
 
-.wp-footer {
+.wp-footer{
   padding: 8px 16px;
   border-top: 1px solid var(--color-border);
   text-align: center;
 }
 
-.wp-hint {
+.wp-hint{
   font-size: var(--text-xs);
   color: var(--color-text-muted, #64748b);
   transition: color var(--motion-normal);
 }
-.wp-hint-selected {
+.wp-hint-selected{
   color: var(--color-success, #22c55e);
+}
+/* ═══════════════════════════════════════════════════════════════════════
+ * 設計稿 04「桌面端示範」· 單頁 560×440
+ *
+ * 主持人在這個視窗只做兩件事：開／關顯示層，決定顯示在哪個螢幕。
+ * 其餘（連線、關於、備份）收進 ⚙ 面板。狀態只出現在主卡一處。
+ * 寬度 <420 切精簡版面（360×200）。
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+.client-body {
+  /* 跟隨系統深淺色。原本整支介面固定深底，淺色系統下與其他 app 不一致。 */
+  background: var(--admin-bg, var(--color-bg-deep));
+  color: var(--color-text-primary);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── 標題列 ─────────────────────────────────────────────────────────── */
+.client-titlebar {
+  justify-content: space-between;
+  background: transparent;
+  border-bottom: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  font-family: var(--font-ui);
+}
+
+.client-titlebar-label {
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.client-titlebar-gear {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-app-region: no-drag;
+}
+
+.client-titlebar-gear:hover { background: var(--admin-raised, rgba(148, 163, 184, 0.12)); }
+
+/* S6：有更新時 ⚙ 右上角一個小紅點——不阻斷，只是「這裡有事」。 */
+.client-titlebar-gear-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-danger);
+}
+
+.client-titlebar-gear-dot[hidden] { display: none; }
+
+/* ── 版面 ───────────────────────────────────────────────────────────── */
+.client-shell {
+  min-height: 0;
+  height: calc(100vh - 36px);
+}
+
+.client-main {
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  /* 440 高在出橫幅時會裝不下三段內容；讓主欄自己捲，
+     不要把設定群組截掉一半（那比捲動更難看懂）。 */
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* flex 子項預設會被壓縮到低於內容高度，而 .client-group 又是 overflow:hidden
+   ——兩者相乘就是「設定群組被切掉一半，捲軸卻不出現」。釘死不壓縮。 */
+.client-main > * { flex: 0 0 auto; }
+
+/* ── 橫幅（S4 連線失敗 / S6 有更新）───────────────────────────────── */
+.client-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-footnote);
+}
+
+.client-banner[hidden] { display: none; }
+
+.client-banner.is-error {
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  color: var(--color-ink-danger, var(--color-danger));
+}
+
+.client-banner.is-info {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-text-primary);
+}
+
+.client-banner-body { flex: 1 1 auto; min-width: 0; }
+.client-banner-title { font-weight: 600; }
+
+.client-banner-text {
+  margin-top: 2px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.client-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+.client-banner-close {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.client-banner-close[hidden] { display: none; }
+
+/* ── 主卡（S2 / S3）—— 全視窗唯一的狀態顯示 ────────────────────────── */
+.client-main-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--admin-panel, var(--color-bg-base));
+  border: 1px solid var(--admin-line, var(--color-border-soft));
+}
+
+.client-main-card.is-running {
+  border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
+}
+
+.client-main-card-icon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-lg);
+  background: var(--admin-raised, rgba(148, 163, 184, 0.12));
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.client-main-card.is-running .client-main-card-icon {
+  background: color-mix(in srgb, var(--color-success) 14%, transparent);
+  color: var(--color-success);
+}
+
+.client-main-card-body { flex: 1 1 auto; min-width: 0; }
+
+.client-main-card-title {
+  font-size: var(--text-body);
+  font-weight: 700;
+}
+
+.client-main-card-status {
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-footnote);
+  color: var(--color-text-secondary);
+}
+
+.client-main-card.is-running .client-main-card-status {
+  color: var(--color-ink-success, var(--color-success));
+  font-weight: 600;
+}
+
+.client-main-card-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-secondary);
+  flex: 0 0 auto;
+}
+
+.client-main-card-dot[data-state="on"] { background: var(--color-success); }
+
+/* 主要動作：卡片裡最大的按鈕（設計稿 04）。開啟後轉淡紅「關閉」。 */
+.client-overlay-button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 0;
+  background: var(--color-primary);
+  color: var(--color-bg-deep);
+  font-size: var(--text-subhead);
+  font-weight: 600;
+}
+
+.client-overlay-button.is-running {
+  background: color-mix(in srgb, var(--color-danger) 14%, transparent);
+  color: var(--color-ink-danger, var(--color-danger));
+}
+
+/* ── 設定群組（沿用 admin 的 .admin-ui-group 版型刻度）──────────────── */
+.client-group {
+  border-radius: var(--radius-lg);
+  background: var(--admin-panel, var(--color-bg-base));
+  border: 1px solid var(--admin-line, var(--color-border-soft));
+  overflow: hidden;
+}
+
+.client-group-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-subhead);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.client-group-row + .client-group-row,
+.client-group > div + div,
+.client-group > details + details,
+.client-group > button + button {
+  border-top: 1px solid var(--admin-line, var(--color-border-soft));
+}
+
+.client-group-row.is-block { display: block; padding: var(--space-3) var(--space-4); }
+
+.client-group-label { flex: 0 0 auto; }
+
+.client-group-value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-footnote);
+  overflow: hidden;
+}
+
+.client-group-note { color: var(--color-text-secondary); opacity: 0.8; }
+.client-group-caret { color: var(--color-text-secondary); }
+
+.client-group-help {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.client-group-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  list-style: none;
+  cursor: pointer;
+}
+
+.client-group-summary::-webkit-details-marker { display: none; }
+
+.client-select {
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--text-footnote);
+  text-align: right;
+}
+
+.client-kbd {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--admin-raised, rgba(148, 163, 184, 0.12));
+}
+
+/* 開關（設計稿 03） */
+.client-switch-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.client-switch {
+  width: 40px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--admin-line, rgba(148, 163, 184, 0.3));
+  position: relative;
+  flex: 0 0 auto;
+  transition: background var(--motion-fast) ease;
+}
+
+.client-switch-input:checked + .client-switch { background: var(--color-success); }
+
+.client-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-text-primary);
+  transition: transform var(--motion-fast) ease;
+}
+
+.client-switch-input:checked + .client-switch .client-switch-knob {
+  transform: translateX(16px);
+}
+
+.client-progress {
+  flex: 1 1 auto;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--admin-line, rgba(148, 163, 184, 0.3));
+  overflow: hidden;
+}
+
+.client-progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+}
+
+/* ── S1 · 首次啟動精靈 ────────────────────────────────────────────── */
+.client-onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--admin-bg, var(--color-bg-deep));
+}
+
+.client-onboarding[hidden] { display: none; }
+
+.client-onboarding-panel {
+  width: min(400px, 100% - var(--space-8));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+}
+
+.client-onboarding-icon { border-radius: var(--radius-lg); }
+
+.client-onboarding-title {
+  margin: 0;
+  font-size: var(--text-title2);
+  font-weight: 700;
+}
+
+.client-onboarding-body {
+  margin: 0;
+  font-size: var(--text-footnote);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.client-onboarding-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--admin-line, var(--color-border-soft));
+  background: var(--admin-panel, var(--color-bg-base));
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--text-subhead);
+}
+
+.client-onboarding-status {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.client-onboarding-status[hidden] { display: none; }
+
+.client-onboarding-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.client-action-btn.is-text {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-text-secondary);
+}
+
+/* ── P1 · 設定面板 ────────────────────────────────────────────────── */
+.client-settings {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.client-settings[hidden] { display: none; }
+
+.client-settings-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(2 6 15 / 50%);
+}
+
+.client-settings-panel {
+  position: relative;
+  width: min(420px, 100%);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--admin-bg, var(--color-bg-deep));
+  border-left: 1px solid var(--admin-line, var(--color-border-soft));
+}
+
+.client-settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  flex: 0 0 auto;
+}
+
+.client-settings-title {
+  font-size: var(--text-body);
+  font-weight: 700;
+}
+
+.client-settings-done {
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: var(--text-subhead);
+  font-weight: 600;
+}
+
+.client-settings-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--space-5) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.client-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.client-settings-section-title {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  padding: 0 var(--space-1);
+}
+
+/* ── 精簡版面（<420 寬）—— 只留主卡與主要動作 ──────────────────── */
+@media (max-width: 419px) {
+  .client-main { padding: var(--space-3); gap: var(--space-2); }
+  .client-main-card { padding: var(--space-3); gap: var(--space-3); }
+  .client-main-card-icon { display: none; }
+  .client-group,
+  .client-overlay-actions { display: none; }
+  .client-titlebar-label { display: none; }
 }

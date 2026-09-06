@@ -1,5 +1,5 @@
 // Window creation and lifecycle management
-const { app, BrowserWindow, screen, shell } = require("electron");
+const { app, BrowserWindow, nativeTheme, screen, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { sanitizeLog } = require("../shared/utils");
@@ -8,7 +8,11 @@ const { buildDisplayOptions } = require("./display-watcher");
 
 // Main-window default size — used on first run and as a fallback when the
 // persisted bounds land off-screen (e.g. a monitor was unplugged).
-const DEFAULT_MAIN_BOUNDS = { width: 800, height: 900 };
+// 設計稿 04「桌面端示範」：三分區側欄 800×900 → 單頁 560×440。
+// 內容是固定的一張卡＋兩三列設定，撐到 800 寬只是把空白拉大。
+// 寬度低於 420 時 renderer 切精簡版面（360×200）——那道門檻由
+// styles.css 的 @media (max-width: 419px) 負責，主行程不用知道。
+const DEFAULT_MAIN_BOUNDS = { width: 560, height: 440 };
 
 function getWindowStatePath() {
   return path.join(app.getPath("userData"), "window-state.json");
@@ -156,7 +160,11 @@ function createWindow(childWindows, onKonamiTrigger) {
   // entirely (no close button), so we only apply it on darwin and let
   // Windows/Linux keep their default frame chrome with native controls.
   const isMac = process.platform === "darwin";
-  const titleBarOpts = isMac ? { titleBarStyle: "hidden" } : {};
+    // 設計稿 04：macOS 用 hiddenInset 讓交通燈落在卡片留白裡，
+  // Windows/Linux 保留系統框（那邊 hidden 會連關閉鈕一起吃掉）。
+  const titleBarOpts = isMac
+    ? { titleBarStyle: "hiddenInset", trafficLightPosition: { x: 12, y: 13 } }
+    : {};
 
   // Restore the last window geometry when it still lands on a live display;
   // otherwise fall back to the default centered size (A8).
@@ -180,9 +188,14 @@ function createWindow(childWindows, onKonamiTrigger) {
 
   const mainWindow = new BrowserWindow({
     ...initialBounds,
-    minWidth: 400,
-    minHeight: 700,
+    minWidth: 360,
+    minHeight: 200,
+    // 內容固定，不需要無限拉大（設計稿 04）。
+    maxWidth: 720,
+    maxHeight: 560,
     resizable: true,
+    fullscreenable: false,
+    maximizable: false,
     autoHideMenuBar: true,
     ...titleBarOpts,
     // macOS Space 修復：不使用 show:false + ready-to-show 模式
@@ -190,7 +203,9 @@ function createWindow(childWindows, onKonamiTrigger) {
     // 之後 show() 時視窗就出現在錯誤的桌面。
     // 改為立即顯示 + 深色背景，避免白閃且確保出現在當前 Space。
     show: true,
-    backgroundColor: "#0f172a",
+    // 跟隨系統深淺色（設計稿 04）。原本固定深藍底，淺色系統下開窗會閃一下深色。
+    backgroundColor:
+      nativeTheme && nativeTheme.shouldUseDarkColors ? "#121A2B" : "#F4F6F9",
     icon: path.join(__dirname, "../assets/icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "../dist/preload.bundle.js"),

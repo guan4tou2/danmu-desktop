@@ -499,18 +499,19 @@ function initTrackManager() {
     });
   };
 
-  // Periodically update the in-flight counter element (child window only)
+  // 在飛的彈幕數。設計稿 09 · D2 拿掉了投影畫面右下角那顆 HUD，所以這裡
+  // 只把數字掛在 window.__danmuActiveCount 給桌面端控制視窗讀；DOM 裡若
+  // 還留著 #danmu-counter（舊頁面／測試 harness）就一併寫進去。
   // 儲存 interval ID 以便重複初始化時清除舊的 interval，防止累積
-  const counterEl = document.getElementById("danmu-counter");
-  if (counterEl) {
-    if (window._danmuCounterInterval) {
-      clearInterval(window._danmuCounterInterval);
-    }
-    window._danmuCounterInterval = setInterval(() => {
-      const count = document.querySelectorAll("h1.danmu, img.danmu").length;
-      counterEl.textContent = count > 0 ? String(count) : "";
-    }, 500);
+  if (window._danmuCounterInterval) {
+    clearInterval(window._danmuCounterInterval);
   }
+  window._danmuCounterInterval = setInterval(() => {
+    const count = document.querySelectorAll("h1.danmu, img.danmu").length;
+    window.__danmuActiveCount = count;
+    const counterEl = document.getElementById("danmu-counter");
+    if (counterEl) counterEl.textContent = count > 0 ? String(count) : "";
+  }, 500);
 }
 
 module.exports = { initTrackManager };

@@ -410,12 +410,15 @@ describe("sound playback guard", () => {
 // ===========================================================================
 
 describe("idle screen hydration", () => {
-  test("hydrates subtitle, URL and QR container from config", () => {
+  // 設計稿 09 · D1：網址單獨一行、原樣顯示（不再 uppercase，也不再塞進
+  // 副標句子中間）——投影出去要在 10 公尺外讀得出來。副標是固定的一句
+  // 白話，只有在 markup 沒給時才由這裡補。
+  test("hydrates URL and QR container from config, leaves the fixed subtitle", () => {
     document.body.innerHTML = `
       <div id="overlay-idle">
-        <p class="overlay-idle-subtitle">掃描 QR code 或打開 — — 開始送彈幕</p>
+        <p class="overlay-idle-lead">掃 QR 或打開<span class="overlay-idle-url">—</span></p>
+        <p class="overlay-idle-subtitle">打字，就會飛到這個螢幕上</p>
         <div class="overlay-idle-qr"></div>
-        <div class="overlay-idle-url">—</div>
       </div>
     `;
     startClient({
@@ -423,10 +426,23 @@ describe("idle screen hydration", () => {
       qrSvg: '<svg viewBox="0 0 10 10"></svg>',
     });
     expect(document.querySelector(".overlay-idle-subtitle").textContent).toBe(
-      "掃描 QR code 或打開 danmu.example.com — 開始送彈幕"
+      "打字，就會飛到這個螢幕上"
     );
-    expect(document.querySelector(".overlay-idle-url").textContent).toBe("DANMU.EXAMPLE.COM");
+    expect(document.querySelector(".overlay-idle-url").textContent).toBe("danmu.example.com");
     expect(document.querySelector(".overlay-idle-qr svg")).not.toBeNull();
+  });
+
+  test("fills the subtitle only when the markup left it blank", () => {
+    document.body.innerHTML = `
+      <div id="overlay-idle">
+        <p class="overlay-idle-subtitle"></p>
+        <div class="overlay-idle-url">—</div>
+      </div>
+    `;
+    startClient({ displayHost: "danmu.example.com" });
+    expect(document.querySelector(".overlay-idle-subtitle").textContent).toBe(
+      "打字，就會飛到這個螢幕上"
+    );
   });
 });
 

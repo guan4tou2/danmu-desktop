@@ -38,28 +38,34 @@ function readClientElectronVersion() {
   return String(pkg.devDependencies.electron || "").replace(/^[^\d]*/, "");
 }
 
-function section(html, key) {
-  const match = html.match(
-    new RegExp(`<section class="client-section" data-section="${key}"[\\s\\S]*?</section>`)
-  );
-  return match ? match[0] : "";
+// 設計稿 04：分頁（<section data-section>）整組退休。連線設定與關於搬進
+// ⚙ 面板，顯示層控制留在主畫面，所以斷言只分「⚙ 面板內」與「主畫面」。
+function settingsPanel(html) {
+  const i = html.indexOf('id="client-settings"');
+  if (i === -1) return "";
+  return html.slice(i);
 }
 
-test("client nav only exposes display, connection, and about/update primary areas", () => {
+function mainArea(html) {
+  const i = html.indexOf('class="client-main"');
+  const j = html.indexOf("</main>", i);
+  return i === -1 || j === -1 ? "" : html.slice(i, j);
+}
+
+test("design-04 single page: no nav tabs, one settings panel", () => {
   const html = readClientHtml();
 
-  expect(html).toContain('data-nav="overlay"');
-  expect(html).toContain('data-nav="conn"');
-  expect(html).toContain('data-nav="about"');
-  expect(html).not.toContain('data-nav="keys"');
-  expect(html).not.toContain('data-nav="update"');
-  expect(html).not.toContain('data-section="keys"');
-  expect(html).not.toContain('data-section="update"');
+  // 側欄與分頁整組退休
+  expect(html).not.toContain("data-nav=");
+  expect(html).not.toContain("data-section=");
+  // ⚙ 面板是連線與關於的唯一入口
+  expect(html).toContain('id="client-settings-btn"');
+  expect(html).toContain('id="client-settings"');
 });
 
-test("connection section only owns server configuration, not display runtime controls", () => {
+test("connection config keeps its compat inputs and stays out of the main card", () => {
   const html = readClientHtml();
-  const conn = section(html, "conn");
+  const conn = html;
 
   // 2026-05-16 conn-section impl alignment: split host/port fields kept
   // as HIDDEN compat inputs so ws-manager continues to read from
@@ -73,11 +79,13 @@ test("connection section only owns server configuration, not display runtime con
   expect(conn).not.toContain("data-client-tls-title");
   expect(conn).not.toContain("data-client-tls-note");
   expect(conn).not.toContain('data-client-action="reconnect"');
-  expect(conn).not.toContain('id="screen-select"');
-  expect(conn).not.toContain('id="sync-multi-display-checkbox"');
+  // 螢幕選擇屬於主畫面（設計稿 04 · S5），不在 ⚙ 面板裡
+  expect(settingsPanel(html)).not.toContain('id="screen-select"');
+  expect(settingsPanel(html)).not.toContain('id="sync-multi-display-checkbox"');
+  expect(mainArea(html)).toContain('id="screen-select"');
 });
 
-test("connection section follows the configure-only design with three always-visible cards", () => {
+test("connection config keeps the conn-section-wire contract intact", () => {
   // 2026-05-16 v3-r5 alignment: three always-visible cards on the conn page:
   //   1. Server card — TestChip, host display, canonical preview, ⚐ 測試,
   //      in-place edit via ✎ pencil
@@ -87,9 +95,9 @@ test("connection section follows the configure-only design with three always-vis
   // Live `重連 X 次 / 上線 Y` meta is removed (impl source of truth: design
   // v3-r5 ConnSection).
   const html = readClientHtml();
-  const conn = section(html, "conn");
+  const conn = html;
 
-  // Server card: in-place edit + test chip + canonical preview
+  // 顯示 ↔ 編輯兩態、測試 chip、canonical preview 的契約不變
   expect(conn).toMatch(/id="conn-server-input"/);
   expect(conn).toMatch(/data-conn-canonical-preview/);
   expect(conn).toMatch(/data-conn-test-btn/);
@@ -99,13 +107,12 @@ test("connection section follows the configure-only design with three always-vis
   expect(conn).toMatch(/data-conn-edit-save/);
   expect(conn).toMatch(/data-conn-edit-cancel/);
 
-  // AUTH card is its own <details> panel, NOT nested inside the edit form
-  expect(conn).toMatch(/<details[^>]+class="client-conn-card client-conn-auth-panel"[^>]+data-conn-auth-panel/);
+  // 連線密碼是自己的 <details>，不是塞在編輯表單裡（設計稿 04 · P1）
+  expect(settingsPanel(html)).toMatch(/<details[^>]*data-conn-auth-panel/);
 
-  // LAST USED SERVER card
-  expect(conn).toMatch(/data-conn-last-server/);
-  expect(conn).toMatch(/data-conn-last-addr/);
-  expect(conn).toMatch(/data-i18n="connLastKicker"/);
+  // 上次使用的位址搬進 ⚙ 面板的「伺服器 › 位址」
+  expect(settingsPanel(html)).toMatch(/data-conn-last-addr/);
+  expect(settingsPanel(html)).toMatch(/data-conn-last-when/);
 
   // Removed live-status chrome + retired edit-panel container — must not regress.
   expect(conn).not.toMatch(/data-client-reconnect/);
@@ -119,9 +126,20 @@ test("connection section follows the configure-only design with three always-vis
   expect(conn).toMatch(/<input[^>]+id="port-input"[^>]+hidden/);
 });
 
-test("desktop client does not ship or auto-init a first-run setup wizard", () => {
+test("first run asks exactly one question (design 04 · S1)", () => {
+  // 設計稿 04 把首次啟動精靈收成「一個欄位＋兩顆按鈕」：問伺服器位址，
+  // 或直接略過。舊的多步 firstRunGate 不回來。
   const html = readClientHtml();
   const renderer = readRendererEntry();
+
+  expect(html).toContain('id="client-onboarding"');
+  expect(html).toContain('id="client-onboarding-input"');
+  expect(html).toContain("data-onboarding-continue");
+  expect(html).toContain("data-onboarding-skip");
+  // 只有一個輸入欄位
+  const panel = html.slice(html.indexOf('id="client-onboarding"'));
+  const onboarding = panel.slice(0, panel.indexOf("</div>\n    </div>"));
+  expect((onboarding.match(/<input/g) || []).length).toBe(1);
 
   expect(html).not.toContain('id="firstRunGate"');
   expect(html).not.toContain("data-firstrun-action");
@@ -147,9 +165,14 @@ test("desktop preload does not emit debug console logs", () => {
   expect(preload).not.toContain(" V2");
 });
 
-test("overlay section owns display selection and has one visible runtime control model", () => {
+test("main card owns the one visible runtime control and the only status readout", () => {
   const html = readClientHtml();
-  const overlay = section(html, "overlay");
+  const overlay = mainArea(html);
+
+  // 設計稿 04：狀態只出現在主卡一處（原本標題列／側欄／卡片三處）
+  expect(overlay).toContain("data-client-main-card");
+  expect(overlay).toContain("data-client-overlay-status");
+  expect(overlay).toContain("data-client-overlay-dot");
 
   expect(overlay).toContain('data-client-overlay-button');
   expect(overlay).toContain('data-client-overlay-state');
@@ -201,9 +224,10 @@ test("client shell metadata fallbacks are release-neutral", () => {
   const electronVersion = readClientElectronVersion();
 
   expect(html).toContain(`<span data-client-version>v—</span>`);
-  expect(html).toContain(`<span data-client-about-version>v—</span>`);
+  // 設計稿 04 的單頁只顯示一次版本與平台，另一份留在 DOM 但 hidden。
+  expect(html).toContain(`<span data-client-about-version hidden>v—</span>`);
   expect(html).toContain(`<span data-client-about-electron-version>Electron —</span>`);
-  expect(html).toContain(`<span data-client-platform>Desktop</span>`);
+  expect(html).toContain(`<span data-client-platform hidden>Desktop</span>`);
   expect(html).toContain(`<span data-client-about-platform>Desktop</span>`);
   expect(html).not.toContain(`>v${version}<`);
   expect(html).not.toContain(`>Electron ${electronVersion}<`);
@@ -211,41 +235,54 @@ test("client shell metadata fallbacks are release-neutral", () => {
   expect(html).not.toContain(`<span data-client-about-platform>macOS</span>`);
 });
 
-test("about section links to GitHub through the hardened open-external IPC", () => {
-  // about.html modal retired 2026-07-29 — the main window About section is
-  // the single About surface, so it must carry the repo link the modal had.
+test("about links to GitHub through the hardened open-external IPC", () => {
+  // about.html modal retired 2026-07-29；設計稿 04 之後「關於」在 ⚙ 面板裡，
+  // 仍是唯一的 About 介面，所以 repo 連結必須在那裡。
   const html = readClientHtml();
   const nav = readClientNav();
 
-  expect(section(html, "about")).toContain('id="about-github-link"');
+  expect(settingsPanel(html)).toContain('id="about-github-link"');
   expect(nav).toContain('openExternal("https://github.com/guan4tou2/danmu-desktop")');
 });
 
-test("tray About routes to the main window About section (no standalone about window)", () => {
+test("tray About opens the settings panel (no standalone about window)", () => {
   const main = readMainProcess();
   const preload = readPreload();
   const nav = readClientNav();
+  const shell = fs.readFileSync(path.join(__dirname, "..", "client-shell.js"), "utf8");
 
   expect(main).toContain('"client-nav:activate"');
   expect(main).not.toContain("createAboutWindow");
   expect(preload).toContain("onNavigateSection");
   expect(nav).toContain("onNavigateSection");
+  // 分頁沒了之後，導覽事件由 client-shell.js 轉成開 ⚙ 面板
+  expect(nav).toContain("client:navigate-section");
+  expect(shell).toContain("client:navigate-section");
 });
 
-test("tray menu exposes v3 canonical schema: Desktop toggle + idle + no dead controls", () => {
+test("tray menu is the design-09 six-item schema", () => {
   const main = readMainProcess();
 
-  // v3 design: native tray menu, not a popover
+  // native tray menu, not a popover
   expect(main).not.toContain('require("./main-modules/tray-popover")');
   expect(main).not.toContain("buildTrayPopoverSections");
 
-  // v3 canonical items: "顯示 Desktop" (⌘⇧D) + idle QR sub-item。
-  // 2026-07-29 更名「待機畫面」→「入場 QR 畫面」：QR 場景關閉鈕的提示
-  // 指向系統列，tray 項目必須與按鈕／場景用同一個詞彙才指得到路。
-  expect(main).toContain('"顯示 Desktop"');
-  expect(main).toContain("入場 QR 畫面");
-  expect(main).toContain('"偏好設定…"');
-  expect(main).toMatch(/label:\s*"偏好設定…",\s*click:\s*showMainWindow/s);
+  // 設計稿 09：9 項 → 6 項。狀態合併成一行；主要動作永遠第一項並帶快速鍵；
+  // 「更改連線」「關於」收進「設定…」。
+  expect(main).toContain('"開啟顯示層"');
+  expect(main).toContain('"關閉顯示層"');
+  expect(main).toContain('"顯示入場 QR"');   // 與控制視窗按鈕、QR 場景關閉鈕同詞
+  expect(main).toContain('"清空畫面"');
+  expect(main).toContain('"開啟控制視窗…"');
+  expect(main).toContain('label: "設定…"');
+  expect(main).toContain('accelerator: "CommandOrControl+Shift+D"');
+
+  // 退休的唯讀資訊列與獨立項目
+  expect(main).not.toContain('"顯示 Desktop"');
+  expect(main).not.toContain("Desktop 視窗：");
+  expect(main).not.toContain('"偏好設定…"');
+  expect(main).not.toContain("更改連線…");
+  expect(main).not.toMatch(/label:\s*`關於 \$\{pkgName\}…`/);
 
   // No dead dispatcher-style runtime controls in tray
   expect(main).not.toContain('dispatchToRenderer("pause")');

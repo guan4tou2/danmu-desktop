@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ html_lang | default('zh-Hant') }}">
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- interactive-widget=resizes-content：設計稿 16 · VK1。鍵盤彈出時讓送出列
+       跟著鍵盤走，而不是被蓋掉。 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
   <title>Danmu Fire</title>
   <meta name="description"
     content="Send live danmu messages to the screen in real-time. Customize color, size, speed, and effects." />
@@ -36,102 +38,72 @@
 
   <div class="viewer-page-shell">
 
-    <!-- Main Card — design-v2 Viewer port (see docs/designs/design-v2/components/viewer.jsx) -->
+    <!-- ══════════════════════════════════════════════════════════════
+         設計稿 05「觀眾頁示範」· 打字 → 送出，兩步完成。
+         首屏只露出：預覽、一列「樣式」摘要、輸入框。顏色／大小／效果／
+         位置／暱稱全部收進樣式抽層（#viewerStyleSheet）。
+         桌面 ≥768 抽層改成右側常駐面板（設計稿 16 · VP1）。
+         ══════════════════════════════════════════════════════════════ -->
     <main class="viewer-main-card">
       <div class="viewer-shell">
 
-        <!-- Hero · 3-col layout (prototype viewer.jsx:106 redesign 2026-04-27):
-             left column   = DANMU FIRE + subtitle
-             middle (full-width absolute background) = DanmuMarquee scrolling 12 chips
-             right column  = 伺服器 / Overlay ConnChip stack + language picker
-             Mobile uses `is-mini` chip variant. -->
-        <section class="viewer-hero animate-fade-in-scale-up">
-          <!-- 2026-08-19 設計稿 03：裝飾用的 DanmuMarquee 移除。
-               12 條假彈幕在頁首後方持續滾動，自己也註明「Pure visual;
-               no informational role」——那正是稿上要拿掉的裝飾動畫。
-               預覽區那條會留著，因為那條是功能。 -->
-
-          <div class="viewer-hero-lockup">
+        <!-- ── 頂欄：字標 ＋ 副標 ＋ 一顆狀態 chip ─────────────────
+             設計稿 05：原本「已連線」「Desktop 離線」兩顆 chip ＋底部紅色
+             警語共三處，收斂成這一顆。連線狀態改由離線橫幅表達，所以
+             #connectionStatus 只留在 DOM 給 main.js 寫，不顯示。 -->
+        <header class="viewer-topbar">
+          <div class="viewer-topbar-lockup">
             <!-- 字標只出現在 4 個品牌位置之一（設計稿 12）：觀眾頁頂欄。
-                 用轉外框的 SVG，不依賴字型下載；alt 保留可讀名稱。 -->
-            <h1 class="viewer-hero-title">
+                 用轉外框的 SVG，不依賴字型下載。 -->
+            <h1 class="viewer-topbar-title">
               <img src="{{ url_for('static', filename='wordmark-dark.svg') }}"
-                   alt="Danmu Fire" class="viewer-hero-wordmark is-on-dark" width="540" height="96">
+                   alt="Danmu Fire" class="viewer-topbar-wordmark is-on-dark" width="540" height="96">
               <img src="{{ url_for('static', filename='wordmark-light.svg') }}"
-                   alt="" aria-hidden="true" class="viewer-hero-wordmark is-on-light" width="540" height="96">
+                   alt="" aria-hidden="true" class="viewer-topbar-wordmark is-on-light" width="540" height="96">
             </h1>
-            <p class="viewer-hero-subtitle" data-i18n="mainSubtitle">
-              Send your message to the screen!
+            <p class="viewer-topbar-subtitle" data-i18n="mainSubtitle">
+              把想說的話送上大螢幕
             </p>
           </div>
 
-          <div class="viewer-hero-spacer" aria-hidden="true"></div>
+          <span id="overlayStatus" class="viewer-screen-chip" role="status" aria-live="polite">
+            <span class="viewer-screen-chip-dot connection-dot--disconnected"></span>
+            <span class="viewer-screen-chip-value" id="overlayLabel" data-i18n="overlayNone">大螢幕未開</span>
+          </span>
+          <!-- main.js 仍會寫入這裡（updateConnectionUI／離線橫幅的觸發點），
+               但依設計稿 05 不再佔頂欄版位。 -->
+          <span id="connectionStatus" class="viewer-conn-chip" hidden>
+            <span class="viewer-conn-chip-dot connection-dot--connecting"></span>
+            <span class="viewer-conn-chip-value" id="connectionLabel" data-i18n="connecting">Connecting…</span>
+          </span>
 
-          <div class="viewer-hero-utility" role="status" aria-live="polite">
-            <span id="connectionStatus" class="viewer-conn-chip">
-              <span class="viewer-conn-chip-dot connection-dot--connecting"></span>
-              <span class="viewer-conn-chip-value" id="connectionLabel" data-i18n="connecting">Connecting…</span>
-            </span>
-            <span id="overlayStatus" class="viewer-conn-chip">
-              <span class="viewer-conn-chip-dot connection-dot--disconnected"></span>
-              <span class="viewer-conn-chip-value" id="overlayLabel" data-i18n="overlayNone">–</span>
-            </span>
-            <!-- Desktop theme chip — design v4 brief 0518-v3 #1 (2026-05-18).
-                 3-segment toggle (淺色 / 自動 / 深色). Reuses `theme-mode`
-                 storage + applyViewerTheme(). Hidden on mobile, and hidden by
-                 JS when admin forces ViewerThemeMode. -->
-            <div
-              id="viewerThemeChip"
-              class="viewer-theme-chip"
-              role="radiogroup"
-              aria-label="外觀主題"
-              data-viewer-theme-control
-            >
-              <button
-                type="button"
-                class="viewer-theme-chip-seg"
-                data-theme-choice="light"
-                role="radio"
-                aria-checked="false"
-                title="淺色"
-              >☼</button>
-              <button
-                type="button"
-                class="viewer-theme-chip-seg is-active"
-                data-theme-choice="auto"
-                role="radio"
-                aria-checked="true"
-                title="自動"
-              >◐</button>
-              <button
-                type="button"
-                class="viewer-theme-chip-seg"
-                data-theme-choice="dark"
-                role="radio"
-                aria-checked="false"
-                title="深色"
-              >☾</button>
-            </div>
-            <!-- Hamburger (mobile only — design v4 brief 0518-4a 2026-05-18).
-                 Opens a bottom sheet with theme tri-state + lang selector.
-                 Desktop hides this button via @media (min-width: 769px) since
-                 mobile is the explicit target for the new switcher.
-                 Per polestar pivot: audience can override system theme/lang
-                 but admin still has final say via Viewer page settings. -->
-            <button
-              type="button"
-              id="viewerHamburger"
-              class="viewer-hamburger"
-              aria-label="設定"
-              aria-haspopup="dialog"
-              aria-expanded="false"
-            >☰</button>
+          <!-- 桌面兩段主題切換（設計稿 05 · D1）。手機跟隨系統，
+               主題／語言收進 ☰。JS 會在 admin 鎖定 ViewerThemeMode 時隱藏。 -->
+          <div
+            id="viewerThemeChip"
+            class="viewer-theme-chip"
+            role="radiogroup"
+            aria-label="外觀主題"
+            data-viewer-theme-control
+          >
+            <button type="button" class="viewer-theme-chip-seg" data-theme-choice="light"
+                    role="radio" aria-checked="false" title="淺色">☼</button>
+            <button type="button" class="viewer-theme-chip-seg is-active" data-theme-choice="auto"
+                    role="radio" aria-checked="true" title="自動">◐</button>
+            <button type="button" class="viewer-theme-chip-seg" data-theme-choice="dark"
+                    role="radio" aria-checked="false" title="深色">☾</button>
           </div>
-        </section>
+          <button
+            type="button"
+            id="viewerHamburger"
+            class="viewer-hamburger"
+            aria-label="設定"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+          >☰</button>
+        </header>
 
-        <!-- Mobile settings bottom sheet — opens via #viewerHamburger.
-             Hidden on desktop. Render at viewer-shell level so it overlays
-             everything correctly. -->
+        <!-- 主題／語言抽層（手機）。樣式已搬到 #viewerStyleSheet。 -->
         <div id="viewerMobileSheet" class="viewer-mobile-sheet" hidden role="dialog" aria-label="設定" aria-modal="true">
           <div class="viewer-mobile-sheet-backdrop" data-mobile-sheet-close></div>
           <div class="viewer-mobile-sheet-panel">
@@ -140,7 +112,6 @@
               <span class="viewer-mobile-sheet-title" data-i18n="settings">設定</span>
               <button type="button" class="viewer-mobile-sheet-close" data-mobile-sheet-close aria-label="關閉"><svg class="viewer-icon-close" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="vertical-align:middle" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
             </div>
-            <!-- Theme tri-state. Hidden by JS when admin forces ViewerThemeMode. -->
             <div class="viewer-mobile-sheet-row" data-viewer-mobile-theme-row>
               <span class="viewer-mobile-sheet-label" data-i18n="themeAppearance">外觀主題</span>
               <div class="viewer-mobile-sheet-spacer"></div>
@@ -150,7 +121,6 @@
                 <button type="button" class="viewer-mobile-sheet-seg" data-theme-choice="auto" role="radio" aria-checked="true" data-i18n="themeAuto">系統</button>
               </div>
             </div>
-            <!-- Lang selector. Hidden by JS when admin forces ViewerLangMode. -->
             <div class="viewer-mobile-sheet-row" data-viewer-mobile-lang-row>
               <span class="viewer-mobile-sheet-label" data-i18n="language">語言</span>
               <div class="viewer-mobile-sheet-spacer"></div>
@@ -165,7 +135,9 @@
           </div>
         </div>
 
-        <div class="viewer-tabbar" role="tablist" aria-label="Viewer mode">
+        <!-- 彈幕／投票分段控制 —— 設計稿 05 · V6：**有投票時才浮出**，
+             並在「投票」上帶紅點。無投票時 hidden，首屏就只有彈幕。 -->
+        <div class="viewer-tabbar" role="tablist" aria-label="Viewer mode" hidden>
           <button
             type="button"
             class="viewer-tab is-active"
@@ -174,8 +146,7 @@
             aria-controls="viewerFirePane"
             data-viewer-tab="fire"
           >
-            <span class="viewer-tab-label">Fire</span>
-            <span class="viewer-tab-sub">送彈幕</span>
+            <span class="viewer-tab-label" data-i18n="viewerTabDanmu">彈幕</span>
           </button>
           <button
             type="button"
@@ -185,31 +156,21 @@
             aria-controls="viewerPollPane"
             data-viewer-tab="poll"
           >
-            <span class="viewer-tab-label">Poll</span>
-            <span class="viewer-tab-sub">即時投票</span>
+            <span class="viewer-tab-label" data-i18n="viewerTabPoll">投票</span>
+            <span class="viewer-tab-live" data-viewer-tab-live hidden aria-hidden="true"></span>
           </button>
         </div>
 
         <section id="viewerFirePane" class="viewer-pane is-active" data-viewer-pane="fire">
-          <!-- Scrollable body — preview + fields.
-               2026-05-16 RWD: the inner content is capped at max-width
-               560px on desktop (via .viewer-fire-content) so the form
-               doesn't stretch the full width on wide screens. Sendbar
-               sits outside .viewer-body and stays full-width. -->
           <div class="viewer-body">
           <div class="viewer-fire-content">
 
-          <!-- Live preview strip — nickname renders in the top-left
-               (`#previewNick`) and is wired to `#nicknameInput` below.
-               2026-05-16 marquee (design v3-r8): inner `.viewer-preview-track`
-               is absolute-positioned and animated right→left via
-               `--viewer-preview-duration` CSS var (driven by the speed
-               slider). Kicker carries a faint cyan `#previewSpeedBadge`
-               showing the current speed value live. -->
+          <!-- 預覽區。設計稿 05：kicker 只留「預覽」兩個字，速度徽章移除
+               （速度收進樣式抽層的「更多」）。這條滾動彈幕是功能不是裝飾，
+               所以留著；reduce-motion 時改置中靜止（設計稿 17）。 -->
           <div class="viewer-preview">
             <div class="viewer-preview-kicker">
-              <span data-i18n="previewKicker">預覽 · 你送出的樣子</span>
-              <span id="previewSpeedBadge" class="viewer-preview-speed" aria-hidden="true">{{ "%.1f"|format(options.Speed[3]) }}x</span>
+              <span data-i18n="viewerPreview">預覽</span>
             </div>
             <div class="viewer-preview-row" aria-live="polite">
               <div class="viewer-preview-track">
@@ -217,251 +178,72 @@
                 <span
                   id="previewText"
                   class="viewer-preview-text"
-                  data-i18n="preview"
+                  data-i18n="viewerPreviewSample"
                   style="font-size: 32px;"
-                >示例彈幕文字</span>
+                >講得好！+1</span>
               </div>
             </div>
+            <!-- 大螢幕未開時取代滾動彈幕（設計稿 05 · V4）。 -->
+            <p class="viewer-preview-idle" data-viewer-preview-idle data-i18n="viewerPreviewIdle" hidden>
+              大螢幕開啟後這裡會顯示你的彈幕
+            </p>
           </div>
 
-          <!-- Nickname — inline edit (click chip → input in place) -->
-          {% if options.get('Nickname', [True])[0] %}
-          <div id="nicknameControl" class="viewer-field viewer-nickname-chip-mode">
-            <label class="viewer-field-label">
-              <span data-i18n="nickname">暱稱</span>
-            </label>
-            <div class="viewer-nickname-row" data-nickname-row>
-              <button
-                type="button"
-                class="viewer-nickname-chip"
-                id="nicknameChipBtn"
-                data-nickname-chip
-              >
-                <span class="viewer-nickname-chip-text" data-nickname-display>Anonymous</span>
-                <span class="viewer-nickname-chip-edit" aria-hidden="true">✎</span>
-              </button>
-              <input
-                type="text"
-                class="viewer-nickname-inline-input"
-                data-nickname-inline-input
-                maxlength="12"
-                placeholder="Anonymous"
-                autocomplete="off"
-                hidden
-              />
-              <span class="viewer-nickname-hint" data-i18n="nicknameClickHint">← 點擊改名</span>
-            </div>
-            <!-- Hidden source input — kept in DOM so existing fire flow
-                 reads its value without code change. -->
-            <input
-              type="text"
-              id="nicknameInput"
-              class="viewer-input viewer-nickname-source"
-              maxlength="12"
-              placeholder="Anonymous"
-              data-i18n-placeholder="anonymousPlaceholder"
-              autocomplete="off"
-              hidden
-            />
-          </div>
-          {% endif %}
-
-          <!-- Color + hex readout · 6 preset swatches + custom picker -->
-          {% if options.Color[0] %}
-          <div id="colorControl" class="viewer-field">
-            <label class="viewer-field-label">
-              <span data-i18n="color">顏色</span>
-            </label>
-            <div class="viewer-color-row">
-              <button type="button" class="viewer-swatch-preset is-active" data-color="#ffffff" data-i18n-aria="swatchWhite" data-i18n-title="swatchWhite" aria-label="白" title="白" style="background:#ffffff"></button>
-              <button type="button" class="viewer-swatch-preset" data-color="#38bdf8" data-i18n-aria="swatchSky" data-i18n-title="swatchSky" aria-label="天藍" title="天藍" style="background:#38bdf8"></button>
-              <button type="button" class="viewer-swatch-preset" data-color="#fbbf24" data-i18n-aria="swatchAmber" data-i18n-title="swatchAmber" aria-label="琥珀" title="琥珀" style="background:#fbbf24"></button>
-              <button type="button" class="viewer-swatch-preset" data-color="#86efac" data-i18n-aria="swatchGreen" data-i18n-title="swatchGreen" aria-label="綠" title="綠" style="background:#86efac"></button>
-              <button type="button" class="viewer-swatch-preset" data-color="#f87171" data-i18n-aria="swatchRed" data-i18n-title="swatchRed" aria-label="紅" title="紅" style="background:#f87171"></button>
-              <button type="button" class="viewer-swatch-preset" data-color="#ffd166" data-i18n-aria="swatchYellow" data-i18n-title="swatchYellow" aria-label="黃" title="黃" style="background:#ffd166"></button>
-              <label class="viewer-swatch viewer-swatch--custom" aria-label="Choose custom color">
-                +<input type="color" id="colorInput" value="#ffffff" aria-label="Choose danmu color" />
-              </label>
-              <div id="colorGradientPreview" hidden aria-hidden="true"></div>
-              <span id="colorValue" class="viewer-color-hex">#FFFFFF</span>
-            </div>
-          </div>
-          {% endif %}
-
-          <!-- Font family -->
-          <div id="userFontSelectControl" class="viewer-field" style="display: none;">
-            <label class="viewer-field-label" for="userFontSelect">
-              <span data-i18n="font">字型</span>
-            </label>
-            <div class="viewer-select-wrap">
-              <select id="userFontSelect" class="viewer-select" aria-label="Choose font">
-                <option value="">{{ options.FontFamily[3] or "NotoSansTC" }}</option>
-              </select>
+          <!-- 大螢幕未開說明卡（設計稿 05 · V4）。overlay 上線時隱藏。 -->
+          <div class="viewer-screenoff-card" data-viewer-screenoff-card hidden>
+            <span class="viewer-screenoff-card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                   stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>
+              </svg>
+            </span>
+            <div>
+              <div class="viewer-screenoff-card-title" data-i18n="viewerOfflineTitle">現場大螢幕還沒開啟</div>
+              <div class="viewer-screenoff-card-body" data-i18n="viewerOfflineBody">你可以先寫好，開啟後再送出；或先在下方回覆投票。</div>
             </div>
           </div>
 
-          <!-- Size / Opacity / Speed — 3-col on desktop, 2-col + speed
-               wrap on mobile (per design v3-r8 RWD adjustment). -->
-          <div class="viewer-grid-fields">
-            {% if options.FontSize[0] %}
-            <div id="fontSizeControl" class="viewer-field is-nomb">
-              <label class="viewer-field-label" for="sizeInput">
-                <span data-i18n="size">字級</span>
-                <span class="viewer-field-label__value"> · <span id="sizeValue">{{
-                  options.FontSize[3] }}</span>px</span>
-              </label>
-              <input
-                type="range"
-                id="sizeInput"
-                class="viewer-range"
-                min="{{ options.FontSize[1] }}"
-                max="{{ options.FontSize[2] }}"
-                value="{{ options.FontSize[3] }}"
-                aria-label="Font size"
-                aria-valuemin="{{ options.FontSize[1] }}"
-                aria-valuemax="{{ options.FontSize[2] }}"
-              />
-            </div>
-            {% endif %}
-
-            {% if options.Opacity[0] %}
-            <div id="opacityControl" class="viewer-field is-nomb">
-              <label class="viewer-field-label" for="opacityRange">
-                <span data-i18n="opacity">透明度</span>
-                <span class="viewer-field-label__value"> · <span id="opacityValue">{{ options.Opacity[3] }}</span>%</span>
-              </label>
-              <input
-                type="range"
-                id="opacityRange"
-                class="viewer-range"
-                min="{{ options.Opacity[1] }}"
-                max="{{ options.Opacity[2] }}"
-                value="{{ options.Opacity[3] }}"
-                aria-label="Text opacity"
-                aria-valuemin="{{ options.Opacity[1] }}"
-                aria-valuemax="{{ options.Opacity[2] }}"
-              />
-            </div>
-            {% endif %}
-
-            {% if options.Speed[0] %}
-            <div id="speedControl" class="viewer-field is-nomb">
-              <label class="viewer-field-label" for="speedRange">
-                <span data-i18n="speed">速度</span>
-                <span class="viewer-field-label__value"> · <span id="speedValue">{{
-                  "%.1f"|format(options.Speed[3]) }}</span>x</span>
-              </label>
-              <input
-                type="range"
-                id="speedRange"
-                class="viewer-range"
-                min="{{ options.Speed[1] }}"
-                max="{{ options.Speed[2] }}"
-                step="0.1"
-                value="{{ options.Speed[3] }}"
-                aria-label="Scroll speed"
-                aria-valuemin="{{ options.Speed[1] }}"
-                aria-valuemax="{{ options.Speed[2] }}"
-              />
-            </div>
-            {% endif %}
-          </div>
-
-          <!-- Effects (dynamically loaded from /effects API by main.js).
-               2026-05-17: label trimmed to "效果 · 可疊加" — the 已選 X / 8
-               counter was redundant with the visible chip pressed-state. -->
-          <div id="effectControl" class="viewer-field">
-            <label class="viewer-field-label">
-              <span data-i18n="effects">效果</span>
-              <span class="viewer-field-label__value"> · <span data-i18n="multiSelectToStack">可疊加</span></span>
-            </label>
-            <div
-              id="effectButtons"
-              class="viewer-chip-row"
-              role="group"
-              aria-label="Effect selection"
-            >
-              <span class="viewer-field-label" data-i18n="loadingEffects">Loading...</span>
-            </div>
-            <!-- 2026-05-17 design v3-r10: per-effect parameter cards.
-                 Each selected effect renders its own cyan-tinted card with
-                 2-col slider grid (1-col when only 1 param). main.js
-                 _refreshParamsPanel() populates this. -->
-            <div
-              id="effectParamsPanel"
-              class="viewer-effect-params"
-              role="group"
-              aria-label="Effect parameters"
-              hidden
-            ></div>
-          </div>
-
-          <!-- Layout 5-grid -->
-          {% if options.get('Layout', [True])[0] %}
-          <div id="layoutControl" class="viewer-field is-nomb">
-            <label class="viewer-field-label">
-              <span data-i18n="layoutMode">排版</span>
-            </label>
-            <div
-              class="viewer-layout-grid"
-              id="layoutButtons"
-              role="group"
-              aria-label="Layout mode selection"
-            >
-              <button
-                type="button"
-                data-layout="scroll"
-                aria-label="Scroll layout (right to left)"
-                aria-pressed="true"
-                class="layout-btn viewer-layout-btn active is-active"
-              >
-                <span class="viewer-layout-btn__zh" data-i18n="layoutScroll">滾動</span>
-                <span class="viewer-layout-btn__sub">右→左</span>
-              </button>
-              <button
-                type="button"
-                data-layout="top_fixed"
-                aria-label="Top fixed layout"
-                aria-pressed="false"
-                class="layout-btn viewer-layout-btn"
-              >
-                <span class="viewer-layout-btn__zh" data-i18n="layoutTop">頂固定</span>
-                <span class="viewer-layout-btn__sub">TOP</span>
-              </button>
-              <button
-                type="button"
-                data-layout="bottom_fixed"
-                aria-label="Bottom fixed layout"
-                aria-pressed="false"
-                class="layout-btn viewer-layout-btn"
-              >
-                <span class="viewer-layout-btn__zh" data-i18n="layoutBottom">底固定</span>
-                <span class="viewer-layout-btn__sub">BOT</span>
-              </button>
-              <button
-                type="button"
-                data-layout="float"
-                aria-label="Float layout (random position)"
-                aria-pressed="false"
-                class="layout-btn viewer-layout-btn"
-              >
-                <span class="viewer-layout-btn__zh" data-i18n="layoutFloat">浮動</span>
-                <span class="viewer-layout-btn__sub">RANDOM</span>
-              </button>
-              <button
-                type="button"
-                data-layout="rise"
-                aria-label="Rise layout (bottom to top)"
-                aria-pressed="false"
-                class="layout-btn viewer-layout-btn"
-              >
-                <span class="viewer-layout-btn__zh" data-i18n="layoutRise">上升</span>
-                <span class="viewer-layout-btn__sub">底→頂</span>
+          <!-- 首次進入的暱稱提示（設計稿 16 · VN1）。內嵌卡片、不是 modal，
+               可關；填過或關過就不再出現（localStorage）。 -->
+          <div class="viewer-nameask" id="viewerNameAsk" hidden>
+            <div class="viewer-nameask-head">
+              <span class="viewer-nameask-avatar" aria-hidden="true">匿</span>
+              <div class="viewer-nameask-copy">
+                <div class="viewer-nameask-title" data-i18n="viewerNameAskTitle">想留個名字嗎？</div>
+                <div class="viewer-nameask-body" data-i18n="viewerNameAskBody">大螢幕上會顯示在彈幕前面。不填就以「匿名」送出，隨時可改。</div>
+              </div>
+              <button type="button" class="viewer-nameask-dismiss" data-nameask-dismiss aria-label="關閉">
+                <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor"
+                     stroke-width="2.4" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg>
               </button>
             </div>
-            <input type="hidden" id="layoutSelect" value="scroll" />
+            <div class="viewer-nameask-row">
+              <input type="text" class="viewer-nameask-input" data-nameask-input maxlength="12"
+                     data-i18n-placeholder="viewerNameAskPlaceholder" placeholder="暱稱（最多 12 字）" autocomplete="off" />
+              <button type="button" class="viewer-nameask-ok" data-nameask-ok data-i18n="viewerNameAskOk">好</button>
+            </div>
           </div>
-          {% endif %}
+
+          <!-- 「樣式」摘要列 —— 首屏唯一的樣式入口（設計稿 05 · V1）。
+               左：目前顏色的色點 ＋「樣式」；右：「白 · 中 · 發光 ›」。 -->
+          <button type="button" class="viewer-style-row" id="viewerStyleRow"
+                  aria-haspopup="dialog" aria-expanded="false" aria-controls="viewerStyleSheet">
+            <span class="viewer-style-row-left">
+              <span class="viewer-style-row-swatch" data-style-swatch aria-hidden="true"></span>
+              <span data-i18n="viewerStyle">樣式</span>
+            </span>
+            <span class="viewer-style-row-right">
+              <span class="viewer-style-row-summary" data-style-summary></span>
+              <span class="viewer-style-row-caret" aria-hidden="true">›</span>
+            </span>
+          </button>
+
+          <!-- 「我送過的」（設計稿 05 · V3）。送出成功後由 main.js 填。 -->
+          <div class="viewer-sent" data-viewer-sent hidden>
+            <div class="viewer-sent-title" data-i18n="viewerSentList">我送過的</div>
+            <ul class="viewer-sent-list" data-viewer-sent-list></ul>
+          </div>
+
           </div><!-- /.viewer-fire-content -->
           </div><!-- /.viewer-body -->
         </section>
@@ -469,33 +251,23 @@
         <section id="viewerPollPane" class="viewer-pane" data-viewer-pane="poll" hidden>
           <div class="viewer-poll-card">
             <div class="viewer-poll-kicker" data-vpoll-state-label>即時投票</div>
-            <!-- Multi-Q image hero (design v4 brief P1 #1, 2026-05-18).
-                 Hidden when no image_url on current question. ≤2MB.
-                 16:9 aspect-fit. Mobile ≤160px, desktop ≤200px. -->
             <div class="viewer-poll-image" data-vpoll-image hidden>
               <img class="viewer-poll-image-img" data-vpoll-image-img alt="" />
             </div>
             <h2 class="viewer-poll-question" data-vpoll-question>目前沒有進行中的投票</h2>
-            <p class="viewer-poll-meta" data-vpoll-meta>請先切回 Fire 模式送出訊息</p>
+            <p class="viewer-poll-meta" data-vpoll-meta>請先切回彈幕送出訊息</p>
             <div class="viewer-poll-options" data-vpoll-options></div>
-            <!-- Auto-mode timer bar — progress-only, no second-count text
-                 per design Q2 decision. Hidden in manual mode + idle. -->
             <div class="viewer-poll-timer" data-vpoll-timer hidden>
               <div class="viewer-poll-timer-fill" data-vpoll-timer-fill style="width:0%"></div>
             </div>
-            <!-- Progress dots — current question highlighted (cyan, wider),
-                 past dim, future bg2. Only renders when questionCount > 1. -->
             <div class="viewer-poll-dots" data-vpoll-dots hidden></div>
           </div>
         </section>
 
-        <!-- Send bar — pill input + emoji button + FIRE. Emoji popover holds
-             the legacy #emojiPicker grid so main.js can populate it without
-             needing new IDs. -->
+        <!-- ── 送出列 ──────────────────────────────────────────────
+             設計稿 05：48px 輸入框 ＋ 48px 圓形送出鍵；下面一行
+             「小明 · 改暱稱」與字數。限流時送出鍵變倒數（is-cooldown）。 -->
         <div class="viewer-sendbar">
-          <!-- 2026-05-17 design v3-r10: inline send-status banner above the
-               pill. Lime when sent, crimson when blocked. Animated in via
-               .is-active. Auto-clears after ~2s (handled by main.js). -->
           <div
             id="sendStatusBanner"
             class="viewer-sendbar-banner"
@@ -503,10 +275,6 @@
             aria-live="polite"
             hidden
           ></div>
-          <!-- 2026-07-07 uiux polish B2: persistent status row ABOVE the
-               pill (not inside the FIRE button) so long copy — "Desktop
-               offline · cannot send", "message dropped" — never squeezes
-               the input's flex:1 width down and hides its placeholder. -->
           <div
             id="sendbarStatusRow"
             class="viewer-sendbar-status-row"
@@ -514,24 +282,32 @@
             aria-live="polite"
             hidden
           ></div>
+          <!-- 鍵盤上方一列常用 emoji／短句（設計稿 16 · VK1）。 -->
           <div id="emojiPopover" class="viewer-emoji-popover" aria-hidden="true">
             <div id="emojiPicker" class="viewer-emoji-popover-grid"></div>
           </div>
-          <div id="sendbarPill" class="viewer-sendbar-pill">
+          <div class="viewer-quickbar" data-viewer-quickbar>
+            <button type="button" class="viewer-quickbar-item" data-quick-insert="🔥">🔥</button>
+            <button type="button" class="viewer-quickbar-item" data-quick-insert="👏">👏</button>
+            <button type="button" class="viewer-quickbar-item" data-quick-insert="❤️">❤️</button>
+            <button type="button" class="viewer-quickbar-item" data-quick-insert="😂">😂</button>
+            <button type="button" class="viewer-quickbar-item" data-quick-insert="✨">✨</button>
             <button
               type="button"
               id="emojiToggle"
-              class="viewer-emoji-btn"
+              class="viewer-emoji-btn viewer-quickbar-more"
               aria-label="Toggle emoji picker"
               aria-expanded="false"
             >☺</button>
+          </div>
+          <div id="sendbarPill" class="viewer-sendbar-pill">
             <input
               type="text"
               id="danmuText"
               class="viewer-sendbar-input"
               maxlength="100"
               aria-describedby="charCount"
-              placeholder="想對現場說點什麼？"
+              placeholder="想對現場說什麼？"
               data-i18n-placeholder="placeholder"
               autocomplete="off"
             />
@@ -540,9 +316,17 @@
               id="btnSend"
               class="viewer-fire-btn"
               disabled
+              data-i18n-aria="fireDanmu"
+              aria-label="發送"
             >
-              <span id="btnSendText" data-i18n="fireDanmu">FIRE</span>
-              <span id="btnSendIcon" class="viewer-fire-arrow" aria-hidden="true">▶</span>
+              <span id="btnSendText" class="viewer-fire-btn-text" data-i18n="fireDanmu">發送</span>
+              <span id="btnSendIcon" class="viewer-fire-btn-arrow" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor"
+                     stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+              </span>
+              <span class="viewer-fire-btn-count" data-cooldown-count aria-hidden="true"></span>
               <svg
                 id="btnSendSpinner"
                 class="btn-spinner hidden"
@@ -554,11 +338,249 @@
               </svg>
             </button>
           </div>
+          <!-- 左槽兩態（設計稿 05）：平常是「小明 · 改暱稱」，
+               大螢幕未開或冷卻中換成一行說明。main.js 的 _setSendbarHint()
+               寫 .viewer-sendbar-meta__hint，CSS 用 :has() 讓兩者互斥。 -->
           <div class="viewer-sendbar-meta">
-            <span data-i18n="sendbarHint">Enter 送出 · emoji 可用 :name:</span>
+            <span class="viewer-sendbar-meta__who">
+              <span data-sendbar-nick></span>
+              <button type="button" class="viewer-sendbar-nicklink" data-open-nickname
+                      data-i18n="viewerNickChange">改暱稱</button>
+            </span>
+            <span class="viewer-sendbar-meta__hint" data-i18n="sendbarHint"></span>
             <span id="charCount" class="viewer-sendbar-meta__count" aria-live="polite">0/100</span>
           </div>
         </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         樣式抽層（設計稿 05 · V2）。手機是 bottom sheet，桌面 ≥768 由 CSS
+         改成右側常駐面板（設計稿 16 · VP1）——同一份 DOM，不做兩套。
+         ══════════════════════════════════════════════════════════════ -->
+    <div id="viewerStyleSheet" class="viewer-style-sheet" hidden role="dialog"
+         aria-modal="true" aria-labelledby="viewerStyleSheetTitle">
+      <div class="viewer-style-sheet-backdrop" data-style-sheet-close></div>
+      <div class="viewer-style-sheet-panel">
+        <div class="viewer-style-sheet-grabber" aria-hidden="true"></div>
+
+        <!-- 主層 -->
+        <div class="viewer-style-sheet-view" data-style-view="root">
+          <div class="viewer-style-sheet-head">
+            <span class="viewer-style-sheet-title" id="viewerStyleSheetTitle" data-i18n="viewerStyle">樣式</span>
+            <button type="button" class="viewer-style-sheet-done" data-style-sheet-close
+                    data-i18n="viewerStyleDone">完成</button>
+          </div>
+
+          <div class="viewer-style-sheet-scroll">
+            <!-- 抽層內的即時預覽 -->
+            <div class="viewer-sheet-preview">
+              <div class="viewer-sheet-preview-track">
+                <span class="viewer-sheet-preview-nick" data-sheet-preview-nick></span>
+                <span class="viewer-sheet-preview-text" data-sheet-preview-text data-i18n="viewerPreviewSample">講得好！+1</span>
+              </div>
+            </div>
+
+            <!-- 顏色 · 40px 色點（設計稿 05）；每顆帶名稱做 aria（設計稿 17 · CB1） -->
+            {% if options.Color[0] %}
+            <div id="colorControl" class="viewer-sheet-group">
+              <div class="viewer-sheet-group-label" data-i18n="color">顏色</div>
+              <div class="viewer-color-row">
+                <button type="button" class="viewer-swatch-preset is-active" data-color="#ffffff" data-i18n-aria="swatchWhite" data-i18n-title="swatchWhite" aria-label="白" title="白" style="background:#ffffff"></button>
+                <button type="button" class="viewer-swatch-preset" data-color="#38bdf8" data-i18n-aria="swatchSky" data-i18n-title="swatchSky" aria-label="天藍" title="天藍" style="background:#38bdf8"></button>
+                <button type="button" class="viewer-swatch-preset" data-color="#fbbf24" data-i18n-aria="swatchAmber" data-i18n-title="swatchAmber" aria-label="琥珀" title="琥珀" style="background:#fbbf24"></button>
+                <button type="button" class="viewer-swatch-preset" data-color="#86efac" data-i18n-aria="swatchGreen" data-i18n-title="swatchGreen" aria-label="綠" title="綠" style="background:#86efac"></button>
+                <button type="button" class="viewer-swatch-preset" data-color="#f87171" data-i18n-aria="swatchRed" data-i18n-title="swatchRed" aria-label="紅" title="紅" style="background:#f87171"></button>
+                <button type="button" class="viewer-swatch-preset" data-color="#c084fc" data-i18n-aria="swatchPurple" data-i18n-title="swatchPurple" aria-label="紫" title="紫" style="background:#c084fc"></button>
+                <label class="viewer-swatch viewer-swatch--custom" aria-label="Choose custom color">
+                  +<input type="color" id="colorInput" value="#ffffff" aria-label="Choose danmu color" />
+                </label>
+                <div id="colorGradientPreview" hidden aria-hidden="true"></div>
+                <span id="colorValue" class="viewer-color-hex" hidden>#FFFFFF</span>
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- 大小 · 小／中／大三段（設計稿 05）。#sizeInput 保留成隱藏 range，
+                 仍是送出流程唯一的真值來源，由三段控制寫入。 -->
+            {% if options.FontSize[0] %}
+            <div id="fontSizeControl" class="viewer-sheet-group">
+              <div class="viewer-sheet-group-label" data-i18n="viewerSizeLabel">大小</div>
+              <div class="viewer-seg" role="radiogroup" data-size-seg aria-label="大小">
+                <button type="button" class="viewer-seg-item" data-size-step="small"
+                        role="radio" aria-checked="false" data-i18n="viewerSizeSmall">小</button>
+                <button type="button" class="viewer-seg-item is-active" data-size-step="medium"
+                        role="radio" aria-checked="true" data-i18n="viewerSizeMedium">中</button>
+                <button type="button" class="viewer-seg-item" data-size-step="large"
+                        role="radio" aria-checked="false" data-i18n="viewerSizeLarge">大</button>
+              </div>
+              <input
+                type="range"
+                id="sizeInput"
+                class="viewer-range"
+                min="{{ options.FontSize[1] }}"
+                max="{{ options.FontSize[2] }}"
+                value="{{ options.FontSize[3] }}"
+                aria-label="Font size"
+                aria-valuemin="{{ options.FontSize[1] }}"
+                aria-valuemax="{{ options.FontSize[2] }}"
+                hidden
+              />
+              <span id="sizeValue" hidden>{{ options.FontSize[3] }}</span>
+            </div>
+            {% endif %}
+
+            <!-- 效果 · 可多選 pill -->
+            <div id="effectControl" class="viewer-sheet-group">
+              <div class="viewer-sheet-group-label">
+                <span data-i18n="effects">效果</span>
+                <span class="viewer-sheet-group-note"> · <span data-i18n="viewerEffectsMulti">可多選</span></span>
+              </div>
+              <div
+                id="effectButtons"
+                class="viewer-chip-row"
+                role="group"
+                aria-label="Effect selection"
+              >
+                <span class="viewer-sheet-group-note" data-i18n="loadingEffects">Loading...</span>
+              </div>
+              <div
+                id="effectParamsPanel"
+                class="viewer-effect-params"
+                role="group"
+                aria-label="Effect parameters"
+                hidden
+              ></div>
+            </div>
+
+            <!-- 位置 · 飄過／停在上方／停在下方（設計稿 05 · V2） -->
+            {% if options.get('Layout', [True])[0] %}
+            <div id="layoutControl" class="viewer-sheet-group">
+              <div class="viewer-sheet-group-label" data-i18n="viewerPosition">位置</div>
+              <div class="viewer-seg" id="layoutButtons" role="radiogroup" aria-label="位置">
+                <button type="button" data-layout="scroll" role="radio" aria-checked="true"
+                        aria-pressed="true" class="layout-btn viewer-seg-item active is-active"
+                        data-i18n="viewerPosScroll">飄過</button>
+                <button type="button" data-layout="top_fixed" role="radio" aria-checked="false"
+                        aria-pressed="false" class="layout-btn viewer-seg-item"
+                        data-i18n="viewerPosTop">停在上方</button>
+                <button type="button" data-layout="bottom_fixed" role="radio" aria-checked="false"
+                        aria-pressed="false" class="layout-btn viewer-seg-item"
+                        data-i18n="viewerPosBottom">停在下方</button>
+              </div>
+              <input type="hidden" id="layoutSelect" value="scroll" />
+            </div>
+            {% endif %}
+
+            <!-- 字型（admin 開啟時才顯示；main.js 控制） -->
+            <div id="userFontSelectControl" class="viewer-sheet-group" style="display: none;">
+              <div class="viewer-sheet-group-label" data-i18n="font">字型</div>
+              <div class="viewer-select-wrap">
+                <select id="userFontSelect" class="viewer-select" aria-label="Choose font">
+                  <option value="">{{ options.FontFamily[3] or "NotoSansTC" }}</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 暱稱列 → 開第二層（設計稿 10 · V3） -->
+            {% if options.get('Nickname', [True])[0] %}
+            <button type="button" class="viewer-sheet-row" id="nicknameControl" data-open-nickname>
+              <span data-i18n="nickname">暱稱</span>
+              <span class="viewer-sheet-row-value">
+                <span data-nickname-display>Anonymous</span>
+                <span class="viewer-sheet-row-caret" aria-hidden="true">›</span>
+              </span>
+            </button>
+            {% endif %}
+
+            <!-- 更多：透明度、速度 -->
+            <details class="viewer-sheet-more">
+              <summary class="viewer-sheet-more-summary" data-i18n="viewerStyleMore">更多：透明度、速度</summary>
+              <div class="viewer-sheet-more-body">
+                {% if options.Opacity[0] %}
+                <div id="opacityControl" class="viewer-sheet-group">
+                  <div class="viewer-sheet-group-label">
+                    <span data-i18n="opacity">透明度</span>
+                    <span class="viewer-sheet-group-note"> · <span id="opacityValue">{{ options.Opacity[3] }}</span>%</span>
+                  </div>
+                  <input
+                    type="range"
+                    id="opacityRange"
+                    class="viewer-range"
+                    min="{{ options.Opacity[1] }}"
+                    max="{{ options.Opacity[2] }}"
+                    value="{{ options.Opacity[3] }}"
+                    aria-label="Text opacity"
+                    aria-valuemin="{{ options.Opacity[1] }}"
+                    aria-valuemax="{{ options.Opacity[2] }}"
+                  />
+                </div>
+                {% endif %}
+                {% if options.Speed[0] %}
+                <div id="speedControl" class="viewer-sheet-group">
+                  <div class="viewer-sheet-group-label">
+                    <span data-i18n="speed">速度</span>
+                    <span class="viewer-sheet-group-note"> · <span id="speedValue">{{
+                      "%.1f"|format(options.Speed[3]) }}</span>x</span>
+                  </div>
+                  <input
+                    type="range"
+                    id="speedRange"
+                    class="viewer-range"
+                    min="{{ options.Speed[1] }}"
+                    max="{{ options.Speed[2] }}"
+                    step="0.1"
+                    value="{{ options.Speed[3] }}"
+                    aria-label="Scroll speed"
+                    aria-valuemin="{{ options.Speed[1] }}"
+                    aria-valuemax="{{ options.Speed[2] }}"
+                  />
+                </div>
+                {% endif %}
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- 第二層：暱稱（設計稿 10 · V3） -->
+        <div class="viewer-style-sheet-view" data-style-view="nickname" hidden>
+          <div class="viewer-style-sheet-head is-three-up">
+            <button type="button" class="viewer-style-sheet-back" data-style-view-back>
+              <span aria-hidden="true">‹</span> <span data-i18n="viewerStyle">樣式</span>
+            </button>
+            <span class="viewer-style-sheet-title" data-i18n="nickname">暱稱</span>
+            <button type="button" class="viewer-style-sheet-done" data-style-sheet-close
+                    data-i18n="viewerStyleDone">完成</button>
+          </div>
+          <div class="viewer-style-sheet-scroll">
+            <div class="viewer-sheet-preview">
+              <div class="viewer-sheet-preview-track is-static">
+                <span class="viewer-sheet-preview-nick" data-sheet-preview-nick></span>
+                <span class="viewer-sheet-preview-text" data-i18n="viewerPreviewSample">講得好！+1</span>
+              </div>
+            </div>
+            <div class="viewer-nick-field">
+              <input
+                type="text"
+                id="nicknameInput"
+                class="viewer-nick-input"
+                maxlength="12"
+                placeholder="Anonymous"
+                data-i18n-placeholder="anonymousPlaceholder"
+                autocomplete="off"
+              />
+              <span class="viewer-nick-count" data-nickname-count>0/12</span>
+            </div>
+            <p class="viewer-nick-hint" data-i18n="viewerNickHint">會顯示在你每則彈幕前面。留空就用「匿名」。</p>
+            <div class="viewer-sheet-row is-static">
+              <span data-i18n="viewerNickShow">顯示暱稱</span>
+              <label class="viewer-switch">
+                <input type="checkbox" data-nickname-show checked />
+                <span class="viewer-switch-track" aria-hidden="true"><span class="viewer-switch-knob"></span></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
       </div>
     </main>
@@ -611,10 +633,19 @@
       var lang = mode.replace(/^force-/, "");
       if (lang) ServerI18n.setLanguage(lang);
     })();
+    // 設計稿 17：<html lang> 跟隨介面語言（原本固定 en）。
+    (function () {
+      try {
+        var map = { zh: "zh-Hant", en: "en", ja: "ja", ko: "ko" };
+        var cur = (window.ServerI18n && ServerI18n.language) || "zh";
+        document.documentElement.lang = map[cur] || cur;
+      } catch (_) {}
+    })();
   </script>
   <script defer src="{{ url_for('static', filename='js/toast.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/viewer-states.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='js/viewer-style-sheet.js') }}"></script>
 </body>
 
 </html>

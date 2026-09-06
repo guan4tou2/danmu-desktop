@@ -13,19 +13,15 @@ const _ERROR_LABELS = {
   unknown: "Connection failed",
 };
 
-function _nowHms() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-}
-
 function _errorLabel(code) {
   return _ERROR_LABELS[code] || _ERROR_LABELS.unknown;
 }
 
 function createConnTest({ api }) {
   let state = "idle";
-  let chipLabel = "LAST TEST · —";
+  // 設計稿 04：測試結果是列上的一小段狀態，還沒測過就什麼都不顯示——
+  // 「LAST TEST · —」這種佔位標籤只是在畫面上留一個看不懂的洞。
+  let chipLabel = "";
   let inFlight = null;
   const listeners = new Set();
 
@@ -37,13 +33,13 @@ function createConnTest({ api }) {
 
   function _setSuccess(latencyMs) {
     state = "ok";
-    chipLabel = `✓ ${_nowHms()} · ${latencyMs}ms`;
+    chipLabel = `✓ ${latencyMs}ms`;
     _fireChange();
   }
 
   function _setFailure(code) {
     state = "fail";
-    chipLabel = `✗ ${_nowHms()} · ${_errorLabel(code)}`;
+    chipLabel = `✗ ${_errorLabel(code)}`;
     _fireChange();
   }
 
@@ -51,7 +47,7 @@ function createConnTest({ api }) {
     if (state === "testing" && inFlight) return inFlight;
 
     state = "testing";
-    chipLabel = "⟳ 測試中…";
+    chipLabel = "測試中…";
     _fireChange();
 
     if (!api || typeof api.testConnection !== "function") {

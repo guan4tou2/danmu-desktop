@@ -4,21 +4,20 @@
  * top, scrollable body with the seven fields (nickname, color, font, size +
  * opacity 2-col, speed, effects, layout), pill send bar at the bottom with
  * an emoji popover. Uses shared tokens — no hardcoded hex.
- */
-
-/* ───────── Page shell (light theme — matches prototype TWEAK_DEFAULTS) ─────
+ *//* ───────── Page shell (light theme — matches prototype TWEAK_DEFAULTS) ─────
  * Prototype renders Viewer with theme="light" by default. We redefine the
  * shared tokens inside the viewer scope so every downstream rule (card,
  * inputs, sendbar, preview) picks up the hudTokens.light* palette without
  * per-rule overrides. Cyan accent stays the same in both themes.
  *
  * Viewport-filling flex column: body scrolls inside, sendbar pins bottom. */
-html:has(body.viewer-body-v2) {
+
+html:has(body.viewer-body-v2){
   height: 100%;
   color-scheme: light;
 }
 
-body.viewer-body-v2 {
+body.viewer-body-v2{
   /* hudTokens light palette (viewer.jsx:32–37) — default */
   --color-bg-deep: #f8fafc;              /* lightBg0 — page */
   --color-bg-base: #ffffff;              /* lightBg1 — card */
@@ -42,6 +41,11 @@ body.viewer-body-v2 {
   --viewer-ink-warning: light-dark(var(--amber-700), var(--amber-400));
   --viewer-ink-error: light-dark(var(--red-700), var(--red-400));
 
+  /* 舞台（大螢幕）底色。預覽區與樣式抽層的預覽都是同一塊畫面，
+   * 定義一次；值取自設計稿 05／09。恆定深底，不隨主題翻轉。 */
+  --viewer-stage-bg: linear-gradient(135deg, #02060f, #0a1628);
+  --viewer-stage-ink: #f1f5f9;
+
   background: var(--color-bg-deep);
   color: var(--color-text-primary);
   color-scheme: light;
@@ -54,11 +58,10 @@ body.viewer-body-v2 {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-}
-
-/* Dark theme — prototype viewer.jsx:32–37 (isDark branch).
+}/* Dark theme — prototype viewer.jsx:32–37 (isDark branch).
  * Switches the same scoped tokens to the hudTokens.bg0/bg1/bg2 dark palette. */
-body.viewer-body-v2.is-dark {
+
+body.viewer-body-v2.is-dark{
   --color-bg-deep: #020617;              /* slate-950 — page */
   --color-bg-base: #0f172a;              /* slate-900 — panel */
   --color-bg-elevated: #1e293b;          /* slate-800 — raised */
@@ -68,13 +71,12 @@ body.viewer-body-v2.is-dark {
   --hud-line: rgba(148, 163, 184, 0.18);
   --hud-line-strong: rgba(148, 163, 184, 0.32);
   color-scheme: dark;
-}
-
-/* Full-width per prototype viewer.jsx — `width: inBrowser ? '100%' : ...`.
+}/* Full-width per prototype viewer.jsx — `width: inBrowser ? '100%' : ...`.
  * No card, no max-width, no side padding — content's own hero/body padding
  * provides the 28–32px breathing room. Viewport-bound flex column so the
  * sendbar pins to the bottom on every viewport (desktop + mobile unified). */
-.viewer-page-shell {
+
+.viewer-page-shell{
   width: 100%;
   flex: 1 1 0;
   min-height: 0;
@@ -83,7 +85,7 @@ body.viewer-body-v2.is-dark {
   gap: 0;
 }
 
-.viewer-main-card {
+.viewer-main-card{
   flex: 1 1 0;
   min-height: 0;
   background: var(--color-bg-base);
@@ -93,10 +95,9 @@ body.viewer-body-v2.is-dark {
   flex-direction: column;
   overflow: hidden;
   box-shadow: none;
-}
+}/* Preset color swatch buttons — 6 circles + 1 custom (matches viewer.jsx:146) */
 
-/* Preset color swatch buttons — 6 circles + 1 custom (matches viewer.jsx:146) */
-.viewer-swatch-preset {
+.viewer-swatch-preset{
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -107,85 +108,22 @@ body.viewer-body-v2.is-dark {
   transition: transform var(--motion-fast), border-color var(--motion-fast);
 }
 
-.viewer-swatch-preset:hover {
+.viewer-swatch-preset:hover{
   transform: scale(1.08);
 }
 
-.viewer-swatch-preset.is-active {
+.viewer-swatch-preset.is-active{
   border: 2px solid var(--color-primary);
   outline: 1px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-/* FIRE button arrow — matches prototype `FIRE ▶` */
-.viewer-fire-arrow {
-  display: inline-block;
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  line-height: 1;
-  letter-spacing: 0;
-}
-
-.viewer-shell {
+.viewer-shell{
   flex: 1 1 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
-}
-
-/* Hero · 2-col layout matching the 2026-04-25 prototype
- * (docs/designs/design-v2/components/viewer.jsx:88–113):
- *   left  — DanmuHero (lockup left-aligned, theme-aware drop-shadow)
- *   right — ConnChip stack (伺服器 / Overlay) + (desktop) Lang Seg + Theme Seg
- *
- * padding: '28px 32px 22px' desktop / '18px 16px 16px' mobile
- * gap: 24 desktop / 10 mobile
- * Mobile keeps both columns side-by-side (NOT stacked) — chip stack uses
- * mini variant. */
-.viewer-hero {
-  padding: 28px 32px 20px;
-  border-bottom: 1px solid var(--hud-line);
-  background: transparent;
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  /* DanmuMarquee runs absolutely-positioned behind the hero content; clip
-   * overflow so chips that haven't scrolled in yet stay invisible. */
-  position: relative;
-  overflow: hidden;
-}
-
-.viewer-hero-lockup {
-  /* Logo is flexShrink:0 so it doesn't compete with the chip column for
-   * space — a center spacer (.viewer-hero-spacer) absorbs the slack. */
-  flex: 0 0 auto;
-  min-width: 0;
-  text-align: left;
-  position: relative;
-  z-index: 2;
-}
-
-.viewer-hero-utility {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  position: relative;
-  z-index: 2;
-}
-
-/* Marquee — 12 fake danmu chips scroll right→left across the hero. Pure
- * decoration; mask gradient on the left so the logo stays legible. */
-.viewer-hero-marquee {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 22%, #000 38%, #000 88%, transparent 100%);
-          mask-image: linear-gradient(90deg, transparent 0, transparent 22%, #000 38%, #000 88%, transparent 100%);
 }
 
 /* Light theme — design v4 brief 0518-v3 #3 fix (2026-05-18).
@@ -194,131 +132,19 @@ body.viewer-body-v2.is-dark {
    filter that effectively shifts pale -300/-400 shades into -600/-700
    territory: lower brightness, bump contrast + saturate. Cheaper than
    overriding 12 inline-style declarations with !important. */
-body.viewer-body-v2:not(.is-dark) .viewer-hero-marquee {
-  filter: brightness(0.7) saturate(1.15) contrast(1.15);
-}
-
-.viewer-mq-item {
-  position: absolute;
-  left: 100%;
-  font-family: var(--font-sans, sans-serif);
-  font-weight: 700;
-  font-size: var(--text-footnote);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  animation: viewer-mq-scroll 16s linear infinite;
-  text-shadow: 0 0 8px currentColor;
-  /* per-chip y/opacity/duration via :nth-child overrides below */
-}
 
 @keyframes viewer-mq-scroll {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-1100px); }
-}
+  0%{ transform: translateX(0); }
+  100%{ transform: translateX(-1100px); }}
 
 @media (max-width: 599px) {
-  .viewer-mq-item {
-    font-size: var(--text-footnote);
-    animation-name: viewer-mq-scroll-mobile;
-  }
   @keyframes viewer-mq-scroll-mobile {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-500px); }
-  }
-}
-
-/* Per-chip stagger: y / delay / duration / opacity + decorative color.
- * Matches prototype viewer.jsx:526 items array. Mobile clamps y to ≤38 so
- * chips don't fall outside the shorter mobile hero. Colors were inline
- * style="color:#…" on each <span> in index.html; moved here (D3) and mapped
- * to palette tokens (the former violet #c4b5fd swapped to accent-light cyan
- * to keep the no-violet rule). These are decorative sample danmu, not UI. */
-.viewer-mq-i0  { top: 16px; opacity: 0.32; animation-delay: 0s;     animation-duration: 14s; color: var(--color-error-light); }
-.viewer-mq-i1  { top: 44px; opacity: 0.28; animation-delay: 1.8s;   animation-duration: 17s; color: var(--color-primary-light); }
-.viewer-mq-i2  { top: 6px;  opacity: 0.36; animation-delay: 3.4s;   animation-duration: 16s; color: var(--color-warning); }
-.viewer-mq-i3  { top: 56px; opacity: 0.32; animation-delay: 5.0s;   animation-duration: 13s; color: var(--color-primary); }
-.viewer-mq-i4  { top: 28px; opacity: 0.26; animation-delay: 6.4s;   animation-duration: 19s; color: var(--color-success-light); }
-.viewer-mq-i5  { top: 4px;  opacity: 0.30; animation-delay: 7.8s;   animation-duration: 15s; color: var(--color-accent-light); }
-.viewer-mq-i6  { top: 50px; opacity: 0.26; animation-delay: 9.0s;   animation-duration: 16s; color: var(--color-primary-light); }
-.viewer-mq-i7  { top: 22px; opacity: 0.36; animation-delay: 10.4s;  animation-duration: 13s; color: var(--color-warning); }
-.viewer-mq-i8  { top: 38px; opacity: 0.28; animation-delay: 11.6s;  animation-duration: 17s; color: var(--color-success-light); }
-.viewer-mq-i9  { top: 12px; opacity: 0.32; animation-delay: 13.0s;  animation-duration: 14s; color: var(--color-error-light); }
-.viewer-mq-i10 { top: 60px; opacity: 0.30; animation-delay: 14.2s;  animation-duration: 18s; color: var(--color-primary); }
-.viewer-mq-i11 { top: 32px; opacity: 0.26; animation-delay: 15.6s;  animation-duration: 16s; color: var(--color-accent-light); }
-
-@media (max-width: 599px) {
-  .viewer-mq-i3  { top: 38px; }
-  .viewer-mq-i6  { top: 38px; }
-  .viewer-mq-i10 { top: 38px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .viewer-mq-item { animation: none; opacity: 0; }
-}
-
-/* Center spacer pushes chip column flush right while marquee owns the
- * middle area visually. */
-.viewer-hero-spacer {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-@media (max-width: 599px) {
-  .viewer-hero {
-    padding: 16px 16px 16px;
-    gap: 8px;
-  }
-}
-
-/* Prototype tokens.jsx HERO_SIZE.hero = clamp(3.2rem, 8vw, 6rem).
+    0%{ transform: translateX(0); }
+    100%{ transform: translateX(-500px); }}}/* Prototype tokens.jsx HERO_SIZE.hero = clamp(3.2rem, 8vw, 6rem).
  * Mobile in new prototype uses 'medium' = '2rem' (smaller than the prior
- * 'large' clamp). Light-theme drop-shadow (matches DanmuHero light branch). */
-/* 字標（2026-08-19 設計稿 11/12）。原本是 Bebas Neue 排的文字，靠
- * text-transform / letter-spacing / drop-shadow 做效果；現在是轉外框的
- * SVG，形本身就是設計——最後的 E 是三道彈幕、領頭帶火，與 app icon 同形。
- * 稿上指定觀眾頁頂欄高度：桌面 32、手機 28。 */
-.viewer-hero-title {
-  margin: 0;
-  line-height: 0;
-}
-
-.viewer-hero-wordmark {
-  display: block;
-  width: auto;
-  height: 32px;
-}
-
-/* 深淺各一張、CSS 擇一顯示。用 content:url() 換 <img> 的 src 在各瀏覽器
+ * 'large' clamp). Light-theme drop-shadow (matches DanmuHero light branch). *//* 深淺各一張、CSS 擇一顯示。用 content:url() 換 <img> 的 src 在各瀏覽器
  * 行為不一致（Safari 不換、alt 也會失準），兩張圖顯隱最穩；淺色那張
  * aria-hidden，讀屏只會讀到一次。 */
-.viewer-hero-wordmark.is-on-light { display: none; }
-
-body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-dark { display: none; }
-body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: block; }
-
-@media (max-width: 599px) {
-  .viewer-hero-wordmark {
-    height: 28px;
-  }
-}
-
-/* Prototype subtitle override (viewer.jsx:101 subStyle):
- * desktop: margin '10px 0 0' / inherits HERO_SLATE_300 / no maxWidth lock
- * mobile: margin '6px 0 0' / fontSize 12 */
-.viewer-hero-subtitle {
-  margin: 8px 0 0;
-  color: var(--color-text-secondary);
-  font-size: clamp(1rem, 2vw, 1.25rem);
-  line-height: 1.6;
-  font-weight: 400;
-}
-
-@media (max-width: 599px) {
-  .viewer-hero-subtitle {
-    margin: 4px 0 0;
-    font-size: var(--text-footnote);
-  }
-}
 
 /* ConnChip — 伺服器 / Overlay status pill matching the 2026-04-25
  * prototype viewer.jsx ConnChip (lines 376–399 of new bundle):
@@ -332,7 +158,8 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
  * Online state is signalled by `.connection-dot--connected` /
  * `.connection-dot--live` on the dot child; the parent gets is-online
  * via JS (or fall back to scoped child selector). */
-.viewer-conn-chip {
+
+.viewer-conn-chip{
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -349,18 +176,17 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   letter-spacing: 1px;
   color: var(--color-text-primary);
   white-space: nowrap;
-}
+}/* Online — stacked gradient: cyanSoft tint on top of the solid panel bg. */
 
-/* Online — stacked gradient: cyanSoft tint on top of the solid panel bg. */
 .viewer-conn-chip:has(.connection-dot--connected),
-.viewer-conn-chip:has(.connection-dot--live) {
+.viewer-conn-chip:has(.connection-dot--live){
   background:
     linear-gradient(var(--hud-cyan-soft), var(--hud-cyan-soft)),
     var(--color-bg-base);
   border-color: var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
 }
 
-.viewer-conn-chip-dot {
+.viewer-conn-chip-dot{
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -369,153 +195,48 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
 }
 
 .viewer-conn-chip-dot.connection-dot--connected,
-.viewer-conn-chip-dot.connection-dot--live {
+.viewer-conn-chip-dot.connection-dot--live{
   background: var(--color-primary);
   box-shadow: 0 0 6px var(--color-primary);
   animation: viewer-conn-pulse 2s ease-in-out infinite;
 }
 
-.viewer-conn-chip-dot.connection-dot--connecting {
+.viewer-conn-chip-dot.connection-dot--connecting{
   background: var(--color-warning);
   box-shadow: 0 0 4px var(--color-warning);
 }
 
 .viewer-conn-chip-dot.connection-dot--disconnected,
-.viewer-conn-chip-dot.connection-dot--failed {
+.viewer-conn-chip-dot.connection-dot--failed{
   /* 非文字 UI 也要 3.0：red-400 在淺色頁面上只有 2.5:1。 */
   background: var(--viewer-ink-error);
 }
 
-.viewer-conn-chip-label {
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.viewer-conn-chip-value {
+.viewer-conn-chip-value{
   font-weight: 500;
 }
 
 @media (max-width: 599px) {
-  .viewer-conn-chip {
+  .viewer-conn-chip{
     /* prototype mini variant: 2px 7px / 9px / 0.5px / gap 4 */
     font-size: var(--text-caption);
     padding: 2px 8px;
     letter-spacing: 0.5px;
     gap: 4px;
-  }
-  .viewer-conn-chip-label { display: none; }
-}
+  }}
 
 @keyframes viewer-conn-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: 0.65; transform: scale(0.88); }
-}
-
-/* 2026-07-07 UIUX polish E4: connection dot pulse had no reduced-motion
+  0%, 100%{ opacity: 1; transform: scale(1); }
+  50%{ opacity: 0.65; transform: scale(0.88); }}/* 2026-07-07 UIUX polish E4: connection dot pulse had no reduced-motion
  * fallback (every other animation in this file does). */
+
 @media (prefers-reduced-motion: reduce) {
   .viewer-conn-chip-dot.connection-dot--connected,
-  .viewer-conn-chip-dot.connection-dot--live {
+  .viewer-conn-chip-dot.connection-dot--live{
     animation: none;
-  }
-}
+  }}/* Viewer Fire/Poll tabs + pane switcher. */
 
-/* Lang select + theme toggle row — prototype viewer.jsx:184-185
- * (LangSelect line 519, ThemeToggle line 553). Visible on every viewport;
- * mobile uses the prototype `mini` variant (22px instead of 26px). */
-.viewer-hero-seg-row {
-  display: flex;
-  align-items: center;
-  gap: 4px; /* prototype gap: 6 */
-  margin-top: 4px;
-}
-
-/* LangSelect — prototype viewer.jsx:519. Native <select> overlay so
- * the user gets all 4 languages (zh / en / ja / ko); visible label is
- * the current selection in monospace + dropdown arrow. */
-.viewer-lang-select {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  height: 26px;
-  padding: 0 16px 0 8px;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--hud-line);
-  border-radius: var(--radius-md-sm);
-}
-.viewer-lang-current {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  font-weight: 500;
-  letter-spacing: 0.3px;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-}
-.viewer-lang-arrow {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  color: var(--color-text-secondary);
-  pointer-events: none;
-}
-.viewer-lang-native {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  border: none;
-  background: transparent;
-}
-
-/* ThemeToggle — prototype viewer.jsx:553. Single icon button, ◐ when
- * dark / ◑ when light, click to flip. */
-.viewer-theme-toggle {
-  width: 26px;
-  height: 26px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border-radius: var(--radius-md-sm);
-  border: 1px solid var(--hud-line);
-  background: var(--hud-cyan-soft);
-  color: var(--color-primary);
-  font-family: var(--font-mono);
-  font-size: var(--text-footnote);
-  cursor: pointer;
-}
-.viewer-theme-toggle:hover {
-  background: rgba(56, 189, 248, 0.16);
-}
-
-/* Mobile mini variant — prototype LangSelect mini: padding 0 16px 0 8px,
- * height 22, font-size 10. ThemeToggle mini: 22×22, font-size 11. */
-@media (max-width: 599px) {
-  .viewer-lang-select {
-    height: 22px;
-    padding: 0 16px 0 8px;
-  }
-  .viewer-lang-current { font-size: var(--text-caption); }
-  .viewer-lang-arrow {
-    right: 5px;
-  }
-  .viewer-theme-toggle {
-    width: 22px;
-    height: 22px;
-    font-size: var(--text-caption);
-  }
-}
-
-/* Viewer Fire/Poll tabs + pane switcher. */
-.viewer-tabbar {
+.viewer-tabbar{
   display: flex;
   align-items: flex-end;
   gap: 0;
@@ -523,7 +244,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   border-bottom: 1px solid var(--hud-line);
 }
 
-.viewer-tab {
+.viewer-tab{
   appearance: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -538,61 +259,51 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   transition: border-color var(--motion-fast), color var(--motion-fast);
 }
 
-.viewer-tab-label {
+.viewer-tab-label{
   font-size: var(--text-footnote);
   font-weight: 500;
   letter-spacing: 0.2px;
 }
 
-.viewer-tab-sub {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
-}
-
-.viewer-tab:hover {
+.viewer-tab:hover{
   border-bottom-color: var(--hud-line-strong);
   color: var(--color-text-primary);
-}
-
-/* 2026-07-29：sky-400 是深色臂專用的亮青，淺色主題下 tab 文字只有 2.14:1。
+}/* 2026-07-29：sky-400 是深色臂專用的亮青，淺色主題下 tab 文字只有 2.14:1。
    文字改吃 --viewer-ink-accent（淺色 sky-700、深色仍是 sky-400＝原值）→ 5.93；
    底線是非文字（門檻 3.0），留 --color-primary 就夠。 */
+
 .viewer-tab.is-active,
-.viewer-tab[aria-selected="true"] {
+.viewer-tab[aria-selected="true"]{
   border-bottom-color: var(--color-primary);
   color: var(--viewer-ink-accent);
 }
 
 .viewer-tab.is-active .viewer-tab-label,
-.viewer-tab[aria-selected="true"] .viewer-tab-label {
+.viewer-tab[aria-selected="true"] .viewer-tab-label{
   font-weight: 700;
 }
 
 .viewer-tab.is-active .viewer-tab-sub,
-.viewer-tab[aria-selected="true"] .viewer-tab-sub {
+.viewer-tab[aria-selected="true"] .viewer-tab-sub{
   color: var(--viewer-ink-accent);
 }
 
-.viewer-pane {
+.viewer-pane{
   flex: 1 1 0;
   min-height: 0;
   display: none;
 }
 
-.viewer-pane.is-active {
+.viewer-pane.is-active{
   display: flex;
   flex-direction: column;
 }
 
-.viewer-pane[hidden] {
+.viewer-pane[hidden]{
   display: none !important;
-}
+}/* Poll pane */
 
-/* Poll pane */
-.viewer-poll-card {
+.viewer-poll-card{
   margin: 20px 24px 24px;
   padding: 16px;
   border: 1px solid rgba(125, 211, 252, 0.25);
@@ -601,7 +312,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   box-shadow: 0 8px 24px rgba(2, 6, 23, 0.08);
 }
 
-.viewer-poll-kicker {
+.viewer-poll-kicker{
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   letter-spacing: 1.4px;
@@ -610,7 +321,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   margin-bottom: 8px;
 }
 
-.viewer-poll-question {
+.viewer-poll-question{
   margin: 0;
   font-size: var(--text-title1);
   font-weight: 700;
@@ -618,19 +329,19 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   color: var(--color-text-primary);
 }
 
-.viewer-poll-meta {
+.viewer-poll-meta{
   margin: 8px 0 0;
   color: var(--color-text-secondary);
   font-size: var(--text-footnote);
 }
 
-.viewer-poll-options {
+.viewer-poll-options{
   margin-top: 12px;
   display: grid;
   gap: 8px;
 }
 
-.viewer-poll-option {
+.viewer-poll-option{
   width: 100%;
   border: 1px solid var(--hud-line);
   border-radius: var(--radius-md);
@@ -642,19 +353,19 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   transition: border-color var(--motion-fast), transform var(--motion-fast);
 }
 
-.viewer-poll-option:hover {
+.viewer-poll-option:hover{
   border-color: rgba(56, 189, 248, 0.68);
   background: rgba(56, 189, 248, 0.08);
   transform: translateY(-1px);
 }
 
-.viewer-poll-option-row {
+.viewer-poll-option-row{
   display: flex;
   align-items: baseline;
   gap: 8px;
 }
 
-.viewer-poll-option-key {
+.viewer-poll-option-key{
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   letter-spacing: 1.2px;
@@ -662,23 +373,22 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   min-width: 22px;
 }
 
-.viewer-poll-option-text {
+.viewer-poll-option-text{
   flex: 1;
   min-width: 0;
   font-size: var(--text-footnote);
   font-weight: 600;
-}
-
-/* 2026-07-07 uiux polish B8: immediate "voted" confirmation state — border
+}/* 2026-07-07 uiux polish B8: immediate "voted" confirmation state — border
  * + inline "已投出" label. Deliberately NO count/percentage anywhere here
  * (product rule: viewer poll never shows vote counts/percentages). */
-.viewer-poll-option.is-voted {
+
+.viewer-poll-option.is-voted{
   border-color: var(--color-primary);
   background: rgba(56, 189, 248, 0.1);
   cursor: default;
 }
 
-.viewer-poll-option-voted-mark {
+.viewer-poll-option-voted-mark{
   margin-left: auto;
   display: inline-flex;
   align-items: center;
@@ -694,36 +404,30 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
 }
 
 @media (max-width: 599px) {
-  .viewer-tabbar {
+  .viewer-tabbar{
     padding: 0 8px;
   }
 
-  .viewer-tab {
+  .viewer-tab{
     padding: 8px 12px;
     gap: 4px;
   }
 
-  .viewer-tab-label {
+  .viewer-tab-label{
     font-size: var(--text-footnote);
   }
 
-  .viewer-tab-sub {
-    font-size: var(--text-caption);
-  }
-
-  .viewer-poll-card {
+  .viewer-poll-card{
     margin: 16px;
     padding: 12px;
   }
 
-  .viewer-poll-question {
+  .viewer-poll-question{
     font-size: var(--text-title2);
-  }
-}
-
-/* Body — prototype viewer.jsx:129 — `flex:1, overflow:auto, padding: pad`.
+  }}/* Body — prototype viewer.jsx:129 — `flex:1, overflow:auto, padding: pad`.
  * Inner scroll on every viewport so the sendbar pins to the bottom. */
-.viewer-body {
+
+.viewer-body{
   flex: 1 1 0;
   min-height: 0;
   overflow: auto;
@@ -732,12 +436,9 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
 }
 
 @media (max-width: 599px) {
-  .viewer-body {
+  .viewer-body{
     padding: 16px 16px 20px; /* prototype mobile: pad=16, pad+6=22 */
-  }
-}
-
-/* Live preview strip — 投影幕舞台，兩個主題都是深底。
+  }}/* Live preview strip — 投影幕舞台，兩個主題都是深底。
  *
  * 2026-07-29：原本淺色臂把預覽台刷成 --color-bg-base（白），但台上的字色是
  * 觀眾自己挑的彈幕色，而那些色票是為「深色投影幕」調的。結果六個內建色票在
@@ -747,38 +448,25 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
  * 預覽台本來就該長得像 overlay——overlay 疊在別人畫面上，永遠是深色圖層。
  * 所以這裡不再分主題：兩邊共用同一座深色舞台，色票對比＝真實上場對比。
  * 底下的 kicker / speed / nick / text-shadow 也一併去掉淺色臂（見下）。 */
-.viewer-preview {
+
+.viewer-preview{
   position: relative;
   overflow: hidden;
   min-height: 72px;
   padding: 16px 12px;
   margin-bottom: 1rem;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, #000814 0%, #001428 100%);
-  border: 1px solid rgba(125, 211, 252, 0.18);
-  color: #f1f5f9;
-  box-shadow: inset 0 0 40px rgba(125, 211, 252, 0.06);
-}
-
-/* 掃描線疊層——舞台兩主題同底，所以只留一條白色掃描線。 */
-.viewer-preview::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent 0,
-    transparent 3px,
-    rgba(255, 255, 255, 0.015) 3px,
-    rgba(255, 255, 255, 0.015) 4px
-  );
-}
+  background: var(--viewer-stage-bg);
+  border: 1px solid var(--hud-line);
+  color: var(--viewer-stage-ink);
+  box-shadow: none;
+}/* 掃描線疊層——舞台兩主題同底，所以只留一條白色掃描線。 */
 
 /* 舞台上的說明文字：深底常駐，所以沒有淺色臂。
  * 2026-07-29：原本 slate-400 @ 0.7 在深底上只有 4.05:1（11px 正文需 4.5），
  * 深色主題也是不合格的擦邊球——提到 0.86 一次補到 5.4:1，兩個主題同時受益。 */
-.viewer-preview-kicker {
+
+.viewer-preview-kicker{
   position: absolute;
   top: 6px;
   left: 10px;
@@ -791,25 +479,13 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   font-size: var(--text-caption);
   color: rgba(148, 163, 184, 0.86);
   letter-spacing: 1.4px;
-}
-
-/* Speed badge inside the kicker — sits flush right, faint cyan so it
-   reads as "current speed" without competing with the kicker label.
-   2026-07-29：0.5 alpha 只有 3.59:1，提到 0.8 → 6.4:1。 */
-.viewer-preview-speed {
-  margin-left: auto;
-  color: rgba(125, 211, 252, 0.8);
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-}
-
-/* 2026-05-16 marquee preview (design v3-r8): preview text actually
+}/* 2026-05-16 marquee preview (design v3-r8): preview text actually
    scrolls right→left so viewers see the speed change live. Duration
    = max(2, 8 / speed)s, set as a CSS variable by main.js whenever the
    speed slider moves. The row has a fixed height (font-size + line)
    so the scrolling text never collapses the panel. */
-.viewer-preview-row {
+
+.viewer-preview-row{
   margin-top: 8px;
   position: relative;
   overflow: hidden;
@@ -822,7 +498,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   container-type: inline-size;
 }
 
-.viewer-preview-track {
+.viewer-preview-track{
   position: absolute;
   top: 0;
   left: 0;
@@ -834,96 +510,85 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   animation: dm-preview-scroll var(--viewer-preview-duration, 8s) linear infinite;
 }
 
-@keyframes dm-preview-scroll {
-  /* 0% — track sits one container-width to the right of its origin, so
+@keyframes dm-preview-scroll {/* 0% — track sits one container-width to the right of its origin, so
      the left edge is exactly at the container's right edge (fully off-
      screen on the right). */
-  0%   { transform: translateX(100cqw); }
-  /* 100% — track moves -100% of its own width, so the right edge ends
+  
+  0%{ transform: translateX(100cqw); }/* 100% — track moves -100% of its own width, so the right edge ends
      at the container's left edge (fully off-screen on the left). */
-  100% { transform: translateX(-100%); }
-}
+  
+  100%{ transform: translateX(-100%); }}
 
-@media (prefers-reduced-motion: reduce) {
-  /* Respect users who prefer no motion — keep the panel static. */
-  .viewer-preview-track { animation: none; transform: none; }
-}
-
-/* 舞台上的暱稱：繼承 .viewer-preview 的 #f1f5f9。2026-07-29 拿掉淺色臂——
+@media (prefers-reduced-motion: reduce) {/* Respect users who prefer no motion — keep the panel static. */
+  
+  .viewer-preview-track{ animation: none; transform: none; }}/* 舞台上的暱稱：繼承 .viewer-preview 的 #f1f5f9。2026-07-29 拿掉淺色臂——
  * 它會把暱稱刷成 slate-600，在深色舞台上等於消失。 */
-.viewer-preview-nick {
+
+.viewer-preview-nick{
   font-family: var(--font-mono);
   font-weight: 500;
   opacity: 0.75;
   letter-spacing: 0.5px;
-}
-
-/* Default preview shadow — prototype viewer.jsx:125 fallback when glow off:
+}/* Default preview shadow — prototype viewer.jsx:125 fallback when glow off:
  *   '0 2px 4px rgba(0,0,0,0.55)'. Glow-effect handler in main.js may add
  *   a coloured halo on top via inline style.
  * 2026-05-17: `display: inline-block` so transform-based effects
  * (spin / bounce / zoom / wave / shake) actually animate the span. */
-.viewer-preview-text {
+
+.viewer-preview-text{
   display: inline-block;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
   transition: font-size var(--motion-normal), opacity var(--motion-normal);
-}
-
-/* 2026-05-17 preview-side effect keyframes (vp- prefix to avoid
+}/* 2026-05-17 preview-side effect keyframes (vp- prefix to avoid
    colliding with overlay's de- set in shared/danmu-effects.js).
    `selectedEffects` is multi-select, so updatePreview() in main.js
    joins matching animations into a comma-separated list and applies
    to .viewer-preview-text. The marquee transform on the parent
-   .viewer-preview-track is independent and doesn't conflict. */
-/* 2026-05-17 design v3-r10: effect keyframes read CSS custom
+   .viewer-preview-track is independent and doesn't conflict. *//* 2026-05-17 design v3-r10: effect keyframes read CSS custom
    properties on .viewer-preview-text so the parameter sliders on
    each cyan card retune the animation live. Defaults match the
    spec values in main.js EFFECT_PARAM_SPEC. */
-@keyframes vp-blink   { 0%, 100% { opacity: 1; } 50% { opacity: var(--vp-blink-min, 0); } }
+
+@keyframes vp-blink   { 0%, 100%{ opacity: 1; } 50%{ opacity: var(--vp-blink-min, 0); }}
 @keyframes vp-shake   {
-  0%, 100% { transform: translateX(0); }
-  25%      { transform: translateX(calc(var(--vp-shake-strength, 4px) * -1)); }
-  75%      { transform: translateX(var(--vp-shake-strength, 4px)); }
-}
-@keyframes vp-bounce  { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(var(--vp-bounce-height, -16px)); } }
-@keyframes vp-spin    { to { transform: rotate(360deg); } }
-@keyframes vp-rainbow { to { filter: hue-rotate(360deg) saturate(var(--vp-rainbow-sat, 0.9)); } }
+  0%, 100%{ transform: translateX(0); }
+  25%{ transform: translateX(calc(var(--vp-shake-strength, 4px) * -1)); }
+  75%{ transform: translateX(var(--vp-shake-strength, 4px)); }}
+@keyframes vp-bounce  { 0%, 100%{ transform: translateY(0); } 50%{ transform: translateY(var(--vp-bounce-height, -16px)); }}
+@keyframes vp-spin    { to{ transform: rotate(360deg); }}
+@keyframes vp-rainbow { to{ filter: hue-rotate(360deg) saturate(var(--vp-rainbow-sat, 0.9)); }}
 @keyframes vp-wave    {
-  0%, 100% { transform: translateY(0); }
-  25%      { transform: translateY(calc(var(--vp-wave-amplitude, 8px) * -1)); }
-  75%      { transform: translateY(var(--vp-wave-amplitude, 8px)); }
-}
-@keyframes vp-zoom    { 0%, 100% { transform: scale(1); } 50% { transform: scale(var(--vp-zoom-max, 1.5)); } }
+  0%, 100%{ transform: translateY(0); }
+  25%{ transform: translateY(calc(var(--vp-wave-amplitude, 8px) * -1)); }
+  75%{ transform: translateY(var(--vp-wave-amplitude, 8px)); }}
+@keyframes vp-zoom    { 0%, 100%{ transform: scale(1); } 50%{ transform: scale(var(--vp-zoom-max, 1.5)); }}
 
-@media (prefers-reduced-motion: reduce) {
-  /* All decorative preview effects respect the system motion preference. */
-  .viewer-preview-text { animation: none !important; }
-}
-
-/* 2026-05-17 design v3-r10: per-effect parameter cards. Sits under the
+@media (prefers-reduced-motion: reduce) {/* All decorative preview effects respect the system motion preference. */
+  
+  .viewer-preview-text{ animation: none !important; }}/* 2026-05-17 design v3-r10: per-effect parameter cards. Sits under the
    8 effect pill buttons; each selected effect renders one cyan-tinted
    card with a 2-col slider grid (1-col when only one param). */
-.viewer-effect-params {
+
+.viewer-effect-params{
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-top: 8px;
 }
-.viewer-effect-params[hidden] { display: none; }
+.viewer-effect-params[hidden]{ display: none; }
 
-.viewer-effect-params-card {
+.viewer-effect-params-card{
   padding: 8px 12px;
   border-radius: var(--radius-md-sm);
   border: 1px solid rgba(56, 189, 248, 0.20); /* accent + 0x33 alpha */
   background: rgba(56, 189, 248, 0.05);       /* hudTokens.cyanSoft */
-}
-
-/* 2026-07-29：--viewer-accent / --viewer-text-dim 是**幽靈 token**——全 repo
+}/* 2026-07-29：--viewer-accent / --viewer-text-dim 是**幽靈 token**——全 repo
  * 從來沒有任何地方定義過它們，所以這四條規則永遠落在 fallback，也就是硬寫死
  * 的深色臂。淺色主題下整張卡 15 段文字全部 2.06–2.11:1（改後 5.71 / 7.29）。
  * 改指真的存在的 token：文字走 --viewer-ink-accent / --color-text-secondary，
  * 滑桿（非文字）走 --color-primary。深色臂數值與原 fallback 相同，零視覺變化。 */
-.viewer-effect-params-card__title {
+
+.viewer-effect-params-card__title{
   font-size: var(--text-caption);
   font-weight: 600;
   color: var(--viewer-ink-accent);
@@ -932,49 +597,44 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   letter-spacing: 1px;
 }
 
-.viewer-effect-params-card__grid {
+.viewer-effect-params-card__grid{
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
-.viewer-effect-params-card__grid.is-single {
+.viewer-effect-params-card__grid.is-single{
   grid-template-columns: 1fr;
 }
 
-.viewer-effect-params-card__row-head {
+.viewer-effect-params-card__row-head{
   display: flex;
   justify-content: space-between;
   margin-bottom: 4px;
 }
 
-.viewer-effect-params-card__label {
+.viewer-effect-params-card__label{
   font-size: var(--text-caption);
   color: var(--color-text-secondary);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.5px;
 }
 
-.viewer-effect-params-card__value {
+.viewer-effect-params-card__value{
   font-size: var(--text-caption);
   color: var(--viewer-ink-accent);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-.viewer-effect-params-card__slider {
+.viewer-effect-params-card__slider{
   width: 100%;
   accent-color: var(--color-primary);
 }
 
-/* Field — 9px mono tracked uppercase label above control. */
-.viewer-field {
-  margin-bottom: 0.875rem;
-}
-
-.viewer-field.is-nomb {
+.viewer-field.is-nomb{
   margin-bottom: 0;
 }
 
-.viewer-field-label {
+.viewer-field-label{
   display: block;
   font-family: var(--font-mono);
   font-size: var(--text-caption);
@@ -982,110 +642,29 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   color: var(--color-text-secondary);
   margin-bottom: 4px;
   text-transform: uppercase;
-}
+}/* Save confirm flash — 0.4s pale-cyan fade per Design spec. */
 
-.viewer-field-label__value {
-  color: var(--color-text-bright);
-}
-
-/* Identity chip — prototype #18 (2026-04-27).
- * Display: `[@nick · fp:xxxxxxxx]`. Click → inline edit input replaces nick.
- * Esc cancels, Enter / blur saves. 0.4s confirm flash on save. */
-.viewer-identity-chip {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: var(--radius-md-sm);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--hud-line);
-  cursor: text;
-  transition: border-color var(--motion-fast), background var(--motion-fast);
-  min-height: 40px;
-  box-sizing: border-box;
-}
-
-.viewer-identity-chip[data-mode="edit"] {
-  border-color: var(--color-primary);
-}
-
-.viewer-identity-chip:hover[data-mode="display"] {
-  border-color: var(--hud-line-strong);
-}
-
-.viewer-identity-chip-nick {
-  font-family: var(--font-sans, sans-serif);
-  font-size: var(--text-footnote);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  letter-spacing: 0.01em;
-}
-
-.viewer-identity-chip-fp {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 0.05em;
-  color: var(--color-text-secondary);
-  transition: opacity var(--motion-fast);
-  margin-left: auto;
-}
-
-.viewer-identity-chip-input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--color-text-primary);
-  font-size: var(--text-footnote);
-  font-weight: 600;
-  font-family: var(--font-sans, sans-serif);
-  padding: 0;
-}
-
-/* Save confirm flash — 0.4s pale-cyan fade per Design spec. */
-.viewer-identity-chip.is-confirm {
+.viewer-identity-chip.is-confirm{
   background: var(--hud-cyan-soft);
   border-color: var(--color-primary);
   animation: viewer-identity-confirm 0.4s ease-out;
 }
 
 @keyframes viewer-identity-confirm {
-  0%   { background: var(--hud-cyan-soft); border-color: var(--color-primary); }
-  100% { background: var(--color-bg-elevated); border-color: var(--hud-line); }
-}
+  0%{ background: var(--hud-cyan-soft); border-color: var(--color-primary); }
+  100%{ background: var(--color-bg-elevated); border-color: var(--hud-line); }}
 
 @media (prefers-reduced-motion: reduce) {
-  .viewer-identity-chip.is-confirm { animation: none; }
-}
+  .viewer-identity-chip.is-confirm{ animation: none; }}/* Color swatches — 6 preset + 1 custom with dashed ring. */
 
-/* Text input — raised background + hairline border. */
-.viewer-input {
-  width: 100%;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--hud-line);
-  color: var(--color-text-primary);
-  padding: 0.7rem 0.85rem;
-  border-radius: var(--radius-md-sm);
-  outline: none;
-  font-size: var(--text-subhead);
-  box-sizing: border-box;
-}
-
-.viewer-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--glow-primary-ring);
-}
-
-/* Color swatches — 6 preset + 1 custom with dashed ring. */
-.viewer-color-row {
+.viewer-color-row{
   display: flex;
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
 }
 
-.viewer-swatch {
+.viewer-swatch{
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -1095,13 +674,13 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   background-clip: padding-box;
 }
 
-.viewer-swatch.is-active {
+.viewer-swatch.is-active{
   border: 2px solid var(--color-primary);
   outline: 1px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-.viewer-swatch--custom {
+.viewer-swatch--custom{
   position: relative;
   border-style: dashed;
   color: var(--color-text-secondary);
@@ -1113,28 +692,27 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   font-size: var(--text-footnote);
 }
 
-.viewer-swatch--custom input[type="color"] {
+.viewer-swatch--custom input[type="color"]{
   position: absolute;
   inset: 0;
   opacity: 0;
   cursor: pointer;
 }
 
-.viewer-color-hex {
+.viewer-color-hex{
   margin-left: auto;
   font-family: var(--font-mono);
   font-size: var(--text-footnote);
   letter-spacing: 0.5px;
   color: var(--color-text-secondary);
   text-transform: uppercase;
-}
+}/* Select — chevron rendered via ::after absolute overlay. */
 
-/* Select — chevron rendered via ::after absolute overlay. */
-.viewer-select-wrap {
+.viewer-select-wrap{
   position: relative;
 }
 
-.viewer-select {
+.viewer-select{
   width: 100%;
   padding: 12px 36px 12px 12px;
   border-radius: var(--radius-md-sm);
@@ -1148,7 +726,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   -webkit-appearance: none;
 }
 
-.viewer-select-wrap::after {
+.viewer-select-wrap::after{
   content: "▾";
   position: absolute;
   right: 12px;
@@ -1158,9 +736,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   color: var(--color-text-secondary);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
-}
-
-/* Range slider — Tailwind preflight sets `input { background-color: #0000 }`
+}/* Range slider — Tailwind preflight sets `input { background-color: #0000 }`
  * which would erase the track if applied on the input itself. WebKit also
  * renders the track via the ::-webkit-slider-runnable-track pseudo-element,
  * not the input bg. So:
@@ -1168,7 +744,8 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
  *   - WebKit: track gets the gradient via ::-webkit-slider-runnable-track
  *   - Firefox: track + progress via ::-moz-range-track + ::-moz-range-progress
  * Progress fill is driven by an inline --progress CSS var set by main.js. */
-.viewer-range {
+
+.viewer-range{
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
@@ -1178,10 +755,9 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   cursor: pointer;
   margin: 0;
   padding: 0;
-}
+}/* WebKit / Blink (Safari, Chrome, Edge) */
 
-/* WebKit / Blink (Safari, Chrome, Edge) */
-.viewer-range::-webkit-slider-runnable-track {
+.viewer-range::-webkit-slider-runnable-track{
   height: 6px;
   border-radius: var(--radius-pill);
   background:
@@ -1191,7 +767,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   transition: background-size var(--motion-fast);
 }
 
-.viewer-range::-webkit-slider-thumb {
+.viewer-range::-webkit-slider-thumb{
   -webkit-appearance: none;
   appearance: none;
   width: 16px;
@@ -1203,22 +779,21 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   cursor: pointer;
   margin-top: -4px;            /* center 16px thumb on 6px track */
   transition: transform var(--motion-fast);
-}
+}/* Firefox */
 
-/* Firefox */
-.viewer-range::-moz-range-track {
+.viewer-range::-moz-range-track{
   height: 6px;
   border-radius: var(--radius-pill);
   background: var(--hud-line);
 }
 
-.viewer-range::-moz-range-progress {
+.viewer-range::-moz-range-progress{
   height: 6px;
   border-radius: var(--radius-pill) 0 0 var(--radius-pill);
   background: var(--color-primary);
 }
 
-.viewer-range::-moz-range-thumb {
+.viewer-range::-moz-range-thumb{
   width: 16px;
   height: 16px;
   border-radius: 50%;
@@ -1229,140 +804,71 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
 }
 
 .viewer-range:hover::-webkit-slider-thumb,
-.viewer-range:focus::-webkit-slider-thumb {
+.viewer-range:focus::-webkit-slider-thumb{
   transform: scale(1.15);
-}
-
-/* 2026-05-16 RWD per design v3-r8, breakpoint raised 599px→768px on
-   2026-07-07 (uiux polish B6): the 3-col row was cramping the size/opacity/
-   speed sliders on tablet widths (600-767px) too, not just phones.
-   Desktop (≥768px): size / opacity / speed in a single 3-col row.
-   ≤767px: drops to 2-col so size + opacity stay together
-   and speed wraps below as a full-width row (grid auto-wrap). */
-.viewer-grid-fields {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0.75rem;
-  margin-bottom: 0.875rem;
-}
-
-@media (max-width: 767px) {
-  .viewer-grid-fields {
-    grid-template-columns: 1fr 1fr;
-  }
-  .viewer-grid-fields > #speedControl {
-    /* Span both columns so the speed slider keeps its full handle width. */
-    grid-column: 1 / -1;
-  }
-}
-
-/* 2026-05-16 RWD per design v3-r8: cap fire-pane form width on desktop
+}/* 2026-05-16 RWD per design v3-r8: cap fire-pane form width on desktop
    so the slider/composer don't stretch the full pane. Mobile keeps the
    pane padding for full width (no max-width). The wrapping sendbar
    sits outside .viewer-body and stays full-width. */
-.viewer-fire-content {
+
+.viewer-fire-content{
   max-width: 560px;
   margin: 0 auto;
 }
 
 @media (max-width: 599px) {
-  .viewer-fire-content {
+  .viewer-fire-content{
     max-width: 100%;
     margin: 0;
-  }
-}
+  }}/* Effects/Layout chip grid. */
 
-/* Effects/Layout chip grid. */
-.viewer-chip-row {
+.viewer-chip-row{
   display: flex;
   flex-wrap: wrap;
   gap: 0.375rem;
 }
 
-.viewer-chip {
-  min-width: 64px;
-  min-height: 44px;            /* WCAG 44×44 touch target */
-  padding: 0.375rem 0.875rem;
+/* 效果 pill —— 設計稿 05 · V2：白底髮線框，選中整顆填主色。
+ * 高 40（抽層裡的控制刻度），命中區靠 ::after 撐到 44（設計稿 17）。 */
+.viewer-chip{
+  min-height: 40px;
+  padding: 0 var(--space-4);
   border-radius: var(--radius-pill);
-  border: 1px solid var(--hud-line);
-  background: transparent;
+  border: 1px solid var(--hud-line-strong);
+  background: var(--color-bg-base);
   color: var(--color-text-primary);
   cursor: pointer;
-  font-size: var(--text-footnote);
+  font-size: var(--text-subhead);
   font-weight: 400;
   transition: background var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.375rem;
+  position: relative;
 }
 
-.viewer-chip:hover {
-  border-color: var(--hud-line-strong);
+.viewer-chip::after {
+  content: "";
+  position: absolute;
+  inset: -2px 0;
+}
+
+.viewer-chip:hover{
+  border-color: var(--color-text-secondary);
 }
 
 .viewer-chip.is-active,
-.viewer-chip[aria-pressed="true"] {
-  border-color: var(--color-primary);
-  background: var(--hud-cyan-soft);
-  color: var(--color-primary);
+.viewer-chip[aria-pressed="true"]{
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-ink-on-accent);
   font-weight: 600;
-}
-
-/* Layout 5-column grid (title + monospace sub-label). */
-.viewer-layout-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.375rem;
-}
-
-.viewer-layout-btn {
-  min-height: 56px;
-  padding: 0.5rem 0.25rem;
-  border-radius: var(--radius-md-sm);
-  cursor: pointer;
-  border: 1px solid var(--hud-line);
-  background: transparent;
-  color: var(--color-text-primary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.1875rem;
-  transition: background var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast);
-}
-
-.viewer-layout-btn:hover {
-  border-color: var(--hud-line-strong);
-}
-
-.viewer-layout-btn.is-active,
-.viewer-layout-btn[aria-pressed="true"] {
-  border-color: var(--color-primary);
-  background: var(--hud-cyan-soft);
-  color: var(--viewer-ink-accent);
-}
-
-.viewer-layout-btn__zh {
-  font-size: var(--text-footnote);
-  font-weight: 500;
-}
-
-.viewer-layout-btn__sub {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 0.5px;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-}
-
-.viewer-layout-btn.is-active .viewer-layout-btn__sub {
-  color: var(--viewer-ink-accent);
 }
 
 /* Send bar — pill container with emoji ☺ button + input + FIRE.
  * flex:0 0 auto pins it to the bottom of the shell/viewport. */
-.viewer-sendbar {
+
+.viewer-sendbar{
   flex: 0 0 auto;
   position: relative;
   padding: 0.625rem 1.25rem 0.75rem;
@@ -1370,7 +876,7 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   background: var(--color-bg-base);
 }
 
-.viewer-sendbar-pill {
+.viewer-sendbar-pill{
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1379,13 +885,12 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   border: 1px solid var(--hud-line);
   background: var(--color-bg-elevated); /* lightBg2 in light theme */
   transition: border-color var(--motion-fast);
-}
-
-/* 2026-05-17 design v3-r10: inline send-status banner anchored above the
+}/* 2026-05-17 design v3-r10: inline send-status banner anchored above the
    pill. Lime when sent (signals "delivered"), crimson when blocked. JS
    toggles [hidden] + is-sent / is-blocked, then auto-clears. */
-.viewer-sendbar { position: relative; }
-.viewer-sendbar-banner {
+
+.viewer-sendbar{ position: relative; }
+.viewer-sendbar-banner{
   position: absolute;
   left: 50%;
   bottom: calc(100% + 8px);
@@ -1401,39 +906,35 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   pointer-events: none;
   animation: viewer-banner-in 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.viewer-sendbar-banner[hidden] { display: none; }
-.viewer-sendbar-banner.is-sent {
+.viewer-sendbar-banner[hidden]{ display: none; }
+.viewer-sendbar-banner.is-sent{
   background: #84e100;
   color: #001428;
   box-shadow: 0 4px 20px rgba(132, 225, 0, 0.4);
 }
-.viewer-sendbar-banner.is-blocked {
+.viewer-sendbar-banner.is-blocked{
   background: #ff4d4f;
   color: #fff;
   box-shadow: 0 4px 20px rgba(255, 77, 79, 0.4);
 }
 @keyframes viewer-banner-in {
-  from { opacity: 0; transform: translate(-50%, 8px); }
-  to   { opacity: 1; transform: translate(-50%, 0); }
-}
+  from{ opacity: 0; transform: translate(-50%, 8px); }
+  to{ opacity: 1; transform: translate(-50%, 0); }}
 @media (prefers-reduced-motion: reduce) {
-  .viewer-sendbar-banner { animation: none; }
-}
-
-/* Sendbar hint state colors — design v3-r10 line 478-489. JS sets
+  .viewer-sendbar-banner{ animation: none; }}/* Sendbar hint state colors — design v3-r10 line 478-489. JS sets
    data-state on the hint span; CSS recolors.
    2026-07-29：原本直接寫深色臂的三個亮色，淺色主題下 1.65 / 3.27 / 1.67，
    送出結果等於沒回饋。三個語意 token 本身早就有 light-dark()，改指過去
    淺色一次補到 4.5+，深色維持原本的亮色不動。 */
-.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="sent"]     { color: var(--viewer-ink-success); }
-.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="blocked"]  { color: var(--viewer-ink-error); }
-.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="cooldown"] { color: var(--viewer-ink-warning); }
 
-/* 2026-07-07 uiux polish B2/B4: persistent status row ABOVE the pill (not
+.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="sent"]{ color: var(--viewer-ink-success); }
+.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="blocked"]{ color: var(--viewer-ink-error); }
+.viewer-sendbar-meta > [data-i18n="sendbarHint"][data-state="cooldown"]{ color: var(--viewer-ink-warning); }/* 2026-07-07 uiux polish B2/B4: persistent status row ABOVE the pill (not
  * squeezed into the FIRE button or a badge over the input) so the input
  * placeholder stays fully visible while an offline / dropped-message
  * notice is shown. Block-level, full width, wraps if needed. */
-.viewer-sendbar-status-row {
+
+.viewer-sendbar-status-row{
   margin: 0 4px 4px;
   padding: 4px 8px;
   border-radius: var(--radius-md, 6px);
@@ -1446,13 +947,12 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   letter-spacing: 0.4px;
   line-height: 1.4;
 }
-.viewer-sendbar-status-row[hidden] { display: none; }
-
-/* 2026-07-07 uiux polish B3: brief "reconnected" confirmation toast,
+.viewer-sendbar-status-row[hidden]{ display: none; }/* 2026-07-07 uiux polish B3: brief "reconnected" confirmation toast,
  * mirrors the existing .admin-offline-banner bottom placement (style.css)
  * so it doesn't feel like a new, disconnected component — just the
  * positive counterpart shown for ~2s after recovery. */
-.viewer-reconnected-toast {
+
+.viewer-reconnected-toast{
   position: fixed;
   left: 0;
   right: 0;
@@ -1469,18 +969,17 @@ body.viewer-body-v2:not(.is-dark) .viewer-hero-wordmark.is-on-light { display: b
   text-align: center;
   animation: viewer-banner-in 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-body.viewer-body-v2.is-dark .viewer-reconnected-toast {
+body.viewer-body-v2.is-dark .viewer-reconnected-toast{
   color: var(--color-success-bright);
 }
 @media (prefers-reduced-motion: reduce) {
-  .viewer-reconnected-toast { animation: none; }
-}
+  .viewer-reconnected-toast{ animation: none; }}
 
-.viewer-sendbar-pill.is-active {
+.viewer-sendbar-pill.is-active{
   border-color: var(--color-primary);
 }
 
-.viewer-emoji-btn {
+.viewer-emoji-btn{
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -1493,12 +992,12 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   flex-shrink: 0;
 }
 
-.viewer-emoji-btn.is-active {
+.viewer-emoji-btn.is-active{
   background: var(--hud-cyan-soft);
   color: var(--color-primary);
 }
 
-.viewer-sendbar-input {
+.viewer-sendbar-input{
   flex: 1;
   background: transparent;
   border: none;
@@ -1513,11 +1012,11 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   min-width: 0;
 }
 
-.viewer-sendbar-input::placeholder {
+.viewer-sendbar-input::placeholder{
   color: var(--color-text-secondary);
 }
 
-.viewer-fire-btn {
+.viewer-fire-btn{
   padding: 8px 16px;
   border-radius: var(--radius-pill);
   background: var(--color-bg-elevated);
@@ -1535,33 +1034,32 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   flex-shrink: 0;
 }
 
-.viewer-fire-btn:not([disabled]) {
+.viewer-fire-btn:not([disabled]){
   background: var(--color-primary);
   color: #000;
   cursor: pointer;
-}
-
-/* 2026-07-29：同上，離線態的紅色改走 --viewer-ink-error。
+}/* 2026-07-29：同上，離線態的紅色改走 --viewer-ink-error。
    淺色 2.72 → 5.38、深色 4.90（原本規則根本沒生效時是 4.14）。 */
-.viewer-fire-btn[data-state="offline"] {
+
+.viewer-fire-btn[data-state="offline"]{
   background: rgba(255, 77, 79, 0.08);
   color: var(--viewer-ink-error);
 }
 
-.viewer-fire-btn:not([disabled]):hover {
+.viewer-fire-btn:not([disabled]):hover{
   transform: translateY(-1px);
 }
 
-.viewer-fire-btn:not([disabled]):active {
+.viewer-fire-btn:not([disabled]):active{
   transform: translateY(0);
 }
 
-.viewer-fire-btn .btn-spinner {
+.viewer-fire-btn .btn-spinner{
   width: 14px;
   height: 14px;
 }
 
-.viewer-sendbar-meta {
+.viewer-sendbar-meta{
   display: flex;
   justify-content: space-between;
   margin-top: 4px;
@@ -1572,12 +1070,11 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   letter-spacing: 1px;
 }
 
-.viewer-sendbar-meta__count.is-near {
+.viewer-sendbar-meta__count.is-near{
   color: var(--color-warning);
-}
+}/* Emoji popover — absolute above the send bar pill. */
 
-/* Emoji popover — absolute above the send bar pill. */
-.viewer-emoji-popover {
+.viewer-emoji-popover{
   position: absolute;
   left: 1.25rem;
   right: 1.25rem;
@@ -1592,110 +1089,31 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast {
   z-index: 30;
 }
 
-.viewer-emoji-popover.is-open {
+.viewer-emoji-popover.is-open{
   display: block;
 }
 
-.viewer-emoji-popover-grid {
+.viewer-emoji-popover-grid{
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 0.25rem;
 }
 
 @media (max-width: 520px) {
-  .viewer-emoji-popover-grid {
+  .viewer-emoji-popover-grid{
     grid-template-columns: repeat(8, 1fr);
-  }
-}
+  }}/* Reduced motion — kill hover transforms. */
 
-/* Image-emoji tiles inside the popover + the legacy #emojiPicker grid. */
-.viewer-emoji-tile {
-  padding: 0.375rem 0;
-  min-height: 36px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  border: 1px solid var(--hud-line);
-  background: transparent;
-  font-size: var(--text-title2);
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background var(--motion-fast), border-color var(--motion-fast);
-}
-
-.viewer-emoji-tile:hover {
-  background: var(--hud-cyan-soft);
-  border-color: var(--color-primary);
-}
-
-.viewer-emoji-tile img {
-  width: 22px;
-  height: 22px;
-}
-
-/* Header bar — prototype viewer omits this when inBrowser=true, so we
- * hide it by default. Language picker + connection status still render
- * but are tucked away; re-show by toggling `.viewer-has-topstrip` on body. */
-.viewer-topstrip {
-  display: none;
-}
-
-body.viewer-has-topstrip .viewer-topstrip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.5rem 1.25rem 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 1.5px;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-}
-
-.viewer-topstrip-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.viewer-topstrip-status + .viewer-topstrip-status {
-  margin-left: 0.75rem;
-}
-
-.viewer-topstrip-select {
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--hud-line);
-  color: var(--color-text-secondary);
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 0.1em;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-
-.viewer-topstrip-select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-/* Reduced motion — kill hover transforms. */
 @media (prefers-reduced-motion: reduce) {
   .viewer-chip,
-  .viewer-layout-btn,
   .viewer-fire-btn,
   .viewer-preview-text,
-  .viewer-emoji-btn {
+  .viewer-emoji-btn{
     transition: none;
   }
-  .viewer-fire-btn:not([disabled]):hover {
+  .viewer-fire-btn:not([disabled]):hover{
     transform: none;
-  }
-}
-
-/* Offline full-panel (P2-1) — 樣式的**單一來源是 hud.css**（`.viewer-offline-card`
+  }}/* Offline full-panel (P2-1) — 樣式的**單一來源是 hud.css**（`.viewer-screenoff-card`
  * 那一段）。那份把整張卡做成深色卡，並在 scope 內重新宣告 --color-text-* 三個
  * token，所以不管宿主頁面是淺是深，卡上的字都讀得到。
  *
@@ -1708,31 +1126,30 @@ body.viewer-has-topstrip .viewer-topstrip {
  * 每一個 light-dark() token（--color-primary、--hud-line…）都自動解析到深色臂，
  * 不必像 hud.css 那樣一顆一顆重宣告。少了它，淺色主題下倒數膠囊的 sky-600
  * 文字畫在深卡上只有 4.02:1。 */
-.viewer-offline-card {
+
+.viewer-screenoff-card{
   color-scheme: dark;
 }
-.viewer-offline-countdown #offlineCountdownValue {
+.viewer-offline-countdown #offlineCountdownValue{
   font-size: var(--text-title2);
   font-weight: 700;
-}
-
-/* ─── Viewer states (P3 Group B, 2026-04-27) ──────────────────────── */
-/* Full-screen overlays for ViewerBanned + ViewerPollThankYou. Replaces
+}/* ─── Viewer states (P3 Group B, 2026-04-27) ──────────────────────── *//* Full-screen overlays for ViewerBanned + ViewerPollThankYou. Replaces
    the chat surface when triggered (data-viewer-state on body). */
-.viewer-state-root {
+
+.viewer-state-root{
   position: fixed; inset: 0;
   display: flex; align-items: center; justify-content: center;
   pointer-events: none;
   z-index: 100;
 }
-body[data-viewer-state] .viewer-state-root { pointer-events: auto; }
-body[data-viewer-state] .viewer-page-shell { display: none; }
-body[data-viewer-state] {
+body[data-viewer-state] .viewer-state-root{ pointer-events: auto; }
+body[data-viewer-state] .viewer-page-shell{ display: none; }
+body[data-viewer-state]{
   background: var(--color-bg-deep, #050910);
   min-height: 100vh;
 }
 
-.viewer-state {
+.viewer-state{
   position: relative;
   width: 100%; max-width: 480px;
   margin: 0 auto;
@@ -1741,20 +1158,18 @@ body[data-viewer-state] {
   text-align: center;
   font-family: var(--font-sans);
   color: var(--color-text-bright);
-}
-/* 2026-07-29 雙主題：禁言／限流畫面的警示紅、警示黃原本硬寫深色臂的
+}/* 2026-07-29 雙主題：禁言／限流畫面的警示紅、警示黃原本硬寫深色臂的
  * red-400 / amber-400，在淺色主題（頁面 slate-50）上文字 2.64:1、圖示 2.50:1、
  * 限流 kicker 1.60:1。改吃 --viewer-ink-error / --viewer-ink-warning：
- * 深色臂就是原本那兩個值（零視覺變化），淺色臂各深一階才過 AA。 */
+ * 深色臂就是原本那兩個值（零視覺變化），淺色臂各深一階才過 AA。 *//* Banned variant */
 
-/* Banned variant */
-.viewer-state-frame {
+.viewer-state-frame{
   position: absolute; inset: 12px;
   border: 1px solid rgba(248, 113, 113, 0.40);
   border-radius: var(--radius-md);
   pointer-events: none;
 }
-.viewer-state-corner {
+.viewer-state-corner{
   position: absolute;
   width: 16px; height: 16px;
   border-color: var(--viewer-ink-error);
@@ -1762,12 +1177,12 @@ body[data-viewer-state] {
   border-width: 0;
   pointer-events: none;
 }
-.viewer-state-corner--tl { top: 12px; left: 12px; border-top-width: 2px; border-left-width: 2px; }
-.viewer-state-corner--tr { top: 12px; right: 12px; border-top-width: 2px; border-right-width: 2px; }
-.viewer-state-corner--bl { bottom: 12px; left: 12px; border-bottom-width: 2px; border-left-width: 2px; }
-.viewer-state-corner--br { bottom: 12px; right: 12px; border-bottom-width: 2px; border-right-width: 2px; }
+.viewer-state-corner--tl{ top: 12px; left: 12px; border-top-width: 2px; border-left-width: 2px; }
+.viewer-state-corner--tr{ top: 12px; right: 12px; border-top-width: 2px; border-right-width: 2px; }
+.viewer-state-corner--bl{ bottom: 12px; left: 12px; border-bottom-width: 2px; border-left-width: 2px; }
+.viewer-state-corner--br{ bottom: 12px; right: 12px; border-bottom-width: 2px; border-right-width: 2px; }
 
-.viewer-state-banned-icon {
+.viewer-state-banned-icon{
   position: relative;
   width: 110px; height: 110px;
   margin: 24px 0;
@@ -1779,7 +1194,7 @@ body[data-viewer-state] {
   font-size: 56px; font-weight: 700;
   box-shadow: 0 0 32px rgba(248, 113, 113, 0.20);
 }
-.viewer-state-banned-icon .slash {
+.viewer-state-banned-icon .slash{
   position: absolute; left: 50%; top: 50%;
   width: 70%; height: 4px;
   background: var(--viewer-ink-error);
@@ -1787,26 +1202,26 @@ body[data-viewer-state] {
   border-radius: var(--radius-2xs);
 }
 
-.viewer-state-kicker {
+.viewer-state-kicker{
   font-family: var(--font-mono);
   font-size: var(--text-caption); letter-spacing: 2.5px;
   color: var(--viewer-ink-error);
   margin-bottom: 8px;
 }
-.viewer-state-title {
+.viewer-state-title{
   margin: 0; font-size: var(--text-title2); font-weight: 600;
   letter-spacing: 0.5px;
 }
-.viewer-state-title--center { text-align: center; }
-.viewer-state-desc {
+.viewer-state-title--center{ text-align: center; }
+.viewer-state-desc{
   font-size: var(--text-footnote); line-height: 1.7;
   color: var(--color-text-secondary);
   margin-top: 12px;
   max-width: 380px;
 }
-.viewer-state-desc--center { text-align: center; }
+.viewer-state-desc--center{ text-align: center; }
 
-.viewer-state-info {
+.viewer-state-info{
   margin-top: 24px; padding: 12px 16px;
   background: var(--color-bg-card, rgba(15, 23, 42, 0.75));
   border: 1px solid var(--color-border);
@@ -1817,12 +1232,12 @@ body[data-viewer-state] {
   letter-spacing: 0.4px;
   width: 100%;
 }
-.viewer-state-info .row {
+.viewer-state-info .row{
   display: flex; justify-content: space-between; gap: 16px;
 }
-.viewer-state-info .v { color: var(--color-text-bright); }
+.viewer-state-info .v{ color: var(--color-text-bright); }
 
-.viewer-state-tip {
+.viewer-state-tip{
   margin-top: 16px; padding: 8px 12px;
   background: rgba(56, 189, 248, 0.08);
   border: 1px solid rgba(56, 189, 248, 0.40);
@@ -1832,15 +1247,14 @@ body[data-viewer-state] {
   max-width: 380px;
   text-align: left;
 }
-.viewer-state-tip .kicker {
+.viewer-state-tip .kicker{
   display: block;
   color: var(--viewer-ink-accent);
   font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 1.5px;
   margin-bottom: 4px;
-}
+}/* Thank-you variant */
 
-/* Thank-you variant */
-.viewer-state-thanks-icon {
+.viewer-state-thanks-icon{
   position: relative;
   width: 96px; height: 96px;
   margin-top: 40px;
@@ -1853,18 +1267,18 @@ body[data-viewer-state] {
   font-size: 48px;
   box-shadow: 0 0 40px rgba(56, 189, 248, 0.35), inset 0 0 24px rgba(56, 189, 248, 0.14);
 }
-.viewer-state-thanks-icon .ring {
+.viewer-state-thanks-icon .ring{
   position: absolute; border-radius: 50%;
   pointer-events: none;
 }
-.viewer-state-thanks-icon .ring-1 {
+.viewer-state-thanks-icon .ring-1{
   inset: -10px; border: 1px solid rgba(56, 189, 248, 0.35);
 }
-.viewer-state-thanks-icon .ring-2 {
+.viewer-state-thanks-icon .ring-2{
   inset: -22px; border: 1px solid rgba(56, 189, 248, 0.14);
 }
 
-.viewer-state-recap {
+.viewer-state-recap{
   width: 100%; max-width: 380px;
   margin-top: 16px; padding: 16px;
   background: var(--color-bg-card, rgba(15, 23, 42, 0.75));
@@ -1872,23 +1286,23 @@ body[data-viewer-state] {
   border-radius: var(--radius-md);
   text-align: left;
 }
-.viewer-state-recap .kicker {
+.viewer-state-recap .kicker{
   font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 1.2px;
   color: var(--color-text-muted, #64748b);
   margin-bottom: 4px;
 }
-.viewer-state-recap .question {
+.viewer-state-recap .question{
   font-size: var(--text-footnote); font-weight: 600; line-height: 1.5;
   margin-bottom: 12px;
 }
-.viewer-state-recap .choice {
+.viewer-state-recap .choice{
   display: flex; align-items: center; gap: 8px;
   padding: 8px 12px;
   background: rgba(56, 189, 248, 0.08);
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-sm);
 }
-.viewer-state-recap .choice .check {
+.viewer-state-recap .choice .check{
   width: 20px; height: 20px;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--color-primary);
@@ -1897,29 +1311,29 @@ body[data-viewer-state] {
   font-size: var(--text-footnote); font-weight: 700;
   flex-shrink: 0;
 }
-.viewer-state-recap .choice .lbl {
+.viewer-state-recap .choice .lbl{
   flex: 1; font-size: var(--text-footnote); font-weight: 600;
 }
-.viewer-state-recap .choice .ts {
+.viewer-state-recap .choice .ts{
   font-family: var(--font-mono); font-size: var(--text-caption);
   color: var(--color-text-muted, #64748b);
 }
-.viewer-state-recap .meta {
+.viewer-state-recap .meta{
   margin-top: 8px;
   font-family: var(--font-mono); font-size: var(--text-caption);
   line-height: 1.7; letter-spacing: 0.3px;
   color: var(--color-text-muted, #64748b);
 }
-.viewer-state-recap .meta .dot {
+.viewer-state-recap .meta .dot{
   display: inline-block;
   width: 6px; height: 6px;
   border-radius: 50%;
   background: var(--color-text-muted, #64748b);
   margin-right: 4px;
 }
-.viewer-state-recap .meta .dot.is-good { background: #86efac; box-shadow: 0 0 4px #86efac; }
+.viewer-state-recap .meta .dot.is-good{ background: #86efac; box-shadow: 0 0 4px #86efac; }
 
-.viewer-state-action {
+.viewer-state-action{
   margin-top: 16px;
   width: 100%; max-width: 380px;
   padding: 12px;
@@ -1932,127 +1346,33 @@ body[data-viewer-state] {
   box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
   transition: transform var(--motion-fast) ease;
 }
-.viewer-state-action:hover { transform: translateY(-1px); }
-.viewer-state-trace {
+.viewer-state-action:hover{ transform: translateY(-1px); }
+.viewer-state-trace{
   margin-top: 12px;
   font-family: var(--font-mono); font-size: var(--text-caption);
   letter-spacing: 0.3px;
   color: var(--color-text-muted, #64748b);
-}
-
-/* Rate-limit variant
+}/* Rate-limit variant
  * 2026-07-29：amber-400 在淺色主題上 1.53–1.60:1。--color-warning 的深色臂
  * **就是** amber-400（深色零變化），淺色臂 amber-600 過 AA。
  * 底色填滿的按鈕例外——它自己就是亮底，維持 amber-400 + 近黑字。 */
-.viewer-state-ratelimit-icon {
+
+.viewer-state-ratelimit-icon{
   border-color: var(--viewer-ink-warning);
   background: rgba(251, 191, 36, 0.08);
   color: var(--viewer-ink-warning);
   box-shadow: 0 0 40px rgba(251, 191, 36, 0.3), inset 0 0 24px rgba(251, 191, 36, 0.14);
 }
-.viewer-state-kicker--warn {
+.viewer-state-kicker--warn{
   color: var(--viewer-ink-warning);
 }
-.viewer-state-action--warn {
+.viewer-state-action--warn{
   background: #fbbf24;
   color: #111827;
   box-shadow: 0 4px 16px rgba(251, 191, 36, 0.35);
-}
-
-/* ═══════════════════════════════════════════════════════════════════
- * Nickname chip + floating popover (design v4 brief 0518-4c, 2026-05-18)
- * Replaces the bare input with a tappable chip that opens an in-place
- * popover for editing. Source input stays in DOM (hidden) so existing
- * fire flow / localStorage logic is untouched.
- * ═══════════════════════════════════════════════════════════════════ */
-.viewer-nickname-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-}
-.viewer-nickname-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 12px;
-  border-radius: var(--radius-pill);
-  background: rgba(56, 189, 248, 0.10);
-  border: 1px solid var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
-  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
-  font-size: var(--text-footnote);
-  font-weight: 600;
-  /* 2026-07-29 驗收補洞：--color-primary 的淺色臂是 sky-600（給色塊／邊框用的
-   * 中間調），畫在自己那層 8% 天藍底上只有 3.70:1。文字改吃 --viewer-ink-accent
-   * （淺 sky-700 / 深 sky-400）→ 淺色 5.36:1；深色臂與 --color-primary 完全
-   * 相同，深色零視覺變化。 */
-  color: var(--viewer-ink-accent);
-  cursor: pointer;
-  transition: background var(--motion-fast) var(--ease-out, ease),
-              border-color var(--motion-fast) var(--ease-out, ease);
-}
-.viewer-nickname-chip:hover,
-.viewer-nickname-chip[aria-expanded="true"] {
-  background: rgba(56, 189, 248, 0.18);
-  border-color: var(--glow-primary-lg, rgba(56, 189, 248, 0.6));
-}
-
-/* Light theme — design v4 brief 0518-v3 #3 fix (2026-05-18).
+}/* Light theme — design v4 brief 0518-v3 #3 fix (2026-05-18).
    sky-400 chip border is too pale on white. Swap to sky-600 (-2 shade
    for AA contrast) and bump border opacity 0.25 → 0.35 per audit. */
-body.viewer-body-v2:not(.is-dark) .viewer-nickname-chip {
-  background: rgba(2, 132, 199, 0.08);
-  border-color: rgba(2, 132, 199, 0.35);
-  /* color 交給上面的 --viewer-ink-accent（sky-700），這裡不再覆寫 */
-}
-body.viewer-body-v2:not(.is-dark) .viewer-nickname-chip:hover,
-body.viewer-body-v2:not(.is-dark) .viewer-nickname-chip[aria-expanded="true"] {
-  background: rgba(2, 132, 199, 0.14);
-  border-color: rgba(2, 132, 199, 0.55);
-}
-
-.viewer-nickname-chip-text {
-  letter-spacing: 0.3px;
-}
-.viewer-nickname-chip-edit {
-  font-size: var(--text-caption);
-  /* 2026-07-29 驗收補洞：opacity 0.7 把這支 11px 鉛筆壓到淺色 2.47:1、
-   * 深色 4.21:1 —— 兩個主題都不及格。11px 已經比 13px 的暱稱小一階，
-   * 階層靠字級就夠了，透明度拿掉：淺色 5.36、深色 6.83。 */
-}
-.viewer-nickname-hint {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  color: var(--color-text-muted);
-  letter-spacing: 0.3px;
-}
-
-/* Hide the source input but keep it in DOM (so fire flow + listeners work). */
-.viewer-nickname-source[hidden] { display: none !important; }
-
-/* Inline edit input — replaces chip in-place on click */
-.viewer-nickname-inline-input {
-  padding: 4px 12px;
-  border-radius: var(--radius-pill);
-  background: rgba(56, 189, 248, 0.10);
-  border: 1px solid var(--color-primary);
-  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
-  font-size: var(--text-footnote);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  outline: none;
-  width: 140px;
-}
-body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
-  background: rgba(2, 132, 199, 0.08);
-  border-color: #0284c7;
-}
-.viewer-nickname-inline-input[hidden] { display: none; }
-
-/* Narrow viewer — hide the "← 點擊改名" hint, chip is self-explanatory */
-@media (max-width: 480px) {
-  .viewer-nickname-hint { display: none; }
-}
 
 /* ═══════════════════════════════════════════════════════════════════
  * Mobile hamburger + settings bottom sheet
@@ -2060,10 +1380,11 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
  *
  * Desktop hides the hamburger entirely — theme + lang stay system-driven
  * with admin override per Viewer page settings. Mobile shows the
- * hamburger in viewer-hero-utility; tapping opens a bottom sheet with
+ * hamburger in .viewer-topbar; tapping opens a bottom sheet with
  * theme tri-state (深色/淺色/系統) + lang quad-state (中/EN/日/한).
  * ═══════════════════════════════════════════════════════════════════ */
-.viewer-hamburger {
+
+.viewer-hamburger{
   display: none;
   width: 32px;
   height: 32px;
@@ -2078,24 +1399,21 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   justify-content: center;
   flex-shrink: 0;
 }
-.viewer-hamburger:active {
+.viewer-hamburger:active{
   background: rgba(56, 189, 248, 0.2);
-}
+}/* Visible on mobile only — desktop 用 hero 工具列的 .viewer-theme-chip */
 
-/* Visible on mobile only — desktop 用 hero 工具列的 .viewer-theme-chip */
 @media (max-width: 768px) {
-  .viewer-hamburger { display: inline-flex; }
-}
+  .viewer-hamburger{ display: inline-flex; }}/* Bottom sheet container */
 
-/* Bottom sheet container */
-.viewer-mobile-sheet {
+.viewer-mobile-sheet{
   position: fixed;
   inset: 0;
   z-index: 100;
   pointer-events: none;
 }
-.viewer-mobile-sheet[hidden] { display: none; }
-.viewer-mobile-sheet-backdrop {
+.viewer-mobile-sheet[hidden]{ display: none; }
+.viewer-mobile-sheet-backdrop{
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
@@ -2103,10 +1421,10 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   transition: opacity var(--motion-normal, 180ms) var(--ease-in-out, ease);
   pointer-events: auto;
 }
-.viewer-mobile-sheet.is-open .viewer-mobile-sheet-backdrop {
+.viewer-mobile-sheet.is-open .viewer-mobile-sheet-backdrop{
   opacity: 1;
 }
-.viewer-mobile-sheet-panel {
+.viewer-mobile-sheet-panel{
   position: absolute;
   bottom: 0;
   left: 0;
@@ -2120,30 +1438,30 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   pointer-events: auto;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
-.viewer-mobile-sheet.is-open .viewer-mobile-sheet-panel {
+.viewer-mobile-sheet.is-open .viewer-mobile-sheet-panel{
   transform: translateY(0);
 }
-.viewer-mobile-sheet-grabber {
+.viewer-mobile-sheet-grabber{
   width: 36px;
   height: 4px;
   border-radius: var(--radius-2xs);
   background: var(--color-border, rgba(255, 255, 255, 0.18));
   margin: 8px auto 4px;
 }
-.viewer-mobile-sheet-head {
+.viewer-mobile-sheet-head{
   padding: 8px 16px;
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   gap: 8px;
 }
-.viewer-mobile-sheet-title {
+.viewer-mobile-sheet-title{
   font-size: var(--text-footnote);
   font-weight: 600;
   color: var(--color-text-primary);
   flex: 1;
 }
-.viewer-mobile-sheet-close {
+.viewer-mobile-sheet-close{
   font-size: var(--text-subhead);
   color: var(--color-text-muted);
   background: transparent;
@@ -2151,24 +1469,24 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   cursor: pointer;
   padding: 4px 8px;
 }
-.viewer-mobile-sheet-row {
+.viewer-mobile-sheet-row{
   padding: 12px 16px;
   border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.06));
   display: flex;
   align-items: center;
   gap: 12px;
 }
-.viewer-mobile-sheet-row:last-of-type { border-bottom: 0; }
-.viewer-mobile-sheet-label {
+.viewer-mobile-sheet-row:last-of-type{ border-bottom: 0; }
+.viewer-mobile-sheet-label{
   font-size: var(--text-footnote);
   color: var(--color-text-primary);
 }
-.viewer-mobile-sheet-spacer { flex: 1; }
-.viewer-mobile-sheet-segment {
+.viewer-mobile-sheet-spacer{ flex: 1; }
+.viewer-mobile-sheet-segment{
   display: flex;
   gap: 4px;
 }
-.viewer-mobile-sheet-seg {
+.viewer-mobile-sheet-seg{
   padding: 4px 12px;
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
@@ -2180,37 +1498,34 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   cursor: pointer;
   transition: background-color var(--motion-fast) var(--ease-out, ease), border-color var(--motion-fast) var(--ease-out, ease), color var(--motion-fast) var(--ease-out, ease), box-shadow var(--motion-fast) var(--ease-out, ease), transform var(--motion-fast) var(--ease-out, ease);
 }
-.viewer-mobile-sheet-seg.is-active {
+.viewer-mobile-sheet-seg.is-active{
   border-color: var(--color-primary);
   background: rgba(56, 189, 248, 0.10);
   color: var(--color-primary);
 }
-.viewer-mobile-sheet-foot {
+.viewer-mobile-sheet-foot{
   padding: 16px;
   text-align: center;
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   color: var(--color-text-muted);
-}
+}/* Desktop — bottom sheet never opens (hamburger is display:none anyway). */
 
-/* Desktop — bottom sheet never opens (hamburger is display:none anyway). */
 @media (min-width: 769px) {
-  .viewer-mobile-sheet { display: none !important; }
-}
-
-/* ═══════════════════════════════════════════════════════════════════
+  .viewer-mobile-sheet{ display: none !important; }}/* ═══════════════════════════════════════════════════════════════════
  * Desktop theme chip (design v4 brief 0518-v3 #1, 2026-05-18)
- * 3-segment ☼/◐/☾ toggle in viewer-hero-utility. Hidden on mobile
+ * 3-segment ☼/◐/☾ toggle in .viewer-topbar. Hidden on mobile
  * (replaced by hamburger bottom sheet). Reuses theme-mode storage key.
  * ═══════════════════════════════════════════════════════════════════ */
-.viewer-theme-chip {
+
+.viewer-theme-chip{
   display: inline-flex;
   border-radius: var(--radius-pill);
   overflow: hidden;
   border: 1px solid var(--hud-line, rgba(15, 23, 42, 0.12));
   flex-shrink: 0;
 }
-.viewer-theme-chip-seg {
+.viewer-theme-chip-seg{
   padding: 4px 8px;
   font-family: var(--font-mono);
   font-size: var(--text-caption);
@@ -2229,39 +1544,35 @@ body.viewer-body-v2:not(.is-dark) .viewer-nickname-inline-input {
   text-align: center;
   transform: scale(1);
 }
-.viewer-theme-chip-seg.is-active {
+.viewer-theme-chip-seg.is-active{
   transform: scale(1.05);
 }
-.viewer-theme-chip-seg:last-child { border-right: 0; }
-.viewer-theme-chip-seg:hover {
+.viewer-theme-chip-seg:last-child{ border-right: 0; }
+.viewer-theme-chip-seg:hover{
   color: var(--color-text-primary, #0f172a);
 }
-.viewer-theme-chip-seg.is-active {
+.viewer-theme-chip-seg.is-active{
   background: rgba(2, 132, 199, 0.08);
   color: var(--viewer-ink-accent);
-}
-/* Dark theme variant — accent color shift for slightly brighter sky-400 */
-body.viewer-body-v2.is-dark .viewer-theme-chip-seg.is-active {
+}/* Dark theme variant — accent color shift for slightly brighter sky-400 */
+
+body.viewer-body-v2.is-dark .viewer-theme-chip-seg.is-active{
   background: rgba(56, 189, 248, 0.10);
   color: var(--hud-cyan);
 }
 body.viewer-body-v2.is-dark .viewer-theme-chip,
-body.viewer-body-v2.is-dark .viewer-theme-chip-seg {
+body.viewer-body-v2.is-dark .viewer-theme-chip-seg{
   border-color: rgba(148, 163, 184, 0.18);
-}
+}/* Mobile (≤768px) — hide desktop chip; hamburger sheet covers same flow */
 
-/* Mobile (≤768px) — hide desktop chip; hamburger sheet covers same flow */
 @media (max-width: 768px) {
-  .viewer-theme-chip { display: none; }
-}
-
-/* ═══════════════════════════════════════════════════════════════════
+  .viewer-theme-chip{ display: none; }}/* ═══════════════════════════════════════════════════════════════════
  * Viewer poll multi-Q (design v4 brief P1 #1, 2026-05-18)
  * Image hero · progress dots · auto-mode timer bar.
  * Counts/percentages stay polestar-locked (admin-only).
  * ═══════════════════════════════════════════════════════════════════ */
 
-.viewer-poll-image {
+.viewer-poll-image{
   width: 100%;
   max-height: 200px;
   margin-bottom: 12px;
@@ -2270,8 +1581,8 @@ body.viewer-body-v2.is-dark .viewer-theme-chip-seg {
   background: var(--color-bg-elevated, #f1f5f9);
   border: 1px solid var(--hud-line, rgba(15, 23, 42, 0.12));
 }
-.viewer-poll-image[hidden] { display: none; }
-.viewer-poll-image-img {
+.viewer-poll-image[hidden]{ display: none; }
+.viewer-poll-image-img{
   width: 100%;
   height: auto;
   max-height: 200px;
@@ -2281,20 +1592,18 @@ body.viewer-body-v2.is-dark .viewer-theme-chip-seg {
 
 @media (max-width: 599px) {
   .viewer-poll-image,
-  .viewer-poll-image-img {
+  .viewer-poll-image-img{
     max-height: 160px;
-  }
-}
+  }}/* Progress dots — current cyan + wider; past dim; future neutral. */
 
-/* Progress dots — current cyan + wider; past dim; future neutral. */
-.viewer-poll-dots {
+.viewer-poll-dots{
   display: flex;
   justify-content: center;
   gap: 8px;
   margin-top: 12px;
 }
-.viewer-poll-dots[hidden] { display: none; }
-.viewer-poll-dot {
+.viewer-poll-dots[hidden]{ display: none; }
+.viewer-poll-dot{
   width: 8px;
   height: 8px;
   border-radius: var(--radius-sm);
@@ -2302,28 +1611,859 @@ body.viewer-body-v2.is-dark .viewer-theme-chip-seg {
   transition: width var(--motion-normal, 180ms) var(--ease-out, ease),
               background var(--motion-fast) var(--ease-out, ease);
 }
-.viewer-poll-dot.is-past {
+.viewer-poll-dot.is-past{
   background: var(--color-text-muted);
 }
-.viewer-poll-dot.is-current {
+.viewer-poll-dot.is-current{
   background: var(--color-primary);
   width: 20px;
   box-shadow: 0 0 8px var(--glow-primary-ring, rgba(56, 189, 248, 0.5));
-}
+}/* Auto-mode timer bar — sits between options and dots. */
 
-/* Auto-mode timer bar — sits between options and dots. */
-.viewer-poll-timer {
+.viewer-poll-timer{
   margin-top: 12px;
   height: 4px;
   border-radius: var(--radius-2xs);
   background: var(--color-bg-elevated);
   overflow: hidden;
 }
-.viewer-poll-timer[hidden] { display: none; }
-.viewer-poll-timer-fill {
+.viewer-poll-timer[hidden]{ display: none; }
+.viewer-poll-timer-fill{
   height: 100%;
   background: var(--hud-lime, #86efac);
   border-radius: var(--radius-2xs);
   /* No CSS transition — JS rAF updates width every frame for smooth
      countdown. transition would fight the rAF updates. */
+}
+/* ═══════════════════════════════════════════════════════════════════════
+ * 設計稿 05「觀眾頁示範」+ 16「觀眾頁與顯示層補充」
+ *
+ * 首屏＝預覽 ＋ 一列「樣式」摘要 ＋ 輸入框。控制項全部進 #viewerStyleSheet；
+ * 桌面 ≥768 同一份 DOM 由這裡改成右側常駐面板（設計稿 16 · VP1）。
+ * 面色沿用設計稿 03/14 的對映表（見 shared/tokens.css）。
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 頂欄 ─────────────────────────────────────────────────────────────── */
+.viewer-topbar {
+  padding: var(--space-2) var(--space-5) var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.viewer-topbar-lockup {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.viewer-topbar-title {
+  margin: 0;
+  line-height: 0;
+}
+
+/* 字標（設計稿 11/12）：轉外框 SVG，形本身就是設計。深淺各一張、CSS 擇一
+ * 顯示——用 content:url() 換 src 在 Safari 不生效且會弄壞 alt。 */
+.viewer-topbar-wordmark {
+  display: block;
+  width: auto;
+  height: 32px;
+}
+
+.viewer-topbar-wordmark.is-on-light { display: none; }
+body.viewer-body-v2:not(.is-dark) .viewer-topbar-wordmark.is-on-dark { display: none; }
+body.viewer-body-v2:not(.is-dark) .viewer-topbar-wordmark.is-on-light { display: block; }
+
+.viewer-topbar-subtitle {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-footnote);
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+@media (max-width: 599px) {
+  .viewer-topbar { padding: var(--space-2) var(--space-5) var(--space-3); }
+  .viewer-topbar-wordmark { height: 26px; }
+}
+
+/* ── 唯一的狀態 chip（設計稿 05：三處狀態收成一顆）──────────────────── */
+.viewer-screen-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+}
+
+.viewer-screen-chip.is-online {
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  color: var(--viewer-ink-success);
+}
+
+.viewer-screen-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-secondary);
+  flex: 0 0 auto;
+}
+
+.viewer-screen-chip.is-online .viewer-screen-chip-dot { background: var(--color-success); }
+
+@media (max-width: 339px) {
+  /* 極窄螢幕（<340）才收成色點，文字讓位給字標 */
+  .viewer-screen-chip-value { display: none; }
+  .viewer-screen-chip { padding: 0 var(--space-2); }
+}
+
+/* ── 分頁分段控制（有投票才浮出）────────────────────────────────────── */
+.viewer-tab-live {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  margin-left: var(--space-2);
+  display: inline-block;
+}
+
+/* ── 預覽區 ───────────────────────────────────────────────────────────── */
+.viewer-preview-idle {
+  margin: 0;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-5);
+  text-align: center;
+  /* 舞台是恆定深底，這行字不能吃主題的次要文字色（淺色臂會變深底深字）。 */
+  color: var(--viewer-stage-ink);
+  opacity: 0.72;
+  font-size: var(--text-footnote);
+}
+
+/* ── 大螢幕未開的說明卡（設計稿 05 · V4）──────────────────────────── */
+.viewer-screenoff-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-card, 14px);
+  background: var(--color-bg-base);
+  border: 1px solid var(--hud-line);
+}
+
+.viewer-screenoff-card-icon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewer-screenoff-card-title {
+  font-size: var(--text-subhead);
+  font-weight: 700;
+}
+
+.viewer-screenoff-card-body {
+  margin-top: var(--space-1);
+  font-size: var(--text-footnote);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* ── 首次暱稱提示（設計稿 16 · VN1）──────────────────────────────── */
+.viewer-nameask {
+  padding: var(--space-4);
+  border-radius: var(--radius-card, 14px);
+  background: var(--color-bg-base);
+  border: 1px solid var(--hud-line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.viewer-nameask-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.viewer-nameask-avatar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-subhead);
+  font-weight: 700;
+}
+
+.viewer-nameask-copy { flex: 1 1 auto; min-width: 0; }
+.viewer-nameask-title { font-size: var(--text-subhead); font-weight: 600; }
+
+.viewer-nameask-body {
+  margin-top: var(--space-1);
+  font-size: var(--text-footnote);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.viewer-nameask-dismiss {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-control, 10px);
+  font-size: var(--text-body);
+  /* 命中區撐到 44（設計稿 17） */
+  position: relative;
+}
+
+.viewer-nameask-dismiss::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+.viewer-nameask-row { display: flex; gap: var(--space-2); }
+
+.viewer-nameask-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-control, 10px);
+  border: 1px solid var(--hud-line-strong);
+  background: var(--color-bg-deep);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--text-subhead);
+}
+
+.viewer-nameask-ok {
+  flex: 0 0 auto;
+  height: 44px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-control, 10px);
+  background: var(--color-accent);
+  color: var(--color-ink-on-accent);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── 首屏唯一的樣式入口（設計稿 05 · V1）──────────────────────────── */
+.viewer-style-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 52px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-card, 14px);
+  border: 1px solid var(--hud-line);
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--text-subhead);
+  cursor: pointer;
+  text-align: left;
+}
+
+.viewer-style-row:hover { border-color: var(--hud-line-strong); }
+
+.viewer-style-row-left,
+.viewer-style-row-right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.viewer-style-row-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--hud-line-strong);
+  background: #fff;
+  flex: 0 0 auto;
+}
+
+.viewer-style-row-summary {
+  color: var(--color-text-secondary);
+  font-size: var(--text-footnote);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewer-style-row-caret { color: var(--color-text-secondary); }
+
+/* ── 「我送過的」（設計稿 05 · V3）───────────────────────────────── */
+.viewer-sent { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.viewer-sent-title {
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  padding: var(--space-2) var(--space-1) 0;
+}
+
+.viewer-sent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.viewer-sent-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-control, 10px);
+  background: var(--color-bg-base);
+  border: 1px solid var(--hud-line);
+  font-size: var(--text-subhead);
+}
+
+.viewer-sent-dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
+
+.viewer-sent-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewer-sent-time { font-size: var(--text-caption); color: var(--color-text-secondary); }
+
+/* ── 鍵盤上方常用 emoji（設計稿 16 · VK1）────────────────────────── */
+.viewer-quickbar {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: var(--space-2);
+}
+
+.viewer-quickbar::-webkit-scrollbar { display: none; }
+
+.viewer-quickbar-item,
+.viewer-quickbar-more {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-control, 10px);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-size: var(--text-title2);
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewer-quickbar-more { font-size: var(--text-body); color: var(--color-text-secondary); }
+
+/* ── 送出列（設計稿 05：48px 輸入框 ＋ 48px 圓形送出鍵）──────────── */
+.viewer-sendbar-input {
+  /* 手機用 16px 才不會觸發 iOS 自動放大；--text-subhead 在 ≤767 就是 16px */
+  font-size: var(--text-subhead);
+  min-height: 48px;
+}
+
+.viewer-fire-btn {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+/* 手機只留箭頭；桌面（≥768）依設計稿 D1 改成帶字的 pill「發送」 */
+.viewer-fire-btn-text { display: none; }
+.viewer-fire-btn-arrow { display: inline-flex; font-size: var(--text-body); }
+.viewer-fire-btn-count { display: none; }
+
+.viewer-fire-btn.is-cooldown .viewer-fire-btn-arrow,
+.viewer-fire-btn.is-cooldown .viewer-fire-btn-text { display: none; }
+
+/* 限流倒數：數字 ＋ 環形進度（設計稿 05 · V5） */
+.viewer-fire-btn.is-cooldown {
+  background: var(--color-bg-elevated);
+  color: var(--viewer-ink-warning);
+}
+
+.viewer-fire-btn.is-cooldown .viewer-fire-btn-count {
+  display: inline-flex;
+  font-size: var(--text-subhead);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.viewer-fire-btn.is-cooldown::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color-warning) calc(var(--viewer-cooldown-progress, 0) * 360deg),
+    transparent 0
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+}
+
+/* 送出列下方左槽兩態（設計稿 05 · V1 vs V4/V5）。*/
+.viewer-sendbar-meta__who {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+}
+
+.viewer-sendbar-nicklink {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--viewer-ink-accent);
+  font: inherit;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.viewer-sendbar-meta__hint:empty { display: none; }
+
+.viewer-sendbar-meta:has(.viewer-sendbar-meta__hint:not(:empty)) .viewer-sendbar-meta__who {
+  display: none;
+}
+
+/* ── 樣式抽層（手機 bottom sheet）───────────────────────────────── */
+.viewer-style-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+}
+
+.viewer-style-sheet[hidden] { display: none; }
+
+.viewer-style-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(15 23 42 / 40%);
+}
+
+.viewer-style-sheet-panel {
+  position: relative;
+  width: 100%;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-base);
+  border-radius: 24px 24px 0 0;
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2) 0 max(var(--space-6), env(safe-area-inset-bottom));
+}
+
+.viewer-style-sheet-grabber {
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--hud-line-strong);
+  margin: 0 auto var(--space-2);
+  flex: 0 0 auto;
+}
+
+.viewer-style-sheet-view {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.viewer-style-sheet-view[hidden] { display: none; }
+
+.viewer-style-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-5) var(--space-3);
+  flex: 0 0 auto;
+}
+
+.viewer-style-sheet-head.is-three-up { justify-content: space-between; }
+
+.viewer-style-sheet-title {
+  font-size: var(--text-body);
+  font-weight: 700;
+}
+
+.viewer-style-sheet-done,
+.viewer-style-sheet-back {
+  border: 0;
+  background: transparent;
+  padding: var(--space-2);
+  margin: calc(var(--space-2) * -1);
+  color: var(--viewer-ink-accent);
+  font: inherit;
+  font-size: var(--text-subhead);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.viewer-style-sheet-scroll {
+  overflow-y: auto;
+  min-height: 0;
+  padding: 0 var(--space-5) var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* 抽層內的即時預覽 */
+.viewer-sheet-preview {
+  position: relative;
+  overflow: hidden;
+  height: 88px;
+  border-radius: var(--radius-control, 10px);
+  background: var(--viewer-stage-bg);
+  flex: 0 0 auto;
+}
+
+.viewer-sheet-preview-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 28px;
+  white-space: nowrap;
+  animation: dm-preview-scroll var(--viewer-preview-duration, 8s) linear infinite;
+}
+
+.viewer-sheet-preview-track.is-static {
+  animation: none;
+  left: var(--space-4);
+}
+
+.viewer-sheet-preview-nick {
+  font-size: var(--text-footnote);
+  font-weight: 500;
+  color: #fff;
+  opacity: 0.75;
+  margin-right: var(--space-2);
+}
+
+.viewer-sheet-preview-text {
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 6px rgb(0 0 0 / 60%);
+}
+
+/* 抽層裡的一組設定 */
+.viewer-sheet-group { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.viewer-sheet-group-label {
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.viewer-sheet-group-note { font-weight: 400; color: var(--color-text-secondary); }
+
+/* 分段控制 —— 大小、位置共用（設計稿 03） */
+.viewer-seg {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+}
+
+.viewer-seg-item {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 40px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--text-subhead);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewer-seg-item.is-active,
+.viewer-seg-item[aria-checked="true"] {
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  box-shadow: var(--shadow-base);
+}
+
+/* 抽層裡的一列（暱稱入口／顯示暱稱開關） */
+.viewer-sheet-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 52px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-control, 10px);
+  border: 0;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--text-subhead);
+  cursor: pointer;
+  text-align: left;
+}
+
+.viewer-sheet-row.is-static { cursor: default; }
+
+.viewer-sheet-row-value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+}
+
+.viewer-sheet-row-caret { color: var(--color-text-secondary); }
+
+/* 更多：透明度、速度 */
+.viewer-sheet-more { border-top: 1px solid var(--hud-line); padding-top: var(--space-4); }
+
+.viewer-sheet-more-summary {
+  cursor: pointer;
+  text-align: center;
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  color: var(--viewer-ink-accent);
+  list-style: none;
+}
+
+.viewer-sheet-more-summary::-webkit-details-marker { display: none; }
+
+.viewer-sheet-more-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-top: var(--space-4);
+}
+
+/* 暱稱第二層 */
+.viewer-nick-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 52px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-control, 10px);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--hud-line);
+}
+
+.viewer-nick-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--text-body);
+  outline: none;
+}
+
+.viewer-nick-count {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.viewer-nick-hint {
+  margin: 0;
+  font-size: var(--text-footnote);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* 開關（設計稿 03） */
+.viewer-switch { display: inline-flex; position: relative; }
+.viewer-switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+
+.viewer-switch-track {
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--hud-line-strong);
+  display: inline-block;
+  position: relative;
+  transition: background 120ms ease;
+}
+
+.viewer-switch input:checked + .viewer-switch-track { background: var(--color-success); }
+
+.viewer-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 120ms ease;
+}
+
+.viewer-switch input:checked + .viewer-switch-track .viewer-switch-knob {
+  transform: translateX(18px);
+}
+
+/* 顏色色點放大到 40px（設計稿 05：28 → 40 的點擊目標） */
+.viewer-swatch-preset {
+  width: 40px;
+  height: 40px;
+}
+
+.viewer-color-row { flex-wrap: wrap; gap: var(--space-3); }
+
+/* ── 桌面 ≥768：抽層改成右側常駐面板（設計稿 16 · VP1）─────────── */
+@media (min-width: 768px) {
+  .viewer-shell {
+    /* 主欄置中 560（設計稿 05 · D1），面板佔右側 360 */
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .viewer-topbar,
+  .viewer-pane,
+  .viewer-sendbar { grid-column: 1; }
+
+  .viewer-style-sheet {
+    position: relative;
+    grid-column: 2;
+    grid-row: 1 / -1;
+    inset: auto;
+    z-index: 1;
+    display: block;   /* 常駐；[hidden] 由 viewer-style-sheet.js 拿掉 */
+    border-left: 1px solid var(--hud-line);
+  }
+
+  .viewer-style-sheet-backdrop,
+  .viewer-style-sheet-grabber,
+  .viewer-style-sheet-done,
+  .viewer-style-sheet-back { display: none; }
+
+  .viewer-style-sheet-panel {
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: var(--space-5) 0;
+  }
+
+  /* 桌面沒有兩層抽層——暱稱直接排在主層下面 */
+  .viewer-style-sheet-view[hidden] { display: flex; }
+  .viewer-style-sheet-view[data-style-view="nickname"] .viewer-sheet-preview { display: none; }
+
+  /* 首屏那一列摘要在桌面沒有作用（面板已常駐） */
+  .viewer-style-row { display: none; }
+
+  /* 送出鍵改回帶字的 pill（設計稿 05 · D1） */
+  .viewer-fire-btn {
+    width: auto;
+    min-width: 0;
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-pill);
+  }
+
+  .viewer-fire-btn-text { display: inline; }
+  .viewer-fire-btn-arrow { display: none; }
+  .viewer-fire-btn.is-cooldown { padding: 0 var(--space-4); }
+
+  /* 桌面用鍵盤，不需要 emoji 快捷列（emoji picker 仍在） */
+  .viewer-quickbar-item { display: none; }
+}
+
+/* ── 動態減弱（設計稿 17 · RM1）──────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .viewer-preview-track,
+  .viewer-sheet-preview-track {
+    animation: none;
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+
+  .viewer-style-sheet-panel,
+  .viewer-mobile-sheet-panel { transition: none; }
+}
+
+/* Toast —— 設計稿 05 · V3：頂部置中的深色 pill，不是右上角堆疊。
+ * 觀眾多半單手拿手機，右上角是最難看到也最容易被瀏海遮住的位置。 */
+body.viewer-body-v2 #toast-container {
+  top: max(var(--space-3), env(safe-area-inset-top));
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+  max-width: calc(100vw - var(--space-8));
+}
+
+/* 送過的訊息色點：白色彈幕在白卡上看不見，補一圈髮線。 */
+.viewer-sent-dot {
+  box-shadow: inset 0 0 0 1px var(--hud-line-strong);
+}
+
+/* 桌面主欄置中 560（設計稿 05 · D1）。抽層改成右欄後，剩下的寬度全給
+ * 主欄，內容再置中，才不會整份表單黏在左邊。 */
+@media (min-width: 768px) {
+  .viewer-fire-content,
+  .viewer-poll-card,
+  .viewer-sendbar > * {
+    margin-inline: auto;
+    max-width: 560px;
+  }
+
+  .viewer-sendbar { padding-inline: var(--space-6); }
 }

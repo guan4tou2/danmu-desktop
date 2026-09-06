@@ -29,11 +29,18 @@
     </head>
 
     <body id="danmubody">
-        <!-- Danmu in-flight counter (bottom-right corner) -->
-        <div id="danmu-counter" class="hud-label is-accent" aria-live="polite" aria-label="Active danmu count"></div>
+        <!-- 設計稿 09 · D2：投影畫面上只有彈幕，沒有任何 HUD。
+             原本右下角常駐的即時彈幕計數移除——那是給主持人看的數字，
+             它的家在桌面端控制視窗與 Admin，不是觀眾的視線裡。
+             track-manager 仍會算，值掛在 window.__danmuActiveCount。 -->
 
-        <!-- Overlay Idle · Hero Lockup — prototype hero-scenes.jsx:86 OverlayIdle.
-             Hidden by default. Invoked manually via tray / window.API.toggleOverlayIdle. -->
+        <!-- ══════════════════════════════════════════════════════════
+             入場 QR（設計稿 09 · D1）。觀眾唯一會看到的產品畫面，所以
+             QR 要在 10 公尺外掃得到：260px 白卡，網址用等寬大字另起一行。
+             原本的「DESKTOP READY · 等待中」chip 與掃描線背景移除——
+             那是給主持人看的技術狀態，投影幕上沒有它的位置。
+             手動開關；由系統匣 / 主視窗 / window.OverlayIdle 觸發。
+             ══════════════════════════════════════════════════════════ -->
         <div id="overlay-idle" aria-hidden="true">
           <!-- 2026-07-29 使用者回報：單螢幕時 QR 蓋滿畫面（含控制視窗），
                找不到出口。場景本身要有關閉鈕；idle 顯示期間 main 會暫時
@@ -43,15 +50,8 @@
           </button>
           <div class="overlay-idle-backdrop" aria-hidden="true"></div>
           <div class="overlay-idle-inner">
-            <h1 class="overlay-idle-hero">Danmu Fire</h1>
-            <p class="overlay-idle-subtitle">掃描 QR code 或打開 — — 開始送彈幕</p>
-            <div class="overlay-idle-chip">
-              <span class="overlay-idle-chip-dot" aria-hidden="true"></span>
-              <span class="overlay-idle-chip-label">DESKTOP READY</span>
-              <span class="overlay-idle-chip-suffix">· 等待中</span>
-            </div>
             <div class="overlay-idle-qr" aria-hidden="true">
-              <svg viewBox="0 0 21 21" width="108" height="108">
+              <svg viewBox="0 0 21 21" width="220" height="220">
                 <rect x="0" y="0" width="7" height="7" fill="#fff"/>
                 <rect x="0" y="0" width="7" height="1" fill="#000"/>
                 <rect x="0" y="6" width="7" height="1" fill="#000"/>
@@ -88,8 +88,18 @@
                 <rect x="18" y="9" width="1" height="1" fill="#000"/>
               </svg>
             </div>
-            <div class="overlay-idle-url">—</div>
+            <div class="overlay-idle-copy">
+              <img src="assets/brand/wordmark-dark.svg" alt="Danmu Fire"
+                   class="overlay-idle-wordmark" width="540" height="96" />
+              <p class="overlay-idle-lead">掃 QR 或打開<br><span class="overlay-idle-url">—</span></p>
+              <p class="overlay-idle-subtitle">打字，就會飛到這個螢幕上</p>
+              <div class="overlay-idle-ready">
+                <span class="overlay-idle-ready-dot" aria-hidden="true"></span>
+                已就緒 · 等待第一則彈幕
+              </div>
+            </div>
           </div>
+          <div class="overlay-idle-hint">主持人：按 ⌘⇧Q 或系統匣可關閉此畫面</div>
         </div>
 
         <script src="./dist/child.bundle.js"></script>

@@ -92,7 +92,13 @@
   --color-primary-hover: light-dark(var(--sky-700), var(--sky-500));
   --color-primary-light: light-dark(var(--sky-400), var(--sky-300));  /* cyan-300 — lighter cyan for hero / hover-up state */
   --color-secondary: #3b82f6;
-  --color-accent: #06b6d4;
+  /* 2026-09-06 設計稿 14 token 對照表：主色從 cyan #06b6d4 換成 sky
+   * （淺 #0284C7 / 深 #38BDF8）。原本 --color-accent 是 cyan、
+   * --color-ink-accent 是 sky，兩個不同色相同時出現在同一個畫面上。 */
+  --color-accent: light-dark(#0284c7, #38bdf8);
+  /* 主色**上面**的文字。深色臂的 #38BDF8 太亮，白字只有 1.9:1；
+   * 稿上指定配 #04121F（13.6:1）。淺色臂維持白字（4.9:1）。 */
+  --color-ink-on-accent: light-dark(#ffffff, #04121f);
   --color-accent-light: #22d3ee;   /* cyan-400 — brighter accent for stats/data viz */
   --color-accent-dark: #0891b2;    /* cyan-600 — gradient endpoint */
 

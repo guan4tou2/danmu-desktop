@@ -13,35 +13,37 @@ function loadLocale(loc) {
   return JSON.parse(fs.readFileSync(p, "utf8"));
 }
 
+// 2026-09-06 設計稿 04：連線設定從獨立分頁搬進 ⚙ 面板的一組設定列。
+// 剩下的 key 是那組列真正用得到的；kicker 與卡片標題整組退場
+// （設計稿 14 刪除清單）。
 const REQUIRED_KEYS = [
-  // Section header (renamed connSectionTitle from "連線狀態" → "連線設定")
-  "connSectionTitle",
-  "connSectionKicker",
-  // Single Server field
-  "connServerLabel",
+  // ⚙ › 伺服器
+  "clientServerLabel",
+  "clientAddress",
   "connServerPlaceholder",
-  "connServerHelp",
-  // ⚐ 測試 button + chip states
   "connTestBtn",
-  "connTestChipIdle",
-  "connTestHint",
-  // In-place edit save/cancel
   "connBtnApply",
   "connBtnCancel",
-  // Collapsible WebSocket Token panel
-  "connAuthSummary",
-  "connAuthKicker",
-  "connAuthHint",
-  "connAuthStatusUnset",
-  "connTokenPlaceholder",
-  // LAST USED SERVER card
-  "connLastKicker",
-  "connLastMeta",
+  "connHostEmptyHint",
   "connLastNever",
-  // About page
-  "aboutCopyright",
-  "aboutDesc",
+  // ⚙ › 伺服器 › 連線密碼（原 WebSocket Token）
+  "clientConnPassword",
+  "clientConnPasswordPlaceholder",
+  "clientConnPasswordHelp",
+  "connAuthStatusUnset",
+  // ⚙ › 關於
+  "sectionAboutTitle",
   "checkForUpdates",
+  // S1 首次啟動精靈
+  "clientOnboardTitle",
+  "clientOnboardBody",
+  "clientOnboardContinue",
+  "clientOnboardSkip",
+  // S4 連線失敗橫幅
+  "clientConnFailTitle",
+  "clientConnFailBody",
+  "clientRetry",
+  "clientChangeAddress",
 ];
 
 // Retired keys — must not appear (UI elements they label are gone).
@@ -51,6 +53,20 @@ const RETIRED_KEYS = [
   "connStatReconnectUnit",
   "connStatUptime",
   "connBtnReconnect",
+  // 設計稿 14 刪除清單：kicker 與併頁後的 key
+  "connSectionTitle",
+  "connSectionKicker",
+  "connServerLabel",
+  "connServerHelp",
+  "connTestChipIdle",
+  "connTestHint",
+  "connAuthSummary",
+  "connAuthKicker",
+  "connAuthHint",
+  "connLastKicker",
+  "connLastMeta",
+  "aboutCopyright",
+  "aboutDesc",
 ];
 
 describe.each(LOCALES)("locale %s", (loc) => {
