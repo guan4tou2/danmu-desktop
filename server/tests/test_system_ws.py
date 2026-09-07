@@ -55,7 +55,9 @@ def _recv_non_ping(ws, timeout: float = 2.0):
             ws.socket.settimeout(remaining)
             raw = ws.recv()
             data = json.loads(raw)
-            if data.get("type") == "ping":
+            # display_layer 是連上線時伺服器補推的現況（設計稿 16 · OS1），
+            # 跟 ping 一樣不是「我剛送出的那則」。
+            if data.get("type") in ("ping", "display_layer"):
                 continue
             return data
         except (TimeoutError, ConnectionClosed):
@@ -81,15 +83,23 @@ def test_ws_server_accepts_connection(ws_server_port):
         assert ws is not None
 
 
+def _recv_until(ws, msg_type, limit=6):
+    """讀到指定 type 為止。連上線時伺服器會先補推一則 display_layer
+    （設計稿 16 · OS1），所以第一則不再保證是 ping。"""
+    for _ in range(limit):
+        data = json.loads(ws.recv())
+        if data.get("type") == msg_type:
+            return data
+    raise AssertionError(f"never received a {msg_type} message")
+
+
 def test_ws_server_sends_ping_to_connected_client(ws_server_port):
     """連線後伺服器應定期發送 {"type": "ping"} 訊息"""
     from websockets.sync.client import connect
 
     with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
         ws.socket.settimeout(2.0)
-        raw = ws.recv()
-        data = json.loads(raw)
-        assert data.get("type") == "ping"
+        assert _recv_until(ws, "ping")
 
 
 # ─── 訊息轉發測試 ─────────────────────────────────────────────────────────────
@@ -100,9 +110,9 @@ def test_enqueued_message_forwarded_to_ws_client(ws_server_port):
     from websockets.sync.client import connect
 
     with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
-        # 等待伺服器準備好（接收第一個 ping）
+        # 等待伺服器準備好（連上時的 display_layer 補推之後，第一個 ping）
         ws.socket.settimeout(2.0)
-        ws.recv()  # 丟棄初始 ping
+        _recv_until(ws, "ping")
 
         payload = {"type": "danmu", "text": "system test message"}
         ws_queue.enqueue_message(payload)
@@ -119,7 +129,7 @@ def test_multiple_messages_all_delivered(ws_server_port):
 
     with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
         ws.socket.settimeout(2.0)
-        ws.recv()  # 丟棄初始 ping
+        _recv_until(ws, "ping")  # 先吃掉連上時的 display_layer 補推與初始 ping
 
         payloads = [{"seq": i, "type": "danmu"} for i in range(3)]
         for p in payloads:
@@ -149,7 +159,7 @@ def test_heartbeat_gets_ack(ws_server_port):
 
     with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
         ws.socket.settimeout(2.0)
-        ws.recv()  # 丟棄初始 ping
+        _recv_until(ws, "ping")  # 先吃掉連上時的 display_layer 補推與初始 ping
 
         ts = "2026-01-01T00:00:00Z"
         ws.send(json.dumps({"type": "heartbeat", "timestamp": ts}))
@@ -330,10 +340,28 @@ def test_flask_ws_accepts_correct_token(ws_server_port):
     try:
         with connect(f"ws://127.0.0.1:{ws_server_port}/ws?token=real-secret") as ws:
             ws.socket.settimeout(3.0)
-            data = json.loads(ws.recv())
-            assert data.get("type") == "ping"
+            assert _recv_until(ws, "ping")
     finally:
         ws_auth.set_state(require_token=False, token="")
+
+
+def test_flask_ws_pushes_display_layer_on_connect(ws_server_port):
+    """設計稿 16 · OS1：中途才連上的大螢幕要立刻拿到現在的安全區與描邊模式。
+
+    display_layer 只在 admin 改動時廣播——沒有這一則補推，活動開始後才開的
+    第二台顯示層會停在編譯進去的預設值（安全區 5%、描邊自動），跟主持人早上
+    設好的那組不一樣。
+    """
+    from websockets.sync.client import connect
+
+    from server.services import display_layer
+
+    display_layer.set_state({"safe_area": 8, "stroke_mode": "always"})
+    with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
+        ws.socket.settimeout(3.0)
+        data = _recv_until(ws, "display_layer")
+    assert data["settings"]["safe_area"] == 8
+    assert data["settings"]["stroke_mode"] == "always"
 
 
 # ─── Token 驗證：真實 TCP 連線測試 ──────────────────────────────────────────

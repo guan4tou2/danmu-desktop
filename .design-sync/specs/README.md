@@ -138,8 +138,17 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
    行為有四條 jest 測試（顯示中不跳／關閉後才跳／兩顆按鈕各自送出／同一次
    下載只跳一次）。
 5. **設計稿 13** ——README banner 與 social preview 出圖。
-6. **設計稿 16/17 的收尾**——安全區與自動描邊只做了顯示層那半，Admin 還沒有
-   對應的設定列；a11y 檢核清單（reduce-motion／高對比／DPI／焦點／SR）未逐項自測。
+6. **設計稿 16/17 的收尾**——安全區（OS1）與淺底描邊（OS2）2026-09-07
+   **已接上**：Admin › 顯示層 › 投影畫面 兩列（安全區 `0% / 5% / 8%` 分段、
+   描邊 `自動／總是描邊／不描邊` 分段），值存進 `display_layer.json`。
+   **顯示層那半 2026-08 就寫好了，但沒有任何東西會去設它**——`child.css`
+   的 `--overlay-safe` 永遠是寫死的 5%，`stage-luminance.js` 的 `setForced`
+   沒有呼叫端。現在兩個顯示層都吃：OBS 的 `overlay.js` 與 Electron 的
+   `renderer-modules/display-layer.js`，彈幕軌道也會把顯示範圍再往內縮一圈
+   （刻意推出畫面下方的用法不拉回來）。初始值由 server 在 client 註冊完成
+   當下用 WS 補推——`child.html` 的 CSP 是 `connect-src ws: wss:`，overlay
+   自己 fetch `/display-layer` 出不去。
+   **剩下**：a11y 檢核清單（reduce-motion／高對比／DPI／焦點／SR）未逐項自測。
 
 ## 契約測試
 

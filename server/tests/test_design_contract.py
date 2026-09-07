@@ -1023,3 +1023,46 @@ def test_viewer_emoji_more_actually_opens_the_panel(zh):
     focus = css.split(".viewer-sendbar-pill:focus-within{")[1].split("}")[0]
     assert "border-color: var(--color-accent);" in focus
     assert "0 0 0 3px color-mix(in srgb, var(--color-accent) 15%, transparent)" in focus
+
+
+def test_stage_safe_area_and_stroke_have_an_admin_entry(zh):
+    """設計稿 16 · OS1／OS2：Admin › 顯示層 要有安全區與描邊這兩列。
+
+    顯示層那半 2026-08 就寫好了——`child.css` 的 `--overlay-safe`、
+    `stage-luminance.js` 的 `setForced`——但**沒有任何東西會去設它們**：
+    安全區永遠停在寫死的 5%，描邊模式的入口不存在。
+    """
+    assert zh["dlSafeArea"] == "投影安全區"
+    assert "2–5%" in zh["dlSafeAreaHint"]
+    assert zh["dlStrokeAlways"] == "總是描邊"
+
+    js = _strip_comments(_read("server/static/js/admin-display.js"))
+    assert 'data-dl-seg="safe_area"' in js
+    assert 'data-dl-seg="stroke_mode"' in js
+    assert 'data-dl-opt="8"' in js and 'data-dl-opt="always"' in js
+
+    # 服務層：三檔列舉 + 三種模式
+    svc = _read("server/services/display_layer.py")
+    assert "_SAFE_AREA_CHOICES = (0, 5, 8)" in svc
+    assert '_STROKE_MODES = ("auto", "always", "never")' in svc
+
+    # 兩個顯示層都要接上——OBS 的 overlay.js 與 Electron 的 display-layer.js
+    obs = _strip_comments(_read("server/static/js/overlay.js"))
+    assert "--overlay-safe" in obs and "insetArea" in obs
+    assert 'strokeMode === "always"' in obs
+    el = _strip_comments(_read("danmu-desktop/renderer-modules/display-layer.js"))
+    assert "OverlayDisplayLayer" in el and "StageLuminance" in el
+    ws = _strip_comments(_read("danmu-desktop/renderer-modules/overlay-ws.js"))
+    assert 'data.type === "display_layer"' in ws
+    # 初始值由 server 在 client 註冊完成當下補推——child.html 的 CSP 是
+    # `connect-src ws: wss:`，overlay 自己 fetch /display-layer 出不去。
+    flask_ws = _read("server/ws/flask_ws.py")
+    assert '"type": "display_layer"' in flask_ws
+    assert "display_layer.get_state()" in flask_ws
+    assert "fetchInitial" not in _read("danmu-desktop/renderer-modules/display-layer.js")
+
+    # 描邊的兩份 CSS 共用同一組 token——同一場活動的兩個顯示層不能有兩種字
+    for path in ("server/static/css/overlay.css", "danmu-desktop/child.css"):
+        css = _read(path)
+        assert "-webkit-text-stroke: 1.5px var(--stage-stroke-ink);" in css, path
+        assert "paint-order: stroke fill;" in css, path

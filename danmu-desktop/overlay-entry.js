@@ -12,6 +12,9 @@ const { initGlobalEffects } = require("./renderer-modules/konami");
 const { initOverlayWs } = require("./renderer-modules/overlay-ws");
 // 淺底自動描邊（設計稿 16 · OS2）——自我註冊，只需要被 require 進 bundle。
 require("./renderer-modules/stage-luminance");
+// 投影安全區與描邊模式的接收端（設計稿 16 · OS1／OS2）。要在 overlay-ws
+// 之前註冊 window.OverlayDisplayLayer——連上線的第一件事就是抓它。
+require("./renderer-modules/display-layer");
 
 const initOverlay = async () => {
   initTrackManager();

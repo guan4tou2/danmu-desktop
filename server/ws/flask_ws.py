@@ -27,7 +27,7 @@ from simple_websocket.ws import CloseReason
 
 from ..config import Config
 from ..managers import connection_manager
-from ..services import ws_auth, ws_queue
+from ..services import display_layer, ws_auth, ws_queue
 from ..services.ws_state import update_ws_client_count
 from ..utils import sanitize_log_string
 
@@ -183,6 +183,20 @@ def init_ws(app):
         logger.info("New client connected from %s. Total: %s", client_ip, total_clients)
         update_ws_client_count(total_clients)
         sender_gl = gevent.spawn(_sender_loop, ws, outbox)
+
+        # 顯示層設定只在 admin 改動時才廣播——中途才連上的大螢幕手上會是
+        # 編譯進去的預設值（安全區 5%、描邊自動），跟主持人早上設好的那組
+        # 不一樣。連上就先補一份現況。
+        #
+        # 走 WS 而不是讓 overlay 自己去 fetch /display-layer：Electron 的
+        # child.html CSP 是 `connect-src ws: wss:`，那邊 fetch 不出去，而
+        # 為了一個設定把 https: 整個開進 connect-src 不划算。
+        try:
+            outbox.put_nowait(
+                json.dumps({"type": "display_layer", "settings": display_layer.get_state()})
+            )
+        except Exception as exc:  # 補推失敗不該讓連線本身失敗
+            logger.warning("initial display_layer push failed: %s", sanitize_log_string(str(exc)))
 
         try:
             while True:

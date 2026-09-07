@@ -24,8 +24,10 @@ from server.services.ws_state import get_ws_client_count
 # ─── 輔助函式 ─────────────────────────────────────────────────────────────────
 
 
-def _recv(ws, *, skip_types=("ping",), timeout: float = 2.0):
-    """從 WS 接收一則非心跳訊息，回傳 dict 或 None（timeout）"""
+# display_layer：伺服器在 client 註冊完成當下會補推一則現況（設計稿 16 ·
+# OS1），所以「第一則非 ping」不再等於「我剛送出的那則」。
+def _recv(ws, *, skip_types=("ping", "display_layer"), timeout: float = 2.0):
+    """從 WS 接收一則非心跳／非設定同步的訊息，回傳 dict 或 None（timeout）"""
     from websockets.exceptions import ConnectionClosed
 
     deadline = time.monotonic() + timeout

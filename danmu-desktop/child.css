@@ -262,15 +262,15 @@ img{
  * 顯示層每 2 秒取樣背景平均亮度；> 60% 視為淺底，body 掛 .is-light-stage。
  * paint-order:stroke fill 讓描邊畫在字的**後面**，字形不會變胖。 */
 body.is-light-stage h1.danmu {
-  -webkit-text-stroke: 1.5px rgba(15, 23, 42, 0.9);
+  -webkit-text-stroke: 1.5px var(--stage-stroke-ink);
   paint-order: stroke fill;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  text-shadow: var(--stage-stroke-shadow);
 }
 
 /* 深色彈幕在淺底上改加白光暈——深描邊只會讓它更看不見 */
 body.is-light-stage h1.danmu.is-dark-ink {
   -webkit-text-stroke: 0;
-  text-shadow: 0 0 2px #fff, 0 0 8px rgba(255, 255, 255, 0.9);
+  text-shadow: var(--stage-dark-ink-glow);
 }
 
 /* ── 投票結果卡（設計稿 09 · D3）─────────────────────────────────────

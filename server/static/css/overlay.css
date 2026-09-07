@@ -14,9 +14,17 @@ body {
  * HUD framing (4 corner brackets) + top bar + hero + 29×29 QR + 6-char code +
  * state-specific action row.
  * Hidden by default; invoke via window.OverlayIdle.{show,hide,setState}. */
+/* ── 投影安全區（設計稿 16 · OS1）─────────────────────────────────────
+ * 預設內縮 5%；admin 的「顯示層 › 投影安全區」把值寫進 --overlay-safe
+ * （overlay.js 的 applyDisplayLayer）。彈幕軌道的內縮在 JS 那邊做——
+ * 軌道是 JS 算出來的絕對座標，不是 CSS 盒模型管得到的。 */
+:root {
+  --overlay-safe: 5%;
+}
+
 #overlay-idle {
   position: fixed;
-  inset: 0;
+  inset: var(--overlay-safe);
   z-index: 10;
   display: none;
   align-items: center;
@@ -359,7 +367,7 @@ body {
 
 /* ─── Poll overlay variants (P3 Group B, 2026-04-27) ───────────────── */
 .poll-overlay-root {
-  position: fixed; inset: 0;
+  position: fixed; inset: var(--overlay-safe);
   pointer-events: none;
   z-index: 9999;
 }
@@ -664,4 +672,21 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.55);
+}
+
+/* ── 淺底描邊（設計稿 16 · OS2）───────────────────────────────────────
+ * OBS browser source 讀不到它蓋在上面那個場景的像素，所以這裡沒有自動
+ * 取樣——主持人在 admin 鎖「總是描邊」時，overlay.js 才掛 .is-light-stage。
+ * 規則本身與 Electron 顯示層（danmu-desktop/child.css）保持同一份寫法。
+ * paint-order:stroke fill 讓描邊畫在字的**後面**，字形不會變胖。 */
+body.is-light-stage h1.danmu {
+  -webkit-text-stroke: 1.5px var(--stage-stroke-ink);
+  paint-order: stroke fill;
+  text-shadow: var(--stage-stroke-shadow);
+}
+
+/* 深色彈幕在淺底上改加白光暈——深描邊只會讓它更看不見 */
+body.is-light-stage h1.danmu.is-dark-ink {
+  -webkit-text-stroke: 0;
+  text-shadow: var(--stage-dark-ink-glow);
 }

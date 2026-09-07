@@ -39,6 +39,9 @@ def test_defaults_match_engine_semantics():
         "avoid_overlap": True,
         "area_top": 0,
         "area_height": 100,
+        # 設計稿 16 · OS1／OS2（2026-09-07）
+        "safe_area": 5,
+        "stroke_mode": "auto",
     }
 
 
@@ -125,3 +128,52 @@ def test_admin_patch_rejects_bad_range_with_400(client):
     assert res.status_code == 400
     assert "error" in res.get_json()
     assert display_layer.get_state()["area_top"] == 0
+
+
+# ─── 投影安全區與淺底描邊（設計稿 16 · OS1／OS2，2026-09-07）─────────────
+
+
+@pytest.mark.parametrize("value", [0, 5, 8])
+def test_safe_area_accepts_the_three_choices(value):
+    assert display_layer.set_state({"safe_area": value})["safe_area"] == value
+
+
+@pytest.mark.parametrize("value", [3, 10, -1, "5", True, None])
+def test_safe_area_rejects_anything_else(value):
+    """三檔是列舉不是範圍——投影機裁邊是 2–5% 的量級，開放滑桿只會讓人
+    停在一個沒有意義的 3%。"""
+    with pytest.raises(ValueError):
+        display_layer.set_state({"safe_area": value})
+
+
+@pytest.mark.parametrize("mode", ["auto", "always", "never"])
+def test_stroke_mode_accepts_the_three_modes(mode):
+    assert display_layer.set_state({"stroke_mode": mode})["stroke_mode"] == mode
+
+
+@pytest.mark.parametrize("mode", ["Auto", "on", "", 1, None])
+def test_stroke_mode_rejects_anything_else(mode):
+    with pytest.raises(ValueError):
+        display_layer.set_state({"stroke_mode": mode})
+
+
+def test_patch_route_broadcasts_safe_area_to_the_overlays(client, monkeypatch):
+    """改了要立刻推給連線中的顯示層——不必重開 OBS source 或桌面端。"""
+    sent = []
+    monkeypatch.setattr(
+        "server.services.messaging.forward_to_ws_server",
+        lambda payload: sent.append(payload),
+    )
+    res = _authed_patch(client, "/admin/display-layer", {"safe_area": 8})
+    assert res.status_code == 200
+    assert res.get_json()["safe_area"] == 8
+    assert sent and sent[-1]["type"] == "display_layer"
+    assert sent[-1]["settings"]["safe_area"] == 8
+
+
+def test_public_display_layer_endpoint_exposes_the_two_new_fields(client):
+    """overlay 沒有登入態，靠公開的 /display-layer 抓初始值。"""
+    display_layer.set_state({"safe_area": 0, "stroke_mode": "always"})
+    body = client.get("/display-layer").get_json()
+    assert body["safe_area"] == 0
+    assert body["stroke_mode"] == "always"

@@ -35,6 +35,12 @@ function initOverlayWs(config) {
   const WS_AUTH_TOKEN = config.wsAuthToken || "";
   console.log(IP_ADDR, HTTPS_PORT_NUM, "wss");
   const url = buildWsUrl(IP_ADDR, HTTPS_PORT_NUM, WS_AUTH_TOKEN);
+  // 投影安全區把顯示範圍再往內縮一圈（設計稿 16 · OS1）。模組沒載進來時
+  // 原樣放行——安全區是加分項，不該讓彈幕整個不顯示。
+  function _insetArea(area) {
+    const dl = window.OverlayDisplayLayer;
+    return dl && typeof dl.insetArea === "function" ? dl.insetArea(area) : area;
+  }
   let ws = null;
   let reconnectAttempts = 0;
   const maxReconnectAttempts = 10;
@@ -523,6 +529,13 @@ function initOverlayWs(config) {
             return;
           }
 
+          // 顯示層設定（設計稿 16 · OS1／OS2）：投影安全區與淺底描邊。
+          // admin 一改就推過來，不必重開顯示層。
+          if (data.type === "display_layer") {
+            if (window.OverlayDisplayLayer) window.OverlayDisplayLayer.apply(data.settings);
+            return;
+          }
+
           // 管理員 Remote Control：清除所有彈幕（保留 #danmu-counter 等非彈幕元素）
           if (data.type === "clear") {
             document
@@ -693,7 +706,7 @@ function initOverlayWs(config) {
                 parseInt(dataPayload.speed),
                 dataPayload.fontInfo,
                 dataPayload.textStyles || { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 },
-                dataPayload.displayArea || { top: 0, height: 100 },
+                _insetArea(dataPayload.displayArea || { top: 0, height: 100 }),
                 dataPayload.effectCss || null,
                 dataPayload.layout || "scroll",
                 dataPayload.layoutConfig || null,

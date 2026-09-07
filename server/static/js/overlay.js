@@ -21,6 +21,12 @@
   var avoidOverlap = true;
   var displayAreaCfg = { top: 0, height: 100 };
 
+  // 投影安全區與淺底描邊（設計稿 16 · OS1／OS2）。OBS browser source 讀不到
+  // 它蓋在上面那個場景的像素，所以「自動」在這裡等於維持原本的深底假設；
+  // 主持人鎖「總是描邊」時才真的翻。
+  var safeArea = 5;
+  var strokeMode = "auto";
+
   function applyDisplayLayer(d) {
     if (!d || typeof d !== "object") return;
     if (!maxTracksPinned && typeof d.max_tracks === "number") maxTracks = d.max_tracks;
@@ -28,6 +34,26 @@
     var top = typeof d.area_top === "number" ? d.area_top : displayAreaCfg.top;
     var h = typeof d.area_height === "number" ? d.area_height : displayAreaCfg.height;
     displayAreaCfg = { top: top, height: h };
+    if (typeof d.safe_area === "number" && isFinite(d.safe_area)) {
+      safeArea = Math.max(0, Math.min(20, d.safe_area));
+      document.documentElement.style.setProperty("--overlay-safe", safeArea + "%");
+    }
+    if (typeof d.stroke_mode === "string") {
+      strokeMode = d.stroke_mode;
+      if (document.body) {
+        document.body.classList.toggle("is-light-stage", strokeMode === "always");
+      }
+    }
+  }
+
+  /** 顯示範圍再往內縮一個安全區。兩者疊加：範圍是主持人畫的框，安全區是
+   *  投影機會吃掉的最外圈。刻意推出畫面下方（下緣 > 100）的用法不拉回來。 */
+  function insetArea(area) {
+    if (!safeArea || !area) return area;
+    var top = area.top < safeArea ? safeArea : area.top;
+    var bottom = area.top + area.height;
+    if (bottom > 100 - safeArea && bottom <= 100) bottom = 100 - safeArea;
+    return { top: top, height: Math.max(0, bottom - top) };
   }
 
   function fetchDisplayLayer() {
@@ -619,7 +645,7 @@
           parseFloat(data.speed) || 1.0,
           data.fontInfo,
           data.textStyles || { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 },
-          data.displayArea || displayAreaCfg,
+          insetArea(data.displayArea || displayAreaCfg),
           effectCss,
           data.layout || "scroll",
           data.layoutConfig || null,

@@ -176,6 +176,33 @@
               </span>
             </div>
           </div>
+
+          <!-- 投影安全區與淺底描邊（設計稿 16 · OS1／OS2）。顯示層那半早就
+               寫好了（child.css 的 --overlay-safe、stage-luminance 的 setForced），
+               缺的一直是這兩列——安全區永遠停在寫死的 5%，描邊模式沒有入口。 -->
+          <div class="admin-ui-group-label">${escapeHtml(t("dlGroupStage"))}</div>
+          <div class="admin-ui-group">
+            <div class="admin-ui-group-row is-tall">
+              <span class="lbl">${escapeHtml(t("dlSafeArea"))}
+                <span class="sub">${escapeHtml(t("dlSafeAreaHint"))}</span>
+              </span>
+              <span class="val admin-ui-seg" data-dl-seg="safe_area">
+                <button type="button" data-dl-opt="0">0%</button>
+                <button type="button" data-dl-opt="5">5%</button>
+                <button type="button" data-dl-opt="8">8%</button>
+              </span>
+            </div>
+            <div class="admin-ui-group-row is-tall">
+              <span class="lbl">${escapeHtml(t("dlStrokeMode"))}
+                <span class="sub">${escapeHtml(t("dlStrokeModeHint"))}</span>
+              </span>
+              <span class="val admin-ui-seg" data-dl-seg="stroke_mode">
+                <button type="button" data-dl-opt="auto">${escapeHtml(t("dlStrokeAuto"))}</button>
+                <button type="button" data-dl-opt="always">${escapeHtml(t("dlStrokeAlways"))}</button>
+                <button type="button" data-dl-opt="never">${escapeHtml(t("dlStrokeNever"))}</button>
+              </span>
+            </div>
+          </div>
         </div>
 
         <div class="admin-dsp2-grid">
@@ -1058,6 +1085,16 @@
         const cur = Number(_dlState[key] ?? 0);
         const next = cur + Number(step.getAttribute("data-dl-step"));
         postDisplayLayer(key, next);
+        return;
+      }
+      const opt = e.target.closest("[data-dl-opt]");
+      if (opt) {
+        const wrap = opt.closest("[data-dl-seg]");
+        if (!wrap) return;
+        const key = wrap.getAttribute("data-dl-seg");
+        const raw = opt.getAttribute("data-dl-opt");
+        // safe_area 是數字、stroke_mode 是字串——後端會擋型別，這裡照鍵送對的
+        postDisplayLayer(key, key === "safe_area" ? Number(raw) : raw);
       }
     });
 
@@ -1095,6 +1132,14 @@
       if (rg && document.activeElement !== rg) rg.value = String(val);
       const tg = page.querySelector(`[data-dl-toggle="${key}"]`);
       if (tg) tg.checked = !!val;
+      const seg = page.querySelector(`[data-dl-seg="${key}"]`);
+      if (seg) {
+        seg.querySelectorAll("[data-dl-opt]").forEach((b) => {
+          const on = b.getAttribute("data-dl-opt") === String(val);
+          b.classList.toggle("is-active", on);
+          b.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+      }
     });
   }
 

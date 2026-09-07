@@ -188,6 +188,14 @@
    * 清楚；壓到 .45 就變成一般 modal 遮罩，兩者的語意不同。 */
   --color-overlay-soft: light-dark(rgba(15, 23, 42, 0.35), rgba(2, 6, 23, 0.55));
 
+  /* 淺底描邊（設計稿 16 · OS2）。大螢幕的兩份 overlay CSS（OBS 的
+   * server/static/css/overlay.css 與 Electron 的 danmu-desktop/child.css）
+   * 共用同一組值——描邊規則兩邊必須長一樣，不然同一場活動的兩個顯示層
+   * 會有兩種字。恆定深色語意，不隨 admin 主題翻。 */
+  --stage-stroke-ink: rgba(15, 23, 42, 0.9);
+  --stage-stroke-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --stage-dark-ink-glow: 0 0 2px #ffffff, 0 0 8px rgba(255, 255, 255, 0.9);
+
   /* Theme-aware overlay tints — replace hardcoded rgba(255,255,255,X)
    * row/button hover so they correctly invert on light theme. Dark
    * mode = subtle white lift; light mode override below = subtle slate

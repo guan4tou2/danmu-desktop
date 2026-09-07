@@ -132,7 +132,9 @@ def _recv_non_ping(ws, timeout: float = 5.0):
         try:
             ws.socket.settimeout(remaining)
             data = json.loads(ws.recv())
-            if data.get("type") == "ping":
+            # display_layer 是連上線時伺服器補推的現況（設計稿 16 · OS1），
+            # 跟 ping 一樣不是「我剛送出的那則」。
+            if data.get("type") in ("ping", "display_layer"):
                 continue
             return data
         except (TimeoutError, ConnectionClosed):

@@ -15,9 +15,17 @@ query 帶，displayArea 則是寫死的 {top:0, height:100}。
   avoid_overlap 避免彈幕重疊。關掉時引擎跳過碰撞檢查，彈幕可以疊著跑
   area_top      從畫面頂端算起，% 。0–90
   area_height   使用畫面高度，% 。10–100
+  safe_area     投影安全區內縮 %。0 / 5（預設）/ 8 —— 設計稿 16 · OS1
+  stroke_mode   淺底描邊：auto（自動判斷）/ always / never —— 設計稿 16 · OS2
 
 area_top + area_height 允許超過 100（下緣落在畫面外）——那是主持人刻意把
 彈幕推出畫面下方的用法，不擋。
+
+safe_area 與 stroke_mode 是 2026-09-07 補的。在這之前顯示層那半已經寫好了
+（child.css 的 `--overlay-safe`、stage-luminance.js 的 setForced），但**沒有
+任何東西會去設它們**：安全區永遠是寫死的 5%，描邊模式的鎖定入口不存在。
+安全區的三檔是列舉不是範圍——投影機裁邊是 2–5% 的量級，開放 0–20 的滑桿只會
+讓人停在一個沒有意義的 3%。
 """
 
 from __future__ import annotations
@@ -31,6 +39,8 @@ _DEFAULT: Dict[str, Any] = {
     "avoid_overlap": True,
     "area_top": 0,
     "area_height": 100,
+    "safe_area": 5,
+    "stroke_mode": "auto",
 }
 
 # (最小, 最大)。max_tracks 的 0 是「自動」哨兵，另外放行。
@@ -39,6 +49,9 @@ _RANGES = {
     "area_top": (0, 90),
     "area_height": (10, 100),
 }
+
+_SAFE_AREA_CHOICES = (0, 5, 8)
+_STROKE_MODES = ("auto", "always", "never")
 
 
 def _normalize(raw: Any) -> Dict[str, Any]:
@@ -64,6 +77,21 @@ def _normalize(raw: Any) -> Dict[str, Any]:
         if not isinstance(value, bool):
             raise ValueError("avoid_overlap must be a boolean")
         out["avoid_overlap"] = value
+
+    if "safe_area" in raw:
+        value = raw["safe_area"]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError("safe_area must be a number")
+        value = int(value)
+        if value not in _SAFE_AREA_CHOICES:
+            raise ValueError("safe_area must be one of %s" % (_SAFE_AREA_CHOICES,))
+        out["safe_area"] = value
+
+    if "stroke_mode" in raw:
+        value = raw["stroke_mode"]
+        if not isinstance(value, str) or value not in _STROKE_MODES:
+            raise ValueError("stroke_mode must be one of %s" % (_STROKE_MODES,))
+        out["stroke_mode"] = value
 
     return out
 
