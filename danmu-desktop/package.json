@@ -72,7 +72,6 @@
       "tailwind.css",
       "styles.css",
       "tokens.css",
-      "hud.css",
       "i18n.js",
       "client-nav.js",
       "assets/**/*",

@@ -15,7 +15,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{{ title|default("錯誤") }} · Danmu Fire</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/hud.css') }}" />
   </head>
   <body class="admin-err {{ 'admin-err--full' if _is_admin else 'admin-err--viewer' }}">
     <div class="admin-err__center">

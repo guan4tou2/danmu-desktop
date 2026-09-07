@@ -333,7 +333,7 @@
    * predate this pass and already have live consumers at those exact px
    * values (see style.css card/button usages) — do not renumber them.
    * --radius-2xs/xs/md-sm fill the gaps below 4px so the ~360 hardcoded
-   * 2px/3px/6px declarations across style.css/hud.css/viewer-v2.css can
+   * 2px/3px/6px declarations across style.css/viewer-v2.css can
    * point at a token without shifting any existing var(--radius-*) call site. */
   --radius-2xs: 0.125rem;  /* 2px — thin bars/dots */
   --radius-xs: 0.1875rem;  /* 3px — chips/small pills */
@@ -375,7 +375,7 @@
    * (hudTokens.text / bg0 / bg1 / bg2 / fontMono …). Existing v4 CSS
    * calls var(--hud-…) with a hex fallback; these resolve the token
    * to the underlying semantic --color-… so a change in one place
-   * propagates. Values match shared/hud.css's :root @ line ~14. */
+   * propagates. */
   --hud-text: var(--color-text-primary);
   --hud-text-dim: var(--color-text-secondary);
   --hud-textDim: var(--color-text-secondary);     /* camelCase shim some prototypes use */
@@ -438,5 +438,60 @@
     --control-h: 48px;
     --row-h: 52px;
     --page-pad: 16px;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+ * 全域基底（原 shared/hud.css，設計稿 14 §4 步驟 2 併入）
+ *
+ * 這三條規則是唯一真正跨全部五個表面的：admin／觀眾頁／大螢幕／
+ * Electron 主視窗／Electron 顯示層。tokens.css 是它們唯一都載得到的
+ * 檔案——overlay.html 的載入順序是 tokens → overlay，沒有 style.css。
+ * ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 焦點環：全站唯一一種樣式（設計稿 17）───────────────────────────
+ * 2px 實線 var(--focus)、offset 3px。深色臂的 --focus 是白色而不是主色：
+ * 藍底上再畫一圈藍框等於沒畫。
+ *
+ * 放在 tokens.css 而不是 style.css，是因為五個表面只有這一份共用：
+ * overlay.html 的載入順序是 tokens → overlay，根本沒有 style.css。
+ *
+ * 用 :focus-visible 而非 :focus——滑鼠點擊不該出現焦點環。
+ * 列表列／側欄可以用 outline-offset: -2px 內縮（稿上明列的例外）。 */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+
+/* ──────────────────────────────────────────────────────────────────────
+ * 2026-07-07 UIUX polish E4 — consolidated prefers-reduced-motion fallback.
+ * The targeted per-selector blocks scattered through the old hud.css (hud-dot,
+ * effect-demo-text, konami HUD, etc.) predate several newer additions
+ * (admin-cmdk-slide, bc-v4-pulse, lf-v4-pulse, hud-pulse users, …) that were
+ * never added to any of them.
+ * 2026-08-19：adminBroadcastPulse / adminPollsLivePulse / admin-sess-pulse
+ * 已依設計稿 03 整組移除（狀態點的環境脈動屬裝飾），不再需要 fallback。
+ * A blanket rule — same convention already proven in style.css/styles.css —
+ * closes every current and future gap in one place instead of hand-
+ * enumerating each keyframe consumer as it's added.
+ * ────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 高對比下焦點環跟著系統 Highlight 走（其餘 forced-colors 規則各自留在
+ * 擁有那些元件的檔案裡：admin 在 style.css、觀眾頁在 viewer-v2.css）。 */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
   }
 }

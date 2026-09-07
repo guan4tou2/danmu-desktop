@@ -12,6 +12,157 @@
  *
  * Viewport-filling flex column: body scrolls inside, sendbar pins bottom. */
 
+/* ══════════════════════════════════════════════════════════════════════
+ * P2-1 觀眾頁離線卡（原 shared/hud.css，設計稿 14 §4 步驟 2 併入）
+ * ══════════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Edge-state screens — P2-1 Viewer Offline, P2-2 Overlay Connecting,
+ * P2-4 Admin Login Lockout. See docs/design-v2-backlog.md.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/* P2-1 · Viewer Offline — card replaces .viewer-body content when WS fails.
+ * Dark card on a light (viewer-v2) theme; re-declare text tokens in-scope
+ * so the card stays legible regardless of the host page's theme. */
+.viewer-offline-card {
+  /* Re-assert dark-scope text tokens (tokens.css :root values) because
+   * body.viewer-body-v2 remaps these to light. */
+  --color-text-primary: #f1f5f9;
+  --color-text-bright: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 32px 24px;
+  background: #0f172a;
+  border: 1px solid var(--hud-line);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+}
+
+
+.viewer-offline-lockup {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  color: var(--color-ink-accent);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+
+.viewer-offline-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--color-error-light);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+
+.viewer-offline-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-error-light);
+  box-shadow: 0 0 8px var(--color-error-light);
+  animation: hud-pulse 2s ease-in-out infinite;
+}
+
+
+.viewer-offline-message {
+  margin: 0;
+  max-width: 32rem;
+  color: var(--color-text-bright);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+
+.viewer-offline-message small {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+}
+
+
+.viewer-offline-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--hud-cyan-soft);
+  border: 1px solid var(--hud-cyan-line);
+  color: var(--color-ink-accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-footnote);
+  letter-spacing: 1px;
+}
+
+
+.viewer-offline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+
+.viewer-offline-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 20px;
+  background: var(--color-primary);
+  color: #000;
+  border: none;
+  border-radius: var(--radius-md-sm);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-footnote);
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transition: background-color var(--motion-fast) ease, transform var(--motion-fast) ease;
+}
+
+.viewer-offline-btn:hover { background: var(--color-primary-hover); }
+
+.viewer-offline-btn:active { transform: translateY(1px); }
+
+
+.viewer-offline-btn.is-secondary {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--hud-line-strong);
+}
+
+.viewer-offline-btn.is-secondary:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-primary);
+}
+
+@media (forced-colors: active) {
+  /* 狀態色點：顏色本身就是訊號，擋下系統色替換（旁邊永遠有字）。 */
+  .viewer-offline-chip-dot,
+  .viewer-sent-dot {
+    forced-color-adjust: none;
+  }
+}
+
 html:has(body.viewer-body-v2){
   height: 100%;
   color-scheme: light;

@@ -215,7 +215,6 @@ test("admin light inputs have a dark strong text token", () => {
 test("API Tokens admin page has production CSS for its generated surface", () => {
   const apiTokensJs = fs.readFileSync(path.join(REPO_ROOT, "server/static/js/admin-api-tokens.js"), "utf8");
   const adminCss = fs.readFileSync(path.join(REPO_ROOT, "server/static/css/style.css"), "utf8");
-  const hudCss = fs.readFileSync(path.join(REPO_ROOT, "shared/hud.css"), "utf8");
 
   [
     "admin-at-page",
@@ -239,10 +238,10 @@ test("API Tokens admin page has production CSS for its generated surface", () =>
     expect(apiTokensJs).toContain(className);
   });
 
-  expect(hudCss).toContain(".admin-ui-action.is-block");
-  expect(hudCss).toContain(".admin-ui-option-row");
-  expect(hudCss).toContain(".admin-ui-choice > span");
-  expect(hudCss).toContain(".admin-ui-notice");
+  expect(adminCss).toContain(".admin-ui-action.is-block");
+  expect(adminCss).toContain(".admin-ui-option-row");
+  expect(adminCss).toContain(".admin-ui-choice > span");
+  expect(adminCss).toContain(".admin-ui-notice");
   expect(adminCss).not.toContain(".admin-at-submit-btn {");
   expect(adminCss).not.toContain(".admin-at-scope-badge,");
 });

@@ -1,3 +1,74 @@
+/* ══════════════════════════════════════════════════════════════════════
+ * P2-2 大螢幕連線中（原 shared/hud.css，設計稿 14 §4 步驟 2 併入）
+ * ══════════════════════════════════════════════════════════════════════ */
+
+/* P2-2 · Overlay Connecting — dim grid + CONNECTING label before first WS open */
+.overlay-connecting {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  background: radial-gradient(ellipse at 50% 40%, #0b1220 0%, #000 85%);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  pointer-events: none;
+  transition: opacity 350ms ease;
+  opacity: 0;
+}
+
+.overlay-connecting.is-visible { display: flex; opacity: 1; }
+
+.overlay-connecting.is-fading { opacity: 0; }
+
+
+.overlay-connecting::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.2;
+  background-image:
+    linear-gradient(var(--hud-cyan-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hud-cyan-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 40%, #000 0%, transparent 70%);
+          mask-image: radial-gradient(ellipse at 50% 40%, #000 0%, transparent 70%);
+}
+
+
+.overlay-connecting-label {
+  position: relative;
+  z-index: 1;
+  font-size: var(--text-title2);
+  letter-spacing: 4px;
+  color: var(--color-ink-accent);
+  text-transform: uppercase;
+}
+
+
+.overlay-connecting-pulse {
+  position: relative;
+  z-index: 1;
+  font-size: var(--text-title2);
+  color: var(--color-ink-accent);
+  animation: overlay-connecting-pulse 1.4s ease-in-out infinite;
+}
+
+
+@keyframes overlay-connecting-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay-connecting-pulse { animation: none; opacity: 0.8; }
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   background: transparent;

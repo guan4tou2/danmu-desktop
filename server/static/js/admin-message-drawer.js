@@ -222,7 +222,7 @@
              pattern-level decision still deferred — see TODOS.md "「EN ·
              中文」雙語 monolabel 的 pattern 決策", precedent commit 4771242).
              .admin-msgd-v4__seclabel mirrors .admin-ui-monolabel styling
-             (hud.css) so it's treated the same — left untouched, as are the
+             (style.css) so it's treated the same — left untouched, as are the
              two seclabel headers below. -->
         <div class="admin-msgd-v4__seclabel">${ServerI18n.t("msgDrawerSecSender")} · SENDER PROFILE</div>
         <div class="admin-msgd-v4__sender-stats">

@@ -259,15 +259,15 @@ test("admin About actions compose shared action controls", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const aboutSrc = fs.readFileSync(path.join(staticDir, "js", "admin-about.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(aboutSrc).toContain('class="admin-ui-action is-primary admin-about-btn"');
   expect(aboutSrc).toContain('class="admin-ui-action admin-about-btn"');
   expect(aboutSrc).not.toContain("admin-about-btn--accent");
 
-  expect(hudSrc).toContain(".admin-ui-action {");
-  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
+  expect(styleSrc).toContain(".admin-ui-action {");
+  expect(styleSrc).toContain(".admin-ui-action.is-primary {");
   expect(cssSrc).toContain(".admin-about-actions > .admin-ui-action {");
   expect(cssSrc).not.toContain(".admin-about-btn {");
   expect(cssSrc).not.toContain(".admin-about-btn:hover");
@@ -278,7 +278,7 @@ test("admin Audience composes shared toolbar, chips, pills, and actions", () => 
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const audienceSrc = fs.readFileSync(path.join(staticDir, "js", "admin-audience.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(audienceSrc).toContain('class="admin-ui-toolbar admin-aud-toolbar"');
@@ -303,12 +303,12 @@ test("admin Audience composes shared toolbar, chips, pills, and actions", () => 
   expect(audienceSrc).not.toContain('class="warn"');
   expect(audienceSrc).not.toContain('class="close"');
 
-  expect(hudSrc).toContain(".admin-ui-toolbar {");
-  expect(hudSrc).toContain(".admin-ui-chip {");
-  expect(hudSrc).toContain(".admin-ui-pill {");
-  expect(hudSrc).toContain(".admin-ui-action.is-danger {");
-  expect(hudSrc).toContain(".admin-ui-action.is-warn {");
-  expect(hudSrc).toContain(".admin-ui-action.is-block {");
+  expect(styleSrc).toContain(".admin-ui-toolbar {");
+  expect(styleSrc).toContain(".admin-ui-chip {");
+  expect(styleSrc).toContain(".admin-ui-pill {");
+  expect(styleSrc).toContain(".admin-ui-action.is-danger {");
+  expect(styleSrc).toContain(".admin-ui-action.is-warn {");
+  expect(styleSrc).toContain(".admin-ui-action.is-block {");
 
   expect(cssSrc).not.toContain(".admin-aud-filters .chip");
   expect(cssSrc).not.toContain(".admin-aud-refresh {");
@@ -375,7 +375,7 @@ test("admin Webhooks composes shared admin-ui controls instead of page-local chr
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const webhooksSrc = fs.readFileSync(path.join(staticDir, "js", "admin-webhooks.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(webhooksSrc).toContain('class="admin-ui-section-head admin-wh-section-head"');
@@ -398,14 +398,14 @@ test("admin Webhooks composes shared admin-ui controls instead of page-local chr
   expect(webhooksSrc).not.toContain('class="chip');
   expect(webhooksSrc).not.toContain('class="admin-poll-btn');
 
-  expect(hudSrc).toContain(".admin-ui-section-head {");
-  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
-  expect(hudSrc).toContain(".admin-ui-action.is-warn {");
-  expect(hudSrc).toContain(".admin-ui-action.is-danger {");
-  expect(hudSrc).toContain(".admin-ui-chip {");
-  expect(hudSrc).toContain(".admin-ui-pill {");
-  expect(hudSrc).toContain(".admin-ui-list-stack {");
-  expect(hudSrc).toContain(".admin-ui-list-stack.is-tight {");
+  expect(styleSrc).toContain(".admin-ui-section-head {");
+  expect(styleSrc).toContain(".admin-ui-action.is-primary {");
+  expect(styleSrc).toContain(".admin-ui-action.is-warn {");
+  expect(styleSrc).toContain(".admin-ui-action.is-danger {");
+  expect(styleSrc).toContain(".admin-ui-chip {");
+  expect(styleSrc).toContain(".admin-ui-pill {");
+  expect(styleSrc).toContain(".admin-ui-list-stack {");
+  expect(styleSrc).toContain(".admin-ui-list-stack.is-tight {");
 
   expect(cssSrc).not.toContain(".admin-wh-section-head {");
   expect(cssSrc).not.toContain(".admin-wh-add-btn {");
@@ -430,7 +430,7 @@ test("admin Security actions compose shared admin-ui controls instead of page-lo
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const securitySrc = fs.readFileSync(path.join(staticDir, "js", "admin-security.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(securitySrc).toContain('class="admin-ui-action is-primary"');
@@ -452,10 +452,10 @@ test("admin Security actions compose shared admin-ui controls instead of page-lo
   expect(securitySrc).not.toContain('id="sec2-wsa-rotate" class="admin-v2-chip is-warn"');
   expect(securitySrc).not.toContain('class="admin-sec-danger is-amber"');
 
-  expect(hudSrc).toContain(".admin-ui-action {");
-  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
-  expect(hudSrc).toContain(".admin-ui-action.is-warn {");
-  expect(hudSrc).toContain(".admin-ui-action.is-danger {");
+  expect(styleSrc).toContain(".admin-ui-action {");
+  expect(styleSrc).toContain(".admin-ui-action.is-primary {");
+  expect(styleSrc).toContain(".admin-ui-action.is-warn {");
+  expect(styleSrc).toContain(".admin-ui-action.is-danger {");
 
   expect(cssSrc).toContain(".admin-sec-action--end {");
   expect(cssSrc).not.toContain(".admin-sec-card__link {");
@@ -469,7 +469,7 @@ test("admin Rate Limits actions compose shared admin-ui controls", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const ratelimitSrc = fs.readFileSync(path.join(staticDir, "js", "admin-ratelimit.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(ratelimitSrc).toContain('class="admin-ui-action is-primary admin-rl-action" data-rl-action="save"');
   expect(ratelimitSrc).toContain('class="admin-ui-action is-primary admin-rl-action" data-rl-action="apply-suggest"');
@@ -477,15 +477,15 @@ test("admin Rate Limits actions compose shared admin-ui controls", () => {
   expect(ratelimitSrc).toContain('class="admin-ui-action is-primary admin-rl-footer-action" data-rl-action="export"');
   expect(ratelimitSrc).not.toContain('class="admin-poll-btn');
 
-  expect(hudSrc).toContain(".admin-ui-action {");
-  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
+  expect(styleSrc).toContain(".admin-ui-action {");
+  expect(styleSrc).toContain(".admin-ui-action.is-primary {");
 });
 
 test("admin Backup actions compose shared admin-ui controls", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const backupSrc = fs.readFileSync(path.join(staticDir, "js", "admin-backup.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(backupSrc).toContain('id="bk2-settings-download" class="admin-ui-action is-primary"');
   expect(backupSrc).toContain('id="bk2-pack-export" class="admin-ui-action is-primary"');
@@ -516,9 +516,9 @@ test("admin Backup actions compose shared admin-ui controls", () => {
   expect(backupSrc).not.toContain("FACTORY RESET · 回復原廠 (即將支援)");
   expect(backupSrc).not.toContain('class="admin-poll-btn');
 
-  expect(hudSrc).toContain(".admin-ui-action {");
-  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
-  expect(hudSrc).toContain(".admin-ui-action.is-danger {");
+  expect(styleSrc).toContain(".admin-ui-action {");
+  expect(styleSrc).toContain(".admin-ui-action.is-primary {");
+  expect(styleSrc).toContain(".admin-ui-action.is-danger {");
 });
 
 test("admin Viewer Theme actions compose shared admin-ui controls", () => {
@@ -534,15 +534,15 @@ test("admin Effects modal actions compose shared admin-ui controls", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const effectsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-effects-mgmt.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(effectsSrc).toContain('id="effectPreviewRefreshBtn" class="admin-ui-action admin-fx-preview-refresh"');
   expect(effectsSrc).toContain('id="effectEditModalCancel" class="admin-ui-action admin-fx-modal-action"');
   expect(effectsSrc).toContain('id="effectEditModalSave" class="admin-ui-action is-primary admin-fx-modal-action"');
   expect(effectsSrc).not.toContain('class="admin-poll-btn');
 
-  expect(hudSrc).toContain(".admin-ui-action {");
-  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
+  expect(styleSrc).toContain(".admin-ui-action {");
+  expect(styleSrc).toContain(".admin-ui-action.is-primary {");
 });
 
 test("admin Fire Token and Extensions token actions compose shared controls", () => {
@@ -550,7 +550,7 @@ test("admin Fire Token and Extensions token actions compose shared controls", ()
   const staticDir = path.join(rootDir, "server", "static");
   const firetokenSrc = fs.readFileSync(path.join(staticDir, "js", "admin-firetoken.js"), "utf8");
   const extensionsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-extensions.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(firetokenSrc).toContain('class="admin-ui-action admin-ft-action" data-ft-action="copy" disabled');
@@ -563,8 +563,8 @@ test("admin Fire Token and Extensions token actions compose shared controls", ()
   expect(extensionsSrc).toContain('class="admin-ui-action is-danger admin-ext-token-action" data-fire-token-action="revoke" disabled');
   expect(extensionsSrc).not.toContain("admin-ext-token-btn");
 
-  expect(hudSrc).toContain(".admin-ui-action.is-warn {");
-  expect(hudSrc).toContain(".admin-ui-action.is-danger {");
+  expect(styleSrc).toContain(".admin-ui-action.is-warn {");
+  expect(styleSrc).toContain(".admin-ui-action.is-danger {");
   expect(cssSrc).toContain(".admin-ft-token-display > .admin-ui-action,");
   expect(cssSrc).not.toContain(".admin-ft-action-btn {");
   expect(cssSrc).not.toContain(".admin-ft-action-btn:hover");
@@ -591,7 +591,7 @@ test("admin Search filters compose shared chips", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const searchSrc = fs.readFileSync(path.join(staticDir, "js", "admin-search.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   // 2026-09-07 設計稿 15 · SR1：篩選是「這場／所有場次／只看被擋的／任何人」，
   // 不是六顆時間範圍 chip（其中「自訂」按了沒有反應）。
@@ -602,7 +602,7 @@ test("admin Search filters compose shared chips", () => {
   expect(searchSrc).not.toContain("admin-search-range-chip");
   // 教使用者一套後端沒實作的語法，比不給提示更糟
   expect(searchSrc).not.toContain("admin-search-syntax-block");
-  expect(hudSrc).toContain(".admin-ui-chip {");
+  expect(styleSrc).toContain(".admin-ui-chip {");
 });
 
 test("admin Sessions detail links compose shared actions", () => {
@@ -834,10 +834,7 @@ test("admin shell and Viewer Theme residual controls compose shared primitives",
 test("admin CSS does not retain legacy private control primitives", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const serverCssDir = path.join(rootDir, "server", "static", "css");
-  const sharedCss = fs.readFileSync(path.join(rootDir, "shared", "hud.css"), "utf8");
-  const hudCss = fs.readFileSync(path.join(serverCssDir, "hud.css"), "utf8");
-  const styleCss = fs.readFileSync(path.join(serverCssDir, "style.css"), "utf8");
-  const cssBundle = [sharedCss, hudCss, styleCss].join("\n");
+  const cssBundle = fs.readFileSync(path.join(serverCssDir, "style.css"), "utf8");
 
   expect(cssBundle).toContain(".admin-ui-chip {");
   expect(cssBundle).toContain(".admin-ui-action {");
@@ -880,7 +877,7 @@ test("admin Audit uses shared admin-ui primitives for the v5 compact surface", (
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const auditSrc = fs.readFileSync(path.join(staticDir, "js", "admin-audit.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(auditSrc).toContain('class="admin-ui-toolbar admin-audit-toolbar-v5"');
@@ -899,15 +896,15 @@ test("admin Audit uses shared admin-ui primitives for the v5 compact surface", (
   expect(auditSrc).not.toContain("admin-audit-hash-chip");
   expect(auditSrc).not.toContain("admin-audit-actor-chip");
 
-  expect(hudSrc).toContain(".admin-ui-toolbar {");
-  expect(hudSrc).toContain(".admin-ui-chip {");
-  expect(hudSrc).toContain(".admin-ui-summary {");
-  expect(hudSrc).toContain(".admin-ui-action {");
-  expect(hudSrc).toContain(".admin-ui-pill {");
-  expect(hudSrc).toContain(".admin-ui-code {");
-  expect(hudSrc).toContain(".admin-ui-scroll-list {");
-  expect(hudSrc).toContain(".admin-ui-timeline-row {");
-  expect(hudSrc).toContain("overflow-y: auto;");
+  expect(styleSrc).toContain(".admin-ui-toolbar {");
+  expect(styleSrc).toContain(".admin-ui-chip {");
+  expect(styleSrc).toContain(".admin-ui-summary {");
+  expect(styleSrc).toContain(".admin-ui-action {");
+  expect(styleSrc).toContain(".admin-ui-pill {");
+  expect(styleSrc).toContain(".admin-ui-code {");
+  expect(styleSrc).toContain(".admin-ui-scroll-list {");
+  expect(styleSrc).toContain(".admin-ui-timeline-row {");
+  expect(styleSrc).toContain("overflow-y: auto;");
 
   expect(cssSrc).not.toContain(".admin-audit-grid {");
   expect(cssSrc).not.toContain(".admin-audit-filters {");
@@ -942,7 +939,7 @@ test("admin Events toolbar composes shared chips, status, and actions", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const eventsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-events-log.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(eventsSrc).toContain('class="admin-ui-toolbar admin-ev-v4__filterbar"');
@@ -958,13 +955,13 @@ test("admin Events toolbar composes shared chips, status, and actions", () => {
   expect(eventsSrc).toContain('class="admin-ui-summary admin-ev-v4__count"');
   expect(eventsSrc).toContain('class="admin-ui-action admin-ev-v4__refresh"');
 
-  expect(hudSrc).toContain(".admin-ui-toolbar {");
-  expect(hudSrc).toContain(".admin-ui-chip-group {");
-  expect(hudSrc).toContain(".admin-ui-chip {");
-  expect(hudSrc).toContain(".admin-ui-spacer {");
-  expect(hudSrc).toContain(".admin-ui-dot.is-success {");
-  expect(hudSrc).toContain(".admin-ui-summary {");
-  expect(hudSrc).toContain(".admin-ui-action {");
+  expect(styleSrc).toContain(".admin-ui-toolbar {");
+  expect(styleSrc).toContain(".admin-ui-chip-group {");
+  expect(styleSrc).toContain(".admin-ui-chip {");
+  expect(styleSrc).toContain(".admin-ui-spacer {");
+  expect(styleSrc).toContain(".admin-ui-dot.is-success {");
+  expect(styleSrc).toContain(".admin-ui-summary {");
+  expect(styleSrc).toContain(".admin-ui-action {");
 
   expect(cssSrc).not.toContain(".admin-ev-v4__filterbar {");
   expect(cssSrc).not.toContain(".admin-ev-v4__sev-chips {");
@@ -988,15 +985,13 @@ test("admin Events toolbar composes shared chips, status, and actions", () => {
 test("admin form primitives use admin-ui input/select naming", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
-  const hudCss = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
-  const sharedHudCss = fs.readFileSync(path.join(rootDir, "shared", "hud.css"), "utf8");
   const styleCss = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const jsFiles = fs
     .readdirSync(path.join(staticDir, "js"))
     .filter((name) => name.endsWith(".js"))
     .map((name) => fs.readFileSync(path.join(staticDir, "js", name), "utf8"))
     .join("\n");
-  const cssBundle = [hudCss, sharedHudCss, styleCss].join("\n");
+  const cssBundle = styleCss;
 
   expect(cssBundle).toContain(".admin-ui-input,");
   expect(cssBundle).toContain(".admin-ui-select {");
@@ -1013,14 +1008,12 @@ test("admin form primitives use admin-ui input/select naming", () => {
 test("admin mono label primitive uses admin-ui naming", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
-  const hudCss = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
-  const sharedHudCss = fs.readFileSync(path.join(rootDir, "shared", "hud.css"), "utf8");
+  const cssBundle = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const jsFiles = fs
     .readdirSync(path.join(staticDir, "js"))
     .filter((name) => name.endsWith(".js"))
     .map((name) => fs.readFileSync(path.join(staticDir, "js", name), "utf8"))
     .join("\n");
-  const cssBundle = [hudCss, sharedHudCss].join("\n");
 
   expect(cssBundle).toContain(".admin-ui-monolabel {");
   expect(jsFiles).toContain("admin-ui-monolabel");
@@ -1031,19 +1024,16 @@ test("admin mono label primitive uses admin-ui naming", () => {
 test("admin page shell primitives use admin-ui naming", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
-  const hudCss = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
-  const sharedHudCss = fs.readFileSync(path.join(rootDir, "shared", "hud.css"), "utf8");
   const styleCss = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const jsFiles = fs
     .readdirSync(path.join(staticDir, "js"))
     .filter((name) => name.endsWith(".js"))
     .map((name) => fs.readFileSync(path.join(staticDir, "js", name), "utf8"))
     .join("\n");
-  const cssBundle = [hudCss, sharedHudCss, styleCss].join("\n");
+  const cssBundle = styleCss;
 
   [
     ".admin-ui-page-head {",
-    ".admin-ui-page-kicker {",
     ".admin-ui-page-title {",
     ".admin-ui-page-note {",
     ".admin-ui-card {",
@@ -1057,8 +1047,10 @@ test("admin page shell primitives use admin-ui naming", () => {
   ].forEach((className) => expect(jsFiles).toContain(className));
 
   // 2026-08-19 設計稿 03：頁首 kicker 全域移除（34 處、34 個檔案）。
-  // CSS 規則暫留（上面那組斷言仍檢查），但 JS 端不該再有任何消費者。
+  // 2026-09-07 設計稿 14 §2：hud.css 併入 style.css 時 CSS 規則也一併刪除，
+  // 所以 JS 端與 CSS 端都不該再有 admin-ui-page-kicker。
   expect(jsFiles).not.toContain("admin-ui-page-kicker");
+  expect(cssBundle).not.toContain("admin-ui-page-kicker");
 
   [
     "admin-v2-head",
@@ -1075,14 +1067,12 @@ test("admin page shell primitives use admin-ui naming", () => {
 test("admin status dot and inline toolbar primitives use admin-ui naming", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
-  const hudCss = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
-  const sharedHudCss = fs.readFileSync(path.join(rootDir, "shared", "hud.css"), "utf8");
+  const cssBundle = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const jsFiles = fs
     .readdirSync(path.join(staticDir, "js"))
     .filter((name) => name.endsWith(".js"))
     .map((name) => fs.readFileSync(path.join(staticDir, "js", name), "utf8"))
     .join("\n");
-  const cssBundle = [hudCss, sharedHudCss].join("\n");
 
   expect(cssBundle).toContain(".admin-ui-inline-toolbar {");
   expect(cssBundle).toContain(".admin-ui-dot.is-muted {");
@@ -1127,12 +1117,12 @@ test("admin tab and table primitives use admin-ui naming", () => {
 test("admin replacement marker uses admin-ui naming", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
-  const sharedHudCss = fs.readFileSync(path.join(rootDir, "shared", "hud.css"), "utf8");
+  const styleCss = fs.readFileSync(path.join(rootDir, "server", "static", "css", "style.css"), "utf8");
   const displaySrc = fs.readFileSync(path.join(staticDir, "js", "admin-display.js"), "utf8");
 
-  expect(sharedHudCss).toContain('[data-admin-ui-replaced="1"]');
+  expect(styleCss).toContain('[data-admin-ui-replaced="1"]');
   expect(displaySrc).toContain('setAttribute("data-admin-ui-replaced", "1")');
-  expect(sharedHudCss).not.toContain("data-admin-v2-replaced");
+  expect(styleCss).not.toContain("data-admin-v2-replaced");
   expect(displaySrc).not.toContain("data-admin-v2-replaced");
 });
 
@@ -1140,7 +1130,7 @@ test("admin API Tokens composes shared controls instead of page-local widgets", 
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const tokensSrc = fs.readFileSync(path.join(staticDir, "js", "admin-api-tokens.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(tokensSrc).toContain('class="admin-ui-input admin-at-input"');
@@ -1157,14 +1147,14 @@ test("admin API Tokens composes shared controls instead of page-local widgets", 
   expect(tokensSrc).toContain("admin-ui-pill admin-at-scope-badge");
   expect(tokensSrc).toContain("admin-ui-pill admin-at-badge");
 
-  expect(hudSrc).toContain(".admin-ui-action.is-danger {");
-  expect(hudSrc).toContain(".admin-ui-action.is-block {");
-  expect(hudSrc).toContain(".admin-ui-option-row {");
-  expect(hudSrc).toContain(".admin-ui-choice > span {");
-  expect(hudSrc).toContain(".admin-ui-notice {");
-  expect(hudSrc).toContain(".admin-ui-pill.is-success");
-  expect(hudSrc).toContain(".admin-ui-toolbar > .admin-ui-action");
-  expect(hudSrc).not.toContain("  .admin-ui-chip-group,\n  .admin-ui-action {\n    width: 100%;");
+  expect(styleSrc).toContain(".admin-ui-action.is-danger {");
+  expect(styleSrc).toContain(".admin-ui-action.is-block {");
+  expect(styleSrc).toContain(".admin-ui-option-row {");
+  expect(styleSrc).toContain(".admin-ui-choice > span {");
+  expect(styleSrc).toContain(".admin-ui-notice {");
+  expect(styleSrc).toContain(".admin-ui-pill.is-success");
+  expect(styleSrc).toContain(".admin-ui-toolbar > .admin-ui-action");
+  expect(styleSrc).not.toContain("  .admin-ui-chip-group,\n  .admin-ui-action {\n    width: 100%;");
 
   expect(cssSrc).not.toContain(".admin-at-row-btn {");
   expect(cssSrc).not.toContain(".admin-at-copy-btn {");
@@ -1181,7 +1171,7 @@ test("admin Live session banner composes shared controls instead of page-local w
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const dashboardSrc = fs.readFileSync(path.join(staticDir, "js", "admin-dashboard.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(dashboardSrc).toContain('class="admin-ui-input admin-ui-grow admin-session-name-input"');
@@ -1198,8 +1188,8 @@ test("admin Live session banner composes shared controls instead of page-local w
   expect(dashboardSrc).not.toContain("admin-session-behavior-select");
   expect(dashboardSrc).toContain('id="sessCloseBehavior"');
 
-  expect(hudSrc).toContain(".admin-ui-grow {");
-  expect(hudSrc).toContain(".admin-ui-nowrap {");
+  expect(styleSrc).toContain(".admin-ui-grow {");
+  expect(styleSrc).toContain(".admin-ui-nowrap {");
 
   expect(cssSrc).not.toContain(".admin-session-name-input {");
   expect(cssSrc).not.toContain(".admin-session-name-input:focus");
@@ -1214,7 +1204,7 @@ test("admin Scheduler toolbar and actions compose shared controls", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const schedulerSrc = fs.readFileSync(path.join(staticDir, "js", "admin-scheduler.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(schedulerSrc).toContain('class="admin-ui-toolbar admin-sch-toolbar"');
@@ -1226,9 +1216,9 @@ test("admin Scheduler toolbar and actions compose shared controls", () => {
   expect(schedulerSrc).not.toContain('style="margin-top:8px;cursor:pointer"');
   expect(schedulerSrc).not.toContain('class="admin-poll-btn is-primary">${escapeHTML(ServerI18n.t("createBtn"))}</button>');
 
-  expect(hudSrc).toContain(".admin-ui-toolbar {");
-  expect(hudSrc).toContain(".admin-ui-chip-group {");
-  expect(hudSrc).toContain(".admin-ui-action.is-primary {");
+  expect(styleSrc).toContain(".admin-ui-toolbar {");
+  expect(styleSrc).toContain(".admin-ui-chip-group {");
+  expect(styleSrc).toContain(".admin-ui-action.is-primary {");
 
   expect(cssSrc).not.toContain(".admin-sch-toolbar {");
   expect(cssSrc).not.toContain(".admin-sch-view-toggle {");
@@ -1242,7 +1232,7 @@ test("admin Plugins composes shared toolbar, chips, and pills", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const pluginsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-plugins.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(pluginsSrc).toContain('class="admin-ui-toolbar admin-plugins-toolbar"');
@@ -1253,10 +1243,10 @@ test("admin Plugins composes shared toolbar, chips, and pills", () => {
   expect(pluginsSrc).toContain('class="admin-ui-pill admin-plugins-pill ${priorityCls}"');
   expect(pluginsSrc).toContain('class="admin-ui-pill admin-plugins-pill is-lang ${langPillClass(lang)}"');
 
-  expect(hudSrc).toContain(".admin-ui-toolbar {");
-  expect(hudSrc).toContain(".admin-ui-action {");
-  expect(hudSrc).toContain(".admin-ui-chip {");
-  expect(hudSrc).toContain(".admin-ui-pill {");
+  expect(styleSrc).toContain(".admin-ui-toolbar {");
+  expect(styleSrc).toContain(".admin-ui-action {");
+  expect(styleSrc).toContain(".admin-ui-chip {");
+  expect(styleSrc).toContain(".admin-ui-pill {");
 
   expect(cssSrc).not.toContain(".admin-plugins-toolbar {");
   expect(cssSrc).not.toContain(".admin-plugins-toolbar-btn {");
@@ -1277,7 +1267,7 @@ test("admin Plugins upload modal composes shared action and pill primitives", ()
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const uploadSrc = fs.readFileSync(path.join(staticDir, "js", "admin-plugins-upload.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
+  const styleSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
   expect(uploadSrc).toContain('class="admin-ui-action admin-pu-btn"');
@@ -1290,9 +1280,9 @@ test("admin Plugins upload modal composes shared action and pill primitives", ()
   expect(uploadSrc).not.toContain("is-amber");
   expect(uploadSrc).not.toContain("is-disabled");
 
-  expect(hudSrc).toContain(".admin-ui-action.is-warn {");
-  expect(hudSrc).toContain(".admin-ui-pill.is-warn");
-  expect(hudSrc).toContain(".admin-ui-pill.is-danger");
+  expect(styleSrc).toContain(".admin-ui-action.is-warn {");
+  expect(styleSrc).toContain(".admin-ui-pill.is-warn");
+  expect(styleSrc).toContain(".admin-ui-pill.is-danger");
 
   expect(cssSrc).not.toContain(".admin-pu-btn {");
   expect(cssSrc).not.toContain(".admin-pu-btn:hover");

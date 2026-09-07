@@ -9,7 +9,7 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
 | # | 步驟 | 狀態 |
 |---|---|---|
 | 1 | tokens.css 改值＋`--font-ui` | ✅ 2026-08-19（SF 刻度）＋ 2026-09-06（`--color-accent` 轉 sky、新增 `--color-ink-on-accent`） |
-| 2 | 刪 hud.css 引用、`.admin-ui-*` 搬進 style.css | ⏸ 未做（hud.css 仍是 symlink 共用層） |
+| 2 | 刪 hud.css 引用、`.admin-ui-*` 搬進 style.css | ✅ 2026-09-07（整檔刪除，5584 行分家：admin 4334 → style.css、觀眾頁離線卡 → viewer-v2.css、大螢幕連線中 → overlay.css、焦點環＋reduced-motion → tokens.css、936 行死規則刪掉） |
 | 3 | Admin 側欄 IA 3 組 | ✅ v8 ＋ 2026-09-06 加回 `widgets`（13 列） |
 | 4 | Admin 各頁頁首去 kicker → 設定群組化 | ✅ 設計稿 07 全套；**08 的併頁未做**（見下） |
 | 5 | 觀眾頁（05） | ✅ |
@@ -200,11 +200,12 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
    自己 fetch `/display-layer` 出不去。
    可及性（17）2026-09-07 補了四件本來是**缺的**（不是「怪怪的」，是真的
    用不了）：
-   - **焦點環**：全站唯一一種樣式進 `shared/hud.css`（`2px var(--focus)` ／
-     offset 3px），新增 `--focus: light-dark(#0284c7, #ffffff)`。深色臂刻意
-     是白色——原本 style.css 那條全域規則用 `--color-primary`，深色面板上是
-     藍底藍框，等於沒畫。放 hud.css 而不是 style.css 是因為 overlay.html
-     根本沒載 style.css。
+   - **焦點環**：全站唯一一種樣式（`2px var(--focus)` ／ offset 3px），
+     新增 `--focus: light-dark(#0284c7, #ffffff)`。深色臂刻意是白色——原本
+     style.css 那條全域規則用 `--color-primary`，深色面板上是藍底藍框，
+     等於沒畫。當時放 `shared/hud.css`，2026-09-07 步驟 2 把 hud.css 併掉後
+     改放 `shared/tokens.css`：那是五個表面唯一都載得到的檔案（overlay.html
+     的載入順序是 tokens → overlay，根本沒有 style.css）。
    - **`<html lang>`**：admin 與 overlay 的靜態標記原本寫死 `lang="en"`
      （稿上直接把這件事標成 bug），`child.html` 連 lang 都沒有。改成由
      `ServerI18n` 統一寫 BCP47（`zh` → `zh-Hant`；單一個 zh 沒說是正體還是

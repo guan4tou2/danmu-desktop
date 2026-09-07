@@ -124,7 +124,7 @@
   function pageTemplate() {
     return `
       <div id="${PAGE_ID}" class="admin-dsp2-page hud-page-stack lg:col-span-2" data-tpl="C">
-        <!-- 標題／說明兩套並存，由 data-dsp-mode 決定露哪一套（CSS 在 hud.css）。
+        <!-- 標題／說明兩套並存，由 data-dsp-mode 決定露哪一套（CSS 在 style.css）。
              同一份面板服務顯示層與觀眾頁兩條路由，文案不能只寫一種。 -->
         <div class="admin-ui-page-head">
           <h2 class="admin-ui-page-title" data-dsp-only="values">${escapeHtml(t("displayValuesTitle"))}</h2>

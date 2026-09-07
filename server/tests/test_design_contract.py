@@ -1158,11 +1158,15 @@ def test_a11y_focus_lang_and_live_region(zh):
     # 深色臂刻意是白色：藍底上再畫一圈藍框等於沒畫
     assert "--focus: light-dark(#0284c7, #ffffff);" in tokens
 
-    hud = _read("shared/hud.css")
-    # 全站唯一一種焦點環，放在四個表面都載得到的 hud.css
-    assert ":focus-visible {\n  outline: 2px solid var(--focus);\n  outline-offset: 3px;\n}" in hud
-    assert "@media (forced-colors: active)" in hud
-    assert "forced-color-adjust: none;" in hud
+    # 全站唯一一種焦點環。2026-09-07 設計稿 14 §4 步驟 2 把 hud.css 併掉之後，
+    # tokens.css 是五個表面唯一都載得到的檔案（overlay.html 只載 tokens → overlay）。
+    assert (
+        ":focus-visible {\n  outline: 2px solid var(--focus);\n  outline-offset: 3px;\n}" in tokens
+    )
+    assert "@media (forced-colors: active)" in tokens
+    # forced-colors 的元件規則各自留在擁有那些元件的檔案裡
+    for css in ("server/static/css/style.css", "server/static/css/viewer-v2.css"):
+        assert "forced-color-adjust: none;" in _read(css), css
     # style.css 不該再有自己那條全域規則（原本用 --color-primary）
     style = _strip_comments(_read("server/static/css/style.css"))
     assert "*:focus-visible" not in style
@@ -1299,3 +1303,63 @@ def test_blacklist_still_boots_after_the_replay_tab_removal():
     # 歷史那半確實走了，不是靠留著它才通過
     assert "fetchDanmuHistory" not in js
     assert "_initHistoryTabs" not in js
+
+
+def test_hud_css_is_gone_and_nothing_links_it():
+    """設計稿 14 §3／§4 步驟 2：shared/hud.css 整檔刪除，內容分家到各自的擁有者。
+
+    刪的理由不是「檔案太大」，是**歸屬錯了**：5584 行裡有 4334 行只有 admin
+    會用，卻被觀眾頁、大螢幕、Electron 兩個視窗一起載進去。分家之後：
+
+      * 全域基底（焦點環、prefers-reduced-motion 保底）→ shared/tokens.css，
+        因為那是五個表面唯一都載得到的檔案；
+      * .viewer-offline-* → viewer-v2.css；.overlay-connecting* → overlay.css；
+      * 其餘 admin（含 8 個 @keyframes dme-*）→ style.css；
+      * 936 行沒有任何標記引用的死規則（broadcast 生命週期、dash-telem、
+        中英對照 -en 類、已刪的重播頁）直接刪掉。
+
+    `@keyframes dme-*` 一度被判成死的——理由是 .dme 特效檔各自帶 keyframes、
+    由 effects.py 內插後在執行期注入。那對大螢幕與 Electron 成立，對 admin
+    特效頁**不成立**：`admin-effects-mgmt.js` 的執行期注入只走使用者自訂的
+    .dme，八個內建效果的預覽卡直接吃 CSS 裡這份靜態的。刪掉之後 blink 的
+    預覽凍在 opacity:1、rainbow 凍在紅色——是同頁 A/B 量到才發現的。
+    """
+    root = Path(__file__).resolve().parents[2]
+    for gone in ("shared/hud.css", "server/static/css/hud.css", "danmu-desktop/hud.css"):
+        assert not (root / gone).exists(), f"{gone} 復活了"
+
+    for tpl in (
+        "server/templates/admin.html",
+        "server/templates/index.html",
+        "server/templates/overlay.html",
+        "server/templates/errors/_layout.html",
+        "danmu-desktop/index.html",
+        "danmu-desktop/child.html",
+    ):
+        assert "hud.css" not in _read(tpl), tpl
+
+    # 分家後各檔案確實接到自己那份
+    assert ".viewer-offline-card" in _read("server/static/css/viewer-v2.css")
+    assert ".overlay-connecting" in _read("server/static/css/overlay.css")
+    assert ".admin-ui-group-row" in _read("server/static/css/style.css")
+
+    # 死規則沒有跟著搬過去
+    style = _read("server/static/css/style.css")
+    for zombie in (
+        "admin-broadcast-state-strip",
+        "admin-dash-telem-bars",
+        "admin-replay-histogram",
+        "admin-ui-page-kicker",
+        "hud-panel",
+        "hud-scanline",
+    ):
+        assert zombie not in style, zombie
+
+    # 內建特效預覽卡要的靜態 keyframes 有留下來（見 docstring）
+    assert style.count("@keyframes dme-") == 8
+
+    # `.admin-replay-bar` 是這次唯一的視覺變化，而且是修好一個 bug：hud.css
+    # 載在 style.css 之後，已刪重播頁的直方圖長條一直在蓋掉同名的「全域重播
+    # 列」——把後者的底色重設成透明。搬移時只留活的那一條。
+    assert "z-index: 9070" in style  # 全域重播列（sticky）
+    assert "min-width: 3px" not in style  # 直方圖長條
