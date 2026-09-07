@@ -152,6 +152,19 @@
     _applyMode(_readMode());
   });
 
+  // 對外 API：系統頁的「後台深淺色」分段控制要能讀寫同一份狀態，
+  // 否則頂欄那顆 ☼/☾ 與分段控制會各說各話（設計稿 08 · S1）。
+  window.AdminThemeSwitcher = {
+    getMode: _readMode,
+    setMode: function (mode) {
+      if (mode !== "auto" && mode !== "light" && mode !== "dark") return;
+      _saveMode(mode);
+      _applyMode(mode);
+      _updateButton(mode);
+      document.dispatchEvent(new CustomEvent("admin:theme-mode", { detail: { mode: mode } }));
+    },
+  };
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
       _mount();

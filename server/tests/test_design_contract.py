@@ -633,3 +633,42 @@ def test_extensions_page_is_four_segments(zh):
     # 底下了。這條擋的是「按鈕看得到但按了沒反應」。
     wh = _strip_comments(_read("server/static/js/admin-webhooks.js"))
     assert ".admin-ui-page-actions [data-wh-action='show-add']" in wh
+
+
+def test_system_page_is_an_entry_point(zh):
+    """設計稿 08 · S1：系統頁是「入口頁」——狀態 chip、四格數字、設定與導向列。
+
+    之前它是一塊密度很高的 HUD：六格帶 sparkline 的 tile（每格中英雙標籤）、
+    services 表、recent errors、QUICK ACTIONS（其中一顆是永遠 disabled 的
+    「待 BE」）、CONFIG SUMMARY（全大寫英文欄名）。那些在回答「這台機器現在
+    怎麼樣」，但主持人來這一頁多半是要去別的地方；診斷細節有自己的家
+    （系統事件 #/events）。
+    """
+    assert zh["sohPageTitle"] == "系統"
+    assert zh["sohPageNote"] == "伺服器狀態、語言、備份、安全、擴充的入口。"
+    assert zh["sohAllHealthy"] == "運作正常"
+    for key in ("sohMetricUptime", "sohMetricConnected", "sohMetricMemory", "sohMetricVersion"):
+        assert key in zh, key
+    assert zh["sohAppearanceAuto"] == "跟隨系統"
+
+    js = _strip_comments(_read("server/static/js/admin-system-overview.js"))
+    assert "admin-soh-kpis" in js and "data-soh-qr" in js and "data-soh-mode" in js
+    for gone in (
+        "admin-soh-v4__metrics",
+        "admin-soh-v4__services",
+        "admin-soh-v4__quickcard",
+        "admin-soh-v4__cfgcard",
+        "QUICK ACTIONS",
+        "CONFIG SUMMARY",
+        "_renderSpark",
+    ):
+        assert gone not in js, gone
+
+    # 記憶體那格要用百分比。mem_mb_series 是整台機器已用的 MB，直接印會變成
+    # 「記憶體 5769 MB」這種對主持人毫無意義的數字。
+    assert "mem_series" in js and "mem_mb_series" not in js
+
+    # 深淺色分段與頂欄那顆 ☼/☾ 共用同一份狀態，不然兩邊會各說各話
+    assert "AdminThemeSwitcher" in js
+    switcher = _strip_comments(_read("server/static/js/admin-theme-switcher.js"))
+    assert "window.AdminThemeSwitcher" in switcher

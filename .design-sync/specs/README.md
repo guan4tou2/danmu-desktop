@@ -19,7 +19,14 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
 
 ## 還沒做的（依價值排序）
 
-1. **設計稿 08 的併頁**——系統總覽頁。
+1. **設計稿 08 的併頁**——**已全數完成**（T1 主題／T2 表情／W1 小工具／
+   H1 場次／X1 擴充／S1 系統）。S1 2026-09-07：入口頁＝狀態 chip＋四格數字
+   ＋設定列（公開網址・QR・後台語言・後台深淺色）＋四條導向列；六格
+   sparkline、services／recent errors 兩塊 pane、QUICK ACTIONS（含永遠
+   disabled 的「待 BE」）、CONFIG SUMMARY 全數退場。
+   **稿上對不上產品的一處**：已連線副標寫「1 顯示層 · 37 觀眾 · 1 後台」，
+   但只有顯示層掛 WebSocket、觀眾是輪詢的、後台沒有連線——只報 server 真的
+   知道的兩個數，沒有編第三個。
    擴充（X1）2026-09-07 **已照稿**：四合一分段（Webhook／插件／API 金鑰／
    定時發送），四條舊路由降級成分頁導向；「新增 Webhook」走 shell 的頁首
    動作插槽。Slido／Discord／OBS／Bookmarklet 目錄稿上沒有，但 Slido 那張卡

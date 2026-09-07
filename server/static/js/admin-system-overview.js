@@ -2,13 +2,13 @@
  * Admin · System Overview page (extracted from admin.js 2026-04-28
  * Group D-3 split, fourth pass).
  *
- * Owns sec-system-overview — 3-pane layout (Server block + Rate Limits
- * cap visualization + Backup/Danger). Mirrors prototype admin-pages.jsx
- * AdminSystemPage.
+ * Owns sec-system-overview — 設計稿 08 · S1 的「入口頁」：頁首右側一顆狀態
+ * chip、四格數字（運行時間／已連線／記憶體／版本）、一組設定列（公開網址・
+ * 語言・深淺色）與四條導向列（備份／安全／擴充／關於）。
  *
  * Renders into #settings-grid on `admin-panel-rendered`. Reads
- * /admin/metrics for live CPU / mem / msg-rate / WS clients / queue /
- * widget count + uptime.
+ * /admin/metrics（uptime / mem / ws_clients / queue / 外掛與 webhook 計數）
+ * 與 /admin/audience/stats（在場觀眾數）。
  *
  * Globals: csrfFetch / showToast / DANMU_CONFIG.
  */
@@ -17,38 +17,56 @@
 
   const SECTION_ID = "sec-system-overview";
 
-  const RATE_CAPS = {
-    fire:  { max: 60,  label: "FIRE_RATE_LIMIT" },
-    api:   { max: 60,  label: "API_RATE_LIMIT" },
-    admin: { max: 600, label: "ADMIN_RATE_LIMIT" },
-    login: { max: 30,  label: "LOGIN_RATE_LIMIT" },
-  };
-  const RATE_DEFAULTS = { fire: 20, api: 30, admin: 300, login: 5 };
-  const RATE_WINDOWS  = { fire: 60, api: 60, admin: 60, login: 300 };
+  // ── 版面（設計稿 08 · S1）─────────────────────────────────────────
+  //
+  // 稿上這一頁是「入口頁」：頁首右側一顆狀態 chip、四格數字、然後一組設定
+  // 與導向列。之前它是一塊密度很高的 HUD——六格帶 sparkline 的 tile（每格
+  // 中英雙標籤）、services 表、recent errors、QUICK ACTIONS（其中一顆是
+  // 永遠 disabled 的「待 BE」）、CONFIG SUMMARY（全大寫英文欄名）。那些在
+  // 回答「這台機器現在怎麼樣」，但主持人來這一頁多半是要去別的地方。
+  // 診斷細節本來就有自己的家：系統事件（#/events）。
 
-  // 2026-05-17 design v4: 6 metric tiles w/ sparklines, dual-pane services
-  // + recent errors, action buttons row. Backend-safe action subset:
-  //   Reload Effects = /admin/effects/reload (real)
-  //   Open Events    = link to admin-events route
-  //   Restart WS / Force GC = render as disabled per security review
   function _renderHtml() {
-    // v5 Batch 12-2 (2026-05-19): banner + 6-col KPI strip + 2-col
-    // grid (services table left, right-stack of 3 cards). Renamed
-    // KPI tiles to match design: UPTIME / CPU / MEM RSS / WS CLIENTS
-    // / MSG RATE / DB SIZE. CONFIG SUMMARY added as 3rd right-rail
-    // card per batch12-system.jsx SystemOverviewPage.
     return `
       <div id="${SECTION_ID}" class="admin-soh-v4 hud-page-stack lg:col-span-2" data-tpl="A">
         <div class="admin-ui-page-head">
           <h2 class="admin-ui-page-title">${ServerI18n.t("sohPageTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("sohPageNote")}</p>
+          <div class="admin-ui-page-actions">
+            <span class="admin-soh-chip" data-soh-chip>
+              <span class="admin-soh-chip__dot" data-soh-banner-dot></span>
+              <span data-soh-banner-title>${ServerI18n.t("sohChecking")}</span>
+            </span>
+          </div>
         </div>
 
-        <!-- 2026-08-19 設計稿 03：語言選單由頂欄移到這裡。它是低頻設定，
-             常駐頂欄只是佔位；ID 沿用 server-lang-select，i18n.js 的
-             bindLanguageSelector 靠它綁定，不必改。 -->
-        <div class="admin-ui-group-label">${ServerI18n.t("sohGroupPreferences")}</div>
+        <div class="admin-soh-kpis">
+          ${[
+            { id: "uptime", label: ServerI18n.t("sohMetricUptime") },
+            { id: "conn",   label: ServerI18n.t("sohMetricConnected") },
+            { id: "ram",    label: ServerI18n.t("sohMetricMemory") },
+            { id: "ver",    label: ServerI18n.t("sohMetricVersion") },
+          ].map((m) => `
+            <div class="admin-soh-kpi" data-m="${m.id}">
+              <div class="admin-soh-kpi__label">${m.label}</div>
+              <div class="admin-soh-kpi__value" data-m-v>—</div>
+              <div class="admin-soh-kpi__sub" data-m-sub></div>
+            </div>`).join("")}
+        </div>
+
         <div class="admin-ui-group">
+          <div class="admin-ui-group-row">
+            <span class="lbl">${ServerI18n.t("sohPublicUrlLabel")}</span>
+            <span class="val admin-soh-urlrow">
+              <code id="sysoPublicUrl">${location.origin}</code>
+              <button type="button" class="admin-ui-action" data-soh-action="copy-url">${ServerI18n.t("copyBtn")}</button>
+              <button type="button" class="admin-ui-action" data-soh-action="show-qr">QR</button>
+            </span>
+          </div>
+          <div class="admin-soh-qr" data-soh-qr hidden></div>
+
+          <!-- 2026-08-19 設計稿 03：語言選單由頂欄移到這裡。ID 沿用
+               server-lang-select，i18n.js 的 bindLanguageSelector 靠它綁定。 -->
           <div class="admin-ui-group-row">
             <span class="lbl">${ServerI18n.t("sohLanguageLabel")}</span>
             <span class="val">
@@ -60,81 +78,29 @@
               </select>
             </span>
           </div>
-        </div>
 
-        <!-- Status banner -->
-        <div class="admin-soh-v4__banner" data-soh-banner>
-          <span class="admin-soh-v4__banner-dot" data-soh-banner-dot></span>
-          <div>
-            <div class="admin-soh-v4__banner-title" data-soh-banner-title>${ServerI18n.t("sohChecking")}</div>
-            <div class="admin-soh-v4__banner-sub" data-soh-banner-sub>—</div>
+          <div class="admin-ui-group-row">
+            <span class="lbl">${ServerI18n.t("sohAppearanceLabel")}</span>
+            <span class="val admin-soh-seg" role="group" data-soh-theme>
+              <button type="button" data-soh-mode="auto">${ServerI18n.t("sohAppearanceAuto")}</button>
+              <button type="button" data-soh-mode="light">${ServerI18n.t("sohAppearanceLight")}</button>
+              <button type="button" data-soh-mode="dark">${ServerI18n.t("sohAppearanceDark")}</button>
+            </span>
           </div>
-          <span class="admin-soh-v4__spacer"></span>
-          <button type="button" class="admin-soh-v4__banner-recheck" data-soh-recheck>${ServerI18n.t("sohRecheckBtn")}</button>
         </div>
 
-        <!-- 6 metric tiles -->
-        <div class="admin-soh-v4__metrics">
+        <div class="admin-ui-group">
           ${[
-            { id: "uptime", en: "UPTIME",     zh: ServerI18n.t("sohMetricUptime") },
-            { id: "cpu",    en: "CPU",        zh: "CPU" },
-            { id: "ram",    en: "MEM RSS",    zh: "RAM" },
-            { id: "ws",     en: "WS CLIENTS", zh: ServerI18n.t("sohMetricWs") },
-            { id: "qps",    en: "MSG RATE",   zh: "Fire QPS" },
-            { id: "disk",   en: "DB SIZE",    zh: "DB" },
-          ].map(m => `
-            <div class="admin-soh-v4__metric" data-m="${m.id}">
-              <div class="admin-soh-v4__metric-en">${m.en}</div>
-              <div class="admin-soh-v4__metric-v" data-m-v>—</div>
-              <svg class="admin-soh-v4__spark" data-m-spark viewBox="0 0 120 22" preserveAspectRatio="none">
-                <polyline fill="none" stroke="currentColor" stroke-width="1.5" points="" />
-              </svg>
-              <div class="admin-soh-v4__metric-zh">${m.zh}</div>
-            </div>`).join("")}
-        </div>
-
-        <!-- 2-col grid: services table (left) + right stack -->
-        <div class="admin-soh-v4__panes">
-          <div class="admin-soh-v4__pane">
-            <div class="admin-soh-v4__pane-head"><span class="admin-soh-v4__pane-label">${ServerI18n.t("sohPaneServices")} · SERVICES</span></div>
-            <div class="admin-soh-v4__services" data-soh-services>
-              <!-- populated by _wire() -->
-            </div>
-          </div>
-
-          <div class="admin-soh-v4__rail">
-            <div class="admin-soh-v4__pane">
-              <div class="admin-soh-v4__pane-head">
-                <span class="admin-soh-v4__pane-label">${ServerI18n.t("sohPaneRecent")} · RECENT</span>
-                <span class="admin-soh-v4__spacer"></span>
-                <a href="#/events" class="admin-soh-v4__pane-link">${ServerI18n.t("sohViewAll")}</a>
-              </div>
-              <div class="admin-soh-v4__errors" data-soh-errors>
-                <div class="admin-soh-v4__err-empty">${ServerI18n.t("sohNoErrors")}</div>
-              </div>
-            </div>
-
-            <div class="admin-soh-v4__quickcard">
-              <div class="admin-soh-v4__pane-label">QUICK ACTIONS</div>
-              <button type="button" class="admin-soh-v4__qa is-cyan" data-soh-action="reload-effects">${ServerI18n.t("sohQaReloadPlugins")}</button>
-              <a class="admin-soh-v4__qa" href="#/overlay">${ServerI18n.t("sohQaClearDesktop")}</a>
-              <a class="admin-soh-v4__qa" href="#/backup">${ServerI18n.t("sohQaDiagPack")}</a>
-              <button type="button" class="admin-soh-v4__qa is-disabled" data-soh-action="force-gc" disabled title="${ServerI18n.t("sohQaGcDisabledTitle")}">
-                <span>${ServerI18n.t("sohQaForceGc")}</span>
-                <span class="admin-soh-v4__qa-hint">待 BE</span>
-              </button>
-            </div>
-
-            <div class="admin-soh-v4__cfgcard">
-              <div class="admin-soh-v4__pane-label">CONFIG SUMMARY</div>
-              <div class="admin-soh-v4__cfgrow"><span>PUBLIC URL</span><code id="sysoPublicUrl">${location.origin}</code></div>
-              <div class="admin-soh-v4__cfgrow"><span>WS PATH</span><code id="sysoWsPath">—</code></div>
-              <div class="admin-soh-v4__cfgrow"><span>PLUGINS</span><code data-cfg-plugins>—</code></div>
-              <div class="admin-soh-v4__cfgrow"><span>WEBHOOKS</span><code data-cfg-webhooks>—</code></div>
-              <div class="admin-soh-v4__cfgrow"><span>TOKENS</span><code data-cfg-tokens>—</code></div>
-              <div class="admin-soh-v4__cfgrow"><span>BUILD</span><code>v${(window.DANMU_CONFIG && window.DANMU_CONFIG.appVersion) || "?"}</code></div>
-            </div>
-          </div>
+            { hash: "#/backup",       label: ServerI18n.t("adminNavBackup"),   sub: ServerI18n.t("sohLinkBackupSub"), attr: "" },
+            { hash: "#/security",     label: ServerI18n.t("adminNavSecurity"), sub: ServerI18n.t("sohLinkSecuritySub"), attr: "data-soh-sub=\"security\"" },
+            { hash: "#/integrations", label: ServerI18n.t("adminNavIntegrations"), sub: "—", attr: "data-soh-sub=\"integrations\"" },
+            { hash: "#/about",        label: ServerI18n.t("sohLinkAbout"),     sub: ServerI18n.t("sohLinkAboutSub"), attr: "" },
+          ].map((r) => `
+            <a class="admin-ui-group-row admin-soh-link" href="${r.hash}">
+              <span class="lbl">${r.label}</span>
+              <span class="val admin-soh-link__sub" ${r.attr}>${r.sub}</span>
+              <span class="admin-soh-link__chev" aria-hidden="true">›</span>
+            </a>`).join("")}
         </div>
       </div>`;
   }
@@ -148,205 +114,142 @@
     return `${m}m ${String(sec % 60).padStart(2, "0")}s`;
   }
 
-  function _renderSpark(svg, series, ok) {
-    if (!svg || !Array.isArray(series) || series.length === 0) return;
-    const polyline = svg.querySelector("polyline");
-    if (!polyline) return;
-    const max = Math.max.apply(null, series.concat([0.0001]));
-    const min = Math.min.apply(null, series);
-    const range = (max - min) || 1;
-    const pts = series.map((v, i) => {
-      const x = (series.length === 1) ? 0 : (i / (series.length - 1)) * 120;
-      const y = 22 - ((v - min) / range) * 20 - 1;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
-    polyline.setAttribute("points", pts.join(" "));
-    polyline.style.color = ok ? "var(--hud-lime, #86efac)" : "var(--hud-cyan, #38bdf8)";
-  }
-
-  function _setMetric(id, value, series, ok) {
+  function _setKpi(id, value, sub) {
     const tile = document.querySelector(`[data-m="${id}"]`);
     if (!tile) return;
     const v = tile.querySelector("[data-m-v]");
     if (v) v.textContent = value;
-    if (typeof ok === "boolean") {
-      v.style.color = ok ? "var(--color-ink-success)" : "var(--color-ink-accent)";
-    }
-    const spark = tile.querySelector("[data-m-spark]");
-    _renderSpark(spark, series, ok);
+    const s = tile.querySelector("[data-m-sub]");
+    if (s) s.textContent = sub || "";
   }
 
-  // v5 Batch 12-2: status banner — green when all healthy, amber when
-  // any service flagged. Drives off services data (same as _renderServices).
-  function _updateBanner(data) {
-    const banner = document.querySelector("[data-soh-banner]");
+  // 狀態改成頁首右側一顆 chip（設計稿 08 · S1）。判斷邏輯照舊：佇列滿了就
+  // 不是「運作正常」。
+  function _updateChip(data) {
     const dot = document.querySelector("[data-soh-banner-dot]");
     const title = document.querySelector("[data-soh-banner-title]");
-    const sub = document.querySelector("[data-soh-banner-sub]");
-    if (!banner) return;
-    const upSec = data.server_started_at
-      ? Math.max(0, Math.floor(Date.now() / 1000 - data.server_started_at))
-      : 0;
-    const upStr = upSec ? _fmtUptime(upSec) : "—";
-    const wsClients = data.ws_clients ?? 0;
-    // Simple health rule: degraded if no metrics returned or queue full.
+    const chip = document.querySelector("[data-soh-chip]");
     const queueFull = data.queue_size != null && data.queue_capacity != null &&
                        data.queue_size >= data.queue_capacity;
-    const allHealthy = !queueFull;
-    banner.classList.toggle("is-warn", !allHealthy);
-    if (dot) {
-      dot.style.background = allHealthy ? "var(--hud-lime, #86efac)" : "var(--hud-amber, #fbbf24)";
-      dot.style.boxShadow = allHealthy ? "0 0 8px var(--hud-lime, #86efac)" : "0 0 8px var(--hud-amber, #fbbf24)";
-    }
-    if (title) title.textContent = allHealthy ? ServerI18n.t("sohAllHealthy") : ServerI18n.t("sohOneUnhealthy");
-    if (sub) sub.textContent = `${wsClients} WS clients · uptime ${upStr} · last check ${new Date().toLocaleTimeString()}`;
-  }
-
-  // v5 Batch 12-2: CONFIG SUMMARY card on the right rail — pulls
-  // plugin/webhook/token counts from /admin/metrics where available,
-  // falls back to "—" placeholders.
-  function _updateConfigSummary(data) {
-    const setCfg = (sel, val) => {
-      const el = document.querySelector(sel);
-      if (el) el.textContent = val == null ? "—" : String(val);
-    };
-    setCfg("[data-cfg-plugins]", data.plugins_loaded != null ? `${data.plugins_loaded} loaded` : "—");
-    setCfg("[data-cfg-webhooks]", data.webhooks_count != null ? `${data.webhooks_count} endpoints` : "—");
-    setCfg("[data-cfg-tokens]", data.tokens_count != null ? `${data.tokens_count} issued` : "—");
-  }
-
-  function _renderServices(data) {
-    const host = document.querySelector("[data-soh-services]");
-    if (!host) return;
-    const cfg = window.DANMU_CONFIG || {};
-    const ver = cfg.appVersion || "—";
-    const upSec = data.server_started_at
-      ? Math.max(0, Math.floor(Date.now() / 1000 - data.server_started_at))
-      : 0;
-    const upStr = upSec ? _fmtUptime(upSec) : "—";
-    // Best-effort service mapping. Webhook degradation is inferred from
-    // `recent_violations` if it shows webhook failures, otherwise healthy.
-    const wsHealthy = data.ws_clients >= 0; // metrics endpoint responded
-    const webhookOK = !((data.recent_violations || []).some((v) => /webhook|wh_/i.test(JSON.stringify(v))));
-    const services = [
-      { name: "Flask Server",     status: "healthy",                            uptime: upStr, ver },
-      { name: "WS Server",        status: wsHealthy ? "healthy" : "degraded",   uptime: upStr, ver },
-      { name: "Effect Engine",    status: "healthy",                            uptime: upStr, ver: "—" },
-      { name: "Webhook Delivery", status: webhookOK ? "healthy" : "degraded",   uptime: "—",   ver: "—",
-        note: webhookOK ? null : ServerI18n.t("sohWebhookRetrying") },
-    ];
-    // 同一個狀態色餵兩種用途，門檻不同：圓點是非文字（3.0，--hud-* 撐得住），
-    // 徽章是 9px 文字（4.5，--hud-* 淺色臂只有 3.30）→ 分成 fill 與 ink 兩組。
-    const statusCols = { healthy: "var(--hud-lime, #86efac)", degraded: "var(--hud-amber, #fbbf24)", error: "var(--hud-crimson, #ff4d4f)" };
-    const statusInk = { healthy: "var(--color-ink-success)", degraded: "var(--color-ink-warning)", error: "var(--color-ink-error)" };
-    host.innerHTML = services.map((s) => `
-      <div class="admin-soh-v4__svc">
-        <span class="admin-soh-v4__svc-dot" style="background:${statusCols[s.status]}"></span>
-        <div class="admin-soh-v4__svc-id">
-          <div class="admin-soh-v4__svc-name">${s.name}</div>
-          ${s.note ? `<div class="admin-soh-v4__svc-note">${s.note}</div>` : ""}
-        </div>
-        <span class="admin-soh-v4__svc-ver">v${s.ver}</span>
-        <span class="admin-soh-v4__svc-uptime">${s.uptime}</span>
-        <span class="admin-soh-v4__svc-state" style="color:${statusInk[s.status]};border-color:${statusCols[s.status]}">${s.status.toUpperCase()}</span>
-      </div>`).join("");
-  }
-
-  function _renderErrors(events) {
-    const host = document.querySelector("[data-soh-errors]");
-    if (!host) return;
-    const errs = (events || []).filter((e) => e.sev === "error" || e.sev === "warn").slice(0, 5);
-    if (errs.length === 0) {
-      host.innerHTML = '<div class="admin-soh-v4__err-empty">' + ServerI18n.t("sohNoErrors") + '</div>';
-      return;
-    }
-    host.innerHTML = errs.map((e) => `
-      <div class="admin-soh-v4__err" data-sev="${e.sev}">
-        <span class="admin-soh-v4__err-dot" data-sev="${e.sev}"></span>
-        <span class="admin-soh-v4__err-time">${e.t || "—"}</span>
-        <span class="admin-soh-v4__err-msg">${e.msg || ""}</span>
-        <span class="admin-soh-v4__err-arrow">→</span>
-      </div>`).join("");
+    const ok = !queueFull;
+    if (chip) chip.classList.toggle("is-warn", !ok);
+    if (dot) dot.classList.toggle("is-warn", !ok);
+    if (title) title.textContent = ok ? ServerI18n.t("sohAllHealthy") : ServerI18n.t("sohOneUnhealthy");
   }
 
   function _wire() {
-    const cfg = window.DANMU_CONFIG || {};
-    const wsPathEl = document.getElementById("sysoWsPath");
-    if (wsPathEl) wsPathEl.textContent = ((cfg && cfg.wsPath) || "/ws");
-
     (async () => {
       try {
         const res = await window.csrfFetch("/admin/metrics");
         if (!res.ok) return;
         const data = await res.json();
-        const cpuS  = data.cpu_series || [];
-        const memS  = data.mem_mb_series || [];
-        const rateS = data.rate_series || [];
-        const last = (a) => Array.isArray(a) && a.length ? a[a.length - 1] : null;
-        const cpu = last(cpuS), mem = last(memS), rate = last(rateS);
+        const last = (a) => (Array.isArray(a) && a.length ? a[a.length - 1] : null);
 
-        // Uptime — no series, so we synthesize a flat line.
         const upSec = data.server_started_at
           ? Math.max(0, Math.floor(Date.now() / 1000 - data.server_started_at))
           : 0;
-        _setMetric("uptime", upSec > 0 ? _fmtUptime(upSec) : "—", new Array(12).fill(4), true);
-        _setMetric("cpu",    cpu != null ? `${Number(cpu).toFixed(0)}%` : "—", cpuS, (cpu || 0) < 70);
-        _setMetric("ram",    mem != null ? `${Number(mem).toFixed(0)} MB` : "—", memS, true);
-        // Disk usage unknown without a backend probe — render dim.
-        _setMetric("disk",   data.disk_usage || "—", new Array(12).fill(40), true);
-        _setMetric("ws",     String(data.ws_clients ?? 0), [data.ws_clients ?? 0], false);
-        _setMetric("qps",    rate != null ? `${(Number(rate) / 60).toFixed(1)}/s` : "—",
-                              rateS.map((r) => r / 60), false);
+        _setKpi("uptime", upSec > 0 ? _fmtUptime(upSec) : "—", "");
 
-        _renderServices(data);
-        _updateBanner(data);
-        _updateConfigSummary(data);
-
-        // Recent errors — pull from audit log (alias for now). Endpoint
-        // surfaces server-emitted events; we extract anything tagged
-        // sev=error/warn. Falls back to "no errors" empty state.
+        // 稿上的副標是「1 顯示層 · 37 觀眾 · 1 後台」，但這個產品的連線模型
+        // 不長那樣：只有顯示層掛 WebSocket，觀眾是輪詢的，後台沒有連線。
+        // 所以這裡只報 server 真的知道的兩個數，不編第三個。
+        let viewers = null;
         try {
-          const audit = await fetch("/admin/audit?limit=30&sev=warn,error", { credentials: "same-origin" });
-          if (audit.ok) {
-            const j = await audit.json();
-            const items = Array.isArray(j.records) ? j.records.map((r) => ({
-              t: r.ts ? new Date(r.ts * 1000).toISOString().slice(11, 19) : "—",
-              sev: r.severity || "warn",
-              msg: r.message || `${r.scope || ""} ${r.action || ""}`.trim(),
-            })) : [];
-            _renderErrors(items);
+          const a = await fetch("/admin/audience/stats", { credentials: "same-origin" });
+          if (a.ok) viewers = (await a.json()).total_live;
+        } catch (_) {}
+        const overlays = data.ws_clients ?? 0;
+        _setKpi(
+          "conn",
+          String(overlays + (viewers || 0)),
+          viewers == null
+            ? ServerI18n.t("sohConnOverlaysOnly", { n: overlays })
+            : ServerI18n.t("sohConnBreakdown", { overlays: overlays, viewers: viewers })
+        );
+
+        // 稿上這格是百分比。telemetry 的 mem_mb_series 是**整台機器已用的**
+        // MB（psutil.virtual_memory().used），不是這個 process 的 RSS——
+        // 直接印會變成「記憶體 5769 MB」這種對主持人毫無意義的數字。
+        // 用 mem_series（同一份來源的百分比），副標寫清楚是整台機器。
+        const memPct = last(data.mem_series || []);
+        const totalGb = data.mem_total_mb ? (data.mem_total_mb / 1024).toFixed(0) : null;
+        _setKpi(
+          "ram",
+          memPct != null ? `${Number(memPct).toFixed(0)}%` : "—",
+          totalGb ? ServerI18n.t("sohMemorySub", { total: totalGb }) : ""
+        );
+
+        const ver = (window.DANMU_CONFIG && window.DANMU_CONFIG.appVersion) || "?";
+        _setKpi("ver", `v${ver}`, ServerI18n.t("sohVersionSub"));
+
+        _updateChip(data);
+
+        const extSub = document.querySelector('[data-soh-sub="integrations"]');
+        if (extSub) {
+          extSub.textContent = ServerI18n.t("sohLinkExtSub", {
+            webhooks: data.webhooks_count ?? 0,
+            plugins: data.plugins_loaded ?? 0,
+          });
+        }
+        // 連線密碼的開關狀態不在 /admin/metrics 的 security 摘要裡
+        // （那份只有 ip_allowlist / cors / tls），要問 ws-auth。
+        try {
+          const wa = await window.csrfFetch("/admin/ws-auth");
+          if (wa.ok) {
+            const state = await wa.json();
+            const secSub = document.querySelector('[data-soh-sub="security"]');
+            if (secSub) {
+              secSub.textContent = state.require_token
+                ? ServerI18n.t("sohLinkSecurityOn")
+                : ServerI18n.t("sohLinkSecurityOff");
+            }
           }
-        } catch (_) { /* fine */ }
+        } catch (_) {}
       } catch (_) { /* ignore */ }
     })();
 
-    // Banner re-check button
-    const _recheck = document.querySelector("[data-soh-recheck]");
-    if (_recheck) {
-      _recheck.addEventListener("click", () => {
-        _recheck.textContent = ServerI18n.t("sohRecheckBusy");
-        _recheck.disabled = true;
-        setTimeout(() => _wire(), 100);
-        setTimeout(() => {
-          _recheck.textContent = ServerI18n.t("sohRecheckBtn");
-          _recheck.disabled = false;
-        }, 1500);
-      });
-    }
-
     const root = document.getElementById(SECTION_ID);
-    if (root) {
-      root.addEventListener("click", function (e) {
-        const a = e.target.closest("[data-soh-action]");
-        if (!a || a.disabled) return;
-        if (a.dataset.sohAction === "reload-effects") {
-          window.csrfFetch("/admin/effects/reload", { method: "POST" })
-            .then((r) => r.ok ? r.json() : Promise.reject(r))
-            .then(() => { window.showToast && window.showToast(ServerI18n.t("sohToastEffectsReloaded"), true); })
-            .catch(() => { window.showToast && window.showToast(ServerI18n.t("sohToastReloadFailed"), false); });
-        }
+    if (!root) return;
+
+    // 後台深淺色：跟頂欄那顆 ☼/☾ 共用同一份狀態，不然兩邊會各說各話。
+    const syncTheme = () => {
+      const mode = (window.AdminThemeSwitcher && window.AdminThemeSwitcher.getMode()) || "auto";
+      root.querySelectorAll("[data-soh-mode]").forEach((b) => {
+        const on = b.dataset.sohMode === mode;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
       });
-    }
+    };
+    syncTheme();
+    document.addEventListener("admin:theme-mode", syncTheme);
+
+    root.addEventListener("click", function (e) {
+      const modeBtn = e.target.closest("[data-soh-mode]");
+      if (modeBtn) {
+        window.AdminThemeSwitcher && window.AdminThemeSwitcher.setMode(modeBtn.dataset.sohMode);
+        syncTheme();
+        return;
+      }
+      const a = e.target.closest("[data-soh-action]");
+      if (!a || a.disabled) return;
+      if (a.dataset.sohAction === "copy-url") {
+        const url = document.getElementById("sysoPublicUrl")?.textContent || "";
+        navigator.clipboard?.writeText(url).then(
+          () => window.showToast && window.showToast(ServerI18n.t("sohCopied"), true),
+          () => window.showToast && window.showToast(ServerI18n.t("sohCopyFailed"), false)
+        );
+        return;
+      }
+      if (a.dataset.sohAction === "show-qr") {
+        const box = root.querySelector("[data-soh-qr]");
+        if (!box) return;
+        if (!box.hidden) { box.hidden = true; return; }
+        fetch("/admin/qr/public", { credentials: "same-origin" })
+          .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+          .then((j) => { box.innerHTML = j.svg; box.hidden = false; })
+          .catch(() => window.showToast && window.showToast(ServerI18n.t("sohQrFailed"), false));
+      }
+    });
   }
 
   function init() {

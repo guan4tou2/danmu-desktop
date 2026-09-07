@@ -132,6 +132,20 @@ def _attach_suggestions(rate_stats: dict) -> dict:
     return rate_stats
 
 
+@admin_bp.route("/qr/public", methods=["GET"])
+@require_login
+def public_url_qr():
+    """QR for this server's own join URL（設計稿 08 · S1 的「公開網址 · QR」）。
+
+    刻意不吃參數：要編碼什麼由 server 自己決定（request.host_url），呼叫端
+    沒有機會塞任意內容進去。
+    """
+    from ...services import qr
+
+    join_url = request.host_url.rstrip("/")
+    return _json_response({"url": join_url, "svg": qr.render_svg(join_url)})
+
+
 @admin_bp.route("/metrics", methods=["GET"])
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_login
