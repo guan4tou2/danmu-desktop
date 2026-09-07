@@ -672,3 +672,44 @@ def test_system_page_is_an_entry_point(zh):
     assert "AdminThemeSwitcher" in js
     switcher = _strip_comments(_read("server/static/js/admin-theme-switcher.js"))
     assert "window.AdminThemeSwitcher" in switcher
+
+
+def test_notifications_is_a_popover_not_a_page(zh):
+    """設計稿 08 · N1：通知改成頂欄鈴鐺（帶數字 badge）開的右上彈出面板。
+
+    前一版是整頁三欄式收件匣：篩選欄／清單／詳情窗，加上 全部／未讀／已加星／
+    已封存 四個分頁與嚴重度篩選。通知的用途是「有件事你可能要處理」——為它蓋
+    一座收件匣，等於把一個瞄一眼的東西做成一份要經營的工作。
+    """
+    assert zh["notifMarkAllRead"] == "全部標為已讀"  # 原本是「✓ 全部已讀」
+    assert zh["notifViewBtn"] == "查看"
+
+    js = _strip_comments(_read("server/static/js/admin-notifications.js"))
+    assert 'btn.id = "admin-notif-bell"' in js
+    assert "data-notif-badge" in js and "data-notif-readall" in js
+    # 四個來源的聚合是這個模組真正的價值，不能跟著版面一起被丟掉
+    for keeper in (
+        "_fetchTokenAudit",
+        "_fetchFilterEvents",
+        "_fetchWebhookAudit",
+        "_fetchSystemAudit",
+    ):
+        assert keeper in js, keeper
+    for gone in (
+        "admin-notif-tabs",
+        "admin-notif-sources",
+        "admin-notif-toolbar",
+        "_sevClassFor",
+        "_toggleStar",
+        "sec-notifications-overview",
+    ):
+        assert gone not in js, gone
+
+    # 來源標籤不能直接把內部英文名（Moderation / Webhooks）給使用者看
+    assert 'Moderation:   { key: "adminNavModeration"' in _read(
+        "server/static/js/admin-notifications.js"
+    )
+
+    # 舊書籤 #/notifications 還要能用——route 保留但沒有 section
+    admin = _strip_comments(_read("server/static/js/admin.js"))
+    assert 'notifications: { title: "通知", sections: [] }' in admin

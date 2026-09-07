@@ -9060,242 +9060,101 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 
 body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 
-/* ─── Notifications Inbox (P1, 2026-04-27) ─────────────────────────── */
-.admin-notif-page { padding: 0; }
-.admin-notif-grid {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 12px;
-  align-items: start;
-}
-@media (max-width: 720px) {
-  .admin-notif-grid { grid-template-columns: 1fr; }
+/* ─── 通知（設計稿 08 · N1，2026-09-07）──────────────────────────────
+   頂欄鈴鐺開的右上彈出面板。前一版是整頁三欄式收件匣（篩選欄／清單／詳情
+   窗）＋四個分頁＋嚴重度 pill，整組退場。 */
+.admin-notif-bell { position: relative; }
+.admin-notif-bell__badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: var(--space-4);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--color-danger);
+  color: var(--color-ink-on-accent);
+  font-size: var(--text-caption);
+  line-height: var(--space-4);
+  text-align: center;
 }
 
-.admin-notif-filters {
+.admin-notif {
+  position: fixed;
+  /* 頂欄之下。--space-8 是 2rem，×2 = 4rem = 64px，仍在 4px 格上 */
+  top: calc(var(--space-8) * 2);
+  right: var(--space-4);
+  z-index: 9250;
+  width: min(24rem, calc(100vw - var(--space-8)));
+  max-height: min(70vh, 32rem);
+  overflow-y: auto;
   background: var(--color-surface);
-  border: 1px solid var(--color-border, var(--hud-line));
-  border-radius: var(--radius-md);
-  padding: 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 var(--space-3) var(--space-6) var(--shadow-base);
 }
-.admin-notif-tabs,
-.admin-notif-sources {
-  flex-direction: column;
-  align-items: stretch;
-  margin-top: 8px;
+.admin-notif__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
 }
-.admin-notif-tab,
-.admin-notif-src {
-  justify-content: flex-start;
-  text-align: left;
-  text-transform: none;
+.admin-notif__title {
+  flex: 1;
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
-.admin-notif-count {
-  margin-left: auto;
-  font-family: var(--font-mono); font-size: var(--text-caption);
-  color: var(--color-text-muted);
-  letter-spacing: 0.4px;
-}
-.admin-notif-src.is-disabled {
-  opacity: 0.6;
-  border-style: dashed;
-  pointer-events: none;
-  cursor: default;
-}
-.admin-ui-chip.is-active .admin-notif-count {
+.admin-notif__readall {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-size: var(--text-caption);
   color: var(--color-ink-accent);
 }
-.admin-notif-src.admin-notif-src-placeholder {
-  justify-content: flex-start;
-}
-.admin-notif-src.admin-notif-src-placeholder .cnt {
-  margin-left: auto;
-}
-.admin-notif-label-top { margin-top: 12px; display: block; }
-.admin-notif-tip {
-  margin-top: 12px;
-  padding: 8px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border, var(--hud-line));
-  border-radius: var(--radius-xs);
-  font-family: var(--font-mono); font-size: var(--text-caption);
-  letter-spacing: 0.3px; line-height: 1.6;
-  color: var(--color-text-muted);
-}
-
-.admin-notif-main {
-  display: flex; flex-direction: column;
-  min-width: 0;
-}
-.admin-notif-toolbar {
-  margin-bottom: 12px;
-}
-
-.admin-notif-list {
-  display: flex; flex-direction: column; gap: 4px;
-  min-height: 200px;
-}
-.admin-notif-loading {
-  padding: 40px;
-  text-align: center;
-  font-family: var(--font-mono); font-size: var(--text-caption);
-  color: var(--color-text-muted);
-}
-
-.admin-notif-item {
-  padding: 12px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-left: 3px solid;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
-}
-.admin-notif-item:hover {
-  background: var(--hover-tint-weak);
-  border-color: var(--color-border, var(--hud-line));
-}
-.admin-notif-item.is-unread {
-  background: var(--color-bg);
-  border-color: var(--color-border, var(--hud-line));
-}
-/* Row-level sev tint — matches admin-ev-v4__row[data-sev] from
-   admin-events-log.js so both pages read with the same visual cadence
-   (design v4 2026-05-17). Only warn/error tint; info stays neutral. */
-.admin-notif-item[data-sev="warn"]  { background: rgba(251, 191, 36, 0.04); }
-.admin-notif-item[data-sev="error"] { background: rgba(255, 77, 79, 0.05); }
-.admin-notif-item.is-unread[data-sev="warn"]  { background: rgba(251, 191, 36, 0.07); }
-.admin-notif-item.is-unread[data-sev="error"] { background: rgba(255, 77, 79, 0.09); }
-.admin-notif-item.is-read { opacity: 0.7; }
-.admin-notif-item.is-archived { opacity: 0.5; }
-/* Inline "vs events" explainer under the page head — visually inherits
-   from admin-ev-v4__explain; this rule only adds spacing context. */
-.admin-notif-explain { margin-bottom: 12px; }
-.admin-notif-item .head {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 4px;
-}
-.admin-notif-item .dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.admin-notif-sev-pill { flex-shrink: 0; }
-.admin-notif-item .src {
-  font-family: var(--font-mono); font-size: var(--text-caption);
-  color: var(--color-text-muted);
-  letter-spacing: 0.3px;
-}
-.admin-notif-item .ts {
-  margin-left: auto;
-  font-family: var(--font-mono); font-size: var(--text-caption);
-  color: var(--color-text-muted);
-  letter-spacing: 0.3px;
-}
-.admin-notif-item .title {
-  font-size: var(--text-footnote); font-weight: 600;
-  color: var(--color-text-strong);
-  margin-bottom: 4px;
-}
-.admin-notif-item.is-read .title,
-.admin-notif-item.is-archived .title { font-weight: 400; }
-.admin-notif-item .desc {
-  font-size: var(--text-caption); line-height: 1.5;
-  color: var(--color-text-muted);
-  letter-spacing: 0.2px;
-  word-break: break-word;
-}
-.admin-notif-item .actions {
-  display: flex; gap: 4px;
-  margin-top: 8px;
-  flex-wrap: wrap;
-}
-
-/* Starred state — prototype admin-batch7.jsx:169.
-   ★ icon next to severity chip (amber) + amber tint when star button is on. */
-.admin-notif-item .star {
-  color: var(--color-ink-warning);
-  font-size: var(--text-caption);
-  line-height: 1;
-  flex-shrink: 0;
-}
-.admin-notif-item.is-starred {
-  border-color: rgba(251, 191, 36, 0.25);
-}
-.admin-notif-item.is-archived.is-starred .star { opacity: 0.5; }
-
-/* ── Notifications 3-col detail pane (2026-04-29) ── */
-.admin-notif-grid--3col {
-  grid-template-columns: 240px 1fr 300px;
-}
-@media (max-width: 960px) {
-  .admin-notif-grid--3col { grid-template-columns: 240px 1fr; }
-}
-.admin-notif-detail {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border, var(--hud-line));
-  border-radius: var(--radius-md);
+.admin-notif__list {
+  margin: 0;
   padding: 0;
-  min-height: 200px;
-  overflow: hidden;
-  display: flex; flex-direction: column;
+  list-style: none;
 }
-.admin-notif-detail[hidden] { display: none; }
-.admin-notif-detail-head {
-  display: flex; align-items: center; gap: 8px;
-  padding: 12px 12px;
-  border-bottom: 1px solid var(--color-border, var(--hud-line));
+.admin-notif__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0 var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
 }
-.admin-notif-detail-sev {
-  align-self: flex-start;
-  gap: 4px;
+.admin-notif__item:last-child { border-bottom: 0; }
+.admin-notif__text {
+  grid-column: 1;
+  font-size: var(--text-footnote);
+  color: var(--color-text-primary);
 }
-.admin-notif-detail-body {
-  padding: 12px;
-  overflow-y: auto;
-  flex: 1;
-  display: flex; flex-direction: column; gap: 12px;
+.admin-notif__meta {
+  grid-column: 1;
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
 }
-.admin-notif-detail-title {
-  font-size: var(--text-footnote); font-weight: 600;
-  color: var(--color-text-strong);
-  line-height: 1.4;
+/* 嚴重度只用一條左緣色帶表示，不再另外掛一顆全大寫的 pill */
+.admin-notif__item[data-sev="warn"] { box-shadow: inset 2px 0 0 var(--color-ink-warning); }
+.admin-notif__item[data-sev="crit"] { box-shadow: inset 2px 0 0 var(--color-danger); }
+.admin-notif__action {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+  font-size: var(--text-caption);
+  color: var(--color-text-primary);
 }
-.admin-notif-detail-meta {
-  display: flex; flex-direction: column; gap: 4px;
-}
-.admin-notif-detail-ts,
-.admin-notif-detail-src-row {
-  font-family: var(--font-mono); font-size: var(--text-caption);
-  color: var(--color-text-muted);
-  letter-spacing: 0.3px;
-}
-.admin-notif-detail-desc {
-  font-size: var(--text-footnote); line-height: 1.6;
-  color: var(--color-text-muted);
-}
-.admin-notif-detail-raw-label {
-  font-family: var(--font-mono); font-size: var(--text-caption);
-  letter-spacing: 0.8px; text-transform: uppercase;
-  color: var(--color-text-muted);
-  margin-bottom: 4px;
-}
-.admin-notif-detail-raw {
-  font-family: var(--font-mono); font-size: var(--text-caption);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border, var(--hud-line));
-  border-radius: var(--radius-xs);
-  padding: 8px;
-  overflow-x: auto;
-  color: var(--color-text-muted);
-  white-space: pre;
-  line-height: 1.5;
-  letter-spacing: 0.2px;
-}
-.admin-notif-detail-actions {
-  display: flex; gap: 4px; flex-wrap: wrap;
-  padding-top: 8px;
-  border-top: 1px solid var(--color-border, var(--hud-line));
+.admin-notif__empty {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
 }
 
 /* ─── Audit Log (P1, 2026-04-27) ───────────────────────────────────── */

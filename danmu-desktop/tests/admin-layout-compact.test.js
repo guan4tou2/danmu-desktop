@@ -320,54 +320,40 @@ test("admin Audience composes shared toolbar, chips, pills, and actions", () => 
   expect(cssSrc).not.toContain(".admin-aud-detail-actions button.warn");
 });
 
-test("admin Notifications composes shared filters, toolbar, pills, and actions", () => {
+test("admin Notifications is a top-right popover, not an inbox page", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const notificationsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-notifications.js"), "utf8");
-  const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
   const cssSrc = fs.readFileSync(path.join(staticDir, "css", "style.css"), "utf8");
 
-  expect(notificationsSrc).toContain('class="admin-ui-chip-group admin-notif-tabs"');
-  expect(notificationsSrc).toContain('class="admin-ui-chip admin-notif-tab is-active"');
-  expect(notificationsSrc).toContain('class="admin-ui-chip-group admin-notif-sources"');
-  expect(notificationsSrc).toContain('class="admin-ui-chip admin-notif-src is-active"');
-  // The Backup source chip was a dead placeholder — no backend ever emitted a
-  // Backup notification (integrations catalog hardcoded implemented:false) —
-  // and it was removed along with its sourceCatalog plumbing. Assert it stays
-  // gone rather than asserting the placeholder markup that used to be here.
-  expect(notificationsSrc).not.toContain("admin-notif-src-placeholder");
-  expect(notificationsSrc).not.toContain('data-notif-src="Backup"');
-  expect(notificationsSrc).toContain('class="admin-ui-toolbar admin-notif-toolbar"');
-  expect(notificationsSrc).toContain('class="admin-ui-summary admin-notif-summary"');
-  expect(notificationsSrc).toContain('class="admin-ui-chip-group admin-notif-actions"');
-  expect(notificationsSrc).toContain('class="admin-ui-action admin-notif-action"');
-  expect(notificationsSrc).toContain('class="admin-ui-pill admin-notif-sev-pill ${_sevClassFor(it.sev)}"');
-  expect(notificationsSrc).toContain('class="admin-ui-action admin-notif-row-action ${starred ? "is-warn is-on" : ""}"');
-  expect(notificationsSrc).toContain('class="admin-ui-action admin-notif-row-action"');
-  expect(notificationsSrc).toContain('class="admin-ui-action admin-notif-detail-close"');
-  expect(notificationsSrc).toContain('class="admin-ui-pill admin-notif-detail-sev ${_sevClassFor(it.sev)}"');
-  expect(notificationsSrc).toContain('class="admin-ui-action admin-notif-detail-action"');
+  // 2026-09-07 設計稿 08 · N1：頂欄鈴鐺（帶數字 badge）開的右上彈出面板。
+  // 前一版是整頁三欄式收件匣——篩選欄／清單／詳情窗，加上 全部／未讀／已加星／
+  // 已封存 四個分頁與嚴重度篩選。通知的用途是「有件事你可能要處理」，為它蓋
+  // 一座收件匣等於把一個瞄一眼的東西做成一份要經營的工作。
+  expect(notificationsSrc).toContain('btn.id = "admin-notif-bell"');
+  expect(notificationsSrc).toContain("data-notif-badge");
+  expect(notificationsSrc).toContain("data-notif-readall");
+  expect(notificationsSrc).toContain("data-notif-go");
 
-  expect(hudSrc).toContain(".admin-ui-toolbar {");
-  expect(hudSrc).toContain(".admin-ui-chip-group {");
-  expect(hudSrc).toContain(".admin-ui-chip {");
-  expect(hudSrc).toContain(".admin-ui-pill {");
-  expect(hudSrc).toContain(".admin-ui-action {");
-  expect(hudSrc).toContain(".admin-ui-action.is-warn {");
+  // 退場的三欄收件匣零件
+  for (const gone of [
+    "admin-notif-tabs",
+    "admin-notif-sources",
+    "admin-notif-toolbar",
+    "admin-notif-summary",
+    "admin-notif-sev-pill",
+    "admin-notif-detail-close",
+    "admin-notif-row-action",
+    "_sevClassFor",
+    "_toggleStar",
+  ]) {
+    expect(notificationsSrc).not.toContain(gone);
+    expect(cssSrc).not.toContain("." + gone);
+  }
 
-  expect(cssSrc).not.toContain(".admin-notif-tab, .admin-notif-src {");
-  expect(cssSrc).not.toContain(".admin-notif-tab .cnt, .admin-notif-src .cnt");
-  expect(cssSrc).not.toContain(".admin-notif-tab:hover, .admin-notif-src:hover");
-  expect(cssSrc).not.toContain(".admin-notif-tab.is-active, .admin-notif-src.is-active");
-  expect(cssSrc).not.toContain(".admin-notif-action {");
-  expect(cssSrc).not.toContain(".admin-notif-action:hover");
-  expect(cssSrc).not.toContain(".admin-notif-item .sev {");
-  expect(cssSrc).not.toContain(".admin-notif-item .actions button {");
-  expect(cssSrc).not.toContain(".admin-notif-item .actions button:hover");
-  expect(cssSrc).not.toContain(".admin-notif-detail-close {");
-  expect(cssSrc).not.toContain(".admin-notif-detail-close:hover");
-  expect(cssSrc).not.toContain(".admin-notif-detail-actions button {");
-  expect(cssSrc).not.toContain(".admin-notif-detail-actions button:hover");
+  // 面板本體的樣式要在
+  expect(cssSrc).toContain(".admin-notif-bell__badge {");
+  expect(cssSrc).toContain(".admin-notif__item {");
 });
 
 test("admin Webhooks uses the implemented toggle endpoint instead of BE placeholder copy", () => {

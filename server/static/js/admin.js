@@ -1357,8 +1357,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // the v2 page handles its own visibility from activeRoute + activeLeaf.
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: ["admin-security-v2-page"] },
     backup:    { title: "備份與還原",       kicker: "BACKUP · EXPORT · DANGER",          sections: ["admin-backup-v2-page"] },
-    // P1 (2026-04-27 V1Z4 batch7): aggregated alerts inbox.
-    notifications: { title: "通知",          kicker: "NOTIFICATIONS · 警示中心 · 多來源",  sections: ["sec-notifications-overview"] },
+    // 2026-09-07 設計稿 08 · N1：通知改成頂欄鈴鐺開的右上彈出面板，不再是
+    // 一頁。route 保留但沒有 section——舊書籤 #/notifications 仍然解析得到，
+    // admin-notifications.js 看到這個 hash 就把面板打開（同 #/setup 的做法）。
+    notifications: { title: "通知", sections: [] },
     // P3 Group B (2026-04-27 V1Z4 batch7): fingerprint aggregation list.
     audience:  { title: "觀眾",               kicker: "AUDIENCE · 即時指紋聚合",           sections: ["sec-audience-overview"] },
     // v7 IA (2026-07-28): `audit` demoted to _bareLegacyRedirects →
