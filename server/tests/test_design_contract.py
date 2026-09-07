@@ -1363,3 +1363,30 @@ def test_hud_css_is_gone_and_nothing_links_it():
     # 列」——把後者的底色重設成透明。搬移時只留活的那一條。
     assert "z-index: 9070" in style  # 全域重播列（sticky）
     assert "min-width: 3px" not in style  # 直方圖長條
+
+
+def test_readme_banner_and_social_preview():
+    """設計稿 13：README 頂圖與 social preview。
+
+    兩張都是從設計稿自己的 HTML（`13 GitHub Banner.dc.html`）以 2× 重算匯出，
+    不是用設計專案附的那份 PNG——附的那份跟它自己的版型對不起來：手機 mock
+    疊到投影幕上、把三道彈幕中間那道整個蓋掉，social 版則掉了下方那條彈幕。
+    稿上明講「匯出時彈幕停格於最佳位置」，那份沒有做到。
+
+    橫幅放在 H1 **之上**（稿上指定），深底在 GitHub 淺色模式對比最好，
+    不另出淺色版。social preview 的檔案放在 docs/ 供查找，但實際生效要在
+    GitHub repo Settings › Social preview 手動上傳——那不是 repo 檔案。
+    """
+    root = Path(__file__).resolve().parents[2]
+    banner = root / "docs" / "banner.png"
+    social = root / "docs" / "social-preview.png"
+    assert banner.exists() and social.exists()
+    # 2× 匯出尺寸：1200×400 與 1280×640 的兩倍
+    assert banner.read_bytes()[16:24] == (2400).to_bytes(4, "big") + (800).to_bytes(4, "big")
+    assert social.read_bytes()[16:24] == (2560).to_bytes(4, "big") + (1280).to_bytes(4, "big")
+
+    for readme in ("README.md", "README-CH.md"):
+        text = _read(readme)
+        head = text.split("\n# ", 1)[0]
+        assert 'src="docs/banner.png"' in head, f"{readme}：橫幅要在 H1 之上"
+        assert 'alt="' in head, f"{readme}：橫幅要有 alt"

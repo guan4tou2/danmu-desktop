@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/banner.png" width="100%" alt="Danmu Fire — 讓你的演講也能有彈幕 · Live danmu for any talk, on any screen"></p>
+
 # danmu-desktop
 
 在桌面直接顯示彈幕

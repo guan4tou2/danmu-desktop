@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/banner.png" width="100%" alt="Danmu Fire — 讓你的演講也能有彈幕 · Live danmu for any talk, on any screen"></p>
+
 # danmu-desktop
 
 Display bullet screen directly on the desktop

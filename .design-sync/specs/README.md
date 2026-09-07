@@ -187,7 +187,14 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
    toast，不管當下在不在放彈幕；重新啟動就是把大螢幕關掉，那是最糟的打斷。
    行為有四條 jest 測試（顯示中不跳／關閉後才跳／兩顆按鈕各自送出／同一次
    下載只跳一次）。
-5. **設計稿 13** ——README banner 與 social preview 出圖。
+5. **設計稿 13** ——2026-09-07 **已出圖**：`docs/banner.png`（2400×800）與
+   `docs/social-preview.png`（2560×1280），README 與 README-CH 的 H1 之上都
+   放了橫幅。兩張都是拿設計稿自己的 HTML（`13 GitHub Banner.dc.html`）以
+   deviceScaleFactor=2 重算，**不是**用設計專案附的那份 PNG——附的那份跟它
+   自己的版型對不起來：手機 mock 疊到投影幕上、把三道彈幕中間那道整個蓋掉，
+   social 版則掉了下方那條彈幕；稿上明講「匯出時彈幕停格於最佳位置」。
+   **還差一步只有你能做**：social preview 要在 GitHub repo Settings ›
+   Social preview 手動上傳 `docs/social-preview.png`，那不是 repo 檔案。
 6. **設計稿 16/17 的收尾**——安全區（OS1）與淺底描邊（OS2）2026-09-07
    **已接上**：Admin › 顯示層 › 投影畫面 兩列（安全區 `0% / 5% / 8%` 分段、
    描邊 `自動／總是描邊／不描邊` 分段），值存進 `display_layer.json`。
