@@ -1546,7 +1546,7 @@
 
       // ── Current session strip (span 2 columns) ────────────────
       '<div class="admin-vc-limit-status">' +
-        '<span class="admin-vc-limit-status__label">${ServerI18n.t("lbCurrentSession")}</span>' +
+        '<span class="admin-vc-limit-status__label">' + ServerI18n.t("lbCurrentSession") + '</span>' +
         '<div class="admin-vc-limit-status__metric">' +
           '' +
           '<span class="admin-vc-limit-status__metric-val" data-vc-avg-rate>—</span>' +

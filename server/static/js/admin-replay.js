@@ -93,9 +93,9 @@
         '</div>' +
         '<div class="admin-ui-card admin-replay-picker">' +
           '<div class="admin-ui-inline-toolbar">' +
-            '<span class="admin-ui-monolabel">${ServerI18n.t("mlSession")}</span>' +
+            '<span class="admin-ui-monolabel">' + ServerI18n.t("mlSession") + '</span>' +
             '<select id="replayV2Session" class="admin-ui-select" style="max-width:280px"></select>' +
-            '<span class="admin-ui-monolabel">${ServerI18n.t("mlSpeed")}</span>' +
+            '<span class="admin-ui-monolabel">' + ServerI18n.t("mlSpeed") + '</span>' +
             '<select id="replayV2Speed" class="admin-ui-select" style="max-width:110px">' +
               '<option value="0.5">0.5×</option>' +
               '<option value="1" selected>1×</option>' +
@@ -129,7 +129,7 @@
         '</div>' +
         '<div class="admin-ui-card admin-replay-list-card">' +
           '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">' +
-            '<span class="admin-ui-monolabel">${ServerI18n.t("mlMessages")}</span>' +
+            '<span class="admin-ui-monolabel">' + ServerI18n.t("mlMessages") + '</span>' +
             '<span class="admin-ui-monolabel" id="replayV2Count" style="margin-left:auto">—</span>' +
           '</div>' +
           '<div id="replayV2List" class="admin-replay-list">' +
@@ -458,6 +458,11 @@
   window.addEventListener("hashchange", _applyHashVisibility);
   // History page also dispatches this when its tab strip changes.
   document.addEventListener("admin:history-tab", _applyHashVisibility);
+  // hashchange 早於 shell 更新 dataset.activeRoute，而上面是 dataset 優先——
+  // 快速連續換路由時這裡會讀到上一個 route，整塊重播面板就黏在新頁面上
+  // （2026-09-07 用程式連續換 hash 掃頁面時抓到）。shell 畫完再判一次，
+  // 不管中間搶跑成什麼樣，最後一次一定是對的。
+  document.addEventListener("admin-panel-rendered", _applyHashVisibility);
 
   // Relocate replay-v2-section to sit next to sec-history once the history
   // card exists. Race-safe: if _inject injected into #settings-grid before

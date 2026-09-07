@@ -5,6 +5,9 @@
  * Owns the buttons inside sec-history that drive /admin/replay:
  *   - replayStartBtn / replayPauseBtn / replayResumeBtn / replayStopBtn
  *   - replayRecordBtn  (plus replayRecordingIndicator + replayRecordingTimer)
+ *
+ * 2026-09-07：暫停／繼續／停止／進度／錄製指示搬進全域的
+ * `.admin-replay-bar`（admin-replay-bar.js），id 不變所以這裡的查找照舊。
  *   - exportJsonBtn    (JSON timeline export)
  *
  * Listens to admin-panel-rendered to wire up after admin.js renders the
@@ -20,36 +23,34 @@
 
   let _replayPollTimer = null;
 
+  // 2026-09-07（設計稿 08 · H1）：進行中的控制項搬到全域的 .admin-replay-bar，
+  // 所以不能再用「startBtn 不在就整個 return」——重播跑起來之後主持人多半
+  // 已經離開紀錄頁，那顆按鈕本來就不在 DOM 裡，早退會讓暫停／停止永遠不出現。
+  // 每個元素各自判斷有沒有。
   function _updateReplayUI(state) {
+    if (window.AdminReplayBar) window.AdminReplayBar.ensure();
     const startBtn = document.getElementById("replayStartBtn");
     const pauseBtn = document.getElementById("replayPauseBtn");
     const resumeBtn = document.getElementById("replayResumeBtn");
     const stopBtn = document.getElementById("replayStopBtn");
     const progressEl = document.getElementById("replayProgress");
-    if (!startBtn) return;
+    const show = (el, on) => { if (el) el.classList.toggle("hidden", !on); };
 
-    if (state === "playing") {
-      startBtn.classList.add("hidden");
-      pauseBtn.classList.remove("hidden");
-      resumeBtn.classList.add("hidden");
-      stopBtn.classList.remove("hidden");
-      if (progressEl) progressEl.classList.remove("hidden");
-    } else if (state === "paused") {
-      startBtn.classList.add("hidden");
-      pauseBtn.classList.add("hidden");
-      resumeBtn.classList.remove("hidden");
-      stopBtn.classList.remove("hidden");
-      if (progressEl) progressEl.classList.remove("hidden");
-    } else {
-      // stopped
-      startBtn.classList.remove("hidden");
-      pauseBtn.classList.add("hidden");
-      resumeBtn.classList.add("hidden");
-      stopBtn.classList.add("hidden");
-      if (progressEl) {
-        progressEl.classList.add("hidden");
-        progressEl.textContent = "";
-      }
+    const playing = state === "playing";
+    const paused = state === "paused";
+    show(startBtn, !playing && !paused);
+    show(pauseBtn, playing);
+    show(resumeBtn, paused);
+    show(stopBtn, playing || paused);
+    show(progressEl, playing || paused);
+    if (!playing && !paused && progressEl) progressEl.textContent = "";
+
+    // 閒置就把整條列收起——一條永遠都在的空白列比沒有還糟
+    if (window.AdminReplayBar) {
+      const recording = !document
+        .getElementById("replayRecordingIndicator")
+        ?.classList.contains("hidden");
+      window.AdminReplayBar.setActive(playing || paused || !!recording);
     }
   }
 
@@ -168,10 +169,13 @@
   }
 
   function _showRecordingIndicator(show) {
+    if (window.AdminReplayBar) window.AdminReplayBar.ensure();
     const indicator = document.getElementById("replayRecordingIndicator");
     const recordBtn = document.getElementById("replayRecordBtn");
     if (indicator) indicator.classList.toggle("hidden", !show);
     if (recordBtn) recordBtn.classList.toggle("hidden", show);
+    // 錄製中也要讓全域列露出來（錄製不一定伴隨播放狀態變化）
+    if (show && window.AdminReplayBar) window.AdminReplayBar.setActive(true);
   }
 
   async function _startRecordReplay() {

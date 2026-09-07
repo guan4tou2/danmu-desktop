@@ -14574,3 +14574,59 @@ body.is-light .admin-login-wordmark.is-on-light,
 @media (prefers-reduced-motion: reduce) {
   .admin-ob-spot { transition: none; }
 }
+
+/* ── 重播進行中的全域控制列（設計稿 08 · H1）───────────────────────
+ * 重播一開始主持人就會離開「紀錄與匯出」；暫停／停止留在那一頁等於離開後
+ * 沒地方可以停。比照斷線橫幅（.admin-rcb）：插在 body 最前面、sticky。
+ * 閒置時整條 [hidden] 收起——一條永遠都在的空白列比沒有還糟。 */
+.admin-replay-bar {
+  position: sticky;
+  top: 0;
+  z-index: 9070;   /* 斷線橫幅 9080 之下：斷線比重播更急 */
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-footnote);
+  color: var(--color-ink-accent);
+  background: var(--hud-cyan-soft);
+  border-bottom: 1px solid var(--hud-cyan-line);
+}
+
+.admin-replay-bar__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  flex: 0 0 auto;
+}
+
+.admin-replay-bar__label { font-weight: 600; }
+
+.admin-replay-bar__progress,
+.admin-replay-bar__rec {
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-replay-bar__rec {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-ink-error);
+}
+
+/* style.css 載在 tailwind.css **之後**，所以自訂的 display 會蓋掉 .hidden
+   （tailwind 的 .hidden 沒有 !important，只有 [hidden] 有）。凡是在這裡指定
+   display 又要靠 .hidden 收起來的元素，都得自己補這一條。 */
+.admin-replay-bar__rec.hidden { display: none; }
+
+.admin-replay-bar__rec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-danger);
+}
+
+.admin-replay-bar__spacer { flex: 1 1 auto; }

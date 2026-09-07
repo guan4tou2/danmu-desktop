@@ -1188,3 +1188,59 @@ def test_a11y_focus_lang_and_live_region(zh):
     viewer_css = _read("server/static/css/viewer-v2.css")
     assert "min-height: 44px;" in viewer_css.split(".viewer-swatch-preset{")[1].split("}")[0]
     assert '.viewer-swatch-preset.is-active::after{\n  content: "✓";' in viewer_css
+
+
+def test_replay_controls_are_global_while_a_replay_runs(zh):
+    """設計稿 08 · H1：重播進行中的控制項要在**全域**，不能住在紀錄頁裡。
+
+    重播一開始主持人就會離開「紀錄與匯出」——去控制台、去顯示層、去審核。
+    暫停／停止留在那一頁等於離開之後沒地方可以停。那也是「重播」分頁一直
+    拿不掉的唯一理由。
+    """
+    assert zh["replayBarLabel"] == "重播進行中"
+
+    bar = _strip_comments(_read("server/static/js/admin-replay-bar.js"))
+    for wanted in (
+        "replayPauseBtn",
+        "replayResumeBtn",
+        "replayStopBtn",
+        "replayProgress",
+        "replayRecordingIndicator",
+    ):
+        assert wanted in bar, wanted
+
+    # 紀錄頁只留「需要先選訊息」的那幾顆
+    admin = _strip_comments(_read("server/static/js/admin.js"))
+    toolbar = admin.split('id="replayToolbar"')[1].split("</div>")[0]
+    assert "replayStartBtn" in toolbar
+    for gone in ("replayPauseBtn", "replayResumeBtn", "replayStopBtn"):
+        assert gone not in toolbar, gone
+    # 按鈕只寫動詞（設計稿 14）
+    for glyph in ("▶ ", "⏸ ", "⏹ ", "⏺ "):
+        assert glyph not in toolbar, glyph
+
+    # 「startBtn 不在就整個 return」會讓離開紀錄頁之後暫停／停止永遠不出現
+    ctrl = _strip_comments(_read("server/static/js/admin-replay-controls.js"))
+    assert "if (!startBtn) return;" not in ctrl
+    assert "AdminReplayBar" in ctrl
+
+
+def test_no_uninterpolated_template_placeholder_reaches_the_screen():
+    """單引號字串裡的 ${...} 不會被插值——使用者看到的是字面上的
+    `${ServerI18n.t("mlSpeed")}`。2026-09-07 在畫面上抓到五處。
+
+    這裡釘住那五行改成字串串接了；全面掃描交給 jest 那支用 acorn 真的
+    parse 過一次的測試——heuristic 字串比對擋不住巢狀 template literal，
+    試過一次誤報十幾處。
+    """
+    replay = _read("server/static/js/admin-replay.js")
+    for key in ("mlSession", "mlSpeed", "mlMessages"):
+        assert ('+ ServerI18n.t("%s") +' % key) in replay, key
+    display = _read("server/static/js/admin-display.js")
+    assert '+ ServerI18n.t("lbCurrentSession") +' in display
+    sched = _read("server/static/js/admin-scheduler.js")
+    assert 'escapeHTML(ServerI18n.t("schJobsHeadMsg"))' in sched
+    # 順手換掉的全大寫英文欄名（只看渲染出去的那幾個 span，
+    # REFRESH_INTERVAL 之類的識別字不算）
+    for gone in ("<span>INTERVAL<", "<span>SENT<", "<span>REPEAT<", ">ACTIONS<"):
+        assert gone not in _strip_comments(sched), gone

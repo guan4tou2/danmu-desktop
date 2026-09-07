@@ -332,7 +332,15 @@
       }
 
       list.innerHTML =
-        '<div class="admin-scheduler-jobs-head"><span></span><span>${"" + ServerI18n.t("schJobsHeadMsg")}</span><span>INTERVAL</span><span>SENT</span><span>REPEAT</span><span style="text-align:right">ACTIONS</span></div>' +
+        // 2026-09-07：這一行原本是**單引號**字串裡包 `${...}`——沒插值，
+        // 使用者看到的是字面上的 `${"" + ServerI18n.t("schJobsHeadMsg")}`。
+        // 順手把 INTERVAL / SENT / REPEAT / ACTIONS 四個全大寫英文欄名換掉
+        // （設計稿 14 詞彙表），ACTIONS 那欄本來就沒有標題可言。
+        '<div class="admin-scheduler-jobs-head"><span></span><span>' +
+        escapeHTML(ServerI18n.t("schJobsHeadMsg")) + "</span><span>" +
+        escapeHTML(ServerI18n.t("schColInterval")) + "</span><span>" +
+        escapeHTML(ServerI18n.t("schColSent")) + "</span><span>" +
+        escapeHTML(ServerI18n.t("schColRepeat")) + '</span><span></span></div>' +
         data.jobs.map(jobRowHTML).join("");
     } catch (err) {
       console.error("Scheduler fetch error:", err);

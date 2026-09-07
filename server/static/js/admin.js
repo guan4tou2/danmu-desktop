@@ -1177,21 +1177,21 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                                 <input id="historySearch" type="search" placeholder="${ServerI18n.t("searchHistory")}"
                                     class="admin-ui-input w-full">
+                                <!-- 進行中的控制項（暫停／繼續／停止／進度／錄製指示）
+                                     2026-09-07 搬到全域的 .admin-replay-bar（設計稿 08 · H1）：
+                                     重播一開始主持人就會離開這一頁，控制項留在這裡等於
+                                     離開後沒地方可以停。這裡只留「需要先選訊息」的那幾顆。
+                                     按鈕上的 ▶ ⏸ ⏹ ⏺ 一併拿掉（設計稿 14：只寫動詞）。 -->
                                 <div id="replayToolbar" class="history-replay-toolbar">
-                                    <button id="replayStartBtn" class="admin-ui-action is-primary admin-replay-control-action">▶ ${ServerI18n.t("replaySelected")}</button>
-                                    <button id="replayPauseBtn" class="admin-ui-action admin-replay-control-action hidden">⏸ ${ServerI18n.t("pause")}</button>
-                                    <button id="replayResumeBtn" class="admin-ui-action is-primary admin-replay-control-action hidden">▶ ${ServerI18n.t("resume")}</button>
-                                    <button id="replayStopBtn" class="admin-ui-action is-danger admin-replay-control-action hidden">⏹ ${ServerI18n.t("stop")}</button>
+                                    <button id="replayStartBtn" class="admin-ui-action is-primary admin-replay-control-action">${ServerI18n.t("replaySelected")}</button>
                                     <select id="replaySpeed" class="admin-ui-select">
                                         <option value="1">1x</option>
                                         <option value="2">2x</option>
                                         <option value="5">5x</option>
                                         <option value="10">10x</option>
                                     </select>
-                                    <button id="replayRecordBtn" class="admin-ui-action is-danger admin-replay-control-action">⏺ ${ServerI18n.t("recordReplay") || "Record Replay"}</button>
-                                    <span id="replayRecordingIndicator" class="text-sm hidden" style="color:var(--color-danger)">⏺ <span id="replayRecordingTimer">00:00</span></span>
-                                    <button id="exportJsonBtn" class="admin-ui-action admin-replay-control-action">${ServerI18n.t("exportJSON") || "Export JSON"}</button>
-                                    <span id="replayProgress" class="text-sm hidden" style="color:var(--admin-text-dim)"></span>
+                                    <button id="replayRecordBtn" class="admin-ui-action is-danger admin-replay-control-action">${ServerI18n.t("recordReplay")}</button>
+                                    <button id="exportJsonBtn" class="admin-ui-action admin-replay-control-action">${ServerI18n.t("exportJSON")}</button>
                                 </div>
                                 <div id="historyStats" class="history-stats-strip text-sm" style="color:var(--admin-text-dim)"></div>
                                 <div class="history-list-shell">
