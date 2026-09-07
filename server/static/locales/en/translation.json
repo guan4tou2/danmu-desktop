@@ -2024,6 +2024,7 @@
   "lfCountUnit": "{n}",
   "lfAutoScrollPaused": "Paused",
   "lfAutoScrollOn": "Auto-scrolling",
+  "lfRowHint": "Hover a message to hide or block it",
   "lfAriaLabel": "Live message stream",
   "lfPageTitle": "Live Feed",
   "lfPageNote": "Live danmu stream for the running session; block or flag to the review queue in place.",

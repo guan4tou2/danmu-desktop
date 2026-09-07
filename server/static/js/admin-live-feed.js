@@ -76,16 +76,6 @@
     return true;
   }
 
-  // 2026-05-17 v4: msg/s rate over a rolling 10s window.
-  const _rateBuf = [];
-  function _trackRate() {
-    const now = Date.now();
-    _rateBuf.push(now);
-    while (_rateBuf.length > 0 && _rateBuf[0] < now - 10000) _rateBuf.shift();
-  }
-  function _currentRate() {
-    return (_rateBuf.length / 10).toFixed(1);
-  }
 
   function _setAllTabActive() {
     filterTab = "all";
@@ -376,7 +366,6 @@
   // ── Add entry ────────────────────────────────────────────
 
   function addEntry(data) {
-    _trackRate();
     const entry = { ts: Date.now(), data: data, id: "e" + (++_entryCounter) };
     // 2026-05-17 v4: tag entries with status flags for filter chips.
     if (data && data.status === "blocked") entry.muted = true;
@@ -411,11 +400,8 @@
   }
 
   function _updateRateBar() {
-    const rate = document.querySelector("[data-lf-rate]");
-    const total = document.getElementById("liveFeedCount");
+    // 計數器（TOTAL／MSG/S）已依設計稿 06 · §3 移除；這裡只剩卡底的狀態。
     const state = document.querySelector("[data-lf-state]");
-    if (rate) rate.textContent = `${_currentRate()} MSG/S`;
-    if (total) total.textContent = `${entries.length} TOTAL`;
     if (state) {
       // 暫停是「還連著但不再自動捲」——是警告不是錯誤，所以走 is-warning。
       state.className = paused ? "ui-status is-warning" : "ui-status is-success";
@@ -467,9 +453,8 @@
     const grid = document.getElementById("settings-grid");
     if (!grid) return false;
 
-    // 2026-05-17 design v4: 4 filter chips with counts + density toggle +
-    // bottom rate-bar + sticky jump-to-bottom pill. Existing bulk-select
-    // bar is kept for batch-block flow (design v4 has Ban/Mask in drawer).
+    // 卡頭 4 顆分段（帶數量）＋ 卡底一行狀態說明 ＋ 置底跳轉 pill。
+    // density 切換與卡底計數器已依設計稿 06 · §3 移除。
     const html = `
       <div id="${SECTION_ID}" class="admin-live-feed-page admin-lf-v4 hud-page-stack lg:col-span-2" data-tpl="A">
         <div class="admin-ui-page-head">
@@ -498,9 +483,6 @@
             <input id="liveFeedSearch" type="search"
               placeholder="${escapeAttr(ServerI18n.t("liveFeedSearchPlaceholder"))}"
               class="admin-lf-v4__search" />
-            <span class="admin-lf-v4__density-label">DENSITY</span>
-            <button type="button" class="admin-lf-v4__dchip" data-density="compact">${ServerI18n.t("lbCompact")}</button>
-            <button type="button" class="admin-lf-v4__dchip is-active" data-density="comfy">${ServerI18n.t("lbComfy")}</button>
             <button id="liveFeedPauseBtn" type="button" class="admin-lf-v4__pausebtn">${escapeAttr(ServerI18n.t("pauseBtn"))}</button>
             <button id="liveFeedClearBtn" type="button" class="admin-lf-v4__pausebtn">${escapeAttr(ServerI18n.t("clearBtn"))}</button>
           </div>
@@ -529,23 +511,20 @@
               aria-live="polite"
               aria-relevant="additions"
               aria-label="${ServerI18n.t("lfAriaLabel")}"
-              data-density="comfy"
             ></div>
             <div class="admin-lf-v4__jump" data-lf-jump hidden>
               <button type="button" data-lf-jump-btn>↓ <span data-lf-jump-n>0</span> ${ServerI18n.t("lfJumpNew")}</button>
             </div>
           </div>
 
-          <!-- Bottom rate bar -->
+          <!-- 卡底一行（設計稿 06 · §3）：「自動捲動中 · 滑鼠停在訊息上可隱藏或封鎖」。
+               原本這裡是 0 TOTAL · 0.0 MSG/S 兩個計數器——寫死的全大寫英文，
+               沒進 i18n，違反設計稿 14 的文案規則；而且數量本來就在卡頭的分段
+               控制上（全部 N／可疑 N／已封鎖 N），這裡是第二次講同一件事。
+               狀態＝色點＋文字（設計稿 03「原則 4」），一顆 .ui-status 承載兩者。 -->
           <div class="admin-lf-v4__bottom">
-            <!-- 設計稿 03「原則 4」：狀態＝色點＋文字，一顆元素承載兩者。
-                 原本點與標籤是兩個 span，狀態要改兩個地方。 -->
             <span class="ui-status is-success" data-lf-state>${ServerI18n.t("lfAutoScrollOn")}</span>
-            <span class="admin-lf-v4__spacer"></span>
-            <span class="admin-lf-v4__counts">
-              <span class="admin-ui-monolabel admin-live-feed-count" id="liveFeedCount">0 TOTAL</span>
-              · <span data-lf-rate>0.0 MSG/S</span>
-            </span>
+            <span class="admin-lf-v4__hint">${ServerI18n.t("lfRowHint")}</span>
           </div>
         </div>
       </div>`;
@@ -658,63 +637,8 @@
 
     _bindPoller();
 
-    // 2026-05-17 v4: density toggle (compact/comfy) — propagated as
-    // data-density on the list element so CSS can shrink row padding.
-    const dchips = document.querySelectorAll(".admin-lf-v4__dchip");
-    dchips.forEach((c) => {
-      c.addEventListener("click", () => {
-        dchips.forEach((x) => x.classList.toggle("is-active", x === c));
-        if (listEl) listEl.dataset.density = c.dataset.density || "comfy";
-      });
-    });
-
-    // 2026-05-17 v4: jump-to-bottom pill — drains pauseBuffer into the live
-    // list immediately (without flipping paused state, so user can stay
-    // paused but catch up to current).
-    const jumpBtn = document.querySelector("[data-lf-jump-btn]");
-    if (jumpBtn) {
-      jumpBtn.addEventListener("click", () => {
-        if (pauseBuffer.length === 0) return;
-        for (const e of pauseBuffer) entries.push(e);
-        pauseBuffer = [];
-        if (entries.length > MAX_ENTRIES) entries.splice(0, entries.length - MAX_ENTRIES);
-        renderList();
-        if (listEl) listEl.scrollTop = listEl.scrollHeight;
-      });
-    }
-
-    // Update rate bar every second even if no new entries (drains old samples).
-    setInterval(_updateRateBar, 1000);
-
-    renderList();
-
-    // 2026-04-27 P1: row click → open Message Detail Drawer.
-    // Ignore clicks on existing inline action buttons
-    // and on the bulk-select checkbox to keep their behavior.
-    if (listEl) {
-      listEl.addEventListener("click", function (e) {
-        // Ignore swipe-action buttons too — they call blockAction directly.
-        if (e.target.closest("button, input, .admin-live-feed-actions, .admin-live-feed-check, .admin-live-feed-row__swipe-actions")) return;
-        const row = e.target.closest(".admin-live-feed-row");
-        if (!row) return;
-        // If row is mid-swipe, a tap should close the actions, not open the drawer.
-        if (row.classList.contains("is-swiped")) {
-          row.classList.remove("is-swiped");
-          return;
-        }
-        const id = row.dataset.id;
-        if (!id) return;
-        const entry = entries.find(function (en) { return en.id === id; });
-        if (entry && window.AdminMessageDrawer) {
-          window.AdminMessageDrawer.open(entry);
-        }
-      });
-
-      // 2026-05-18 design v4-r4: swipe-to-action on touch devices.
-      // Left-swipe reveals MASK / MUTE / BAN buttons inside the row.
-      // Touch threshold 60px, full reveal at 180px (matches CSS).
-      _bindLiveFeedSwipe(listEl);
-    }
+    // 2026-09-08：DENSITY 切換依設計稿 06 · §3 的移除清單整組拿掉。列高由
+    // 稿指定（52px），不再讓使用者自己調——多一個沒人會動的開關而已。
   }
 
   function _bindLiveFeedSwipe(host) {

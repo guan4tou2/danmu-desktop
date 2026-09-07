@@ -2535,21 +2535,31 @@ button:disabled,
   background: color-mix(in srgb, var(--color-primary) 4%, transparent);
 }
 
-.hud-status-dot {
+/* 篩選規則列的啟用開關（原 .hud-status-dot）。
+ *
+ * 名字改掉是因為它從來就不是狀態指示——它是**控制項**：外層 <label> 包一顆
+ * sr-only checkbox，點它會切換規則啟用。`.hud-status-dot` 另外四個用法（篩選
+ * 面板標題、動畫效果卡、效果檢視器）都是純裝飾的發光脈動點，2026-09-08 依
+ * 設計稿 14 §3 與 03「原則 4」（顏色不單獨承載意義）移除；檢視器那顆連狀態
+ * 都是冗餘的——選中效果的同一瞬間，標題從「—」變成效果名、兩顆按鈕也解鎖。
+ *
+ * 這裡順手拿掉發光與脈動：設計稿 03 已把狀態點的環境脈動判定為裝飾。
+ * **稿上這一格應該是「開關」而不是一顆點**（03 · 元件），但 repo 還沒有共用的
+ * 開關元件（設定精靈與外掛頁各自造了一個），所以那件事另外開一輪。 */
+.admin-filter-toggle-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   display: inline-block;
 }
-.hud-status-dot.is-live    { background: #86efac; box-shadow: 0 0 6px #86efac, 0 0 14px rgba(134, 239, 172, 0.3); animation: hud-pulse 2s ease-in-out infinite; }
-.hud-status-dot.is-paused  { background: #fbbf24; }
-.hud-status-dot.is-danger  { background: #f87171; }
-.hud-status-dot.is-mute    { background: var(--color-text-muted); }
 
-@keyframes hud-pulse {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.55; }
-}
+.admin-filter-toggle-dot.is-on  { background: var(--color-ink-success); }
+
+.admin-filter-toggle-dot.is-off { background: var(--color-ink-warning); }
+
+/* `@keyframes hud-pulse` 的定義在下方（hud.css 併入時帶進來的那份，帶
+ * transform: scale）。這裡原本還有一份只做 opacity 的同名 keyframes，
+ * 後者勝出所以它從來沒生效過——2026-09-08 刪除，零行為變化。 */
 
 .hud-pill {
   display: inline-block;
@@ -11499,11 +11509,6 @@ body.admin-pu-open { overflow: hidden; }
   display: inline-flex;
   align-items: center;
 }
-.admin-lf-v4__dchip {
-  min-height: 28px;
-  display: inline-flex;
-  align-items: center;
-}
 .admin-lf-v4__pausebtn {
   min-height: 32px;
   display: inline-flex;
@@ -14364,20 +14369,9 @@ body.is-light .admin-login-wordmark.is-on-light,
 }
 
 
-/* 2026-05-17 design v4: density toggle on the list shrinks row padding. */
-.admin-live-feed-list[data-density="compact"] .admin-live-feed-row {
-  padding: 4px 8px;
-  font-size: var(--text-caption);
-}
-
-.admin-live-feed-list[data-density="compact"] .admin-live-feed-row .admin-identity-avatar {
-  width: 20px; height: 20px;
-}
-
-
 /* ──────────────────────────────────────────────────────────────────────
  * Admin Live Feed — design v4 chrome (2026-05-17)
- *   Filter chips with counts · density toggle · sticky jump pill ·
+ *   Filter chips with counts · sticky jump pill ·
  *   bottom rate bar. Keeps existing row layout + drawer click.
  * ────────────────────────────────────────────────────────────────────── */
 .admin-lf-v4__card {
@@ -14435,30 +14429,6 @@ body.is-light .admin-login-wordmark.is-on-light,
 }
 
 
-.admin-lf-v4__density-label {
-  font-family: var(--hud-font-mono);
-  font-size: var(--text-caption); letter-spacing: 1px;
-  color: var(--hud-textDim);
-  margin-left: 4px;
-}
-
-.admin-lf-v4__dchip {
-  padding: 4px 8px; border-radius: var(--radius-xs);
-  background: transparent;
-  border: 1px solid var(--hud-line);
-  color: var(--hud-textDim);
-  font-family: var(--hud-font-mono);
-  font-size: var(--text-caption); letter-spacing: 1px; cursor: pointer;
-  min-height: 32px; box-sizing: border-box;
-  display: inline-flex; align-items: center;
-}
-
-.admin-lf-v4__dchip.is-active {
-  border-color: var(--hud-cyan);
-  color: var(--color-ink-accent);
-}
-
-
 .admin-lf-v4__pausebtn {
   padding: 4px 12px; border-radius: var(--radius-sm);
   background: var(--hud-bg2);
@@ -14510,22 +14480,25 @@ body.is-light .admin-login-wordmark.is-on-light,
 }
 
 
+/* 卡底一行（設計稿 06 · §3）：狀態 chip ＋ 說明。原本是等寬字的計數列
+ * （0 TOTAL · 0.0 MSG/S），等寬字依設計稿 03 只用在網址／識別碼／金鑰。 */
 .admin-lf-v4__bottom {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-top: 1px solid var(--hud-line);
-  font-family: var(--hud-font-mono);
-  font-size: var(--text-caption); letter-spacing: 0.5px;
-  color: var(--hud-textDim);
 }
 
-.admin-lf-v4__counts { font-size: var(--text-caption); }
+.admin-lf-v4__hint {
+  font-size: var(--text-footnote);
+  color: var(--color-text-secondary);
+}
 
 
 @media (max-width: 720px) {
   .admin-lf-v4__filterbar { gap: 4px; padding: 8px 8px; }
   .admin-lf-v4__search { width: 100%; order: 99; flex-basis: 100%; }
-  .admin-lf-v4__density-label { display: none; }
 }
 
 
@@ -17332,7 +17305,6 @@ body.is-light .admin-login-wordmark.is-on-light,
    * 色盤走。新增狀態點時要記得加進來。 */
   .ui-status::before,
   .admin-cockpit-dot,
-  .hud-status-dot,
   .admin-ui-dot,
   .admin-bc-v4__statedot,
   .admin-session-live-dot,

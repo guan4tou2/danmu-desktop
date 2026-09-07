@@ -120,7 +120,6 @@
             <!-- Live moderation log -->
             <div style="border-top:1px solid var(--hud-line-strong)">
               <div class="hud-inspector-head" style="border-bottom:1px solid var(--hud-line-strong)">
-                <span class="hud-status-dot is-live"></span>
                 <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("fltLiveLog")}</span>
                 <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.1em">${ServerI18n.t("fltAutoScroll")}</span>
               </div>
@@ -134,7 +133,6 @@
           <div style="display:flex;flex-direction:column;gap:14px">
             <div class="hud-inspector" style="min-height:auto">
               <div class="hud-inspector-head">
-                <span class="hud-status-dot is-live"></span>
                 <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${t("addFilterRule", "Add Rule")}</span>
 
               </div>
@@ -239,7 +237,7 @@
         <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">P${escapeHtml(String(rule.priority))}</span>
         <label class="relative inline-block" style="width:32px;align-self:center" title="${escapeHtml(rule.enabled ? t("enabled", "Enabled") : t("disabled", "Disabled"))}">
           <input type="checkbox" class="sr-only filter-toggle-cb" data-rule-id="${escapeHtml(rule.id)}" ${rule.enabled ? "checked" : ""} />
-          <span class="hud-status-dot ${rule.enabled ? "is-live" : "is-paused"}" style="display:inline-block;cursor:pointer"></span>
+          <span class="admin-filter-toggle-dot ${rule.enabled ? "is-on" : "is-off"}" style="cursor:pointer"></span>
         </label>
         <button class="filter-delete-btn" type="button" data-rule-id="${escapeHtml(rule.id)}" title="${t("deleteRule", "Delete")}" aria-label="${t("deleteRule", "Delete")}">${window.AdminUtils.closeIcon}</button>
       </div>`;
@@ -735,31 +733,31 @@
     // Event delegation for toggle and delete in rules list
     const rulesList = document.getElementById("filterRulesList");
     if (rulesList) {
+      // 開關的唯一真相是那顆 sr-only checkbox：色點包在 <label> 裡，點它、
+      // 或用鍵盤在 checkbox 上按空白鍵，都會觸發這裡的 change。視覺也一併在
+      // 這裡更新。
+      //
+      // 2026-09-08 修掉一個一直都在的 bug：原本另外有一個 click 分支手動做
+      // `cb.checked = !cb.checked`。事件處理器跑在預設行為**之前**，所以
+      // label 隨後又把 checkbox 翻回去——結果 checkbox 永遠停在 true，
+      // 每次點都送出「停用」，**規則停用後再也點不回來**。而且視覺更新只寫在
+      // click 分支裡，用鍵盤切換的人看到的色點永遠是舊的。
       rulesList.addEventListener("change", (e) => {
         const cb = e.target.closest(".filter-toggle-cb");
-        if (cb) {
-          toggleRule(cb.dataset.ruleId, cb.checked);
+        if (!cb) return;
+        toggleRule(cb.dataset.ruleId, cb.checked);
+        const row = cb.closest(".hud-rule-row");
+        const dot = row?.querySelector(".admin-filter-toggle-dot");
+        if (dot) {
+          dot.classList.toggle("is-on", cb.checked);
+          dot.classList.toggle("is-off", !cb.checked);
         }
+        if (row) row.style.opacity = cb.checked ? "" : "0.45";
       });
 
       rulesList.addEventListener("click", (e) => {
         const btn = e.target.closest(".filter-delete-btn");
-        if (btn) {
-          deleteRule(btn.dataset.ruleId);
-          return;
-        }
-        const dot = e.target.closest(".hud-status-dot");
-        if (dot) {
-          const row = dot.closest(".hud-rule-row");
-          const cb = row?.querySelector(".filter-toggle-cb");
-          if (cb) {
-            cb.checked = !cb.checked;
-            toggleRule(cb.dataset.ruleId, cb.checked);
-            dot.classList.toggle("is-live", cb.checked);
-            dot.classList.toggle("is-paused", !cb.checked);
-            row.style.opacity = cb.checked ? "" : "0.45";
-          }
-        }
+        if (btn) deleteRule(btn.dataset.ruleId);
       });
     }
 

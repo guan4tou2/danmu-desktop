@@ -710,7 +710,6 @@
 
       card.innerHTML = `
         <div class="hud-effect-card-head">
-          <span class="hud-status-dot is-live"></span>
           <span class="admin-v3-card-kicker" style="margin:0;color:var(--color-text-muted)">${escapeHtml(ServerI18n.t("fxCat" + cat.charAt(0) + cat.slice(1).toLowerCase()) || cat)}</span>
           <!-- v8（設計稿 07 · R5）：檔名不再印在卡面。「.dme」是實作細節，
                依規格只在匯入時出現；檔名仍留在 card.title 的 tooltip 裡，
@@ -1067,12 +1066,10 @@
   async function selectEffect(eff) {
     _effectsState.selected = eff.name;
     const inspector = document.getElementById("effectsInspector");
-    const dot = document.getElementById("effectsInspectorDot");
     const titleEl = document.getElementById("effectsInspectorTitle");
     const kicker = document.getElementById("effectsInspectorKicker");
     const body = document.getElementById("effectsInspectorBody");
     if (!inspector) return;
-    if (dot) dot.className = "hud-status-dot is-live";
     // F-108（design audit 磨光項）：RELOAD/EDIT 初始 disabled，首次選取解鎖
     document.getElementById("effectsInspectorReload")?.removeAttribute("disabled");
     document.getElementById("effectsInspectorEdit")?.removeAttribute("disabled");

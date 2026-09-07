@@ -999,7 +999,6 @@ document.addEventListener("DOMContentLoaded", () => {
           <aside class="hud-page-stack" style="gap:14px;position:sticky;top:0">
             <div class="hud-inspector" id="effectsInspector">
               <div class="hud-inspector-head">
-                <span class="hud-status-dot is-paused" id="effectsInspectorDot"></span>
                 <span id="effectsInspectorTitle" style="font-size:13px;font-weight:600;color:var(--color-text-strong)">\u2014</span>
               </div>
               <pre class="hud-inspector-body" id="effectsInspectorBody"># ${ServerI18n.t("fxYamlIdle")}</pre>

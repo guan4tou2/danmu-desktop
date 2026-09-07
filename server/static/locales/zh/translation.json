@@ -2024,6 +2024,7 @@
   "lfCountUnit": "{n} 筆",
   "lfAutoScrollPaused": "已暫停",
   "lfAutoScrollOn": "自動捲動中",
+  "lfRowHint": "滑鼠停在訊息上可隱藏或封鎖",
   "lfAriaLabel": "即時訊息流",
   "lfPageTitle": "即時訊息流",
   "lfPageNote": "場次進行中的彈幕即時串；可就地封鎖、標記進審核佇列。",

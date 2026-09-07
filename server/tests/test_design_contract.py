@@ -1513,8 +1513,12 @@ def test_ui_status_replaces_the_ad_hoc_status_dots():
     混 15% 之後六個組合最低 4.89——而且兩臂方向自動正確（淺色時主文字近黑、
     深色時近白），不必寫 theme 分支也不必引入新色。
 
-    另外**沒有**動 `.hud-status-dot`：那是 `hud-inspector-head` / 效果卡標題前的
-    裝飾點，不是狀態 chip，稿上 §2 也沒點名它。
+    `.hud-status-dot` 於 2026-09-08 一併收掉，但**不是**改成 `.ui-status`：它五個
+    用法沒有一個是狀態 chip。四個是純裝飾的發光脈動點（篩選面板標題 ×2、動畫
+    效果卡、效果檢視器）——檢視器那顆連狀態都是冗餘的，選中效果的同一瞬間標題
+    從「—」變成效果名、兩顆按鈕也解鎖，只有點是「顏色單獨承載意義」。第五個是
+    篩選規則列的**啟用開關**（外層 label 包 sr-only checkbox），改名成
+    `.admin-filter-toggle-dot`，因為它是控制項不是指示器。
     """
     css = _read("server/static/css/style.css")
 
@@ -1546,3 +1550,72 @@ def test_ui_status_replaces_the_ad_hoc_status_dots():
     zh = json.loads(_read("server/static/locales/zh/translation.json"))
     assert zh["lfAutoScrollOn"] == "自動捲動中"
     assert "ON" not in zh["lfAutoScrollOn"]
+
+    # `.hud-status-dot` 已全數收掉（見 docstring）；只剩篩選頁那顆改名的開關
+    for js in ("admin-filters", "admin-effects-mgmt", "admin"):
+        assert "hud-status-dot" not in _read(f"server/static/js/{js}.js"), js
+    assert ".admin-filter-toggle-dot" in css
+    assert ".hud-status-dot" not in _strip_comments(css)
+
+
+def test_live_feed_bottom_line_matches_spec_06(zh):
+    """設計稿 06 · §3：訊息流卡底是**一行**「自動捲動中 · 滑鼠停在訊息上可隱藏或封鎖」，
+    並在移除清單裡明列 DENSITY 切換。
+
+    原本卡底是 `0 TOTAL · 0.0 MSG/S` 兩個等寬計數器：寫死在 JS 的英文（沒進
+    i18n）、全大寫（違反設計稿 14 文案規則）、用等寬字（設計稿 03 限定等寬只
+    用在網址／識別碼／金鑰），而且數量在卡頭的分段控制上已經有了——同一件事
+    講第二次。DENSITY 切換連標籤帶兩顆 chip 一起移除，列高改由稿指定。
+    """
+    js = _read("server/static/js/admin-live-feed.js")
+    css = _read("server/static/css/style.css")
+
+    # 卡底：狀態 chip ＋ 說明，沒有計數器
+    assert 'ServerI18n.t("lfRowHint")' in js
+    assert "admin-lf-v4__hint" in js and ".admin-lf-v4__hint" in css
+    for gone in ("TOTAL", "MSG/S", "_currentRate", "_rateBuf", "_trackRate"):
+        assert gone not in _strip_comments(js), gone
+
+    # DENSITY 切換整組退場（JS、CSS、data 屬性都不留）
+    for gone in ("DENSITY", "dchip", "data-density"):
+        assert gone not in _strip_comments(js), gone
+    for gone in (".admin-lf-v4__dchip", ".admin-lf-v4__density-label", "[data-density="):
+        assert gone not in _strip_comments(css), gone
+
+    # 四語都有新的說明文案，且沒有全大寫英文殘留
+    assert zh["lfRowHint"] == "滑鼠停在訊息上可隱藏或封鎖"
+    for lang in ("en", "ja", "ko"):
+        d = json.loads(_read(f"server/static/locales/{lang}/translation.json"))
+        assert d.get("lfRowHint"), lang
+
+
+def test_hud_pulse_is_defined_once():
+    """`@keyframes hud-pulse` 一度有兩份定義（style.css 自己一份、hud.css 併入時
+    帶進來一份）。後者勝出，前者從來沒生效過——兩份的差別是 transform: scale，
+    所以「哪一份在跑」肉眼看得出來，但沒有人會發現前面那份是死的。
+    """
+    css = _read("server/static/css/style.css")
+    assert css.count("@keyframes hud-pulse {") == 1
+
+
+def test_filter_rule_toggle_has_one_source_of_truth():
+    """篩選規則列的啟用開關：唯一真相是那顆 sr-only checkbox。
+
+    這條測試釘的是 2026-09-08 收 `.hud-status-dot` 時**實測點兩下才發現**的
+    既有 bug：色點包在 `<label>` 裡，本來點它就會由瀏覽器切換 checkbox 並觸發
+    `change`；但程式另外掛了一個 click 分支手動做 `cb.checked = !cb.checked`。
+    事件處理器跑在預設行為**之前**，label 隨後又把 checkbox 翻回去——checkbox
+    永遠停在 true，每次點都送出「停用」，**規則停用後再也點不回來**。而且視覺
+    更新只寫在 click 分支裡，用鍵盤在 checkbox 上切換的人看到的色點永遠是舊的。
+
+    修法是刪掉那個 click 分支，把視覺更新搬進 `change`——一個真相、鍵盤與滑鼠
+    走同一條路。click 監聽只留刪除鈕。
+    """
+    js = _strip_comments(_read("server/static/js/admin-filters.js"))
+    assert "cb.checked = !cb.checked" not in js, "手動翻 checkbox 會跟 label 的預設行為打架"
+    # change 分支要同時負責送出與視覺
+    change_start = js.index('rulesList.addEventListener("change"')
+    change_body = js[change_start : js.index('rulesList.addEventListener("click"', change_start)]
+    assert "toggleRule(cb.dataset.ruleId, cb.checked)" in change_body
+    assert 'classList.toggle("is-on", cb.checked)' in change_body
+    assert "style.opacity = cb.checked" in change_body
