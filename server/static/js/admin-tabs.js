@@ -124,7 +124,7 @@
         { slug: "audience", labelKey: "tabHistoryAudience", en: "AUDIENCE", section: "sec-audience-overview" },
         { slug: "search",   labelKey: "tabHistorySearch", en: "SEARCH",   section: "sec-search-overview"   },
         { slug: "audit",    labelKey: "tabHistoryAudit", en: "AUDIT",    section: "sec-audit-overview"    },
-        { slug: "replay",   labelKey: "tabHistoryReplay", en: "REPLAY",   sections: ["sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history"] },
+        { slug: "replay",   labelKey: "tabHistoryReplay", en: "REPLAY",   sections: ["sec-history-tabs", "sec-history-list", "sec-history"] },
       ],
     },
   };

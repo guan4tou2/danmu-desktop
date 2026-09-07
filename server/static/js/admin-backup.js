@@ -4,9 +4,12 @@
  * Three zones: Export · Restore · Danger. Settings export is assembled
  * client-side from GET /get_settings (no dedicated export endpoint exists yet).
  *
+ * 2026-09-07（設計稿 08 · H1）：本頁的「彈幕紀錄」匯出列移除——時間軸匯出
+ * 精靈（admin-history-v2.js 的 #sec-timeline-export）從紀錄頁搬進本頁，而它
+ * 是那一列的嚴格超集（多了本場活動／今天／昨天／自訂範圍、內容篩選、大小
+ * 預估、最近匯出清單）。同一頁擺兩個做同一件事的匯出是說兩次話。
+ *
  * Endpoints used:
- *   GET  /admin/history/export?hours=N&format=json|csv|srt
- *        → timeline download (server Content-Disposition)
  *   POST /admin/history/clear            → clear all danmu history
  *   GET  /get_settings                   → raw settings dump for client-side snapshot
  *   POST /admin/settings/restore         → apply settings JSON snapshot
@@ -76,24 +79,7 @@
               <button type="button" id="bk2-assets-export" class="admin-ui-action is-primary">${t("backupAssetsExportBtn")}</button>
             </span>
           </div>
-          <div class="admin-ui-group-row is-tall">
-            <span class="lbl">${t("backupSecHistory")}</span>
-            <span class="val">
-              <select id="bk2-hist-hours" class="admin-ui-select">
-                <option value="1">${t("backupRangeLast1h")}</option>
-                <option value="6">${t("backupRangeLast6h")}</option>
-                <option value="24" selected>${t("backupRangeLast24h")}</option>
-                <option value="168">${t("backupRangeLast7d")}</option>
-                <option value="720">${t("backupRangeLast30d")}</option>
-              </select>
-              <select id="bk2-hist-format" class="admin-ui-select">
-                <option value="json">${t("backupFormatJson")}</option>
-                <option value="csv">${t("backupFormatCsv")}</option>
-                <option value="srt">${t("backupFormatSrt")}</option>
-              </select>
-              <button type="button" id="bk2-hist-download" class="admin-ui-action is-primary">${t("backupDownloadBtn")}</button>
-            </span>
-          </div>
+
         </div>
 
         <div class="admin-ui-group-label">${t("backupGroupRestore")}</div>
@@ -162,18 +148,6 @@
 
 
   // ---- Zone 1 · Export ----
-
-  function downloadHistory() {
-    const hours = document.getElementById("bk2-hist-hours").value || "24";
-    const format = document.getElementById("bk2-hist-format").value || "json";
-    // Browser follows Content-Disposition from /admin/history/export.
-    const a = document.createElement("a");
-    a.href = "/admin/history/export?hours=" + encodeURIComponent(hours) + "&format=" + encodeURIComponent(format);
-    a.rel = "noopener";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }
 
   async function downloadSettingsSnapshot() {
     try {
@@ -399,7 +373,6 @@
   }
 
   function bind() {
-    document.getElementById("bk2-hist-download")?.addEventListener("click", downloadHistory);
     document.getElementById("bk2-settings-download")?.addEventListener("click", downloadSettingsSnapshot);
     document.getElementById("bk2-settings-dryrun")?.addEventListener("click", dryRunSettings);
     document.getElementById("bk2-settings-apply")?.addEventListener("click", applySettings);

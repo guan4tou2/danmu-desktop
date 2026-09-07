@@ -497,9 +497,9 @@
     });
   }
 
-  // DS-001: AdminHistoryTabbedPage (admin-tabbed.jsx). Three tabs:
-  // EXPORT (↓) → history-v2-section, LIST (☰) → sec-history-list,
-  // REPLAY (▶) → sec-history + replay-v2-section.
+  // DS-001: AdminHistoryTabbedPage (admin-tabbed.jsx). 原本三格；2026-09-07
+  // 時間軸匯出搬到「備份與還原」（設計稿 08 · H1）之後剩兩格：
+  // LIST (☰) → sec-history-list, REPLAY (▶) → sec-history + replay-v2-section.
   //
   // 這條 strip 是 AdminTabs「重播」分頁**底下的子分頁**，不是 route-level 的
   // 可見性來源：AdminTabs.applyTabSectionVisibility 決定整組四個 section 要不要
@@ -509,13 +509,12 @@
   // style.css 那組 body[data-history-tab=…] !important 規則，結果點「時間軸匯出」
   // 反而把匯出精靈藏起來。現在選擇只留在本模組，body attribute 不再是可見性通道。
   var SUBTAB_PANES = {
-    export: ["history-v2-section"],
     list: ["sec-history-list"],
     // 重播 pane 由 admin-replay.js 注入的 replay-v2-section 與舊 sec-history 卡
     // 兩塊組成，要一起進退。
     replay: ["sec-history", "replay-v2-section"],
   };
-  var SUBTAB_ALL_PANES = ["history-v2-section", "sec-history-list", "sec-history", "replay-v2-section"];
+  var SUBTAB_ALL_PANES = ["sec-history-list", "sec-history", "replay-v2-section"];
   // null = 使用者還沒點過子分頁 → 完全不碰 display，維持 AdminTabs 落地時
   // 三個 pane 並列的樣貌。
   var _historySubTab = null;
@@ -562,7 +561,6 @@
     bar.id = "sec-history-tabs";
     bar.className = "admin-tabstrip lg:col-span-2";
     bar.innerHTML =
-      _makeTabBtn("export", "↓", ServerI18n.t("histTabExport"), "EXPORT") +
       _makeTabBtn("list",   "☰", ServerI18n.t("histTabList"),   "LIST") +
       _makeTabBtn("replay", "▶", ServerI18n.t("histTabReplay"),       "REPLAY") +
       '<span style="flex:1"></span>';

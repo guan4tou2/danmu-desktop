@@ -2,13 +2,20 @@
 // AdminHistoryPage). 3-step picker: time range / content filter / output
 // format → 產生並下載. Right panel = recent exports (localStorage-backed).
 //
-// Self-binds on `admin-panel-rendered`. Renders into #history-v2-section
-// (created next to sec-history). admin.js routing already includes the
-// section under route=history.
+// Self-binds on `admin-panel-rendered`. Renders into #sec-timeline-export.
+//
+// 2026-09-07（設計稿 08 · H1）：從「紀錄與匯出 › 重播」搬到「備份與還原」。
+// 稿上說依小時的整批匯出「收進場次的匯出面板」，但那在功能上不成立——場次
+// 面板是**單一場次**的 CSV/JSON/SRT，給不了「近 7 天、跨場次、只要投票」這種
+// 匯出。而「把我的資料整批倒出來」本來就是備份的事，不是紀錄瀏覽的事；
+// 「全部清除」也早就住在那一頁。
+//
+// id 改成 sec- 前綴之後，可見性由 admin.js 的 applySectionVisibility 統一管
+// （它只掃 [id^="sec-"]），本模組不再自己算一份 route guard。
 (function () {
   "use strict";
 
-  var SECTION_ID = "history-v2-section";
+  var SECTION_ID = "sec-timeline-export";
   var STORAGE_KEY = "danmu.adminHistoryExports.v1";
   var MAX_RECENT = 10;
 
@@ -365,43 +372,31 @@
     }, 250);
   }
 
+  // 備份頁（admin-backup-v2-page）是**延遲注入**的：admin-backup.js 用
+  // MutationObserver 等 #settings-grid 出現才塞。所以 admin-panel-rendered
+  // 當下錨點常常還不存在——第一版直接 return，結果整塊匯出精靈永遠沒被建出來。
+  // 錨點還沒到就先掛在 grid 尾端，之後備份頁到齊時再挪到它後面。
   function _ensureSection() {
-    if (_section()) return;
-    var historyCard = document.getElementById("sec-history");
-    if (!historyCard || !historyCard.parentElement) return;
-    var sec = document.createElement("div");
-    sec.id = SECTION_ID;
-    sec.className = "admin-ui-card lg:col-span-2 history-v2-section";
-    historyCard.parentElement.insertBefore(sec, historyCard);
-    _renderShell();
-    _applyRouteGuard();
+    var sec = _section();
+    var anchor = document.getElementById("admin-backup-v2-page");
+    if (!sec) {
+      var grid = document.getElementById("settings-grid");
+      if (!grid) return;
+      sec = document.createElement("div");
+      sec.id = SECTION_ID;
+      sec.className = "admin-ui-card lg:col-span-2 history-v2-section";
+      grid.appendChild(sec);
+      _renderShell();
+    }
+    // 排到備份頁後面：稿上的順序是「備份／還原在上，整批匯出在下」
+    if (anchor && anchor.parentElement && sec.previousElementSibling !== anchor) {
+      anchor.parentElement.insertBefore(sec, anchor.nextSibling);
+    }
   }
 
-  // Section id is `history-v2-section` — intentionally NOT prefixed `sec-`
-  // so admin.js applySectionVisibility() (which only filters [id^="sec-"])
-  // doesn't touch it. That leaves one job here: hide ourselves when the user
-  // is not on #/history at all, or the export wizard leaks onto every other
-  // route (#/widgets / #/themes …).
-  //
-  // 站在 #/history 之後就完全不插手——AdminTabs 決定「重播」分頁在不在台上、
-  // admin-history.js 的子分頁 strip 決定三個 pane 顯示哪一個。這裡以前還會讀
-  // body.dataset.historyTab 自算一份可見性，跟那兩者互相覆蓋（B7）。
-  function _applyRouteGuard() {
-    var el = _section();
-    if (!el) return;
-    var shell = document.querySelector(".admin-dash-grid");
-    var hash = (window.location.hash.match(/^#\/(\w[\w-]*)/) || [])[1] || "dashboard";
-    var route = (shell && shell.dataset && shell.dataset.activeRoute) || hash;
-    if (route !== "history") el.style.display = "none";
-  }
-
-  document.addEventListener("admin-panel-rendered", function () {
-    _ensureSection();
-  });
-
-  window.addEventListener("hashchange", _applyRouteGuard);
-  // 側欄點擊若沒改變 hash 就不會有 hashchange，route-applied 才是穩定的一棒。
-  document.addEventListener("admin-route-applied", _applyRouteGuard);
+  document.addEventListener("admin-panel-rendered", _ensureSection);
+  // 備份頁比我們晚到，route-applied 是它一定已經在的那一棒。
+  document.addEventListener("admin-route-applied", _ensureSection);
 
   window.AdminHistoryV2 = {
     refresh: _refreshEstimate,

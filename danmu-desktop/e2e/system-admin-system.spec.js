@@ -366,16 +366,18 @@ test.describe("系統維運後台（真實 UI 操作）", () => {
     const marker = `E2E匯出標的${Date.now()}`;
     await seedDanmu(marker);
 
-    await gotoRoute("history");
-    await clickTab("history", "replay");
+    // 2026-09-07 設計稿 08 · H1：匯出精靈搬到「備份與還原」
+    // （#sec-timeline-export）。它取代了那頁原本那列較陽春的「彈幕紀錄」
+    // 匯出——時間選項更多、有內容篩選、有大小預估。
+    await gotoRoute("backup");
 
-    // 匯出精靈（#history-v2-section）就掛在「重播」tab 底下，落地即可見。
-    // 刻意不去點它上方那層舊 tabstrip（時間軸匯出 / 訊息清單 / 重播）——
-    // 那層目前是壞的，見下面 test.skip 的說明。
     await expect(
-      admin.locator("#history-v2-section"),
-      "匯出精靈沒渲染（#history-v2-section 不可見）",
+      admin.locator("#sec-timeline-export"),
+      "匯出精靈沒渲染（#sec-timeline-export 不可見）",
     ).toBeVisible({ timeout: 10000 });
+
+    // 舊的那列不該還在（同一頁兩個匯出等於說兩次話）
+    await expect(admin.locator("#bk2-hist-download")).toHaveCount(0);
 
     // ① 時間範圍：近 24 小時（marker 是剛剛送的，一定在範圍內）
     const range24 = admin.locator('[data-histv2-range="24h"]');
@@ -412,29 +414,25 @@ test.describe("系統維運後台（真實 UI 操作）", () => {
   // 修好前它與 AdminTabs 打架 —— 點「時間軸匯出」時 admin-replay.js 會把
   // body.dataset.historyTab 覆寫回 leaf 值，style.css 的
   // body[data-history-tab="replay"] #history-v2-section { display:none !important }
-  // 於是把剛點開的匯出精靈藏起來。現在可見性只剩兩層且都在 JS：AdminTabs 管
-  // 分頁、admin-history.js 管重播分頁內的三個 pane。
+  // 於是把剛點開的匯出精靈藏起來。那組 CSS 與那個 id 都已不存在（2026-09-07
+  // 匯出精靈搬到備份頁）；可見性只剩兩層且都在 JS：AdminTabs 管分頁、
+  // admin-history.js 管重播分頁內的 pane。
   //
   // 選擇器一律鎖在 #sec-history-tabs 內：<body> 自己也帶 data-history-tab
   // （admin-replay.js 寫的 leaf 值），裸選會撞上 strict mode。
-  test("紀錄 & 匯出：舊 tabstrip 三個子分頁互斥切換", async () => {
+  test("紀錄 & 匯出：舊 tabstrip 兩個子分頁互斥切換", async () => {
     await gotoRoute("history");
     await clickTab("history", "replay");
 
     const subTab = (k) => admin.locator(`#sec-history-tabs [data-history-tab="${k}"]`);
 
-    // 時間軸匯出 → 只剩匯出精靈
-    await subTab("export").click();
-    await expect(subTab("export")).toHaveClass(/is-active/);
-    await expect(admin.locator("#history-v2-section")).toBeVisible();
-    await expect(admin.locator("#sec-history")).toBeHidden();
-    await expect(admin.locator("#sec-history-list")).toBeHidden();
+    // 2026-09-07：「時間軸匯出」子分頁隨匯出精靈搬到備份頁而移除，剩兩格。
+    await expect(subTab("export")).toHaveCount(0);
 
     // 訊息清單 → 換成清單，且真的抓到資料（不是空殼）
     await subTab("list").click();
     await expect(subTab("list")).toHaveClass(/is-active/);
-    await expect(admin.locator("#sec-history-list")).toBeVisible();
-    await expect(admin.locator("#history-v2-section")).toBeHidden();
+    await expect(admin.locator("#sec-history")).toBeHidden();
 
     // 重播 → 換回舊 sec-history 卡
     await subTab("replay").click();
@@ -446,7 +444,6 @@ test.describe("系統維運後台（真實 UI 操作）", () => {
     await clickTab("history", "sessions");
     await expect(admin.locator("#sec-history")).toBeHidden();
     await expect(admin.locator("#sec-history-tabs")).toBeHidden();
-    await expect(admin.locator("#history-v2-section")).toBeHidden();
   });
 
   // ─── #/api-tokens ────────────────────────────────────────────────────

@@ -5247,7 +5247,7 @@ body.stream-mode .admin-hero .admin-summary-grid {
 
 /* History v2 (Timeline Export) page — prototype admin-batch1.jsx:218.
    Mirrors AdminPageShell layout: 1fr 380px grid, two card panes. */
-#history-v2-section.history-v2-section {
+#sec-timeline-export.history-v2-section {
   background: transparent;
   padding: 0;
   border: none;

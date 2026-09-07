@@ -1358,7 +1358,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // search / audit / replay / audience). Each tab's section is hidden
     // when not active by AdminTabs.applyTabSectionVisibility. Replay tab
     // owns sec-history-tabs + history-v2-section + sec-history-list + sec-history.
-    history:   { title: "紀錄與匯出",       kicker: "RECORDS · 場次資料切片", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "history-v2-section", "sec-history-list", "sec-history", "sec-audience-overview"] },
+    history:   { title: "紀錄與匯出",       kicker: "RECORDS · 場次資料切片", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "sec-history-list", "sec-history", "sec-audience-overview"] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
     // 2026-09-06 設計稿 08/14：名稱去術語化 Desktop Widgets → 小工具。
     widgets:   { title: "小工具",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
@@ -1408,7 +1408,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Legacy alias target only. Security now resolves under system/security;
     // the v2 page handles its own visibility from activeRoute + activeLeaf.
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: ["admin-security-v2-page"] },
-    backup:    { title: "備份與還原",       kicker: "BACKUP · EXPORT · DANGER",          sections: ["admin-backup-v2-page"] },
+    // 2026-09-07 設計稿 08 · H1：時間軸匯出（sec-timeline-export）從「紀錄與
+    // 匯出 › 重播」搬進來——「把資料整批倒出來」是備份的事，而「全部清除」
+    // 本來就住這頁。場次面板只匯出單一場次，取代不了跨場次的範圍匯出。
+    backup:    { title: "備份與還原",       kicker: "BACKUP · EXPORT · DANGER",          sections: ["admin-backup-v2-page", "sec-timeline-export"] },
     // 2026-09-07 設計稿 08 · N1：通知改成頂欄鈴鐺開的右上彈出面板，不再是
     // 一頁。route 保留但沒有 section——舊書籤 #/notifications 仍然解析得到，
     // admin-notifications.js 看到這個 hash 就把面板打開（同 #/setup 的做法）。

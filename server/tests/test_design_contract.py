@@ -1244,3 +1244,40 @@ def test_no_uninterpolated_template_placeholder_reaches_the_screen():
     # REFRESH_INTERVAL 之類的識別字不算）
     for gone in ("<span>INTERVAL<", "<span>SENT<", "<span>REPEAT<", ">ACTIONS<"):
         assert gone not in _strip_comments(sched), gone
+
+
+def test_timeline_export_lives_on_the_backup_page(zh):
+    """設計稿 08 · H1：時間軸匯出從「紀錄與匯出 › 重播」搬到「備份與還原」。
+
+    稿上寫「依小時的整批匯出收進場次的匯出面板」，但那在功能上不成立——場次
+    面板是**單一場次**的 CSV/JSON/SRT，給不了「近 7 天、跨場次、只要投票」。
+    照字面刪掉會少一個真的能力，所以改成搬家：「把資料整批倒出來」是備份的
+    事，而「全部清除」本來就住那一頁。
+    """
+    js = _strip_comments(_read("server/static/js/admin-history-v2.js"))
+    assert 'var SECTION_ID = "sec-timeline-export";' in js
+    assert 'getElementById("admin-backup-v2-page")' in js
+    # 改用 sec- 前綴之後可見性交給 shell，模組不再自己算一份 route guard
+    assert "_applyRouteGuard" not in js
+
+    admin = _strip_comments(_read("server/static/js/admin.js"))
+    assert '"admin-backup-v2-page", "sec-timeline-export"' in admin
+    # 紀錄路由與重播分頁都放掉它
+    assert "history-v2-section" not in admin
+    assert "history-v2-section" not in _strip_comments(_read("server/static/js/admin-tabs.js"))
+
+    # 備份頁原本那列「彈幕紀錄」匯出退場——搬進來的精靈是它的嚴格超集
+    backup = _strip_comments(_read("server/static/js/admin-backup.js"))
+    for gone in ("bk2-hist-hours", "bk2-hist-format", "bk2-hist-download", "downloadHistory"):
+        assert gone not in backup, gone
+    for orphan in ("backupSecHistory", "backupRangeLast24h", "backupFormatSrt"):
+        assert orphan not in zh, orphan
+
+    # 按鈕只寫動詞（設計稿 14）
+    assert zh["historyV2GoButton"] == "產生並下載"
+
+    # 「全部清除」在備份頁與 ⌘K 都有，所以紀錄頁那顆拿掉不會少東西
+    assert "/admin/history/clear" in backup
+    assert "/admin/history/clear" in _strip_comments(
+        _read("server/static/js/admin-command-palette.js")
+    )

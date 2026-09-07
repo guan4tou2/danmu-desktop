@@ -485,7 +485,6 @@ test("admin Backup actions compose shared admin-ui controls", () => {
   const backupSrc = fs.readFileSync(path.join(staticDir, "js", "admin-backup.js"), "utf8");
   const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
 
-  expect(backupSrc).toContain('id="bk2-hist-download" class="admin-ui-action is-primary"');
   expect(backupSrc).toContain('id="bk2-settings-download" class="admin-ui-action is-primary"');
   expect(backupSrc).toContain('id="bk2-pack-export" class="admin-ui-action is-primary"');
   expect(backupSrc).toContain('id="bk2-assets-export" class="admin-ui-action is-primary"');
@@ -1308,15 +1307,23 @@ test("admin Plugins upload modal composes shared action and pill primitives", ()
   expect(cssSrc).not.toContain(".admin-pu-pill.is-crimson");
 });
 
-test("admin Backup exposes implemented history export formats", () => {
+// 這條測的是「CSV / SRT 是真的能匯出，不是 disabled 的佔位」。
+// 2026-09-07（設計稿 08 · H1）：備份頁那列陽春的匯出退場，時間軸匯出精靈
+// 搬進來取代它——同一個意圖，改看新的那份原始碼。
+test("timeline export offers the formats the backend actually implements", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
+  const wizardSrc = fs.readFileSync(path.join(staticDir, "admin-history-v2.js"), "utf8");
   const backupSrc = fs.readFileSync(path.join(staticDir, "admin-backup.js"), "utf8");
 
-  expect(backupSrc).toContain('format=" + encodeURIComponent(format)');
-  // D-4：option 標籤走 i18n；value 契約不變
-  expect(backupSrc).toContain('<option value="csv">${t("backupFormatCsv")}');
-  expect(backupSrc).toContain('<option value="srt">${t("backupFormatSrt")}');
-  expect(backupSrc).not.toContain('value="csv" disabled');
-  expect(backupSrc).not.toContain('value="srt" disabled');
-  expect(backupSrc).not.toContain("CSV / SRT history export formats  (backend returns JSON only)");
+  expect(wizardSrc).toContain('{ k: "JSON"');
+  expect(wizardSrc).toContain('{ k: "CSV"');
+  expect(wizardSrc).toContain('{ k: "SRT"');
+  // 三顆格式鈕都不是 disabled 佔位。只鎖格式鈕的渲染——檔案裡另有
+  // 下載鈕的忙碌態 `btn.disabled = true`，那是別的東西。
+  const fmtRender = wizardSrc.slice(wizardSrc.indexOf("function _renderFormats"));
+  expect(fmtRender.slice(0, 600)).not.toContain("disabled");
+
+  // 備份頁不該再有第二個彈幕紀錄匯出
+  expect(backupSrc).not.toContain("bk2-hist-download");
+  expect(backupSrc).not.toContain("backupFormatCsv");
 });
