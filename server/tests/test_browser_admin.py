@@ -119,7 +119,7 @@ def admin_page(logged_context, live_url):
 # 切換 display:none/""；不再是 <details> 展開/摺疊。
 SECTION_TO_ROUTE = {
     "sec-live-feed": "messages",
-    "sec-history": "history",
+    # sec-history 於 2026-09-07 隨「重播」分頁一起退場（設計稿 08 · H1）。
     "sec-polls": "polls",
     "sec-widgets": "widgets",
     # Phase A IA (2026-05-06): viewer/display defaults are now reached

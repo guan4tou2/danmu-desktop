@@ -236,6 +236,8 @@
       }
       if (!res.ok) throw new Error("HTTP " + res.status);
       window.showToast && window.showToast(ServerI18n.t("sessionsReplayStarted"), true);
+      // 讓全域重播列立刻上台（設計稿 08 · H1）——這是重播唯一的啟動點了。
+      window.AdminReplayControls && window.AdminReplayControls.notifyStarted();
     } catch (e) {
       window.showToast && window.showToast(ServerI18n.t("sessionsReplayFailed"), false);
     }

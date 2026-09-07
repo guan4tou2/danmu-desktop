@@ -1,20 +1,19 @@
 /**
- * Admin · Replay Playback + Recording Controls (extracted from admin.js
- * 2026-04-28 Group D-3 split).
+ * Admin · 重播進行中的控制（2026-04-28 從 admin.js 拆出）
  *
- * Owns the buttons inside sec-history that drive /admin/replay:
- *   - replayStartBtn / replayPauseBtn / replayResumeBtn / replayStopBtn
- *   - replayRecordBtn  (plus replayRecordingIndicator + replayRecordingTimer)
+ * 只剩三顆：replayPauseBtn / replayResumeBtn / replayStopBtn，全部住在全域的
+ * `.admin-replay-bar`（admin-replay-bar.js），所以離開任何頁面都停得下來。
  *
- * 2026-09-07：暫停／繼續／停止／進度／錄製指示搬進全域的
- * `.admin-replay-bar`（admin-replay-bar.js），id 不變所以這裡的查找照舊。
- *   - exportJsonBtn    (JSON timeline export)
+ * 2026-09-07（設計稿 08 · H1）「重播」分頁退場後一併移除的：
+ *   - replayStartBtn（勾選訊息後重播）與 _gatherSelectedRecords
+ *   - replayRecordBtn / ReplayRecorder（錄製回放）
+ *   - exportJsonBtn（JSON 時間軸匯出）
+ * 三者都只掛在退場的 sec-history 上。整場重播由「場次 › 重播這場」提供，
+ * 而那條路徑只發 toast，所以本模組改成自己去認領正在跑的重播
+ * （_adoptRunningReplay）＋ 對外開一個 notifyStarted()。
  *
- * Listens to admin-panel-rendered to wire up after admin.js renders the
- * history card. Uses globals: csrfFetch, showToast, ServerI18n,
- * AdminHistory.allHistoryRecords, ReplayRecorder.
- *
- * Loaded as <script defer> in admin.html after admin-history.js.
+ * Uses globals: csrfFetch, showToast, ServerI18n.
+ * Loaded as <script defer> in admin.html.
  */
 (function () {
   "use strict";
@@ -29,7 +28,6 @@
   // 每個元素各自判斷有沒有。
   function _updateReplayUI(state) {
     if (window.AdminReplayBar) window.AdminReplayBar.ensure();
-    const startBtn = document.getElementById("replayStartBtn");
     const pauseBtn = document.getElementById("replayPauseBtn");
     const resumeBtn = document.getElementById("replayResumeBtn");
     const stopBtn = document.getElementById("replayStopBtn");
@@ -38,7 +36,6 @@
 
     const playing = state === "playing";
     const paused = state === "paused";
-    show(startBtn, !playing && !paused);
     show(pauseBtn, playing);
     show(resumeBtn, paused);
     show(stopBtn, playing || paused);
@@ -46,12 +43,7 @@
     if (!playing && !paused && progressEl) progressEl.textContent = "";
 
     // 閒置就把整條列收起——一條永遠都在的空白列比沒有還糟
-    if (window.AdminReplayBar) {
-      const recording = !document
-        .getElementById("replayRecordingIndicator")
-        ?.classList.contains("hidden");
-      window.AdminReplayBar.setActive(playing || paused || !!recording);
-    }
+    if (window.AdminReplayBar) window.AdminReplayBar.setActive(playing || paused);
   }
 
   function _pollReplayStatus() {
@@ -74,51 +66,6 @@
         // ignore polling errors
       }
     }, 500);
-  }
-
-  function _gatherSelectedRecords() {
-    const checkboxes = document.querySelectorAll(".replay-record-cb:checked");
-    if (checkboxes.length === 0) {
-      window.showToast(window.ServerI18n.t("noRecordsSelected"), false);
-      return null;
-    }
-    const searchTerm = document.getElementById("historySearch")?.value?.toLowerCase() || "";
-    const allRecords = (window.AdminHistory && window.AdminHistory.allHistoryRecords) || [];
-    const displayedRecords = searchTerm
-      ? allRecords.filter((r) => (r.text || "").toLowerCase().includes(searchTerm))
-      : allRecords;
-    const selectedRecords = [];
-    checkboxes.forEach((cb) => {
-      const idx = parseInt(cb.dataset.recordIndex, 10);
-      if (displayedRecords[idx]) selectedRecords.push(displayedRecords[idx]);
-    });
-    return selectedRecords;
-  }
-
-  async function _startReplay() {
-    const selectedRecords = _gatherSelectedRecords();
-    if (!selectedRecords || selectedRecords.length === 0) return;
-
-    const speed = parseFloat(document.getElementById("replaySpeed")?.value || "1");
-
-    try {
-      const res = await window.csrfFetch("/admin/replay", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ records: selectedRecords, speedMultiplier: speed }),
-      });
-      if (res.ok) {
-        await res.json();
-        window.showToast(window.ServerI18n.t("replayStarted"), true);
-        _updateReplayUI("playing");
-        _pollReplayStatus();
-      } else {
-        const err = await res.json();
-        window.showToast(window.ServerI18n.t("replayError").replace("{error}", err.error || res.statusText), false);
-      }
-    } catch (e) {
-      window.showToast(window.ServerI18n.t("replayFailed"), false);
-    }
   }
 
   async function _pauseReplay() {
@@ -159,156 +106,11 @@
   let _recordingStartTime = 0;
   let _recordingReplayPollTimer = null;
 
-  function _updateRecordingTimer() {
-    const timerEl = document.getElementById("replayRecordingTimer");
-    if (!timerEl) return;
-    const elapsed = Math.floor((Date.now() - _recordingStartTime) / 1000);
-    const min = String(Math.floor(elapsed / 60)).padStart(2, "0");
-    const sec = String(elapsed % 60).padStart(2, "0");
-    timerEl.textContent = `${min}:${sec}`;
-  }
-
-  function _showRecordingIndicator(show) {
-    if (window.AdminReplayBar) window.AdminReplayBar.ensure();
-    const indicator = document.getElementById("replayRecordingIndicator");
-    const recordBtn = document.getElementById("replayRecordBtn");
-    if (indicator) indicator.classList.toggle("hidden", !show);
-    if (recordBtn) recordBtn.classList.toggle("hidden", show);
-    // 錄製中也要讓全域列露出來（錄製不一定伴隨播放狀態變化）
-    if (show && window.AdminReplayBar) window.AdminReplayBar.setActive(true);
-  }
-
-  async function _startRecordReplay() {
-    const selectedRecords = _gatherSelectedRecords();
-    if (!selectedRecords || selectedRecords.length === 0) return;
-
-    if (typeof ReplayRecorder === "undefined") {
-      window.showToast(window.ServerI18n.t("replayRecorderNotLoaded"), false);
-      return;
-    }
-
-    _replayRecorder = new ReplayRecorder();
-    _replayRecorder.init(1280, 720);
-    _replayRecorder.startRecording();
-
-    _recordingStartTime = Date.now();
-    _recordingTimerInterval = setInterval(_updateRecordingTimer, 1000);
-    _showRecordingIndicator(true);
-
-    const speed = parseFloat(document.getElementById("replaySpeed")?.value || "1");
-
-    try {
-      const res = await window.csrfFetch("/admin/replay", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ records: selectedRecords, speedMultiplier: speed }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        window.showToast(window.ServerI18n.t("recordingReplay").replace("{count}", data.count).replace("{speed}", speed), true);
-        _updateReplayUI("playing");
-        _pollReplayStatusForRecording();
-      } else {
-        const err = await res.json();
-        window.showToast(window.ServerI18n.t("replayError").replace("{error}", err.error || res.statusText), false);
-        _stopRecordReplay();
-      }
-    } catch (e) {
-      window.showToast(window.ServerI18n.t("replayFailed"), false);
-      _stopRecordReplay();
-    }
-  }
-
-  function _pollReplayStatusForRecording() {
-    if (_recordingReplayPollTimer) clearInterval(_recordingReplayPollTimer);
-    let _lastSentCount = 0;
-
-    _recordingReplayPollTimer = setInterval(async () => {
-      try {
-        const res = await fetch("/admin/replay/status", { credentials: "same-origin" });
-        if (!res.ok) return;
-        const data = await res.json();
-        const progressEl = document.getElementById("replayProgress");
-        if (progressEl) {
-          progressEl.textContent = window.ServerI18n.t("recordingProgress").replace("{sent}", data.sent).replace("{total}", data.total);
-          progressEl.classList.remove("hidden");
-        }
-        _updateReplayUI(data.state);
-
-        if (data.sent > _lastSentCount && data.sentRecords) {
-          const newRecords = data.sentRecords.slice(_lastSentCount);
-          for (const r of newRecords) {
-            if (_replayRecorder) _replayRecorder.addDanmu(r);
-          }
-        }
-        _lastSentCount = data.sent || 0;
-
-        if (data.state === "stopped") {
-          clearInterval(_recordingReplayPollTimer);
-          _recordingReplayPollTimer = null;
-          setTimeout(() => _stopRecordReplay(), 3000);
-        }
-      } catch (e) {
-        // ignore polling errors
-      }
-    }, 500);
-  }
-
-  async function _stopRecordReplay() {
-    if (_recordingTimerInterval) {
-      clearInterval(_recordingTimerInterval);
-      _recordingTimerInterval = null;
-    }
-    if (_recordingReplayPollTimer) {
-      clearInterval(_recordingReplayPollTimer);
-      _recordingReplayPollTimer = null;
-    }
-    _showRecordingIndicator(false);
-    _updateReplayUI("stopped");
-
-    if (_replayRecorder) {
-      await _replayRecorder.downloadRecording();
-      _replayRecorder = null;
-      window.showToast(window.ServerI18n.t("recordingSaved"), true);
-    }
-  }
-
-  // ── JSON timeline export ────────────────────────────────────────
-
-  async function _exportJsonTimeline() {
-    const hours = document.getElementById("historyHours")?.value || "24";
-    try {
-      const res = await fetch(`/admin/history/export?hours=${hours}`, { credentials: "same-origin" });
-      if (!res.ok) {
-        await res.json().catch(() => ({}));
-        window.showToast(window.ServerI18n.t("exportFailed"), false);
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `danmu-timeline-${hours}h.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      window.showToast(window.ServerI18n.t("jsonTimelineExported"), true);
-    } catch (e) {
-      window.showToast(window.ServerI18n.t("exportFailed"), false);
-    }
-  }
-
-  // ── Wire-up ─────────────────────────────────────────────────────
-
   function _bindButtons() {
     const map = [
-      ["replayStartBtn", _startReplay],
       ["replayPauseBtn", _pauseReplay],
       ["replayResumeBtn", _resumeReplay],
       ["replayStopBtn", _stopReplay],
-      ["replayRecordBtn", _startRecordReplay],
-      ["exportJsonBtn", _exportJsonTimeline],
     ];
     map.forEach(function ([id, handler]) {
       const el = document.getElementById(id);
@@ -319,7 +121,37 @@
     });
   }
 
-  document.addEventListener("admin-panel-rendered", _bindButtons);
+  // 2026-09-07（設計稿 08 · H1）：重播的啟動點只剩「場次 › 重播這場」，而它
+  // 只發一個 toast——不像退場的 sec-history 啟動鈕那樣接著呼叫 _pollReplayStatus。
+  // 沒有這一段，從場次面板啟動的重播會在背景跑完，全域控制列永遠不出現，
+  // 也就沒有地方可以暫停或停止。
+  //
+  // 所以改成「不管誰啟動的都認得」：進 admin 時先問一次狀態，正在跑就把輪詢
+  // 接上。啟動端另外呼叫 notifyStarted() 只是為了不用等下一次探詢。
+  async function _adoptRunningReplay() {
+    try {
+      const res = await fetch("/admin/replay/status", { credentials: "same-origin" });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.state === "playing" || data.state === "paused") {
+        _updateReplayUI(data.state);
+        _pollReplayStatus();
+      }
+    } catch (_) { /* 探詢失敗就等下一次啟動時的 notifyStarted */ }
+  }
+
+  window.AdminReplayControls = {
+    /** 任何啟動重播的地方都該叫一次，讓全域控制列立刻上台。 */
+    notifyStarted: function () {
+      _updateReplayUI("playing");
+      _pollReplayStatus();
+    },
+  };
+
+  document.addEventListener("admin-panel-rendered", function () {
+    _bindButtons();
+    _adoptRunningReplay();
+  });
   // Defensive: also try after a short delay in case event already fired.
   document.addEventListener("DOMContentLoaded", function () {
     setTimeout(_bindButtons, 800);

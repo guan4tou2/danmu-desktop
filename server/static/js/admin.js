@@ -377,7 +377,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "sec-modqueue",
         "sec-modbans-overview",
         "sec-blacklist",
-        "sec-history",
         "sec-filters",
         "sec-polls",
         "sec-security",
@@ -598,8 +597,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ─── Replay Controls ──────────────────────────────────────────────────────
   // 2026-04-28: extracted to admin-replay-controls.js (Group D-3 split).
-  // The module self-binds to replayStartBtn / replayPauseBtn / replayResumeBtn /
-  // replayStopBtn / replayRecordBtn / exportJsonBtn on `admin-panel-rendered`.
+  // The module self-binds to replayPauseBtn / replayResumeBtn / replayStopBtn
+  // (all inside the global .admin-replay-bar) on `admin-panel-rendered`.
 
   // Expose csrfFetch globally for external admin modules (e.g. admin-scheduler.js)
   window.csrfFetch = csrfFetch;
@@ -1149,66 +1148,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `);
 
     // Danmu History Card
-    settingsGrid.insertAdjacentHTML("beforeend", `
-                    <div id="sec-history" class="admin-ui-card lg:col-span-2">
-                        <div>
-                            <h3 class="text-lg font-bold" style="color:var(--admin-text)">${ServerI18n.t("danmuHistory")}</h3>
-                            <p class="text-sm" style="color:var(--admin-text-dim)">${ServerI18n.t("danmuHistoryDesc")}</p>
-                        </div>
-                        <div class="mt-4 pt-4 history-section-body" style="border-top:1px solid var(--admin-line)">
-                            <div id="statsDashboard"></div>
-                            <div class="space-y-3">
-                                <div class="history-command-bar">
-                                    <label class="text-sm font-medium" style="color:var(--admin-text-dim)">${ServerI18n.t("timeRange")}</label>
-                                    <select id="historyHours" class="admin-ui-select">
-                                        <option value="1">${ServerI18n.t("last1Hour")}</option>
-                                        <option value="6">${ServerI18n.t("last6Hours")}</option>
-                                        <option value="24" selected>${ServerI18n.t("last24Hours")}</option>
-                                        <option value="72">${ServerI18n.t("last3Days")}</option>
-                                        <option value="168">${ServerI18n.t("last7Days")}</option>
-                                    </select>
-                                    <button id="refreshHistoryBtn" class="admin-ui-action is-primary admin-history-action">${ServerI18n.t("refreshBtn")}</button>
-                                    <button id="exportHistoryBtn" class="admin-ui-action admin-history-action">${ServerI18n.t("exportCSV")}</button>
-                                    <button id="clearHistoryBtn" class="admin-ui-action is-danger admin-history-action">${ServerI18n.t("clearAll")}</button>
-                                    <label class="flex items-center gap-2 text-xs cursor-pointer select-none ml-auto" style="color:var(--admin-text-dim)">
-                                        <input type="checkbox" id="historyAutoRefresh" style="accent-color:var(--color-primary)">
-                                        ${ServerI18n.t("autoRefresh")}
-                                    </label>
-                                </div>
-                                <input id="historySearch" type="search" placeholder="${ServerI18n.t("searchHistory")}"
-                                    class="admin-ui-input w-full">
-                                <!-- 進行中的控制項（暫停／繼續／停止／進度／錄製指示）
-                                     2026-09-07 搬到全域的 .admin-replay-bar（設計稿 08 · H1）：
-                                     重播一開始主持人就會離開這一頁，控制項留在這裡等於
-                                     離開後沒地方可以停。這裡只留「需要先選訊息」的那幾顆。
-                                     按鈕上的 ▶ ⏸ ⏹ ⏺ 一併拿掉（設計稿 14：只寫動詞）。 -->
-                                <div id="replayToolbar" class="history-replay-toolbar">
-                                    <button id="replayStartBtn" class="admin-ui-action is-primary admin-replay-control-action">${ServerI18n.t("replaySelected")}</button>
-                                    <select id="replaySpeed" class="admin-ui-select">
-                                        <option value="1">1x</option>
-                                        <option value="2">2x</option>
-                                        <option value="5">5x</option>
-                                        <option value="10">10x</option>
-                                    </select>
-                                    <button id="replayRecordBtn" class="admin-ui-action is-danger admin-replay-control-action">${ServerI18n.t("recordReplay")}</button>
-                                    <button id="exportJsonBtn" class="admin-ui-action admin-replay-control-action">${ServerI18n.t("exportJSON")}</button>
-                                </div>
-                                <div id="historyStats" class="history-stats-strip text-sm" style="color:var(--admin-text-dim)"></div>
-                                <div class="history-list-shell">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <label class="flex items-center gap-2 text-xs cursor-pointer select-none" style="color:var(--admin-text-dim)">
-                                        <input type="checkbox" id="historySelectAll" style="accent-color:var(--color-primary)">
-                                        ${ServerI18n.t("selectAll")}
-                                    </label>
-                                </div>
-                                <div id="danmuHistoryList" class="space-y-2 max-h-96 overflow-y-auto">
-                                    <!-- History will be listed here -->
-                                </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `);
+    
 
     // Polls Builder (multi-question master-detail) — extracted to
     // admin-poll-builder.js (Group D-3 split, 2026-04-28). Self-binds
@@ -1354,11 +1294,12 @@ document.addEventListener("DOMContentLoaded", () => {
     dashboard: { title: "控制台", kicker: "DASHBOARD · 活動進行中", sections: [], showKpi: true },
     // v7 IA (2026-07-28): `messages` demoted to _bareLegacyRedirects → live
     // (it was the same sec-live-feed under a second name).
-    // Slice 4 (P0-0): history is now the merged tabbed nav (sessions /
-    // search / audit / replay / audience). Each tab's section is hidden
-    // when not active by AdminTabs.applyTabSectionVisibility. Replay tab
-    // owns sec-history-tabs + history-v2-section + sec-history-list + sec-history.
-    history:   { title: "紀錄與匯出",       kicker: "RECORDS · 場次資料切片", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-history-tabs", "sec-history-list", "sec-history", "sec-audience-overview"] },
+    // Slice 4 (P0-0): history is the merged tabbed nav. Each tab's section is
+    // hidden when not active by AdminTabs.applyTabSectionVisibility.
+    // 2026-09-07 設計稿 08 · H1：「重播」分頁退場（稿上四段＝場次／觀眾／
+    // 搜尋／操作紀錄）。它底下的 sec-history-tabs / sec-history-list /
+    // sec-history / replay-v2-section 一併移除；時間軸匯出已先搬到備份頁。
+    history:   { title: "紀錄與匯出",       kicker: "RECORDS · 場次資料切片", sections: ["sec-sessions-overview", "sec-search-overview", "sec-audit-overview", "sec-audience-overview"] },
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
     // 2026-09-06 設計稿 08/14：名稱去術語化 Desktop Widgets → 小工具。
     widgets:   { title: "小工具",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },

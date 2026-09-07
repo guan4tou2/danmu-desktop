@@ -121,11 +121,12 @@
     const fp = currentEntry.data && currentEntry.data.fingerprint;
     if (!fp) { _state.sameFpEntries = []; return; }
     // Reach into the live-feed module for in-memory entries (best effort).
+    // 2026-09-07：原本還有一條 AdminHistory.allHistoryRecords 的 fallback，
+    // 但那份記憶體清單隨「重播」分頁的歷史卡一起退場，永遠會是空陣列——
+    // 留著只是讓人以為還有第二個來源。
     let entries = [];
     if (window.AdminLiveFeed && typeof window.AdminLiveFeed.getEntries === "function") {
       entries = window.AdminLiveFeed.getEntries();
-    } else if (window.AdminHistory && window.AdminHistory.allHistoryRecords) {
-      entries = window.AdminHistory.allHistoryRecords;
     }
     _state.sameFpEntries = entries.filter(function (e) {
       const efp = (e.data && e.data.fingerprint) || e.fingerprint || "";

@@ -8,9 +8,11 @@
  * 這支把進行中的控制項抽成一條 sticky 列（比照斷線橫幅 admin-rcb 的作法：
  * 插在 body 最前面、position: sticky），閒置時整條收起。
  *
- * 按鈕的 id 沿用原本那幾顆（replayPauseBtn / replayResumeBtn /
- * replayStopBtn / replayProgress / replayRecordingIndicator /
- * replayRecordingTimer），admin-replay-controls.js 靠 id 找元素，不必改綁定。
+ * 按鈕的 id 沿用原本那幾顆（replayPauseBtn / replayResumeBtn / replayStopBtn /
+ * replayProgress），admin-replay-controls.js 靠 id 找元素，不必改綁定。
+ *
+ * 錄製指示（replayRecordingIndicator）已隨「錄製回放」一起退場——「重播」
+ * 分頁刪除後那個功能沒有入口了（設計稿 08 · H1）。
  *
  * 以 <script defer> 掛在 admin.html。
  */
@@ -33,11 +35,6 @@
       '<span class="admin-replay-bar__dot" aria-hidden="true"></span>' +
       '<span class="admin-replay-bar__label">' + ServerI18n.t("replayBarLabel") + "</span>" +
       '<span id="replayProgress" class="admin-replay-bar__progress hidden"></span>' +
-      '<span id="replayRecordingIndicator" class="admin-replay-bar__rec hidden">' +
-        '<span class="admin-replay-bar__rec-dot" aria-hidden="true"></span>' +
-        ServerI18n.t("replayBarRecording") +
-        ' <span id="replayRecordingTimer">00:00</span>' +
-      "</span>" +
       '<span class="admin-replay-bar__spacer"></span>' +
       '<button type="button" id="replayPauseBtn" class="admin-ui-action admin-replay-control-action hidden">' +
         ServerI18n.t("pause") + "</button>" +

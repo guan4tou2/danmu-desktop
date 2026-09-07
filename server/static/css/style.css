@@ -14604,29 +14604,9 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-replay-bar__label { font-weight: 600; }
 
-.admin-replay-bar__progress,
-.admin-replay-bar__rec {
+.admin-replay-bar__progress {
   color: var(--color-text-secondary);
   font-variant-numeric: tabular-nums;
-}
-
-.admin-replay-bar__rec {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--color-ink-error);
-}
-
-/* style.css 載在 tailwind.css **之後**，所以自訂的 display 會蓋掉 .hidden
-   （tailwind 的 .hidden 沒有 !important，只有 [hidden] 有）。凡是在這裡指定
-   display 又要靠 .hidden 收起來的元素，都得自己補這一條。 */
-.admin-replay-bar__rec.hidden { display: none; }
-
-.admin-replay-bar__rec-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-danger);
 }
 
 .admin-replay-bar__spacer { flex: 1 1 auto; }

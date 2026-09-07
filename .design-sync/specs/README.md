@@ -90,9 +90,19 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
    一個只有實測才看得到的坑：備份頁是 **MutationObserver 延遲注入**的，
    `admin-panel-rendered` 當下錨點還不存在——第一版直接 return，整塊精靈永遠
    沒被建出來。改成錨點沒到就先掛 grid 尾端，備份頁到齊時再挪到它後面。
-   **剩下**：`重播` 分段本身（稿上沒有）。清單／重播兩個子分頁還掛著
-   `sec-history`，而那裡有**三個沒有第二入口**的東西——選訊息重播、錄製回放、
-   匯出 JSON。「全部清除」已確認在備份頁與 ⌘K 都有，拿掉不會少。
+   2026-09-07 收尾：**「重播」分段已刪**，紀錄與匯出就是稿上的四段
+   （場次／觀眾／搜尋／操作紀錄）。連帶移除 `sec-history-tabs`（子分頁 strip）、
+   `sec-history-list`、`sec-history`、`admin-replay.js`（replay-v2-section）與
+   `replay-recorder.js`，以及 25 顆變成孤兒的 i18n key。
+   **刻意放棄的能力**（使用者裁定照稿走）：重播個別訊息（勾選重播與單則
+   re-fire）、錄製回放、JSON 時間軸匯出。整場重播仍在「場次 › 重播這場」。
+   一個差點自己撤銷前一顆 commit 的坑：**場次面板啟動重播只發 toast**，
+   從來沒呼叫過輪詢——那是退場的 `sec-history` 啟動鈕做的事。照原樣刪掉，
+   全域重播列會永遠不出現，也就沒有地方可以暫停或停止。改成控制列自己
+   認領正在跑的重播（進 admin 探詢一次 `/admin/replay/status`），啟動端
+   另外呼叫 `notifyStarted()` 只是為了不用等下一輪。
+   `admin-history.js` 只剩黑名單（歷史那半整個退場），`admin-message-drawer.js`
+   那條永遠會是空陣列的 `allHistoryRecords` fallback 一併拿掉。
 2. **設計稿 15 的補頁**——已做：⌘K 三段結果（動作 › 頁面 › 訊息，取代
    F1–F4）、說明抽屜（右側 360 推開）、斷線橫幅三段式、登入過期對話框
    （EX1，2026-09-07：401 改開對話框、保留 hash 路由、就地換 CSRF token）。

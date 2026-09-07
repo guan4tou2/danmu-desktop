@@ -310,14 +310,14 @@ test.describe("系統維運後台（真實 UI 操作）", () => {
     // Danger 區（清除歷史 / factory reset）刻意不碰。
   });
 
-  // ─── #/history 五個 tab ───────────────────────────────────────────────
+  // ─── #/history 四個 tab ───────────────────────────────────────────────
 
-  test("紀錄 & 匯出 #/history 五個 tab 逐一切換都渲染", async () => {
+  // 2026-09-07 設計稿 08 · H1：「重播」分頁退場，稿上就是這四段。
+  test("紀錄 & 匯出 #/history 四個 tab 逐一切換都渲染", async () => {
     const TABS = [
       ["sessions", "sec-sessions-overview"],
       ["search", "sec-search-overview"],
       ["audit", "sec-audit-overview"],
-      ["replay", "sec-history"],
       ["audience", "sec-audience-overview"],
     ];
 
@@ -409,42 +409,11 @@ test.describe("系統維運後台（真實 UI 操作）", () => {
     await expect(admin.locator("#histv2-estimate")).toContainText(`${rows.length} 筆訊息`);
   });
 
-  // B7 迴歸（2026-07-29 修好）：#/history/replay 上方那層舊 tabstrip
-  // （#sec-history-tabs 內的 export / list / replay）是「重播」分頁底下的子分頁。
-  // 修好前它與 AdminTabs 打架 —— 點「時間軸匯出」時 admin-replay.js 會把
-  // body.dataset.historyTab 覆寫回 leaf 值，style.css 的
-  // body[data-history-tab="replay"] #history-v2-section { display:none !important }
-  // 於是把剛點開的匯出精靈藏起來。那組 CSS 與那個 id 都已不存在（2026-09-07
-  // 匯出精靈搬到備份頁）；可見性只剩兩層且都在 JS：AdminTabs 管分頁、
-  // admin-history.js 管重播分頁內的 pane。
-  //
-  // 選擇器一律鎖在 #sec-history-tabs 內：<body> 自己也帶 data-history-tab
-  // （admin-replay.js 寫的 leaf 值），裸選會撞上 strict mode。
-  test("紀錄 & 匯出：舊 tabstrip 兩個子分頁互斥切換", async () => {
-    await gotoRoute("history");
-    await clickTab("history", "replay");
-
-    const subTab = (k) => admin.locator(`#sec-history-tabs [data-history-tab="${k}"]`);
-
-    // 2026-09-07：「時間軸匯出」子分頁隨匯出精靈搬到備份頁而移除，剩兩格。
-    await expect(subTab("export")).toHaveCount(0);
-
-    // 訊息清單 → 換成清單，且真的抓到資料（不是空殼）
-    await subTab("list").click();
-    await expect(subTab("list")).toHaveClass(/is-active/);
-    await expect(admin.locator("#sec-history")).toBeHidden();
-
-    // 重播 → 換回舊 sec-history 卡
-    await subTab("replay").click();
-    await expect(subTab("replay")).toHaveClass(/is-active/);
-    await expect(admin.locator("#sec-history")).toBeVisible();
-    await expect(admin.locator("#sec-history-list")).toBeHidden();
-
-    // 離開重播分頁時整組都要收掉（子分頁選擇不能蓋過 AdminTabs）
-    await clickTab("history", "sessions");
-    await expect(admin.locator("#sec-history")).toBeHidden();
-    await expect(admin.locator("#sec-history-tabs")).toBeHidden();
-  });
+  // 2026-09-07（設計稿 08 · H1）：這裡原本有一條「舊 tabstrip 子分頁互斥切換」
+  // 的 B7 迴歸測試。「重播」分頁連同它底下的子分頁 strip（#sec-history-tabs）、
+  // 訊息清單（#sec-history-list）與舊的 #sec-history 卡一起退場，被測的機制
+  // 已不存在，所以測試一併移除而不是改寫。
+  // 重播進行中的控制改由全域 .admin-replay-bar 承接（見 replay bar 那條）。
 
   // ─── #/api-tokens ────────────────────────────────────────────────────
 

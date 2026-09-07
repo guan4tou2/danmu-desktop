@@ -44,7 +44,9 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(adminSrc).toMatch(/security:\s*\{\s*title:\s*"安全"/);
   // Sections still rendered inline by admin.js renderControlPanel():
   expect(adminSrc).toContain('id="sec-blacklist"');
-  expect(adminSrc).toContain('id="sec-history"');
+  // sec-history 於 2026-09-07 隨「重播」分頁一起退場（設計稿 08 · H1：
+  // 紀錄與匯出只有場次／觀眾／搜尋／操作紀錄四段）。
+  expect(adminSrc).not.toContain('id="sec-history"');
   // sec-security / sec-ws-auth removed 2026-04-28 (Group D-3 R6) — fully
   // owned by admin-security-v2-page (sec2-pw-* IDs) in admin-security.js.
 
@@ -753,24 +755,23 @@ test("admin Live Feed row and bulk actions compose shared controls", () => {
   expect(liveFeedSrc).not.toContain("admin-poll-btn");
 });
 
-test("admin Scheduler, Replay, and Sessions chips compose shared controls", () => {
+test("admin Scheduler and Sessions chips compose shared controls", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static", "js");
   const schedulerSrc = fs.readFileSync(path.join(staticDir, "admin-scheduler.js"), "utf8");
-  const replaySrc = fs.readFileSync(path.join(staticDir, "admin-replay.js"), "utf8");
   const sessionsSrc = fs.readFileSync(path.join(staticDir, "admin-sessions.js"), "utf8");
 
   expect(schedulerSrc).toContain('class="admin-ui-chip is-danger scheduler-remove-msg"');
   expect(schedulerSrc).toContain('class="admin-ui-chip scheduler-job-toggle ${isPaused ? "is-active" : "is-warn"}"');
   expect(schedulerSrc).toContain('class="admin-ui-chip is-danger scheduler-job-cancel"');
-  expect(replaySrc).toContain('id="replayV2Refresh" class="admin-ui-action admin-replay-toolbar-action"');
-  expect(replaySrc).toContain('id="replayV2ExportJson" class="admin-ui-action admin-replay-toolbar-action"');
-  expect(replaySrc).toContain('class="admin-ui-chip is-active admin-replay-refire-action"');
+  // admin-replay.js（replay-v2-section）2026-09-07 隨「重播」分頁一起刪除，
+  // 它的 refire / 匯出 JSON 都只掛在那一頁上（設計稿 08 · H1）。
+  expect(fs.existsSync(path.join(staticDir, "admin-replay.js"))).toBe(false);
+  expect(fs.existsSync(path.join(staticDir, "replay-recorder.js"))).toBe(false);
   // 設計稿 08 · H1 的表列沒有「LIVE」文字 chip，只有名稱前一顆點。
   expect(sessionsSrc).toContain('class="admin-sessions-livedot"');
   expect(sessionsSrc).not.toContain("admin-sessions-live-badge");
   expect(schedulerSrc).not.toContain("admin-v2-chip");
-  expect(replaySrc).not.toContain("admin-v2-chip");
   expect(sessionsSrc).not.toContain("admin-v2-chip");
 });
 
@@ -820,13 +821,10 @@ test("admin shell and Viewer Theme residual controls compose shared primitives",
   expect(adminSrc).toContain('class="admin-ui-action is-primary admin-effects-inspector-action" id="effectsInspectorEdit"');
   expect(adminSrc).toContain('id="themeReloadBtn" class="admin-ui-action admin-theme-reload-action"');
   expect(adminSrc).toContain('id="addKeywordBtn" type="button" class="admin-ui-action is-primary"');
-  expect(adminSrc).toContain('id="refreshHistoryBtn" class="admin-ui-action is-primary admin-history-action"');
-  expect(adminSrc).toContain('id="clearHistoryBtn" class="admin-ui-action is-danger admin-history-action"');
   // 2026-09-07 設計稿 08 · H1：進行中的控制項搬到全域的 admin-replay-bar.js，
   // 用的還是同一組共用 primitive（檢查點跟著檔案走，不是放寬）。
   const replayBarSrc = fs.readFileSync(path.join(staticDir, "admin-replay-bar.js"), "utf8");
   expect(replayBarSrc).toContain('id="replayStopBtn" class="admin-ui-action is-danger admin-replay-control-action hidden"');
-  expect(adminSrc).toContain('id="exportJsonBtn" class="admin-ui-action admin-replay-control-action"');
   expect(viewerThemeSrc).toContain('class="admin-ui-chip admin-vt-preview-status"');
   expect(adminSrc).not.toContain("admin-poll-btn");
   expect(adminSrc).not.toContain("hud-toolbar-action");

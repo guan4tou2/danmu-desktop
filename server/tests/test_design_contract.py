@@ -1191,38 +1191,38 @@ def test_a11y_focus_lang_and_live_region(zh):
 
 
 def test_replay_controls_are_global_while_a_replay_runs(zh):
-    """設計稿 08 · H1：重播進行中的控制項要在**全域**，不能住在紀錄頁裡。
+    """設計稿 08 · H1：重播進行中的控制項在**全域**，且「重播」分頁已退場。
 
-    重播一開始主持人就會離開「紀錄與匯出」——去控制台、去顯示層、去審核。
-    暫停／停止留在那一頁等於離開之後沒地方可以停。那也是「重播」分頁一直
-    拿不掉的唯一理由。
+    稿上的「紀錄與匯出」只有四段（場次／觀眾／搜尋／操作紀錄）。拆掉重播
+    分頁的前置條件依序解掉了：進行中的暫停／停止搬成全域 `.admin-replay-bar`、
+    時間軸匯出搬到備份頁、「全部清除」確認在備份頁與 ⌘K 都有、整場重播在
+    場次的匯出面板。
+
+    刻意放棄的是「重播個別訊息」那一類（勾選重播／單則 re-fire）以及錄製
+    回放與 JSON 匯出——稿上沒畫，2026-09-07 使用者裁定照稿走。
     """
     assert zh["replayBarLabel"] == "重播進行中"
 
     bar = _strip_comments(_read("server/static/js/admin-replay-bar.js"))
-    for wanted in (
-        "replayPauseBtn",
-        "replayResumeBtn",
-        "replayStopBtn",
-        "replayProgress",
-        "replayRecordingIndicator",
-    ):
+    for wanted in ("replayPauseBtn", "replayResumeBtn", "replayStopBtn", "replayProgress"):
         assert wanted in bar, wanted
+    assert "replayRecordingIndicator" not in bar
 
-    # 紀錄頁只留「需要先選訊息」的那幾顆
+    tabs = _strip_comments(_read("server/static/js/admin-tabs.js"))
+    assert '{ slug: "replay"' not in tabs
     admin = _strip_comments(_read("server/static/js/admin.js"))
-    toolbar = admin.split('id="replayToolbar"')[1].split("</div>")[0]
-    assert "replayStartBtn" in toolbar
-    for gone in ("replayPauseBtn", "replayResumeBtn", "replayStopBtn"):
-        assert gone not in toolbar, gone
-    # 按鈕只寫動詞（設計稿 14）
-    for glyph in ("▶ ", "⏸ ", "⏹ ", "⏺ "):
-        assert glyph not in toolbar, glyph
+    for gone in ("sec-history-tabs", "sec-history-list", '"sec-history"', "replayStartBtn"):
+        assert gone not in admin, gone
+    assert not (REPO / "server/static/js/admin-replay.js").exists()
+    assert not (REPO / "server/static/js/replay-recorder.js").exists()
 
-    # 「startBtn 不在就整個 return」會讓離開紀錄頁之後暫停／停止永遠不出現
+    # 唯一的啟動點只發 toast，所以控制列要自己認領正在跑的重播
     ctrl = _strip_comments(_read("server/static/js/admin-replay-controls.js"))
+    assert "_adoptRunningReplay" in ctrl
+    assert "notifyStarted" in ctrl
+    assert "notifyStarted" in _strip_comments(_read("server/static/js/admin-sessions.js"))
+    # 早退會讓離開紀錄頁之後暫停／停止永遠不出現
     assert "if (!startBtn) return;" not in ctrl
-    assert "AdminReplayBar" in ctrl
 
 
 def test_no_uninterpolated_template_placeholder_reaches_the_screen():
@@ -1233,9 +1233,8 @@ def test_no_uninterpolated_template_placeholder_reaches_the_screen():
     parse 過一次的測試——heuristic 字串比對擋不住巢狀 template literal，
     試過一次誤報十幾處。
     """
-    replay = _read("server/static/js/admin-replay.js")
-    for key in ("mlSession", "mlSpeed", "mlMessages"):
-        assert ('+ ServerI18n.t("%s") +' % key) in replay, key
+    # admin-replay.js 的三處隨該檔一起退場（設計稿 08 · H1 刪掉重播分頁），
+    # 剩下這兩處。全樹掃描交給 jest 那支 acorn 測試。
     display = _read("server/static/js/admin-display.js")
     assert '+ ServerI18n.t("lbCurrentSession") +' in display
     sched = _read("server/static/js/admin-scheduler.js")
