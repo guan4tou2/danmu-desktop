@@ -839,3 +839,46 @@ def test_poll_deepdive_matches_p1(zh):
     poll = _read("server/services/poll.py")
     assert '"vote_times"' in poll and "_vote_timeline_locked" in poll
     assert "def rebroadcast" in poll
+
+
+def test_setup_wizard_is_four_steps(zh):
+    """設計稿 08 · F1：首次設定是四步——`1 伺服器網址 · 2 主題 · 3 審核基本防線 · 4 完成`。
+
+    原本是五步，多一步「顯示規則」。那一步是四個開關的巡覽（不是設定，是
+    「看一下現在是什麼」）；首次設定要問的是非問不可的事，多一步就是多一個
+    讓人按「跳過」的理由。
+
+    主題那步的四張卡帶的是**定位說明**（「暖色像素感，適合活動主視覺」），
+    不是 server 那份功能描述（「復古像素風格，帶閃爍效果」）——首次設定要
+    回答的是「我這場該選哪個」，不是「這個主題做了什麼」。
+    """
+    assert zh["setupWizardStepServer"] == "伺服器網址"
+    assert zh["setupWizardStepTheme"] == "主題"
+    assert zh["setupWizardStepModeration"] == "審核基本防線"
+    assert zh["setupWizardStepMeta"] == "第 {current} 步，共 {total} 步"
+    assert zh["setupWizardSkip"] == "略過，稍後再說"
+    assert zh["setupWizardBack"] == "‹ 上一步"
+    assert zh["setupWizardNext"] == "繼續"
+    assert zh["setupWizardThemeStepTitle"] == "選一個起手主題"
+    for key, value in {
+        "setupWizardThemeDefaultDesc": "白色彈幕，適合大多數畫面",
+        "setupWizardThemeNeonDesc": "高對比發光，適合深色舞台",
+        "setupWizardThemeRetroDesc": "暖色像素感，適合活動主視覺",
+        "setupWizardThemeCinemaDesc": "低飽和金色字幕感，適合論壇",
+    }.items():
+        assert zh[key] == value, key
+
+    js = _strip_comments(_read("server/static/js/admin-setup-wizard.js"))
+    assert '{ id: "server"' in js and '{ id: "theme"' in js
+    assert '{ id: "moderation"' in js and '{ id: "done"' in js
+    assert '"display"' not in js and "displayRules" not in js
+    assert 'SETUP_THEME_ORDER = ["default", "neon", "retro", "cinema"]' in js
+    # 全大寫英文（品牌副標的版本代號、欄位下方的第二行、摘要欄名）一併退場
+    for gone in (
+        "v5 YELLOW",
+        "SERVER NAME",
+        "PUBLIC URL",
+        "DISPLAY RULES",
+        "admin-setup-step-kicker",
+    ):
+        assert gone not in js, gone

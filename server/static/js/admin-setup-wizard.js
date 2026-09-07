@@ -27,12 +27,16 @@
   // 故 label 一律存 labelKey，交給 _renderShell / 各 _render*Step 在
   // 渲染當下才 t()。`en` 欄位是既有全大寫 kicker，本檔目前無渲染點會讀
   // 它，維持原樣不動。
+  // 設計稿 08 · F1：四步——`1 伺服器網址 · 2 主題 · 3 審核基本防線 · 4 完成`。
+  //
+  // 原本是五步，多一步「顯示規則」。那一步是四個開關的巡覽（不是設定，是
+  // 「看一下現在是什麼」），首次設定要問的是「非問不可的事」——多一步就是
+  // 多一個讓人按「跳過」的理由。顯示層的細節在「顯示層」頁隨時可以調。
   const STEPS = [
-    { id: "server", labelKey: "setupWizardStepServer", en: "SERVER" },
-    { id: "display", labelKey: "setupWizardStepDisplay", en: "DISPLAY" },
-    { id: "moderation", labelKey: "setupWizardStepModeration", en: "MODERATION" },
-    { id: "theme", labelKey: "setupWizardStepTheme", en: "THEME" },
-    { id: "done", labelKey: "setupWizardStepDone", en: "DONE" },
+    { id: "server", labelKey: "setupWizardStepServer" },
+    { id: "theme", labelKey: "setupWizardStepTheme" },
+    { id: "moderation", labelKey: "setupWizardStepModeration" },
+    { id: "done", labelKey: "setupWizardStepDone" },
   ];
 
   // 同理，label/description 存 key；_themeLabel/_themeDesc 兩個 helper
@@ -70,12 +74,14 @@
    *  (see _fetchThemes) carry a literal label instead. */
   function _themeLabel(theme) {
     if (!theme) return "—";
+    if (theme.label) return theme.label;
     if (theme.labelKey) return ServerI18n.t(theme.labelKey);
-    return theme.label || theme.name || theme.id || "—";
+    return theme.name || theme.id || "—";
   }
 
   function _themeDesc(theme) {
     if (!theme) return "";
+    // 稿上的定位說明優先——server 的 description 是功能描述，不是選擇依據。
     if (theme.descriptionKey) return ServerI18n.t(theme.descriptionKey);
     return theme.description || "";
   }
@@ -88,30 +94,8 @@
     selectedTheme: FALLBACK_THEMES[0].name,
     serverName: "Danmu Fire",
     publicUrl: "",
-    httpPort: ":4000",
-    wsPath: "/ws",
     // 頂層常數，同樣延後解析——labelKey/descKey 交給 _renderToggleStep
     // 在渲染當下 t()。
-    displayRules: [
-      {
-        id: "dedupe",
-        labelKey: "setupWizardDisplayDedupeLabel",
-        descKey: "setupWizardDisplayDedupeDesc",
-        enabled: true,
-      },
-      {
-        id: "image-preview",
-        labelKey: "setupWizardDisplayPreviewLabel",
-        descKey: "setupWizardDisplayPreviewDesc",
-        enabled: true,
-      },
-      {
-        id: "max-length",
-        labelKey: "setupWizardDisplayMaxLengthLabel",
-        descKey: "setupWizardDisplayMaxLengthDesc",
-        enabled: true,
-      },
-    ],
     moderationRules: [
       {
         id: "sensitive",
@@ -135,12 +119,8 @@
   };
 
   function _deriveServerSnapshot() {
-    const loc = window.location;
-    const port = loc.port || (loc.protocol === "https:" ? "443" : "80");
     _state.serverName = "Danmu Fire";
-    _state.publicUrl = loc.origin + "/";
-    _state.httpPort = ":" + port;
-    _state.wsPath = (window.DANMU_CONFIG && window.DANMU_CONFIG.wsPath) || "/ws";
+    _state.publicUrl = window.location.origin + "/";
   }
 
   function _onHashChange() {
@@ -181,7 +161,9 @@
           <header class="admin-setup-head">
             <div class="admin-setup-brand">
               <div class="admin-setup-brand-name">Danmu Fire</div>
-              <div class="admin-setup-brand-sub">SETUP WIZARD · v5 YELLOW</div>
+              <!-- 「SETUP WIZARD · v5 YELLOW」是內部版本代號，對第一次
+                   打開這個產品的人沒有任何意義（設計稿 14）。 -->
+              <div class="admin-setup-brand-sub">${ServerI18n.t("setupWizardTitle")}</div>
             </div>
             <button type="button" class="admin-setup-close" data-setup-action="close" aria-label="Close wizard">${window.AdminUtils.closeIcon}</button>
           </header>
@@ -232,7 +214,8 @@
     const next = root.querySelector('[data-setup-action="next"]');
     if (next) {
       const stepId = STEPS[_state.step].id;
-      next.textContent = stepId === "theme" ? ServerI18n.t("setupWizardApplyTheme") : ServerI18n.t("setupWizardNext");
+      // 稿上底部只有「‹ 上一步」與「繼續」——每一步的主按鈕都是同一個字。
+      next.textContent = ServerI18n.t("setupWizardNext");
     }
 
     const foot = root.querySelector("[data-setup-foot]");
@@ -242,18 +225,18 @@
     if (!content) return;
     const stepId = STEPS[_state.step].id;
     if (stepId === "server") content.innerHTML = _renderServerStep();
-    else if (stepId === "display") content.innerHTML = _renderDisplayStep();
     else if (stepId === "moderation") content.innerHTML = _renderModerationStep();
     else if (stepId === "theme") content.innerHTML = _renderThemeStep();
     else content.innerHTML = _renderDoneStep();
     _bindStep(stepId);
   }
 
-  function _renderShellField(fieldId, label, sub, value) {
+  // 設計稿 14：中文標籤旁邊不再擺一行大寫英文。原本每個欄位下面都有一行
+  // SERVER NAME / PUBLIC URL / PORT / WS PATH。
+  function _renderShellField(fieldId, label, value) {
     return `
       <div class="admin-setup-field">
         <label class="admin-setup-field-label" for="setup-field-${fieldId}">${escapeHtml(label)}</label>
-        <div class="admin-setup-field-sub">${escapeHtml(sub)}</div>
         <input
           id="setup-field-${fieldId}"
           class="admin-setup-input"
@@ -270,18 +253,15 @@
         <h2 class="admin-setup-step-title">${ServerI18n.t("setupWizardStepServer")}</h2>
         <p class="admin-setup-step-desc">${ServerI18n.t("setupWizardServerDesc")}</p>
         <div class="admin-setup-server-fields">
-          ${_renderShellField("server-name", ServerI18n.t("setupWizardServerNameLabel"), "SERVER NAME", _state.serverName)}
-          ${_renderShellField("public-url", ServerI18n.t("setupWizardPublicUrlLabel"), "PUBLIC URL", _state.publicUrl)}
-          ${_renderShellField("http-port", "HTTP Port", "PORT", _state.httpPort)}
-          ${_renderShellField("ws-path", "WebSocket Path", "WS PATH", _state.wsPath)}
+          ${_renderShellField("public-url", ServerI18n.t("setupWizardPublicUrlLabel"), _state.publicUrl)}
+          ${_renderShellField("server-name", ServerI18n.t("setupWizardServerNameLabel"), _state.serverName)}
         </div>
       </div>`;
   }
 
-  function _renderToggleStep(stepKicker, title, desc, items, attrName) {
+  function _renderToggleStep(title, desc, items, attrName) {
     return `
       <div class="admin-setup-step-pad">
-        <div class="admin-setup-step-kicker">${stepKicker}</div>
         <h2 class="admin-setup-step-title">${escapeHtml(title)}</h2>
         <p class="admin-setup-step-desc">${escapeHtml(desc)}</p>
         <div class="admin-setup-toggle-list">
@@ -306,19 +286,8 @@
       </div>`;
   }
 
-  function _renderDisplayStep() {
-    return _renderToggleStep(
-      "STEP 02",
-      ServerI18n.t("setupWizardStepDisplay"),
-      ServerI18n.t("setupWizardDisplayDesc"),
-      _state.displayRules,
-      "data-setup-display-toggle"
-    );
-  }
-
   function _renderModerationStep() {
     return _renderToggleStep(
-      "STEP 03",
       ServerI18n.t("setupWizardStepModeration"),
       ServerI18n.t("setupWizardModerationDesc"),
       _state.moderationRules,
@@ -326,11 +295,34 @@
     );
   }
 
+  // 設計稿 08 · F1 的四張卡帶的是**定位說明**（「暖色像素感，適合活動主視覺」），
+  // 不是 server 那份功能描述（「復古像素風格，帶閃爍效果」）。首次設定要回答的
+  // 是「我這場該選哪個」，不是「這個主題做了什麼」。順序也照稿。
+  const SETUP_THEME_ORDER = ["default", "neon", "retro", "cinema"];
+
+  function _setupThemeCards() {
+    const byName = {};
+    (_state.themes || []).forEach(function (t) { byName[t.name || t.id] = t; });
+    return SETUP_THEME_ORDER.map(function (name) {
+      const fallback = FALLBACK_THEMES.filter(function (f) { return f.name === name; })[0];
+      const server = byName[name];
+      if (!fallback) return server;
+      // 名稱可以用 server 的（它才知道使用者自己改過沒有），描述一律用稿上的。
+      return {
+        name: name,
+        label: server && server.label,
+        labelKey: fallback.labelKey,
+        descriptionKey: fallback.descriptionKey,
+        colors: fallback.colors,
+      };
+    }).filter(Boolean);
+  }
+
   function _renderThemeStep() {
-    const cards = (_state.themes && _state.themes.length) ? _state.themes : FALLBACK_THEMES;
+    const cards = _setupThemeCards();
     return `
       <div class="admin-setup-step-pad">
-        <h2 class="admin-setup-step-title">${ServerI18n.t("setupWizardStepTheme")}</h2>
+        <h2 class="admin-setup-step-title">${ServerI18n.t("setupWizardThemeStepTitle")}</h2>
         <p class="admin-setup-step-desc">${ServerI18n.t("setupWizardThemeDesc")}</p>
         <div class="admin-setup-theme-grid">
           ${cards.map(function (theme) {
@@ -364,7 +356,6 @@
       }
       return _state.selectedTheme || _state.activeTheme || "—";
     })();
-    const enabledDisplay = _state.displayRules.filter(function (item) { return item.enabled; }).length;
     const enabledModeration = _state.moderationRules.filter(function (item) { return item.enabled; }).length;
     return `
       <div class="admin-setup-step-pad admin-setup-done">
@@ -372,10 +363,9 @@
         <h2 class="admin-setup-step-title">${ServerI18n.t("setupWizardDoneTitle")}</h2>
         <p class="admin-setup-step-desc">${ServerI18n.t("setupWizardDoneDesc")}</p>
         <div class="admin-setup-done-summary">
-          <div class="row"><span class="k">SERVER</span><span class="v">${escapeHtml(_state.publicUrl)}</span></div>
-          <div class="row"><span class="k">THEME</span><span class="v">${escapeHtml(themeName)}</span></div>
-          <div class="row"><span class="k">DISPLAY RULES</span><span class="v">${ServerI18n.t("setupWizardEnabledCount", { n: enabledDisplay, total: _state.displayRules.length })}</span></div>
-          <div class="row"><span class="k">MODERATION</span><span class="v">${ServerI18n.t("setupWizardEnabledCount", { n: enabledModeration, total: _state.moderationRules.length })}</span></div>
+          <div class="row"><span class="k">${ServerI18n.t("setupWizardStepServer")}</span><span class="v">${escapeHtml(_state.publicUrl)}</span></div>
+          <div class="row"><span class="k">${ServerI18n.t("setupWizardStepTheme")}</span><span class="v">${escapeHtml(themeName)}</span></div>
+          <div class="row"><span class="k">${ServerI18n.t("setupWizardStepModeration")}</span><span class="v">${ServerI18n.t("setupWizardEnabledCount", { n: enabledModeration, total: _state.moderationRules.length })}</span></div>
         </div>
         <button type="button" class="admin-setup-done-cta" data-setup-complete-cta>${ServerI18n.t("setupWizardEnterConsole")}</button>
       </div>`;
@@ -418,15 +408,6 @@
   function _bindStep(stepId) {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
-    if (stepId === "display") {
-      root.querySelectorAll("[data-setup-display-toggle]").forEach(function (button) {
-        button.addEventListener("click", function () {
-          _state.displayRules = _toggleList(_state.displayRules, button.dataset.setupDisplayToggle);
-          _renderStep();
-        });
-      });
-      return;
-    }
     if (stepId === "moderation") {
       root.querySelectorAll("[data-setup-moderation-toggle]").forEach(function (button) {
         button.addEventListener("click", function () {
