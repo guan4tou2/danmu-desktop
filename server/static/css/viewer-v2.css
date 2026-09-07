@@ -95,25 +95,50 @@ body.viewer-body-v2.is-dark{
   box-shadow: none;
 }/* Preset color swatch buttons — 6 circles + 1 custom (matches viewer.jsx:146) */
 
+/* 「色點＋名稱」磚（設計稿 17 · 色盲替代）。前身是 28px 純色圓點——
+   對色覺不同的人那是六個一樣的灰點，而且 28px 也達不到手機 44 的命中區。 */
 .viewer-swatch-preset{
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  padding: 0;
   border: 1px solid var(--hud-line);
-  background-clip: padding-box;
-  transition: transform var(--motion-fast), border-color var(--motion-fast);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-size: var(--text-footnote);
+  font-family: inherit;
+  transition: border-color var(--motion-fast), background var(--motion-fast);
 }
+
+.viewer-swatch-dot{
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  /* 白色色點在淺色磚上會消失——給它一圈髮絲邊 */
+  box-shadow: inset 0 0 0 1px var(--hud-line);
+}
+
+.viewer-swatch-name{ white-space: nowrap; }
 
 .viewer-swatch-preset:hover{
-  transform: scale(1.08);
+  border-color: var(--color-border-strong);
 }
 
+/* 稿上：選中加 ✓ 與 2px 粗框 */
 .viewer-swatch-preset.is-active{
   border: 2px solid var(--color-primary);
-  outline: 1px solid var(--color-primary);
-  outline-offset: 2px;
+  padding: 0 calc(var(--space-3) - 1px);   /* 補回粗框多吃的 1px，磚不跳動 */
+  font-weight: 600;
+}
+
+.viewer-swatch-preset.is-active::after{
+  content: "✓";
+  color: var(--color-ink-accent);
+  font-weight: 700;
 }
 
 .viewer-shell{
@@ -655,11 +680,13 @@ body.viewer-body-v2.is-dark{
 @media (prefers-reduced-motion: reduce) {
   .viewer-identity-chip.is-confirm{ animation: none; }}/* Color swatches — 6 preset + 1 custom with dashed ring. */
 
+/* 「色點＋名稱」磚要放得下名字，所以是格線不是 flex：flex-wrap 會先把
+   六塊擠成 40px 再換行，名字全被切掉（設計稿 17）。 */
 .viewer-color-row{
-  display: flex;
-  gap: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: var(--space-2);
   align-items: center;
-  flex-wrap: wrap;
 }
 
 .viewer-swatch{
@@ -2388,13 +2415,10 @@ body.viewer-body-v2:not(.is-dark) .viewer-topbar-wordmark.is-on-light { display:
   transform: translateX(18px);
 }
 
-/* 顏色色點放大到 40px（設計稿 05：28 → 40 的點擊目標） */
-.viewer-swatch-preset {
-  width: 40px;
-  height: 40px;
-}
-
-.viewer-color-row { flex-wrap: wrap; gap: var(--space-3); }
+/* 設計稿 05 當時是「28 → 40 的點擊目標」，17 把色點改成「色點＋名稱」磚
+   之後寬度交給格線、高度由 min-height:44 決定——寫死 40×40 會把名字擠出
+   邊框外（實測 offsetWidth 卡在 40，名字溢位到按鈕外面）。 */
+.viewer-color-row { gap: var(--space-3); }
 
 /* ── 桌面 ≥768：抽層改成右側常駐面板（設計稿 16 · VP1）─────────── */
 @media (min-width: 768px) {

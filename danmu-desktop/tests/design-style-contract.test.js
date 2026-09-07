@@ -51,7 +51,10 @@ const FORBIDDEN_PATTERNS = [
 // 有一顆 `swatchPurple` 標籤。禁色清單管的是**介面色**別再飄回 design-v1 的
 // violet／magenta，不是觀眾自己挑的彈幕顏色——那是內容，且設計稿 17 · CB1
 // 明確要求每個色點旁邊都有名稱。只放行這一顆 key，不放寬 pattern 本身。
-const FORBIDDEN_EXEMPT = [/\bswatchPurple\b/];
+//
+// 2026-09-07：色點改成「色點＋名稱」磚之後多了一顆 `swatchAriaPurple`
+// （aria-label「顏色：紫」）。同一顆標籤的無障礙版本，理由完全相同。
+const FORBIDDEN_EXEMPT = [/\bswatch(Aria)?Purple\b/];
 
 function shouldSkip(fullPath) {
   const rel = path.relative(REPO_ROOT, fullPath);

@@ -437,6 +437,9 @@
 
   function togglePause() {
     paused = !paused;
+    // 暫停時停掉朗讀：使用者刻意讓畫面停住，背景還在唸新訊息就是在吵他
+    // （設計稿 17）。
+    if (listEl) listEl.setAttribute("aria-live", paused ? "off" : "polite");
     if (pauseBtn) {
       pauseBtn.textContent = paused ? ServerI18n.t("resumeBtn") : ServerI18n.t("pauseBtn");
       pauseBtn.classList.toggle("is-primary", paused);
@@ -510,7 +513,20 @@
 
           <!-- Message list (relative for sticky jump pill) -->
           <div class="admin-lf-v4__streamwrap">
-            <div id="liveFeedList" class="admin-live-feed-list admin-lf-v4__list" role="list" data-density="comfy"></div>
+            <!-- role="log" ＋ aria-live（設計稿 17）：這是一串會自己長出新
+                 項目的內容，螢幕閱讀器要唸出新到的訊息。原本是 role="list"
+                 且沒有 aria-live——新彈幕進來完全不會被朗讀。
+                 aria-relevant="additions" 讓它只唸新增的，不會因為列表重排
+                 就把整串重唸一遍。暫停捲動時切成 "off"（見 togglePause）。 -->
+            <div
+              id="liveFeedList"
+              class="admin-live-feed-list admin-lf-v4__list"
+              role="log"
+              aria-live="polite"
+              aria-relevant="additions"
+              aria-label="${ServerI18n.t("lfAriaLabel")}"
+              data-density="comfy"
+            ></div>
             <div class="admin-lf-v4__jump" data-lf-jump hidden>
               <button type="button" data-lf-jump-btn>↓ <span data-lf-jump-n>0</span> ${ServerI18n.t("lfJumpNew")}</button>
             </div>

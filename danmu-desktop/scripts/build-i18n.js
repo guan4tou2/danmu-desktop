@@ -51,6 +51,12 @@ const i18n = {
   // Exposed for backward-compatibility with tests that inspect translations directly
   translations: _resources,
 
+  /** 語言碼 → BCP47（設計稿 17）。單一個 zh 沒說是正體還是簡體，
+   *  螢幕閱讀器與 CJK 字型選擇都吃這個標籤。 */
+  htmlLang() {
+    return { zh: "zh-Hant", en: "en", ja: "ja", ko: "ko" }[this.currentLang] || this.currentLang;
+  },
+
   /** Translate a key with optional {var} interpolation.
    *  Respects this.currentLang so tests can do: i18n.currentLang = "zh"
    *  without needing to call setLanguage().
@@ -79,10 +85,6 @@ const i18n = {
   setLanguage(lang) {
     if (!SUPPORTED.includes(lang)) return;
     this.currentLang = lang;
-    // Update <html lang=""> so CSS :lang() picks the right CJK font
-    if (typeof document !== "undefined" && document.documentElement) {
-      document.documentElement.lang = lang;
-    }
     this.updateUI();
   },
 
@@ -135,8 +137,9 @@ const i18n = {
   updateUI() {
     if (typeof document === "undefined") return;
     // Keep <html lang=""> in sync so CSS :lang() picks the right CJK font
+    // and screen readers pronounce the right language (設計稿 17).
     if (document.documentElement) {
-      document.documentElement.lang = this.currentLang;
+      document.documentElement.lang = this.htmlLang();
     }
     document.querySelectorAll("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");

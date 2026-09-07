@@ -207,6 +207,10 @@
   /* Border */
   --color-border: light-dark(rgba(15, 23, 42, 0.10), rgba(255, 255, 255, 0.1));
   --color-border-focus: #38bdf8;
+  /* 焦點環（設計稿 17）。全站**一種樣式**：2px 實線、offset 3px。
+   * 深色臂刻意是白色而不是主色——藍底上再畫一圈藍框等於沒畫。
+   * 淺色臂 sky-700 在白底上 4.9:1。 */
+  --focus: light-dark(#0284c7, #ffffff);
   --color-border-strong: light-dark(rgba(15, 23, 42, 0.18), var(--slate-700));
 
   /* Text (all meet WCAG AA on --color-bg-base #0f172a unless marked)

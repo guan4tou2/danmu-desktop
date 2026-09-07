@@ -50,7 +50,7 @@ button:disabled,
 
 .skip-link:focus-visible{
   transform: translateY(0);
-  outline: 2px solid var(--color-text-primary);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }/* Per-language font priority — :lang() overrides from server style.css */
 

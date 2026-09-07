@@ -405,13 +405,82 @@
             {% if options.Color[0] %}
             <div id="colorControl" class="viewer-sheet-group">
               <div class="viewer-sheet-group-label" data-i18n="color">顏色</div>
+              <!-- 「色點＋名稱」磚（設計稿 17 · 色盲替代）。原本是六顆 28px 純
+                   色圓點：對色覺不同的人來說那是六個一樣的灰點，而且 28px 也
+                   達不到手機 44 的命中區。順序照稿：白／黃／天藍／綠／紅／紫。 -->
               <div class="viewer-color-row">
-                <button type="button" class="viewer-swatch-preset is-active" data-color="#ffffff" data-i18n-aria="swatchWhite" data-i18n-title="swatchWhite" aria-label="白" title="白" style="background:#ffffff"></button>
-                <button type="button" class="viewer-swatch-preset" data-color="#38bdf8" data-i18n-aria="swatchSky" data-i18n-title="swatchSky" aria-label="天藍" title="天藍" style="background:#38bdf8"></button>
-                <button type="button" class="viewer-swatch-preset" data-color="#fbbf24" data-i18n-aria="swatchAmber" data-i18n-title="swatchAmber" aria-label="琥珀" title="琥珀" style="background:#fbbf24"></button>
-                <button type="button" class="viewer-swatch-preset" data-color="#86efac" data-i18n-aria="swatchGreen" data-i18n-title="swatchGreen" aria-label="綠" title="綠" style="background:#86efac"></button>
-                <button type="button" class="viewer-swatch-preset" data-color="#f87171" data-i18n-aria="swatchRed" data-i18n-title="swatchRed" aria-label="紅" title="紅" style="background:#f87171"></button>
-                <button type="button" class="viewer-swatch-preset" data-color="#c084fc" data-i18n-aria="swatchPurple" data-i18n-title="swatchPurple" aria-label="紫" title="紫" style="background:#c084fc"></button>
+                <button
+                  type="button"
+                  class="viewer-swatch-preset is-active"
+                  data-color="#ffffff"
+                  data-i18n-aria="swatchAriaWhite"
+                  aria-label="顏色：白"
+                  data-i18n-title="swatchWhite"
+                  title="白"
+                >
+                  <span class="viewer-swatch-dot" style="background:#ffffff" aria-hidden="true"></span>
+                  <span class="viewer-swatch-name" data-i18n="swatchWhite">白</span>
+                </button>
+                <button
+                  type="button"
+                  class="viewer-swatch-preset"
+                  data-color="#fbbf24"
+                  data-i18n-aria="swatchAriaAmber"
+                  aria-label="顏色：琥珀"
+                  data-i18n-title="swatchAmber"
+                  title="琥珀"
+                >
+                  <span class="viewer-swatch-dot" style="background:#fbbf24" aria-hidden="true"></span>
+                  <span class="viewer-swatch-name" data-i18n="swatchAmber">琥珀</span>
+                </button>
+                <button
+                  type="button"
+                  class="viewer-swatch-preset"
+                  data-color="#38bdf8"
+                  data-i18n-aria="swatchAriaSky"
+                  aria-label="顏色：天藍"
+                  data-i18n-title="swatchSky"
+                  title="天藍"
+                >
+                  <span class="viewer-swatch-dot" style="background:#38bdf8" aria-hidden="true"></span>
+                  <span class="viewer-swatch-name" data-i18n="swatchSky">天藍</span>
+                </button>
+                <button
+                  type="button"
+                  class="viewer-swatch-preset"
+                  data-color="#86efac"
+                  data-i18n-aria="swatchAriaGreen"
+                  aria-label="顏色：綠"
+                  data-i18n-title="swatchGreen"
+                  title="綠"
+                >
+                  <span class="viewer-swatch-dot" style="background:#86efac" aria-hidden="true"></span>
+                  <span class="viewer-swatch-name" data-i18n="swatchGreen">綠</span>
+                </button>
+                <button
+                  type="button"
+                  class="viewer-swatch-preset"
+                  data-color="#f87171"
+                  data-i18n-aria="swatchAriaRed"
+                  aria-label="顏色：紅"
+                  data-i18n-title="swatchRed"
+                  title="紅"
+                >
+                  <span class="viewer-swatch-dot" style="background:#f87171" aria-hidden="true"></span>
+                  <span class="viewer-swatch-name" data-i18n="swatchRed">紅</span>
+                </button>
+                <button
+                  type="button"
+                  class="viewer-swatch-preset"
+                  data-color="#c084fc"
+                  data-i18n-aria="swatchAriaPurple"
+                  aria-label="顏色：紫"
+                  data-i18n-title="swatchPurple"
+                  title="紫"
+                >
+                  <span class="viewer-swatch-dot" style="background:#c084fc" aria-hidden="true"></span>
+                  <span class="viewer-swatch-name" data-i18n="swatchPurple">紫</span>
+                </button>
                 <label class="viewer-swatch viewer-swatch--custom" aria-label="Choose custom color">
                   +<input type="color" id="colorInput" value="#ffffff" aria-label="Choose danmu color" />
                 </label>
@@ -654,14 +723,6 @@
       if (mode === "auto") return;
       var lang = mode.replace(/^force-/, "");
       if (lang) ServerI18n.setLanguage(lang);
-    })();
-    // 設計稿 17：<html lang> 跟隨介面語言（原本固定 en）。
-    (function () {
-      try {
-        var map = { zh: "zh-Hant", en: "en", ja: "ja", ko: "ko" };
-        var cur = (window.ServerI18n && ServerI18n.language) || "zh";
-        document.documentElement.lang = map[cur] || cur;
-      } catch (_) {}
     })();
   </script>
   <script defer src="{{ url_for('static', filename='js/toast.js') }}"></script>

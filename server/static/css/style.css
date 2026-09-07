@@ -118,7 +118,7 @@ button:disabled,
 
 .skip-link:focus-visible {
   transform: translateY(0);
-  outline: 2px solid var(--color-text-primary);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -3915,18 +3915,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
   box-shadow: 0 0 10px var(--color-primary);
 }
 
-/* Focus-visible outline for keyboard navigation */
-*:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
+/* 全域焦點環搬到 shared/hud.css（設計稿 17：全站一種樣式）。
+   原本這條用 --color-primary，在深色面板上是藍底藍框，看不見。 */
 
 summary:focus-visible {
   border-radius: var(--radius-lg);
 }
 
 .password-toggle:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
@@ -7864,7 +7861,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 .admin-hud-modal--success .admin-hud-modal__btn--confirm { background: var(--color-success, #84e100); border-color: var(--color-success, #84e100); color: var(--btn-text-on-primary); }
 .admin-hud-modal__btn--confirm:hover { filter: brightness(1.05); }
 .admin-hud-modal__btn:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -13346,7 +13343,7 @@ body.admin-pu-open { overflow: hidden; }
 }
 
 .admin-wcag-pair-row:focus-visible {
-  outline: 2px solid var(--color-border-focus);
+  outline: 2px solid var(--focus);
   outline-offset: -2px;
 }
 
@@ -13561,7 +13558,7 @@ body.admin-pu-open { overflow: hidden; }
 }
 
 .admin-wcag-sugg-chip:focus-visible {
-  outline: 2px solid var(--color-border-focus);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
@@ -14069,7 +14066,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   border-radius: var(--radius-md);
 }
 .admin-sx__input:focus-visible {
-  outline: 2px solid var(--color-border-focus);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 .admin-sx__error {

@@ -10,6 +10,20 @@
  * prefers-reduced-motion (see bottom of file).
  */
 
+/* ── 焦點環：全站唯一一種樣式（設計稿 17）───────────────────────────
+ * 2px 實線 var(--focus)、offset 3px。深色臂的 --focus 是白色而不是主色：
+ * 藍底上再畫一圈藍框等於沒畫。
+ *
+ * 放在 hud.css 而不是 style.css，是因為四個表面只有這一份共用：
+ * overlay.html 的載入順序是 tokens → hud → overlay，根本沒有 style.css。
+ *
+ * 用 :focus-visible 而非 :focus——滑鼠點擊不該出現焦點環。
+ * 列表列／側欄可以用 outline-offset: -2px 內縮（稿上明列的例外）。 */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
 /* Angular-cut panel — SAO-style notched corner (top-left + bottom-right).
  * Renders as a 1px cyan-ish border via a sandwich of two clip-path layers
  * so the interior fill stays crisp while the outer edge carries the notch.
@@ -2584,7 +2598,6 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   color: var(--color-ink-accent);
   text-decoration: underline;
   text-underline-offset: 2px;
-  outline: none;
 }
 
 .admin-identity-nick.is-guest {
@@ -2619,7 +2632,6 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   color: var(--color-ink-accent);
   text-decoration: underline;
   text-underline-offset: 2px;
-  outline: none;
 }
 
 .admin-identity-ip {
@@ -5490,4 +5502,83 @@ html[data-theme="dark"] .admin-body .hud-hero-title {
   font-size: var(--text-footnote);
   color: var(--admin-text-dim, #94a3b8);
   text-align: center;
+}
+
+/* ── Windows 高對比（設計稿 17 · forced-colors）───────────────────────
+ *
+ * 高對比模式下瀏覽器會把作者指定的顏色全部換成使用者選的系統色盤，
+ * **但半透明底色是直接失效而不是被替換**——這套介面大量用 rgba 淡底
+ * 區分卡片與列，在高對比下那些區塊會整片糊在一起。稿上的做法是：
+ * 卡片改用 2px CanvasText 邊框、按鈕用 ButtonText 邊框，狀態色點保留
+ * 系統色（forced-color-adjust: none）但旁邊永遠有字。
+ *
+ * 這裡只補「結構還看得出來」所需的最小集合，不是把整份樣式再寫一遍——
+ * 顏色本來就交給系統，我們要保證的是邊界還在。 */
+@media (forced-colors: active) {
+  /* 卡片／面板／群組：淡底失效 → 補邊框 */
+  .admin-ui-card,
+  .admin-ui-group,
+  .hud-panel,
+  .hud-panel > .hud-panel-inner,
+  .hud-inspector,
+  .hud-stat-tile,
+  .hud-table,
+  .admin-cmdk-panel {
+    border: 2px solid CanvasText;
+    background: Canvas;
+  }
+
+  /* 按鈕：填色與淡底都會被剝掉，邊框是唯一還認得出「這是按鈕」的線索 */
+  .admin-ui-action,
+  .admin-ui-chip,
+  .admin-ui-seg > button,
+  .admin-ui-danger-btn,
+  .hud-effect-chip {
+    border: 1px solid ButtonText;
+    forced-color-adjust: none;
+    color: ButtonText;
+    background: ButtonFace;
+  }
+
+  .admin-ui-action.is-primary,
+  .admin-ui-seg > button.is-active,
+  .admin-ui-seg > button[aria-selected="true"] {
+    /* 選中／主要動作：反白，這是高對比模式表達「選中」的慣例 */
+    color: HighlightText;
+    background: Highlight;
+    border-color: Highlight;
+  }
+
+  /* 狀態色點：顏色本身就是訊號（連上／斷線／嚴重度），所以擋下系統色替換。
+   *
+   * 這是**刻意挑過的清單**，不是所有的點：稿上明講「Admin 訊息流的顏色點
+   * 旁不需名稱（顏色只是裝飾，內容才是資訊）」——裝飾性的點就該跟著系統
+   * 色盤走。新增狀態點時要記得加進來。
+   * 稿上另一半要求「旁邊永遠有字」是標記的責任，現況的狀態 chip 都已經是
+   * 「色點＋文字」。 */
+  .admin-cockpit-dot,
+  .hud-dot,
+  .hud-status-dot,
+  .admin-ui-dot,
+  .admin-lf-v4__statedot,
+  .admin-bc-v4__statedot,
+  .admin-session-live-dot,
+  .admin-sessions-livedot,
+  .admin-poll-status-dot,
+  .admin-ext-status-dot,
+  .admin-plugins-dot,
+  .admin-soh-chip__dot,
+  .admin-offline-banner__dot,
+  .admin-rcb__dot,
+  .admin-audit-sev-dot,
+  .admin-ev-v4__sev-dot,
+  .viewer-offline-chip-dot,
+  .viewer-sent-dot {
+    forced-color-adjust: none;
+  }
+
+  /* 焦點環在高對比下要跟著系統的 Highlight 走 */
+  :focus-visible {
+    outline-color: Highlight;
+  }
 }

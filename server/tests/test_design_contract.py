@@ -1145,3 +1145,46 @@ def test_theme_detail_group_and_new_theme_exist(zh):
     # 使用者主題寫在 runtime/，不是 repo 的 server/themes/
     assert '"runtime", "themes"' in themes_svc
     assert "def create_user_theme" in themes_svc and "def delete_user_theme" in themes_svc
+
+
+def test_a11y_focus_lang_and_live_region(zh):
+    """設計稿 17：焦點環／`<html lang>`／訊息流朗讀／高對比／色盲替代。
+
+    這四件在 2026-09-07 之前都是缺的，而且都不是「看起來怪怪的」那種——
+    是鍵盤使用者看不到焦點在哪、螢幕閱讀器不會唸出新訊息、Windows 高對比
+    下卡片糊成一片、色覺不同的人看到六個一樣的灰點。
+    """
+    tokens = _read("shared/tokens.css")
+    # 深色臂刻意是白色：藍底上再畫一圈藍框等於沒畫
+    assert "--focus: light-dark(#0284c7, #ffffff);" in tokens
+
+    hud = _read("shared/hud.css")
+    # 全站唯一一種焦點環，放在四個表面都載得到的 hud.css
+    assert ":focus-visible {\n  outline: 2px solid var(--focus);\n  outline-offset: 3px;\n}" in hud
+    assert "@media (forced-colors: active)" in hud
+    assert "forced-color-adjust: none;" in hud
+    # style.css 不該再有自己那條全域規則（原本用 --color-primary）
+    style = _strip_comments(_read("server/static/css/style.css"))
+    assert "*:focus-visible" not in style
+
+    # <html lang> 跟隨介面語言——稿上直接把「固定 en」標成 bug
+    for tpl in ("server/templates/admin.html", "server/templates/overlay.html"):
+        assert 'lang="en"' not in _read(tpl), tpl
+    assert 'lang="zh-Hant"' in _read("danmu-desktop/child.html")
+    for gen in ("server/scripts/build-i18n.js", "danmu-desktop/scripts/build-i18n.js"):
+        assert "zh-Hant" in _read(gen), gen
+
+    # 訊息流要讓螢幕閱讀器唸出新訊息，暫停時停掉
+    feed = _strip_comments(_read("server/static/js/admin-live-feed.js"))
+    assert 'role="log"' in feed and 'aria-live="polite"' in feed
+    assert 'aria-relevant="additions"' in feed
+    assert 'setAttribute("aria-live", paused ? "off" : "polite")' in feed
+
+    # 顏色改「色點＋名稱」磚，選中加 ✓ 與 2px 粗框
+    html = _read("server/templates/index.html")
+    assert "viewer-swatch-dot" in html and "viewer-swatch-name" in html
+    assert 'data-i18n-aria="swatchAriaWhite"' in html
+    assert zh["swatchAriaWhite"] == "顏色：白"
+    viewer_css = _read("server/static/css/viewer-v2.css")
+    assert "min-height: 44px;" in viewer_css.split(".viewer-swatch-preset{")[1].split("}")[0]
+    assert '.viewer-swatch-preset.is-active::after{\n  content: "✓";' in viewer_css

@@ -2063,6 +2063,7 @@
       "lfCountUnit": "{n}",
       "lfAutoScrollPaused": "Paused",
       "lfAutoScrollOn": "Auto-scroll · ON",
+      "lfAriaLabel": "Live message stream",
       "lfPageTitle": "Live Feed",
       "lfPageNote": "Live danmu stream for the running session; block or flag to the review queue in place.",
       "lfChipAll": "All",
@@ -2677,6 +2678,12 @@
       "viewerNameAskOk": "OK",
       "sendbarHint": "",
       "swatchPurple": "Purple",
+      "swatchAriaWhite": "Colour: White",
+      "swatchAriaAmber": "Colour: Amber",
+      "swatchAriaSky": "Colour: Sky",
+      "swatchAriaGreen": "Colour: Green",
+      "swatchAriaRed": "Colour: Red",
+      "swatchAriaPurple": "Colour: Purple",
       "viewerSizeLabel": "Size",
       "viewerPreviewSample": "Great point! +1",
       "adminLoginReveal": "Show",
@@ -4890,6 +4897,7 @@
       "lfCountUnit": "{n} 筆",
       "lfAutoScrollPaused": "已暫停",
       "lfAutoScrollOn": "自動滾動 · ON",
+      "lfAriaLabel": "即時訊息流",
       "lfPageTitle": "即時訊息流",
       "lfPageNote": "場次進行中的彈幕即時串；可就地封鎖、標記進審核佇列。",
       "lfChipAll": "全部",
@@ -5504,6 +5512,12 @@
       "viewerNameAskOk": "好",
       "sendbarHint": "",
       "swatchPurple": "紫",
+      "swatchAriaWhite": "顏色：白",
+      "swatchAriaAmber": "顏色：琥珀",
+      "swatchAriaSky": "顏色：天藍",
+      "swatchAriaGreen": "顏色：綠",
+      "swatchAriaRed": "顏色：紅",
+      "swatchAriaPurple": "顏色：紫",
       "viewerSizeLabel": "大小",
       "viewerPreviewSample": "講得好！+1",
       "adminLoginReveal": "顯示",
@@ -7717,6 +7731,7 @@
       "lfCountUnit": "{n} 件",
       "lfAutoScrollPaused": "一時停止",
       "lfAutoScrollOn": "自動スクロール · ON",
+      "lfAriaLabel": "ライブメッセージ",
       "lfPageTitle": "ライブフィード",
       "lfPageNote": "進行中セッションの弾幕ストリーム。その場でブロック / 審査キューへ。",
       "lfChipAll": "すべて",
@@ -8331,6 +8346,12 @@
       "viewerNameAskOk": "OK",
       "sendbarHint": "",
       "swatchPurple": "紫",
+      "swatchAriaWhite": "色：白",
+      "swatchAriaAmber": "色：アンバー",
+      "swatchAriaSky": "色：スカイ",
+      "swatchAriaGreen": "色：グリーン",
+      "swatchAriaRed": "色：レッド",
+      "swatchAriaPurple": "色：紫",
       "viewerSizeLabel": "大きさ",
       "viewerPreviewSample": "いいね！+1",
       "adminLoginReveal": "表示",
@@ -10544,6 +10565,7 @@
       "lfCountUnit": "{n}건",
       "lfAutoScrollPaused": "일시정지",
       "lfAutoScrollOn": "자동 스크롤 · ON",
+      "lfAriaLabel": "실시간 메시지",
       "lfPageTitle": "라이브 피드",
       "lfPageNote": "진행 중 세션의 탄막 스트림; 그 자리에서 차단·심사 대기열 표시.",
       "lfChipAll": "전체",
@@ -11158,6 +11180,12 @@
       "viewerNameAskOk": "확인",
       "sendbarHint": "",
       "swatchPurple": "보라",
+      "swatchAriaWhite": "색상: 흰색",
+      "swatchAriaAmber": "색상: 앰버",
+      "swatchAriaSky": "색상: 하늘색",
+      "swatchAriaGreen": "색상: 초록",
+      "swatchAriaRed": "색상: 빨강",
+      "swatchAriaPurple": "색상: 보라",
       "viewerSizeLabel": "크기",
       "viewerPreviewSample": "좋아요! +1",
       "adminLoginReveal": "표시",
@@ -11335,6 +11363,10 @@
     return "en";
   }
 
+  // 語言碼 → BCP47。單一個 zh 是不夠的：它沒說是正體還是簡體，
+  // 螢幕閱讀器與 CJK 字型選擇都吃這個標籤（設計稿 17）。
+  var HTML_LANG = { zh: "zh-Hant", en: "en", ja: "ja", ko: "ko" };
+
   window.ServerI18n = {
     currentLang: "zh",
 
@@ -11357,11 +11389,7 @@
         },
       });
 
-      // Set <html lang=""> so CSS :lang() can apply the right CJK font
-      if (document.documentElement) {
-        document.documentElement.lang = this.currentLang;
-      }
-
+      this._syncHtmlLang();
       this.updateUI();
     },
 
@@ -11388,11 +11416,16 @@
       localStorage.setItem("danmu-server-lang", lang);
       // changeLanguage is async but resources are already loaded — resolves instantly
       i18next.changeLanguage(lang);
-      // Update <html lang=""> so CSS :lang() picks the right CJK font
-      if (document.documentElement) {
-        document.documentElement.lang = lang;
-      }
+      this._syncHtmlLang();
       this.updateUI();
+    },
+
+    /** <html lang> 跟隨介面語言（設計稿 17）。CSS 的 :lang() 靠它挑 CJK
+     *  字型，螢幕閱讀器靠它挑發音。**每一頁都要**——原本 admin 與 overlay
+     *  的靜態標記寫死 lang="en"，稿上直接把這件事標成 bug。 */
+    _syncHtmlLang: function () {
+      if (!document.documentElement) return;
+      document.documentElement.lang = HTML_LANG[this.currentLang] || this.currentLang;
     },
 
     updateUI: function () {

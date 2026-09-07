@@ -167,7 +167,32 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
    （刻意推出畫面下方的用法不拉回來）。初始值由 server 在 client 註冊完成
    當下用 WS 補推——`child.html` 的 CSP 是 `connect-src ws: wss:`，overlay
    自己 fetch `/display-layer` 出不去。
-   **剩下**：a11y 檢核清單（reduce-motion／高對比／DPI／焦點／SR）未逐項自測。
+   可及性（17）2026-09-07 補了四件本來是**缺的**（不是「怪怪的」，是真的
+   用不了）：
+   - **焦點環**：全站唯一一種樣式進 `shared/hud.css`（`2px var(--focus)` ／
+     offset 3px），新增 `--focus: light-dark(#0284c7, #ffffff)`。深色臂刻意
+     是白色——原本 style.css 那條全域規則用 `--color-primary`，深色面板上是
+     藍底藍框，等於沒畫。放 hud.css 而不是 style.css 是因為 overlay.html
+     根本沒載 style.css。
+   - **`<html lang>`**：admin 與 overlay 的靜態標記原本寫死 `lang="en"`
+     （稿上直接把這件事標成 bug），`child.html` 連 lang 都沒有。改成由
+     `ServerI18n` 統一寫 BCP47（`zh` → `zh-Hant`；單一個 zh 沒說是正體還是
+     簡體），兩支 i18n 產生器都改，viewer 那段重複的 inline 補丁刪掉。
+   - **訊息流朗讀**：原本是 `role="list"` 且**沒有任何 aria-live**——螢幕
+     閱讀器完全不會唸出新彈幕。改成 `role="log" aria-live="polite"
+     aria-relevant="additions"`，暫停捲動時切 `off`（使用者刻意讓畫面停住，
+     背景還在唸就是在吵他）。
+   - **Windows 高對比**：全 repo 原本只有一句註解提到 forced-colors，
+     `@media (forced-colors: active)` 區塊**零個**。補上卡片邊框、按鈕
+     `ButtonText` 邊框、選中反白、狀態色點 `forced-color-adjust: none`
+     （刻意挑過的清單——稿上明講訊息流的顏色點只是裝飾，不在其中）。
+   - **色盲替代**：觀眾頁的顏色從六顆 28px 純色圓點改成「色點＋名稱」磚
+     （選中加 ✓ 與 2px 粗框、`aria-label="顏色：紫"`），順序照稿
+     白／黃／天藍／綠／紅／紫，命中區 ≥44。**與稿 16 · VP1 的「6 欄 grid、
+     aspect-ratio:1」衝突時取 17**：色覺不同的人看到六個一樣的灰點是更嚴重
+     的問題。
+   **剩下**：DPI（125/150/200%）與 VoiceOver／NVDA 要在真機上逐項自測，
+   那不是讀程式碼看得出來的。
 
 ## 契約測試
 
