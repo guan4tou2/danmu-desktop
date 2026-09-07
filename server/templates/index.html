@@ -10,7 +10,9 @@
   <meta name="description"
     content="Send live danmu messages to the screen in real-time. Customize color, size, speed, and effects." />
   <meta name="theme-color" content="#000000" />
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" />
+  <!-- 設計稿 11：Web favicon 用符號 SVG；.ico 是 fallback。 -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="32x32" />
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}" />
   <meta property="og:title" content="Danmu Fire" />
   <meta property="og:description" content="Send live danmu messages to the screen in real-time." />
   <meta property="og:image" content="{{ url_for('static', filename='icon.png') }}" />

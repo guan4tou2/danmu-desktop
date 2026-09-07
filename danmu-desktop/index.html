@@ -199,7 +199,13 @@
     <div class="client-onboarding" id="client-onboarding" hidden role="dialog" aria-modal="true"
          aria-labelledby="client-onboarding-title">
       <div class="client-onboarding-panel">
-        <img src="assets/brand/icon-256.png" alt="" class="client-onboarding-icon" width="64" height="64" />
+        <!-- 設計稿 04 · S1／設計稿 11：首次啟動精靈是字標只出現的四個位置之一
+             （高 40），不是 app icon。深淺兩張由 CSS 擇一顯示——用 content:url()
+             換 src 在部分引擎不生效且會弄壞 alt。 -->
+        <img src="assets/brand/wordmark-dark.svg" alt="Danmu Fire"
+             class="client-onboarding-wordmark is-on-dark" width="225" height="40" />
+        <img src="assets/brand/wordmark-light.svg" alt="" aria-hidden="true"
+             class="client-onboarding-wordmark is-on-light" width="225" height="40" />
         <h1 class="client-onboarding-title" id="client-onboarding-title" data-i18n="clientOnboardTitle">連接到你的伺服器</h1>
         <p class="client-onboarding-body" data-i18n="clientOnboardBody">輸入主辦方給你的網址。之後可以在設定裡隨時修改。</p>
         <input

@@ -1422,10 +1422,17 @@ def test_dead_css_sweep_kept_the_dynamically_built_class_names():
     ):
         assert alive in css, alive
 
-    # 子字串誤判留下來的那族已經清掉；`hud-corners-auto` 仍在（登入頁在用）
-    assert ".hud-corners-auto" in css
-    assert ".hud-corners {" not in css
-    assert ".hud-corner[" not in css
+    # 子字串誤判留下來的那族已經清掉。`hud-corners-auto` 當時還留著是因為
+    # admin.html 的骨架載入態在用；2026-09-07 依設計稿 11／14 把骨架那圈 HUD
+    # 角標與「DANMU · ADMIN · BOOT」一起拿掉之後，它也沒有消費者了。
+    for gone in (
+        ".hud-corners",
+        ".hud-corner[",
+        ".hud-corners-auto",
+        ".hud-label",
+        ".hud-hero-title",
+    ):
+        assert gone not in css, gone
 
     # 各族被改寫後的舊版殘骸不該再出現，新版必須還在
     for gone, kept in (
@@ -1437,3 +1444,55 @@ def test_dead_css_sweep_kept_the_dynamically_built_class_names():
     ):
         assert gone not in css, gone
         assert kept in css, kept
+
+
+def test_brand_lockup_and_favicon_match_spec_11():
+    """設計稿 11：字標只出現在四處，Web favicon 用符號 SVG。
+
+    2026-09-07 跟設計專案逐檔對過之後補上的四個缺口——這四個都是「檔案早就
+    在 repo 裡，只是沒有人引用它」那一類，畫面看起來正常，所以先前沒被發現：
+
+    1. `server/static/favicon.svg`（＝稿的 `assets/brand/app-icon-small.svg`，
+       圖形逐字相同）躺在那裡，但三個模板只連 `.ico`。錯誤頁連 `.ico` 都沒有。
+    2. 登入頁的**鎖定態**（P2-4）用 `<h1 class="hud-hero-title">Danmu Fire</h1>`
+       排活字，而不是跟正常登入卡同一張字標 SVG。`.hud-*` 在設計稿 14 §3 的
+       刪除清單上。
+    3. 桌面端首次啟動精靈放的是 app icon 64px；設計稿 04 · S1 的稿面與設計稿 11
+       的「四處」清單都是**高 40 的字標**。
+    4. Admin 骨架載入態掛著 `.hud-corners-auto` 角標與全大寫的
+       「DANMU · ADMIN · BOOT」——設計稿 14 的文案規則明訂「不用全大寫」。
+
+    字標一律是**外框化 SVG**（深淺各一張、CSS 擇一顯示），所以四個位置都不需要
+    活字字體；`--font-brand` 與 `server/static/fonts/unbounded-800-latin.woff2`
+    目前沒有任何 `@font-face` 或消費者，是刻意保留的規格殘留，不是漏接。
+    """
+    # 1 · favicon：三個模板都要有 SVG，.ico 留作 fallback
+    for tpl in (
+        "server/templates/admin.html",
+        "server/templates/index.html",
+        "server/templates/errors/_layout.html",
+    ):
+        html = _read(tpl)
+        assert 'type="image/svg+xml"' in html and "favicon.svg" in html, tpl
+        assert "favicon.ico" in html, tpl
+    svg = _read("server/static/favicon.svg")
+    assert 'rx="112"' in svg and "#38BDF8" in svg  # 符號本體，不是舊的螢幕圖
+
+    # 2 · 鎖定態與 fallback 登入都改用字標 SVG，`hud-hero-title` 全站絕跡
+    login = _read("server/static/js/admin-login.js")
+    assert login.count("admin-login-wordmark") >= 4  # 正常卡 2 張 + 鎖定卡 2 張
+    for js in ("server/static/js/admin-login.js", "server/static/js/admin.js"):
+        assert "hud-hero-title" not in _read(js), js
+
+    # 3 · 桌面端精靈用高 40 字標（540×96 的 viewBox 等比 → 寬 225）
+    shell = _read("danmu-desktop/index.html")
+    assert 'class="client-onboarding-wordmark is-on-dark"' in shell
+    assert 'height="40"' in shell and 'width="225"' in shell
+    assert "client-onboarding-icon" not in shell
+    assert "height: 40px;" in _read("danmu-desktop/styles.css")
+
+    # 4 · 骨架載入態不再有 HUD 角標與全大寫英文
+    admin_html = _strip_comments(_read("server/templates/admin.html"))
+    assert "hud-corners-auto" not in admin_html
+    assert "DANMU · ADMIN · BOOT" not in admin_html
+    assert "skeleton skeleton-title" in admin_html  # 骨架本身還在

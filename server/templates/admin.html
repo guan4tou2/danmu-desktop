@@ -12,7 +12,10 @@
     <title>Danmu Fire — Admin</title>
     <meta name="description" content="Danmu Fire administration panel — manage settings, blacklist, effects, and history." />
     <meta name="theme-color" content="#000000" />
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" />
+    <!-- 設計稿 11：Web favicon 用符號 SVG（= assets/brand/app-icon-small.svg）。
+         .ico 留著當不支援 SVG favicon 的瀏覽器的 fallback。 -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="32x32" />
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}" />
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/tailwind.css') }}"
@@ -36,13 +39,11 @@
       class="admin-app-shell animate-fade-in-scale-up"
       tabindex="-1"
     >
-      <!-- Skeleton Loading — HUD chrome overlays until admin.js replaces
-           innerHTML with the real dashboard. -->
-      <div class="glass-effect hud-corners-auto rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
-        <div class="flex items-center justify-center gap-2 pb-1">
-          <span class="hud-dot"></span>
-          <span class="hud-label is-accent">DANMU · ADMIN · BOOT</span>
-        </div>
+      <!-- 骨架載入態：admin.js 用真正的控制台取代 innerHTML 之前的佔位。
+           2026-09-07 拿掉 HUD 角標與「DANMU · ADMIN · BOOT」那行——設計稿 14
+           的文案規則明訂「不用全大寫」，`.hud-corners`／`.hud-dot`／`.hud-label`
+           也在 §3 刪除清單裡。載入態不需要品牌字，骨架本身就是訊息。 -->
+      <div class="glass-effect rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 max-w-md mx-auto">
         <div class="skeleton skeleton-title mx-auto"></div>
         <div class="space-y-4">
           <div class="skeleton skeleton-text"></div>

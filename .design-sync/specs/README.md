@@ -195,7 +195,40 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
    social 版則掉了下方那條彈幕；稿上明講「匯出時彈幕停格於最佳位置」。
    **還差一步只有你能做**：social preview 要在 GitHub repo Settings ›
    Social preview 手動上傳 `docs/social-preview.png`，那不是 repo 檔案。
-6. **設計稿 16/17 的收尾**——安全區（OS1）與淺底描邊（OS2）2026-09-07
+6. **設計稿 11 的四個「檔案在、但沒人引用」缺口**——2026-09-07 跟設計專案
+   （`DesignSync list_files`，43 個資產、18 份文件，與手上的 zip 逐檔相同）
+   對過之後補上。這四個的共同特徵是**畫面看起來正常**，所以先前都沒被發現：
+   - `server/static/favicon.svg`（＝稿的 `app-icon-small.svg`，圖形逐字相同）
+     躺在 repo 裡，但三個模板只連 `.ico`；錯誤頁連 `.ico` 都沒有。
+   - 登入頁的**鎖定態**（P2-4）用 `<h1 class="hud-hero-title">Danmu Fire</h1>`
+     排活字，不是跟正常登入卡同一張字標 SVG。
+   - 桌面端首次啟動精靈放 app icon 64px；設計稿 04 · S1 的稿面與設計稿 11 的
+     「字標只出現四處」清單都是**高 40 的字標**。
+   - Admin 骨架載入態掛著 `.hud-corners-auto` 角標與全大寫
+     「DANMU · ADMIN · BOOT」——設計稿 14 的文案規則明訂「不用全大寫」。
+
+   順帶把因此變成零消費者的 `.hud-corners-auto` / `.hud-label` /
+   `.hud-hero-title` CSS（137 行）刪掉。
+
+   **資產本身不用動**：43 個逐一比對過，設計專案那份大很多是因為帶了 C2PA
+   內容憑證（一大塊 base64 provenance metadata），去掉之後圖形等價；SVG 只差
+   在 `<g transform>` 分組寫法與 template icon 的 `#000000` vs `#0f172a`
+   （template 圖示的顏色會被系統遮罩忽略）。專案裡的 `app-icon.png`、
+   `favicon-32.png`、`win/app-icon-win.svg` 不在設計稿 11 的「已輸出素材」
+   清單上，不是漏接。
+
+7. **仍未實作 · 設計稿 14 §2 的 `.ui-status`**——稿上要用新的
+   `.ui-status`（色點＋字）取代 `.hud-dot` / `.hud-label` /
+   `.admin-lf-v4__statedot`。`.ui-status` 目前不存在，`.hud-dot` 還有一個
+   消費者（登入頁底部的「● 伺服器運作中 · v5.4.0」），`admin-lf-v4__statedot`
+   則散在訊息流各處。這是一次跨全站狀態點的改名＋樣式統一，值得獨立一輪。
+
+8. **刻意留著的規格殘留**——`--font-brand: "Unbounded"` 與
+   `server/static/fonts/unbounded-800-latin.woff2`（1788 B）目前沒有任何
+   `@font-face` 或消費者。原因是設計稿 11 要求字標「文字外框化後交付」，四個
+   位置都用 SVG，活字字體根本用不到。token 是設計稿 12 明列的，先留著。
+
+9. **設計稿 16/17 的收尾**——安全區（OS1）與淺底描邊（OS2）2026-09-07
    **已接上**：Admin › 顯示層 › 投影畫面 兩列（安全區 `0% / 5% / 8%` 分段、
    描邊 `自動／總是描邊／不描邊` 分段），值存進 `display_layer.json`。
    **顯示層那半 2026-08 就寫好了，但沒有任何東西會去設它**——`child.css`

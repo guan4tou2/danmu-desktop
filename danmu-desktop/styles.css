@@ -1210,7 +1210,19 @@ body[data-os="mac"] .client-titlebar{
   gap: var(--space-3);
 }
 
-.client-onboarding-icon { border-radius: var(--radius-lg); }
+/* 字標（設計稿 11）：轉外框 SVG、高 40。深淺各一張，跟隨系統色擇一顯示。 */
+.client-onboarding-wordmark {
+  display: block;
+  width: auto;
+  height: 40px;
+}
+
+.client-onboarding-wordmark.is-on-light { display: none; }
+
+@media (prefers-color-scheme: light) {
+  .client-onboarding-wordmark.is-on-dark { display: none; }
+  .client-onboarding-wordmark.is-on-light { display: block; }
+}
 
 .client-onboarding-title {
   margin: 0;

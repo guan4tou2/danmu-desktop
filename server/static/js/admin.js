@@ -618,7 +618,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!appContainer) return;
     appContainer.innerHTML = `
       <div class="admin-login-shell"><div class="admin-login-card">
-        <h1 class="hud-hero-title is-large">Danmu Fire</h1>
+        <img class="admin-login-wordmark is-on-dark" src="/static/wordmark-dark.svg"
+             alt="Danmu Fire" width="540" height="96" />
+        <img class="admin-login-wordmark is-on-light" src="/static/wordmark-light.svg"
+             alt="" aria-hidden="true" width="540" height="96" />
         <form action="/login" method="post" class="admin-login-form">
           <input type="password" name="password" class="admin-login-input" required />
           <button type="submit" class="admin-login-submit">Sign in</button>

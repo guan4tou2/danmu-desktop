@@ -170,7 +170,10 @@
     card.classList.add("admin-lockout-card");
     card.innerHTML = `
       <div class="admin-login-hero">
-        <h1 class="hud-hero-title is-large">Danmu Fire</h1>
+        <img class="admin-login-wordmark is-on-dark" src="/static/wordmark-dark.svg"
+             alt="Danmu Fire" width="540" height="96" />
+        <img class="admin-login-wordmark is-on-light" src="/static/wordmark-light.svg"
+             alt="" aria-hidden="true" width="540" height="96" />
         <p class="admin-lockout-title">${ServerI18n.t("lockoutTitle")}</p>
       </div>
       <div class="admin-lockout-body" role="alert" aria-live="assertive">
