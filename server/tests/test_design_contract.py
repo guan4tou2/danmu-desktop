@@ -802,3 +802,40 @@ def test_skeleton_says_something_after_three_seconds(zh):
     assert "_attachSlowHint" in js
     # 骨架被真內容換掉之後不能再對那個節點動手
     assert "hint.isConnected" in js
+
+
+def test_poll_deepdive_matches_p1(zh):
+    """設計稿 08 · P1：頁首（‹ 投票／題目／狀態時間／推結果＋匯出）、KPI 四格、
+    結果長條、「投票時序 · 每 10 秒」折線圖。
+
+    退場的一整批都是「還沒有資料的格子」：
+      · 第五格 KPI「作弊嘗試」——值永遠是「—」，副標寫著「待 BE 擴張」
+      · SENTIMENT INDEX——把選項當 Likert 量表、前半算正面後半算負面再相減。
+        選項順序根本不保證有這個意義，那是一個編出來的數字
+      · 「vs 上一次」——值永遠是「—」
+      · TIMELINE 佔位卡——連結指向一份 prototype-gaps 內部設計文件
+      · GEO 佔位卡——值永遠是空的
+      · INTEGRITY 卡——四列裡兩列寫著「未強制」「無」，等於在宣傳沒有的防護
+    """
+    assert zh["pollDeepdiveSecTimeline"] == "投票時序 · 每 10 秒"
+    assert zh["pollDeepdivePushBtn"] == "推結果到大螢幕"
+    assert zh["pollDeepdiveKpiDuration"] == "時長"
+    assert "位在線" in zh["pollDeepdiveParticipationSub"]
+
+    js = _strip_comments(_read("server/static/js/admin-poll-deepdive.js"))
+    assert "_timelineSvg" in js and "vote_timeline" in js
+    assert 'data-pdd-action="push"' in js
+    for gone in (
+        "SENTIMENT INDEX",
+        "admin-pdd-integrity",
+        "admin-pdd-placeholder",
+        "pollDeepdiveKpiCheat",
+        "pollDeepdiveVsPrevious",
+        "prototype-gaps",
+    ):
+        assert gone not in js, gone
+
+    # 時序要有真的資料來源
+    poll = _read("server/services/poll.py")
+    assert '"vote_times"' in poll and "_vote_timeline_locked" in poll
+    assert "def rebroadcast" in poll

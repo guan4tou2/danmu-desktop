@@ -846,3 +846,45 @@ def test_emoji_list_reports_usage_counts(client):
     assert res.status_code == 200
     for emoji in json.loads(res.data)["emojis"]:
         assert "used" in emoji, emoji
+
+
+def test_poll_vote_timeline_buckets_by_ten_seconds(client):
+    """設計稿 08 · P1 的「投票時序 · 每 10 秒」折線圖需要真的時間資料。
+
+    只留時間、不留是誰投的——那條線要回答的是「大家什麼時候在投」。
+    """
+    login(client)
+    from server.services.poll import poll_service
+
+    poll_service.reset()
+    poll_service.create("要玩哪個？", ["A 選項", "B 選項"])
+
+    status = poll_service.get_status()
+    assert status["state"] == "active"
+    started = status["started_at"]
+
+    # 兩票落在第 0 桶，一票落在第 2 桶（20-30 秒）
+    poll_service.vote("A", "voter-1")
+    poll_service.vote("A", "voter-2")
+    with poll_service._lock:
+        poll_service._poll["vote_times"][-1] = started + 25
+
+    timeline = poll_service.get_status()["vote_timeline"]
+    assert timeline[0] == {"t": 0, "n": 1}
+    assert timeline[-1] == {"t": 20, "n": 1}
+    assert [b["t"] for b in timeline] == [0, 10, 20]
+
+
+def test_poll_timeline_never_reaches_viewers(client):
+    """觀眾永遠看不到票數，時序也一樣——public-status 是白名單組出來的。"""
+    login(client)
+    from server.services.poll import poll_service
+
+    poll_service.reset()
+    poll_service.create("要玩哪個？", ["A 選項", "B 選項"])
+    poll_service.vote("A", "voter-1")
+
+    assert "vote_timeline" in poll_service.get_status()
+    public = json.loads(client.get("/poll/public-status").data)
+    assert "vote_timeline" not in public
+    assert "total_votes" not in public

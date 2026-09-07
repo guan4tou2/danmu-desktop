@@ -130,6 +130,16 @@ def end_poll():
     return _json_response(poll_service.get_status())
 
 
+@admin_bp.route("/poll/broadcast", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def broadcast_poll():
+    """Push the current poll state to every overlay（設計稿 08 · P1）。"""
+    poll_service.rebroadcast()
+    return _json_response(poll_service.get_status())
+
+
 @admin_bp.route("/poll/reset", methods=["POST"])
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf

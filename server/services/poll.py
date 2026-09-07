@@ -255,6 +255,10 @@ class PollService:
                 if opt["key"] == key_upper:
                     opt["count"] += 1
                     voters.add(voter_id)
+                    # 設計稿 08 · P1 的「投票時序 · 每 10 秒」折線圖需要知道
+                    # 每一票是什麼時候進來的。只留時間，不留是誰投的——那條線
+                    # 要回答的是「大家什麼時候在投」，不是「誰投了什麼」。
+                    self._poll.setdefault("vote_times", []).append(time.time())
                     self._broadcast_locked()
                     return True
             return False
@@ -307,11 +311,37 @@ class PollService:
             "questions": questions_view,
             "question_count": len(questions_view),
             # Design v4 brief P1 #1 (2026-05-18) — session-level metadata.
+            "vote_timeline": self._vote_timeline_locked(),
             "mode": self._poll.get("mode", "manual"),
             "default_duration_s": self._poll.get("default_duration_s"),
             "title": self._poll.get("title"),
             **legacy,
         }
+
+    _TIMELINE_BUCKET_SEC = 10
+
+    def _vote_timeline_locked(self) -> List[Dict[str, int]]:
+        """Accepted votes bucketed into 10-second slots since the poll started.
+
+        只在 admin 的 /admin/poll/status 出得去：/poll/public-status 是白名單
+        組出來的，沒有列這個欄位（觀眾永遠看不到票數，時序也一樣）。
+        """
+        if not self._poll:
+            return []
+        started = self._poll.get("started_at")
+        times = self._poll.get("vote_times") or []
+        if not started or not times:
+            return []
+        buckets: Dict[int, int] = {}
+        for t in times:
+            idx = max(0, int((t - started) // self._TIMELINE_BUCKET_SEC))
+            buckets[idx] = buckets.get(idx, 0) + 1
+        if not buckets:
+            return []
+        last = max(buckets)
+        return [
+            {"t": i * self._TIMELINE_BUCKET_SEC, "n": buckets.get(i, 0)} for i in range(last + 1)
+        ]
 
     def _serialize_question(self, q: Dict[str, Any]) -> Dict[str, Any]:
         total = sum(o["count"] for o in q["options"])
@@ -350,6 +380,15 @@ class PollService:
             raise ValueError("Question not found")
 
     # ─── Broadcast plumbing ────────────────────────────────────────────────
+
+    def rebroadcast(self) -> None:
+        """Re-send the current poll state to every overlay.
+
+        設計稿 08 · P1 的「推結果到大螢幕」。有實際用途：顯示層是中途才連上
+        的話，在下一票進來之前它手上沒有任何投票狀態。
+        """
+        with self._lock:
+            self._broadcast_locked()
 
     def _broadcast_locked(self):
         ws_queue.enqueue_message({"type": "poll_update", **self._get_status_locked()})
