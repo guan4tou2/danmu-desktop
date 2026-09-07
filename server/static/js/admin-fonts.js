@@ -12,10 +12,10 @@
       return `<span class="hud-pill is-default">${ServerI18n.t("fontTypeDefault")}</span>`;
     }
     if (status === "enabled") {
-      return `<span class="hud-pill is-lime">ON</span>`;
+      return `<span class="hud-pill is-lime">${ServerI18n.t("fontsPillOn")}</span>`;
     }
     if (status === "system") {
-      return `<span class="hud-pill">SYS</span>`;
+      return `<span class="hud-pill">${ServerI18n.t("fontsPillSystem")}</span>`;
     }
     // disabled
     return `<span class="hud-pill">${ServerI18n.t("fontsPillOff")}</span>`;
@@ -41,11 +41,11 @@
           <div class="hud-page-stack" style="gap:0">
             <div class="hud-table" id="fontsTable">
               <div class="hud-table-head" style="grid-template-columns: 2fr 1.2fr 1fr 90px 80px 96px;">
-                <span>FAMILY</span>
-                <span>FOUNDRY</span>
-                <span>WEIGHT</span>
-                <span>SIZE</span>
-                <span>FMT</span>
+                <span>${ServerI18n.t("fontsColFamily")}</span>
+                <span>${ServerI18n.t("fontsColFoundry")}</span>
+                <span>${ServerI18n.t("fontsColWeight")}</span>
+                <span>${ServerI18n.t("fontsColSize")}</span>
+                <span>${ServerI18n.t("fontsColFormat")}</span>
                 <span style="text-align:right">${ServerI18n.t("ulStatus")}</span>
               </div>
               <div id="adminFontList">
@@ -54,14 +54,14 @@
                 </div>
               </div>
               <div class="hud-table-foot" style="padding:14px 16px;display:flex;align-items:center;gap:10px;">
-                ${loggedIn ? `<label for="adminFontFileInput" class="admin-ui-action admin-font-upload-action" style="cursor:pointer" title="${escapeHtml(ServerI18n.t("uploadFont"))}">+ ${ServerI18n.t("uploadFont")} · WOFF2 / OTF / TTF</label>${uploadHiddenInput}` : ""}
+                ${loggedIn ? `<label for="adminFontFileInput" class="admin-ui-action admin-font-upload-action" style="cursor:pointer" title="${escapeHtml(ServerI18n.t("uploadFont"))}">${ServerI18n.t("uploadFont")}</label>${uploadHiddenInput}` : ""}
                 <span id="fontsTotalSize" style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.12em">${ServerI18n.t("fontsTotalPlaceholder")}</span>
               </div>
             </div>
             <div id="adminFontEmptyStateHost"></div>
             ${loggedIn ? `
             <div class="admin-ui-card admin-fonts-upload-card" id="adminFontDropWrap" style="margin-top:12px">
-              <div class="admin-ui-monolabel" style="margin-bottom:8px">+ ${ServerI18n.t("fontsUploadCustomLabel")}</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:8px">${ServerI18n.t("fontsUploadCustomLabel")}</div>
               <div
                 id="adminFontDrop"
                 class="admin-fonts-drop"
@@ -71,7 +71,7 @@
               >
                 <div class="admin-fonts-drop-icon">⬆</div>
                 <div class="admin-fonts-drop-title">${ServerI18n.t("fontsDropTitle")}</div>
-                <div class="admin-fonts-drop-hint">.TTF / .OTF / .WOFF2 · ${ServerI18n.t("fontsDropHint")}</div>
+                <div class="admin-fonts-drop-hint">${ServerI18n.t("fontsDropHint")}</div>
                 <div id="adminFontDropStatus" class="admin-fonts-drop-status" hidden></div>
               </div>
               <div id="adminFontUploadError" class="admin-font-upload-error" hidden></div>
@@ -82,7 +82,7 @@
           <div class="hud-page-stack" style="gap:16px">
             <div class="hud-inspector" style="min-height:auto">
               <div class="hud-inspector-head">
-                <span class="admin-v3-card-kicker" style="margin:0">PREVIEW · <span id="fontsPreviewFamily">Noto Sans TC</span></span>
+                <span class="admin-v3-card-kicker" style="margin:0"><span id="fontsPreviewFamily">Noto Sans TC</span></span>
               </div>
               <div style="padding:16px;display:flex;flex-direction:column;gap:8px">
                 <div id="fontsPreviewHeadline" style="font-size:34px;font-weight:700;line-height:1.2;color:var(--color-text-strong)">${ServerI18n.t("fontsPreviewHeadline")}</div>
@@ -96,31 +96,20 @@
               </div>
             </div>
 
+            <!-- 2026-09-07 設計稿 08 · T2：
+                 · 子集化卡原本畫一條寫死 38% 的進度條，加上 ORIG · N 字型 /
+                   SUBSET · ~38%——程式碼註解自己寫著「not real data」。而且
+                   子集化根本不是自動的：它是每個字型各自按一次的動作
+                   （POST /admin/fonts/<name>/subset）。改成講真話並指路。
+                 · 「CDN DELIVERY · 交付狀態」整張退場：HIT RATE／P95 TTFB／
+                   REQ/24H 三個 id 從來沒有任何程式寫過值，EDGE 永遠印
+                   「LOCAL」。沒有 CDN，那張卡是在宣傳不存在的東西。 -->
             <div class="hud-inspector" style="min-height:auto">
               <div class="hud-inspector-head">
-                <span class="admin-v3-card-kicker" style="margin:0">SUBSETTING · ${ServerI18n.t("fontsSecSubsetting")}</span>
+                <span class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("fontsSecSubsetting")}</span>
               </div>
-              <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
-                <div style="font-size:13px;color:var(--color-text-strong)">${ServerI18n.t("fontsSubsetAutoDesc")}</div>
-                <div style="height:8px;border-radius:4px;background:color-mix(in srgb, var(--color-bg-deep) 65%, transparent);overflow:hidden">
-                  <div id="fontsSubsetBar" style="width:0%;height:100%;background:var(--color-primary);transition:width 0.4s ease"></div>
-                </div>
-                <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.05em">
-                  <span id="fontsOrigSize">ORIG · —</span>
-                  <span id="fontsSubsetSize" style="color: var(--color-ink-accent)">SUBSET · —</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="hud-inspector" style="min-height:auto">
-              <div class="hud-inspector-head">
-                <span class="admin-v3-card-kicker" style="margin:0">CDN DELIVERY · ${ServerI18n.t("fontsSecCdn")}</span>
-              </div>
-              <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                <div class="hud-kv"><span class="hud-kv-k">HIT RATE</span><span class="hud-kv-v" style="color: var(--color-ink-success)" id="fontsCdnHit">—</span></div>
-                <div class="hud-kv"><span class="hud-kv-k">P95 TTFB</span><span class="hud-kv-v" style="color: var(--color-ink-accent)" id="fontsCdnTtfb">—</span></div>
-                <div class="hud-kv"><span class="hud-kv-k">REQ/24H</span><span class="hud-kv-v" id="fontsCdnReq">—</span></div>
-                <div class="hud-kv"><span class="hud-kv-k">EDGE</span><span class="hud-kv-v" id="fontsCdnEdge">LOCAL</span></div>
+              <div style="padding:16px">
+                <div style="font-size:13px;line-height:1.7;color:var(--color-text-strong)">${ServerI18n.t("fontsSubsetHowto")}</div>
               </div>
             </div>
           </div>
@@ -187,7 +176,7 @@
         // Built-in / Google fonts already optimized; subsetting them would
         // confuse cache + delivery.
         actionBtns.push(
-          `<button class="admin-font-subset-btn hud-effect-chip" data-name="${escapeHtml(font.name)}" title="${escapeHtml(ServerI18n.t("fontsSubsetBtnTitle"))}">⊗ ${ServerI18n.t("fontsSubsetBtn")}</button>`
+          `<button class="admin-font-subset-btn hud-effect-chip" data-name="${escapeHtml(font.name)}" title="${escapeHtml(ServerI18n.t("fontsSubsetBtnTitle"))}">${ServerI18n.t("fontsSubsetBtn")}</button>`
         );
         actionBtns.push(
           `<button class="admin-font-delete-btn admin-ui-action is-danger" data-name="${escapeHtml(font.name)}">${escapeHtml(ServerI18n.t("deleteBtn"))}</button>`
@@ -423,6 +412,8 @@
       var data = await resp.json();
       var fonts = data.fonts || [];
       _allFonts = fonts;
+      // 分段標籤上的數量（設計稿 08 · T2「字型 2」）
+      window.AdminTabs?.setTabCount?.("assets", "fonts", fonts.length || "");
       renderFontsEmptyState(fonts, loggedIn);
 
       if (fonts.length === 0) {
@@ -449,15 +440,6 @@
       const enabled = fonts.filter((f) => f.status !== "disabled").length;
       totalEl.textContent = ServerI18n.t("fontsTotalCountEnabled", { count: fonts.length, enabled: enabled });
     }
-
-    const bar = document.getElementById("fontsSubsetBar");
-    const orig = document.getElementById("fontsOrigSize");
-    const sub = document.getElementById("fontsSubsetSize");
-    const enabledFonts = fonts.filter((f) => f.status !== "disabled");
-    const count = enabledFonts.length;
-    if (bar) bar.style.width = count > 0 ? "38%" : "0%";
-    if (orig) orig.textContent = `ORIG · ${ServerI18n.t("fontsOrigCount", { n: count })}`;
-    if (sub) sub.textContent = count > 0 ? `SUBSET · ~38%` : "SUBSET · —";
   }
 
   function setupRowPreview() {
@@ -595,13 +577,6 @@
     if (totalEl) {
       totalEl.textContent = ServerI18n.t("fontsTotalCount", { n: fonts.length });
     }
-    // Subsetting bar — show a small illustrative ratio (not real data)
-    const bar = document.getElementById("fontsSubsetBar");
-    if (bar) bar.style.width = "38%";
-    const orig = document.getElementById("fontsOrigSize");
-    const sub = document.getElementById("fontsSubsetSize");
-    if (orig) orig.textContent = "ORIG · " + ServerI18n.t("fontsOrigCountTail", { n: fonts.length });
-    if (sub) sub.textContent = `SUBSET \u00b7 ~38%`;
   }
 
   function setupRowPreview() {

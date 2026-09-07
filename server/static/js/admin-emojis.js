@@ -211,6 +211,8 @@
       if (!resp.ok) throw new Error("HTTP " + resp.status);
       var data = await resp.json();
       _cache = data.emojis || [];
+      // 分段標籤上的數量（設計稿 08 · T2「表情 12」）
+      window.AdminTabs?.setTabCount?.("assets", "emojis", _cache.length || "");
       applySearchFilter();
     } catch (err) {
       console.error("[admin-emojis] fetch failed:", err);

@@ -52,12 +52,15 @@
     // v7 IA (2026-07-28): assets absorbed fonts as its fifth tab — fonts
     // are the fourth uploadable asset type. Overview stays the landing tab.
     assets: {
-      defaultTab: "overview",
+      // 2026-09-06 設計稿 08 · T2：分段順序照稿——表情 · 貼圖 · 字型 · 音效。
+      // 「小工具」從這條 strip 移除：它 2026-09-06 起是側欄自己一列
+      // （設計稿 08/14），同一個東西不該同時是一列又是一個分頁。
+      //
+      // 2026-09-07：「總覽」分頁退場（稿上就是這四段）。那頁自己寫著
+      // 「上傳與編輯仍在各自頁面」「素材庫只負責總覽」——每一張卡都是連到
+      // 別頁的連結，唯一獨有的資訊是各類的數量，而數量現在就印在分段標籤上。
+      defaultTab: "emojis",
       tabs: [
-        { slug: "overview", labelKey: "tabAssetsOverview", en: "OVERVIEW", section: "sec-assets-overview" },
-        // 2026-09-06 設計稿 08 · T2：分段順序照稿——表情 · 貼圖 · 字型 · 音效。
-        // 「小工具」從這條 strip 移除：它 2026-09-06 起是側欄自己一列
-        // （設計稿 08/14），同一個東西不該同時是一列又是一個分頁。
         { slug: "emojis",   labelKey: "tabAssetsEmojis", en: "EMOJIS",   section: "sec-emojis"   },
         { slug: "stickers", labelKey: "tabAssetsStickers", en: "STICKERS", section: "sec-stickers" },
         { slug: "fonts",    labelKey: "tabAssetsFonts", en: "FONTS",    section: "sec-fonts"    },
@@ -186,6 +189,14 @@
       label.textContent = tab.labelKey ? ServerI18n.t(tab.labelKey) : tab.label;
       btn.appendChild(label);
 
+      // 數量（設計稿 08 · T2「表情 12 / 貼圖 3 包」）。strip 是在各分頁的
+      // 資料抓回來之前就渲染的，所以先掛一個空的位子，等 setTabCount 填。
+      const count = document.createElement("span");
+      count.className = "admin-tabs-btn-count";
+      count.dataset.tabCount = tab.slug;
+      count.textContent = _counts[nav] && _counts[nav][tab.slug] ? _counts[nav][tab.slug] : "";
+      btn.appendChild(count);
+
       // v8（2026-08-19 設計稿 07）：分頁不再印英文對照。稿上的分頁列就是
       // 「封鎖字 / 被封鎖的觀眾 / 發送上限」三個中文詞——中文已經是標籤，
       // 再疊一行大寫英文只是把同一件事說兩次，還讓分頁列高多一截。
@@ -199,6 +210,20 @@
     });
 
     return strip;
+  }
+
+  // 各分頁自己抓完資料後回報數量。記在模組裡而不是只寫進 DOM——strip 會
+  // 因為換路由被整個重畫，重畫時要能把已知的數量補回去。
+  const _counts = {};
+
+  function setTabCount(nav, slug, text) {
+    if (!TabConfig[nav]) return;
+    _counts[nav] = _counts[nav] || {};
+    _counts[nav][slug] = text == null ? "" : String(text);
+    const el = document.querySelector(
+      '.admin-tabs-strip[data-nav="' + nav + '"] [data-tab-count="' + slug + '"]'
+    );
+    if (el) el.textContent = _counts[nav][slug];
   }
 
   function applyTabSectionVisibility(nav, activeTab, container) {
@@ -219,5 +244,6 @@
     resolveActiveTab,
     renderTabStrip,
     applyTabSectionVisibility,
+    setTabCount,
   };
 })(window);

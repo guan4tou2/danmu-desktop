@@ -1320,13 +1320,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // v7 S4 (2026-07-28): legacy `appearance` and `automation` shells
     // removed — both are pure aliases now (appearance → themes,
     // automation → system/scheduler with explicit tabs passing through).
-    // v5.1 (2026-04-27 redesign): unified Assets Library overview on top
-    // (sec-assets-overview from admin-assets.js) → existing emoji / stickers
-    // / sounds sub-sections kept below for editing per-type.
     // v7 IA (2026-07-28): assets gains the fonts tab (sec-fonts) — fonts are
     // the fourth uploadable asset type; tab strip defined in admin-tabs.js.
     // 2026-09-06 設計稿 08：sec-widgets 移出——小工具回到側欄自己一列。
-    assets:    { title: "素材",           kicker: "ASSETS LIBRARY · 統一素材總覽", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds", "sec-fonts"] },
+    // 2026-09-07 設計稿 08 · T2：sec-assets-overview（素材庫總覽）退場，
+    // 稿上就是表情／貼圖／字型／音效四段。那頁的每一張卡都是連到別頁的
+    // 連結（它自己寫著「素材庫只負責總覽」），唯一獨有的是各類數量，
+    // 而數量現在印在分段標籤上。
+    assets:    { title: "素材",           kicker: "ASSETS LIBRARY · 統一素材總覽", sections: ["sec-emojis", "sec-stickers", "sec-sounds", "sec-fonts"] },
     // v5.2 Sprint 1 (2026-04-27): Extensions catalog page — Slido / Discord
     // / OBS / Bookmarklet cards + shared Fire Token UI inline.
     // 2026-09-07 設計稿 08 · X1：擴充四合一。原本 Webhook／插件／API 金鑰／

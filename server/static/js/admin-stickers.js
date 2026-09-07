@@ -34,10 +34,10 @@
       window.DANMU_CONFIG && window.DANMU_CONFIG.session && window.DANMU_CONFIG.session.logged_in;
     var uploadBlock = loggedIn
       ? `
-          <div class="admin-ui-monolabel" style="margin-bottom:10px">+ ${ServerI18n.t("stickersAddLabel")}</div>
+          <div class="admin-ui-monolabel" style="margin-bottom:10px">${ServerI18n.t("stickersAddLabel")}</div>
           <div class="admin-stickers-upload">
             <label class="admin-stickers-field">
-              <span class="admin-ui-monolabel">FILE · GIF/PNG/WEBP · ≤300KB</span>
+              <span class="admin-ui-monolabel">${ServerI18n.t("stickersFileHint")}</span>
               <input
                 type="file"
                 id="stickerFileInput"
@@ -213,6 +213,13 @@
       // If active pack disappeared, fall back to ALL.
       if (_activePackId !== ALL_PACK_KEY && !_packs.some(function (p) { return p.id === _activePackId; })) {
         _activePackId = ALL_PACK_KEY;
+      }
+      // 分段標籤上的數量（設計稿 08 · T2「貼圖 3 包」——數的是包不是張）
+      if (window.AdminTabs && window.AdminTabs.setTabCount) {
+        window.AdminTabs.setTabCount(
+          "assets", "stickers",
+          _packs.length ? ServerI18n.t("tabCountPacks", { n: _packs.length }) : ""
+        );
       }
       renderPackList();
       renderGrid();

@@ -22,6 +22,8 @@
       const data = await res.json();
       availableSounds = data.sounds || [];
       soundRules = data.rules || [];
+      // 分段標籤上的數量（設計稿 08 · T2「音效 4」）
+      window.AdminTabs?.setTabCount?.("assets", "sounds", availableSounds.length || "");
     } catch (err) {
       console.error("Failed to fetch sounds:", err);
       window.showToast(ServerI18n.t("loadSoundsFailed"), false);
@@ -109,7 +111,7 @@
           '<div class="admin-sounds-tile" data-sound-name="' + escapeHtml(sound.name) + '">' +
           '<div class="name" title="' + safeName + '">' + safeName + "</div>" +
           '<div class="admin-sounds-tile-volume" style="display:flex;align-items:center;gap:6px;margin-top:6px">' +
-            '<span class="admin-ui-monolabel" style="font-size:11px">VOL</span>' +
+            '<span class="admin-ui-monolabel" style="font-size:11px">' + ServerI18n.t("mlVolume") + '</span>' +
             '<input type="range" class="sound-volume-slider" data-name="' + escapeHtml(sound.name) + '" ' +
               'min="0" max="100" step="1" value="' + volPct + '" ' +
               'style="flex:1;min-width:80px;max-width:120px;accent-color:var(--color-primary)" />' +
@@ -429,16 +431,16 @@
           <!-- LEFT: Sound library (upload + list) -->
           <div class="admin-ui-card admin-sounds-col">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-              <span class="admin-ui-monolabel">SOUND LIBRARY · ${ServerI18n.t("sndSecLibrary")}</span>
+              <span class="admin-ui-monolabel">${ServerI18n.t("sndSecLibrary")}</span>
             </div>
             <div id="soundsList" class="admin-sounds-grid"></div>
 
             <!-- Upload form (collapsed into library card per v4 spec) -->
             <div class="admin-sounds-upload-foot">
-              <div class="admin-ui-monolabel" style="margin-bottom:8px">+ ${ServerI18n.t("soundsUploadLabel")}</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:8px">${ServerI18n.t("soundsUploadLabel")}</div>
               <div class="admin-sounds-form">
                 <label class="admin-webhooks-field">
-                  <span class="admin-ui-monolabel">FILE · MP3/OGG/WAV</span>
+                  <span class="admin-ui-monolabel">${ServerI18n.t("soundsFileHint")}</span>
                   <input type="file" id="soundFileInput" accept=".mp3,.ogg,.wav,audio/mpeg,audio/ogg,audio/wav" class="admin-ui-input" />
                 </label>
                 <label class="admin-webhooks-field">
@@ -461,7 +463,7 @@
 
             <!-- New rule form (collapsed into rules card per v4 spec) -->
             <div class="admin-sounds-rule-foot">
-              <div class="admin-ui-monolabel" style="margin-bottom:8px">+ ${ServerI18n.t("soundsAddRuleLabel")}</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:8px">${ServerI18n.t("soundsAddRuleLabel")}</div>
               <div class="admin-sounds-form">
                 <label class="admin-webhooks-field">
                   <span class="admin-ui-monolabel">${ServerI18n.t("mlTriggerType")}</span>
@@ -482,7 +484,7 @@
                   </select>
                 </label>
                 <label class="admin-webhooks-field">
-                  <span class="admin-ui-monolabel">VOLUME · <span id="ruleVolumeLabel">80%</span></span>
+                  <span class="admin-ui-monolabel">${ServerI18n.t("mlVolume")} <span id="ruleVolumeLabel">80%</span></span>
                   <input type="range" id="ruleVolume" min="0" max="100" value="80" class="admin-ui-input" />
                 </label>
                 <label class="admin-webhooks-field">

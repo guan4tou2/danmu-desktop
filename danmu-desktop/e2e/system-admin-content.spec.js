@@ -243,16 +243,16 @@ test.describe("場前佈置 · 內容管理（真 UI 操作）", () => {
 
   // ─── 素材庫 #/assets ─────────────────────────────────────────────────
 
-  test("素材庫：五個 tab（總覽/表情/貼圖/音效/字型）各自渲染且互斥", async () => {
-    await gotoRoute("#/assets", "#sec-assets-overview");
+  // 2026-09-07 設計稿 08 · T2：「總覽」分頁退場，剩表情／貼圖／字型／音效四段。
+  test("素材庫：四個 tab（表情/貼圖/音效/字型）各自渲染且互斥", async () => {
+    await gotoRoute("#/assets", "#sec-emojis");
     const tabs = [
-      ["overview", "sec-assets-overview"],
       ["emojis", "sec-emojis"],
       ["stickers", "sec-stickers"],
       ["sounds", "sec-sounds"],
       ["fonts", "sec-fonts"],
     ];
-    await expect(admin.locator('.admin-tabs-btn[data-nav="assets"]')).toHaveCount(5);
+    await expect(admin.locator('.admin-tabs-btn[data-nav="assets"]')).toHaveCount(4);
 
     for (const [slug, secId] of tabs) {
       await admin.locator(`.admin-tabs-btn[data-nav="assets"][data-tab="${slug}"]`).click();

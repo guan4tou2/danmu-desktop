@@ -4699,131 +4699,6 @@ body.stream-mode .admin-hero .admin-summary-grid {
 .admin-body input::placeholder,
 .admin-body textarea::placeholder { color: var(--admin-text-dim); opacity: 0.65; }
 
-/* ─── Admin Assets Library (v5.1 2026-04-27) ──────────────────────────
- * Unified asset overview rendered by admin-assets.js. Stat strip + filter
- * chips + grid + right rail with source-page links. Editing happens on
- * the source pages — clicking an asset card navigates there.
- */
-.admin-assets-page { gap: 12px; display: flex; flex-direction: column; }
-
-.admin-assets-filter-row {
-  display: flex; gap: 4px; flex-wrap: wrap; align-items: center;
-}
-.admin-assets-chip {
-  padding: 4px 12px; border-radius: var(--radius-sm); cursor: pointer;
-  border: 1px solid var(--hud-line);
-  font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 0.05em;
-  color: var(--color-text-muted);
-  transition: border-color var(--motion-fast), background var(--motion-fast), color var(--motion-fast);
-}
-.admin-assets-chip:hover { border-color: var(--hud-line-strong); }
-.admin-assets-chip.is-active {
-  border-color: var(--color-primary);
-  background: var(--hud-cyan-soft);
-  color: var(--color-ink-accent);
-}
-.admin-assets-chip [data-count] {
-  font-size: var(--text-caption); color: inherit; opacity: 0.75; margin-left: 4px;
-}
-
-.admin-assets-grid-wrap {
-  display: grid; grid-template-columns: 1fr 320px; gap: 16px;
-}
-@media (max-width: 1100px) {
-  .admin-assets-grid-wrap { grid-template-columns: 1fr; }
-}
-
-.admin-assets-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px;
-  align-content: start;
-}
-.admin-assets-empty {
-  grid-column: 1 / -1;
-  padding: 28px 12px; text-align: center;
-  font-family: var(--font-mono); font-size: var(--text-caption);
-  color: var(--color-text-muted); letter-spacing: 0.05em;
-  background: var(--admin-panel, var(--color-bg-base));
-  border: 1px dashed var(--hud-line); border-radius: var(--radius-md-sm);
-}
-
-.admin-assets-card {
-  display: flex; flex-direction: column; gap: 8px;
-  padding: 12px; border-radius: var(--radius-md-sm);
-  background: var(--admin-panel, var(--color-bg-base));
-  border: 1px solid var(--hud-line);
-  text-decoration: none; color: inherit;
-  transition: border-color var(--motion-fast), transform var(--motion-fast);
-}
-.admin-assets-card:hover {
-  border-color: var(--color-primary);
-  transform: translateY(-1px);
-}
-.admin-assets-card-head {
-  display: flex; align-items: center; gap: 4px;
-  font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 0.12em;
-}
-.admin-assets-card-head .kind { font-weight: 700; }
-.admin-assets-card-flag {
-  margin-left: auto;
-  padding: 1px 4px; border-radius: var(--radius-xs);
-  border: 1px solid var(--hud-line);
-  font-size: var(--text-caption); letter-spacing: 0.1em;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-}
-.admin-assets-card-name {
-  font-family: var(--font-mono); font-size: var(--text-footnote);
-  color: var(--color-text-strong);
-  word-break: break-all;
-}
-.admin-assets-card-meta {
-  display: flex; align-items: center; gap: 4px;
-  font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 0.05em;
-  color: var(--color-text-muted);
-}
-.admin-assets-card-meta .dot { opacity: 0.55; }
-
-.admin-assets-rail { display: flex; flex-direction: column; gap: 12px; }
-.admin-assets-rail-card {
-  padding: 12px; border-radius: var(--radius-md-sm);
-  background: var(--admin-panel, var(--color-bg-base));
-  border: 1px solid var(--hud-line);
-}
-
-.admin-assets-source-list {
-  display: flex; flex-direction: column; gap: 4px; margin-top: 8px;
-}
-.admin-assets-source {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 8px; border-radius: var(--radius-sm);
-  text-decoration: none; color: inherit;
-  border: 1px solid transparent;
-  transition: background var(--motion-fast), border-color var(--motion-fast);
-}
-.admin-assets-source:hover {
-  background: var(--hud-cyan-soft);
-  border-color: var(--hud-cyan-line);
-}
-.admin-assets-source .ico {
-  font-size: var(--text-footnote); width: 18px; text-align: center;
-}
-.admin-assets-source .lbl { font-size: var(--text-footnote); color: var(--color-text-strong); }
-.admin-assets-source .en {
-  margin-left: auto;
-  font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 0.12em;
-  color: var(--color-text-muted);
-}
-.admin-assets-source .arrow {
-  font-family: var(--font-mono); font-size: var(--text-caption);
-  color: var(--color-text-muted);
-}
-.admin-assets-source-hint {
-  margin-top: 12px; padding-top: 8px;
-  border-top: 1px solid var(--hud-line);
-  font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 0.04em;
-  color: var(--color-text-muted); line-height: 1.6;
-}
-
 /* ─── Admin Konami easter egg HUD (v5.1 2026-04-27) ───────────────────
  * Bottom-right corner combo indicator. Only visible to the operator —
  * overlay (web danmu screen) has separate freeze+explode animation
@@ -10172,10 +10047,13 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   color: var(--color-text-secondary);
   cursor: pointer;
   display: inline-flex;
-  flex-direction: column;
+  /* 2026-09-07：改回單行。第二行原本放大寫英文對照（v8 已停止渲染），
+     現在同一個位子換成數量（設計稿 08 · T2「表情 12」），而數量是跟在
+     標籤後面的，不是疊在下面。 */
+  flex-direction: row;
   justify-content: center;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-1);
   padding: var(--space-2) var(--space-3);
   white-space: nowrap;
   font-family: inherit;
@@ -10202,17 +10080,19 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   line-height: 1;
 }
 
-.admin-tabs-btn-en {
-  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
+/* 分段標籤上的數量（設計稿 08 · T2：`表情 12` / `貼圖 3 包`）。
+   各分頁抓完資料才回報，所以空字串時整格收起——不要先閃一個 0。 */
+.admin-tabs-btn-count {
   font-size: var(--text-caption);
-  letter-spacing: 1.4px;
-  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  opacity: 0.75;
 }
+.admin-tabs-btn-count:empty { display: none; }
 
 @media (max-width: 640px) {
   [data-admin-tabs-host] { padding: var(--space-3) var(--space-3) 0; }
   .admin-tabs-btn { padding: var(--space-1) var(--space-2); }
-  .admin-tabs-btn-en { display: none; }
 }
 
 /* ── System · API Tokens (design brief 2026-05-19 batch1) ─────────────── */

@@ -1066,3 +1066,49 @@ def test_stage_safe_area_and_stroke_have_an_admin_entry(zh):
         css = _read(path)
         assert "-webkit-text-stroke: 1.5px var(--stage-stroke-ink);" in css, path
         assert "paint-order: stroke fill;" in css, path
+
+
+def test_assets_is_four_segments_with_counts(zh):
+    """設計稿 08 · T2：素材＝`表情 12 / 貼圖 3 包 / 字型 2 / 音效 4` 四段。
+
+    「總覽」分頁退場：那頁自己寫著「上傳與編輯仍在各自頁面」「素材庫只負責
+    總覽」——每一張卡都是連到別頁的連結，唯一獨有的資訊是各類的數量，而
+    數量現在就印在分段標籤上。
+    """
+    tabs = _strip_comments(_read("server/static/js/admin-tabs.js"))
+    assert 'defaultTab: "emojis"' in tabs
+    assert "tabAssetsOverview" not in tabs
+    assert "setTabCount" in tabs and "admin-tabs-btn-count" in tabs
+    # 四個分頁各自回報數量
+    assert 'setTabCount?.("assets", "emojis"' in _strip_comments(
+        _read("server/static/js/admin-emojis.js")
+    )
+    assert 'setTabCount?.("assets", "fonts"' in _strip_comments(
+        _read("server/static/js/admin-fonts.js")
+    )
+    assert 'setTabCount?.("assets", "sounds"' in _strip_comments(
+        _read("server/static/js/admin-sounds.js")
+    )
+    assert '"assets", "stickers"' in _strip_comments(_read("server/static/js/admin-stickers.js"))
+    assert zh["tabCountPacks"] == "{n} 包"
+
+    admin = _strip_comments(_read("server/static/js/admin.js"))
+    assert "sec-assets-overview" not in admin
+    assert not (REPO / "server/static/js/admin-assets.js").exists(), "admin-assets.js 應已退場"
+
+    # 字型分段：CDN 交付卡與寫死 38% 的子集化比例退場
+    fonts = _strip_comments(_read("server/static/js/admin-fonts.js"))
+    for gone in ("CDN DELIVERY", "fontsCdnHit", "P95 TTFB", "fontsSubsetBar", "38%"):
+        assert gone not in fonts, gone
+    assert "fontsSubsetHowto" in fonts
+    # 三個分段的全大寫英文與 ＋ 圖示按鈕退場（設計稿 14 詞彙表）
+    for src, gone in (
+        (fonts, "FAMILY"),
+        (fonts, "FOUNDRY"),
+        (_strip_comments(_read("server/static/js/admin-sounds.js")), "SOUND LIBRARY"),
+        (_strip_comments(_read("server/static/js/admin-sounds.js")), "MP3/OGG/WAV"),
+        (_strip_comments(_read("server/static/js/admin-stickers.js")), "GIF/PNG/WEBP"),
+    ):
+        assert gone not in src, gone
+    assert zh["mlPacks"] == "貼圖包"
+    assert "顯示層" in zh["soundsPageNote"] and "Desktop" not in zh["soundsPageNote"]

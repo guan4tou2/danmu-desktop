@@ -202,7 +202,6 @@ test("viewer theme and language overrides respect admin force mode", () => {
 test("Viewer entry points use the canonical viewer route instead of legacy viewer-config", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const paletteSrc = fs.readFileSync(path.join(staticDir, "admin-command-palette.js"), "utf8");
-  const assetsSrc = fs.readFileSync(path.join(staticDir, "admin-assets.js"), "utf8");
   const tabsSrc = fs.readFileSync(path.join(staticDir, "admin-tabs.js"), "utf8");
   const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
 
@@ -220,8 +219,6 @@ test("Viewer entry points use the canonical viewer route instead of legacy viewe
   expect(paletteSrc).toContain('if (item.tab) document.body.dataset.viewerConfigTab = item.tab;');
   expect(paletteSrc).not.toContain('route: "viewer-config"');
 
-  expect(assetsSrc).toContain('route: "viewer"');
-  expect(assetsSrc).not.toContain('route: "viewer-config"');
 
   // v7 S4 (2026-07-28): appearance 分頁組（含 viewer-config tab）已隨殭屍
   // shell 移除；canonical 的 viewer 分頁面由 viewer route 自己的 4-tab 承擔。
