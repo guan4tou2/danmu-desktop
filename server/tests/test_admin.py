@@ -888,3 +888,40 @@ def test_poll_timeline_never_reaches_viewers(client):
     public = json.loads(client.get("/poll/public-status").data)
     assert "vote_timeline" not in public
     assert "total_votes" not in public
+
+
+def test_blocked_danmu_is_recorded_with_the_rule_that_caught_it(client):
+    """設計稿 10 · G2：場次詳情要列出「被擋下 N」並標出是哪條規則擋的。
+
+    在這之前被擋的彈幕直接消失——主持人事後完全查不到自己擋掉了什麼。
+    """
+    login(client)
+    from server.services import history as history_service
+    from server.services.blacklist import blacklist_store
+    from server.services.ws_state import update_ws_client_count
+
+    # 沒有顯示層連著的話 /fire 一律 503，根本走不到過濾那一段。
+    update_ws_client_count(1)
+    history_service.danmu_history.clear()
+    blacklist_store.add("加line")
+    try:
+        client.post("/fire", json={"text": "今天好熱鬧", "color": "ffffff", "fingerprint": "fp_a"})
+        blocked = client.post(
+            "/fire", json={"text": "加line 給你折扣", "color": "ffffff", "fingerprint": "fp_b"}
+        )
+        assert blocked.status_code == 400
+    finally:
+        blacklist_store.remove("加line")
+        update_ws_client_count(0)
+
+    records = history_service.danmu_history.get_recent(hours=1, limit=100)
+    by_text = {r["text"]: r for r in records}
+    assert by_text["今天好熱鬧"]["status"] == "shown"
+    assert by_text["加line 給你折扣"]["status"] == "blocked"
+    # 標出**是哪個字**擋的，不只是「有沒有被擋」
+    assert by_text["加line 給你折扣"]["blockedBy"] == "加line"
+
+    sessions = json.loads(client.get("/admin/sessions").data)["sessions"]
+    assert sessions[0]["blocked_count"] == 1
+    # 「訊息」算的是真的播出去的，被擋的另外算一欄
+    assert sessions[0]["msg_count"] == 1

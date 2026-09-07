@@ -654,15 +654,19 @@ test("admin Session Detail controls compose shared primitives", () => {
   const detailSrc = fs.readFileSync(path.join(staticDir, "js", "admin-session-detail.js"), "utf8");
 
   expect(detailSrc).toContain('class="admin-ui-action admin-sd-retry-action" data-sd-action="retry"');
-  expect(detailSrc).toContain('class="admin-ui-chip-group admin-sd-speed-group"');
-  expect(detailSrc).toContain('class="admin-ui-chip admin-sd-speed-chip" data-speed="0.5"');
-  expect(detailSrc).toContain('class="admin-ui-chip admin-sd-speed-chip is-active" data-speed="1"');
-  expect(detailSrc).toContain('class="admin-ui-action is-primary admin-sd-action" data-sd-action="export-json"');
-  expect(detailSrc).toContain('class="admin-ui-action admin-sd-action" data-sd-action="go-history"');
-  expect(detailSrc).toContain('document.querySelectorAll(".admin-sd-speed-chip")');
-  expect(detailSrc).toContain('e.target.closest(".admin-sd-speed-chip")');
+  // 2026-09-07 設計稿 10 · G2：頁首兩顆動作是「重播」（次）＋「匯出」（主）。
+  expect(detailSrc).toContain('data-sd-action="replay"');
+  expect(detailSrc).toContain('class="admin-ui-action is-primary" data-sd-action="export"');
+  // 回放控制列退場——它的標籤自己寫著「(VISUAL ONLY)」，四顆倍速鈕點了只會
+  // 換 is-active，沒有任何東西在播。
+  expect(detailSrc).not.toContain("admin-sd-speed-chip");
+  expect(detailSrc).not.toContain("data-sd-playback");
+  // 匯出改用真的「這一場」的端點，不再用 hours=1 當代理
+  expect(detailSrc).toContain("/export?format=csv");
+  // 這一條斷言的是**程式碼**，不是註解裡引述的舊網址——所以比對帶引號的
+  // 字串前綴，不要比 `hours=1` 這種在說明文字裡也會出現的片段。
+  expect(detailSrc).not.toContain('"/admin/history/export?format=');
   expect(detailSrc).not.toContain("admin-sd-btn");
-  expect(detailSrc).not.toContain("admin-sd-speed-btn");
   expect(detailSrc).not.toContain("admin-sd-action-btn");
 });
 

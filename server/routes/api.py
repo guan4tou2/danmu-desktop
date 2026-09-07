@@ -9,7 +9,7 @@ from ..services import fingerprint_tracker
 from ..services import history as history_service
 from ..services import messaging, moderation_bans
 from ..services import themes as theme_svc
-from ..services.blacklist import contains_keyword
+from ..services.blacklist import contains_keyword, matched_keyword
 from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
 from ..services.emoji import emoji_service
@@ -199,13 +199,22 @@ def _resolve_danmu_style(data):
     return data
 
 
-def _record_history_if_enabled(data, fingerprint, client_ip):
+def _record_history_if_enabled(data, fingerprint, client_ip, *, blocked_by=None):
+    """Record one danmu into history.
+
+    ``blocked_by`` 有值時代表這則**沒有上大螢幕**——擋它的規則名寫進紀錄。
+    設計稿 10 · G2 的場次詳情要列出「被擋下 23」並在那幾列標出是哪條規則擋
+    的；在這之前被擋的彈幕直接消失，主持人事後完全查不到自己擋掉了什麼。
+    """
     if not history_service.danmu_history:
         return
 
     history_payload = dict(data)
     history_payload["clientIp"] = client_ip
     history_payload["fingerprint"] = fingerprint
+    if blocked_by:
+        history_payload["status"] = "blocked"
+        history_payload["blockedBy"] = blocked_by
     history_service.danmu_history.add(history_payload)
 
 
@@ -273,11 +282,13 @@ def fire():
             fingerprint_tracker.record(
                 fingerprint, client_ip, user_agent, blocked=True, nickname=nickname
             )
+            _record_history_if_enabled(data, fingerprint, client_ip, blocked_by="ban")
             return _json_response({"error": "You are currently banned"}, 403)
         if client_ip and moderation_bans.is_banned("ip", client_ip):
             fingerprint_tracker.record(
                 fingerprint, client_ip, user_agent, blocked=True, nickname=nickname
             )
+            _record_history_if_enabled(data, fingerprint, client_ip, blocked_by="ban")
             return _json_response({"error": "You are currently banned"}, 403)
 
         # Filter engine check (replaces simple blacklist check)
@@ -285,6 +296,12 @@ def fire():
         if filter_result.action == "block":
             fingerprint_tracker.record(
                 fingerprint, client_ip, user_agent, blocked=True, nickname=nickname
+            )
+            _record_history_if_enabled(
+                data,
+                fingerprint,
+                client_ip,
+                blocked_by=filter_result.rule_id or filter_result.reason or "filter",
             )
             return _json_response(
                 {"error": filter_result.reason or "Content blocked by filter rule"},
@@ -320,7 +337,12 @@ def fire():
                 pass
 
         # Fallback: also check legacy blacklist
-        if contains_keyword(text_content):
+        blocked_keyword = matched_keyword(text_content)
+        if blocked_keyword:
+            fingerprint_tracker.record(
+                fingerprint, client_ip, user_agent, blocked=True, nickname=nickname
+            )
+            _record_history_if_enabled(data, fingerprint, client_ip, blocked_by=blocked_keyword)
             return _json_response({"error": "Content contains blocked keywords"}, 400)
 
         if data.get("isImage") and not is_valid_image_url(data["text"]):

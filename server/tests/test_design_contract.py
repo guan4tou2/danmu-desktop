@@ -882,3 +882,45 @@ def test_setup_wizard_is_four_steps(zh):
         "admin-setup-step-kicker",
     ):
         assert gone not in js, gone
+
+
+def test_session_detail_matches_g2(zh):
+    """設計稿 10 · G2：頁首（‹ 紀錄與匯出／場次名／時間／重播＋匯出）、KPI 四格、
+    搜尋＋「全部／被擋下 N」分段、訊息表（時間戳／顏色點／內文／暱稱）。
+
+    被擋下的那幾列淡紅底、內文刪除線、右側標出是哪條規則擋的。這需要被擋的
+    彈幕真的有留下紀錄——在這之前它們直接消失，主持人事後查不到自己擋掉了
+    什麼，`/admin/search` 讀的 `r.get("status")` 也永遠是預設值。
+
+    退場的：回放控制列（標籤自己寫著「(VISUAL ONLY)」，四顆倍速鈕點了只會換
+    is-active）、右側 stats rail、熱門關鍵字卡。密度時間軸與標記收進摺疊區——
+    稿上沒有，但標記有後端與測試，拿掉唯一入口等於廢掉功能。
+    """
+    assert zh["sessionDetailStatPeak"] == "每分鐘高峰"
+    assert zh["sessionDetailStatBlocked"] == "被擋下"
+    assert zh["sessionDetailBlockedBy"] == "封鎖字「{rule}」"
+    assert zh["sessionDetailSearchPlaceholder"] == "搜尋這場的訊息"
+
+    js = _strip_comments(_read("server/static/js/admin-session-detail.js"))
+    assert "admin-sd-kpis" in js and 'data-sd-stat="peak"' in js
+    assert "data-sd-search" in js and "data-sd-filter" in js
+    assert "is-blocked" in js and "admin-sd-msg-rule" in js
+    for gone in (
+        "admin-sd-speed-chip",
+        "data-sd-playback",
+        "_renderKeywords",
+        "admin-sd-rail",
+        "admin-sd-kv",
+    ):
+        assert gone not in js, gone
+
+    # 被擋的彈幕要有紀錄，而且記得住是哪條規則擋的
+    api = _read("server/routes/api.py")
+    assert "blocked_by=blocked_keyword" in api
+    assert 'blocked_by="ban"' in api
+    history = _read("server/services/history.py")
+    assert '"status": danmu_data.get("status") or "shown"' in history
+    assert '"blockedBy": danmu_data.get("blockedBy") or ""' in history
+    # 「訊息」算真的播出去的，被擋的另外算一欄
+    hist_routes = _read("server/routes/admin/history.py")
+    assert '"msg_count": len(records) - blocked' in hist_routes

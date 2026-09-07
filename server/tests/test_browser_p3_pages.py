@@ -237,17 +237,21 @@ def test_poll_deepdive_page_renders(admin_page):
 
 
 def test_setup_wizard_overlay_renders(admin_page):
+    """設計稿 08 · F1：四步——`1 伺服器網址 · 2 主題 · 3 審核基本防線 · 4 完成`。
+
+    原本是五步，多一步「顯示規則」——那是四個開關的巡覽，不是設定。第一步
+    也從四個欄位收成稿上的伺服器網址（HTTP Port / WebSocket Path 退場）。
+    """
     _go_to_route(admin_page, "setup")
     admin_page.wait_for_selector("#admin-setup-wizard-root", state="visible", timeout=5000)
-    # v5 yellow: server / display / moderation / theme / finish
-    assert admin_page.locator(".admin-setup-step").count() == 5
+    assert admin_page.locator(".admin-setup-step").count() == 4
     labels = admin_page.locator(".admin-setup-step .lbl").all_text_contents()
-    assert labels == ["伺服器基本設定", "顯示規則", "審核策略", "外觀主題", "完成"]
-    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "伺服器基本設定"
+    assert labels == ["伺服器網址", "主題", "審核基本防線", "完成"]
+    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "伺服器網址"
     assert admin_page.is_visible("[data-setup-field='server-name']")
     assert admin_page.is_visible("[data-setup-field='public-url']")
-    assert admin_page.is_visible("[data-setup-field='http-port']")
-    assert admin_page.is_visible("[data-setup-field='ws-path']")
+    assert admin_page.locator("[data-setup-field='http-port']").count() == 0
+    assert admin_page.locator("[data-setup-field='ws-path']").count() == 0
     # Footer action buttons (close / prev / next)
     assert admin_page.locator("[data-setup-action='close']").count() >= 1
     # Close drawer to clean up for next test
@@ -258,19 +262,18 @@ def test_setup_wizard_overlay_renders(admin_page):
     )
 
 
-def test_setup_wizard_step_flow_matches_v5_design(admin_page):
-    """Wizard should follow the v5 step model and end on the finish state."""
+def test_setup_wizard_step_flow_matches_f1(admin_page):
+    """設計稿 08 · F1 的四步流程，最後停在完成頁。"""
     _go_to_route(admin_page, "setup")
     admin_page.wait_for_selector("#admin-setup-wizard-root", state="visible", timeout=5000)
     admin_page.locator("[data-setup-action='next']").click()
     admin_page.wait_for_selector(".admin-setup-step.is-active .lbl", state="visible", timeout=5000)
-    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "顯示規則"
-    assert admin_page.locator("[data-setup-display-toggle]").count() >= 3
+    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "主題"
+    # 稿上的四張卡，順序：標準／霓虹／復古／電影
+    assert admin_page.locator("[data-setup-theme]").count() == 4
     admin_page.locator("[data-setup-action='next']").click()
-    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "審核策略"
+    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "審核基本防線"
     assert admin_page.locator("[data-setup-moderation-toggle]").count() >= 3
-    admin_page.locator("[data-setup-action='next']").click()
-    assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "外觀主題"
     admin_page.locator("[data-setup-action='next']").click()
     assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "完成"
     assert admin_page.is_visible("[data-setup-complete-cta]")

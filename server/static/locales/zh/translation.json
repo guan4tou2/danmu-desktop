@@ -1481,7 +1481,7 @@
   "firetokenToastCopied": "已複製到剪貼簿",
   "sessionDetailKickerMid": "切片明細",
   "sessionDetailPageTitle": "場次詳情",
-  "sessionDetailPageNote": "展開單一資料切片：密度時間軸、訊息逐則、投票統計。內容唯讀（場次結束即定型）。",
+  "sessionDetailPageNote": "這一場說了什麼、什麼時候最熱、擋掉了哪些。",
   "sessionDetailBreadcrumbAria": "上一頁",
   "sessionDetailBackToList": "← 返回場次列表",
   "sessionDetailLoadingText": "載入場次資料中…",
@@ -1491,8 +1491,8 @@
   "sessionDetailAddAnnotationBtn": "+ 加註記",
   "sessionDetailMsgsLabel": "訊息 (最多顯示 200 則)",
   "sessionDetailStatsLabel": "統計",
-  "sessionDetailStatMsgCount": "訊息數",
-  "sessionDetailStatViewerCount": "觀眾數",
+  "sessionDetailStatMsgCount": "訊息",
+  "sessionDetailStatViewerCount": "觀眾",
   "sessionDetailStatDuration": "時長",
   "sessionDetailStatStarted": "開始",
   "sessionDetailStatEnded": "結束",
@@ -2793,5 +2793,11 @@
   "pollDeepdivePushFailed": "推送失敗",
   "pollDeepdiveTimelineTooShort": "票數還不夠畫出時序。",
   "setupWizardTitle": "首次設定",
-  "setupWizardThemeStepTitle": "選一個起手主題"
+  "setupWizardThemeStepTitle": "選一個起手主題",
+  "sessionDetailStatPeak": "每分鐘高峰",
+  "sessionDetailStatBlocked": "被擋下",
+  "sessionDetailSearchPlaceholder": "搜尋這場的訊息",
+  "sessionDetailFilterAll": "全部",
+  "sessionDetailBlockedBy": "封鎖字「{rule}」",
+  "sessionDetailNoMatch": "沒有符合的訊息。"
 }

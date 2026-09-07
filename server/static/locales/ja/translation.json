@@ -1481,7 +1481,7 @@
   "firetokenToastCopied": "クリップボードにコピーしました",
   "sessionDetailKickerMid": "スライス詳細",
   "sessionDetailPageTitle": "セッション詳細",
-  "sessionDetailPageNote": "単一のデータ切片を展開表示：密度タイムライン、メッセージ一覧、投票統計。内容は読み取り専用（セッション終了後に確定）。",
+  "sessionDetailPageNote": "このセッションで何が語られ、いつ盛り上がり、何がブロックされたか。",
   "sessionDetailBreadcrumbAria": "戻る",
   "sessionDetailBackToList": "← セッション一覧に戻る",
   "sessionDetailLoadingText": "セッションデータを読み込み中…",
@@ -1491,8 +1491,8 @@
   "sessionDetailAddAnnotationBtn": "+ メモを追加",
   "sessionDetailMsgsLabel": "メッセージ（最大200件表示）",
   "sessionDetailStatsLabel": "統計",
-  "sessionDetailStatMsgCount": "メッセージ数",
-  "sessionDetailStatViewerCount": "視聴者数",
+  "sessionDetailStatMsgCount": "メッセージ",
+  "sessionDetailStatViewerCount": "観客",
   "sessionDetailStatDuration": "所要時間",
   "sessionDetailStatStarted": "開始",
   "sessionDetailStatEnded": "終了",
@@ -2793,5 +2793,11 @@
   "pollDeepdivePushFailed": "送信できませんでした",
   "pollDeepdiveTimelineTooShort": "推移を描くには票が足りません。",
   "setupWizardTitle": "初回設定",
-  "setupWizardThemeStepTitle": "最初のテーマを選ぶ"
+  "setupWizardThemeStepTitle": "最初のテーマを選ぶ",
+  "sessionDetailStatPeak": "毎分ピーク",
+  "sessionDetailStatBlocked": "ブロック",
+  "sessionDetailSearchPlaceholder": "このセッションを検索",
+  "sessionDetailFilterAll": "すべて",
+  "sessionDetailBlockedBy": "ブロック語「{rule}」",
+  "sessionDetailNoMatch": "該当するメッセージがありません。"
 }

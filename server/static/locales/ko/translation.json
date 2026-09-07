@@ -1481,7 +1481,7 @@
   "firetokenToastCopied": "클립보드에 복사됨",
   "sessionDetailKickerMid": "슬라이스 상세",
   "sessionDetailPageTitle": "세션 상세",
-  "sessionDetailPageNote": "단일 데이터 슬라이스를 펼쳐봅니다: 밀도 타임라인, 메시지 목록, 투표 통계. 읽기 전용 콘텐츠(세션 종료 후 고정).",
+  "sessionDetailPageNote": "이 세션에서 무슨 말이 오갔고, 언제 가장 뜨거웠고, 무엇이 차단됐는지.",
   "sessionDetailBreadcrumbAria": "뒤로",
   "sessionDetailBackToList": "← 세션 목록으로 돌아가기",
   "sessionDetailLoadingText": "세션 데이터 불러오는 중…",
@@ -1491,8 +1491,8 @@
   "sessionDetailAddAnnotationBtn": "+ 메모 추가",
   "sessionDetailMsgsLabel": "메시지 (최대 200개 표시)",
   "sessionDetailStatsLabel": "통계",
-  "sessionDetailStatMsgCount": "메시지 수",
-  "sessionDetailStatViewerCount": "시청자 수",
+  "sessionDetailStatMsgCount": "메시지",
+  "sessionDetailStatViewerCount": "관객",
   "sessionDetailStatDuration": "소요 시간",
   "sessionDetailStatStarted": "시작",
   "sessionDetailStatEnded": "종료",
@@ -2793,5 +2793,11 @@
   "pollDeepdivePushFailed": "보내지 못했습니다",
   "pollDeepdiveTimelineTooShort": "추이를 그리기에는 표가 부족합니다.",
   "setupWizardTitle": "처음 설정",
-  "setupWizardThemeStepTitle": "시작 테마 고르기"
+  "setupWizardThemeStepTitle": "시작 테마 고르기",
+  "sessionDetailStatPeak": "분당 최고",
+  "sessionDetailStatBlocked": "차단됨",
+  "sessionDetailSearchPlaceholder": "이 세션에서 검색",
+  "sessionDetailFilterAll": "전체",
+  "sessionDetailBlockedBy": "차단어 「{rule}」",
+  "sessionDetailNoMatch": "일치하는 메시지가 없습니다."
 }

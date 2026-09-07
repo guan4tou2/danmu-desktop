@@ -571,12 +571,17 @@ def _session_from_records(records, hashlib):
     # Unique fingerprints = viewer count estimate
     viewers = len({r.get("fingerprint") for r in records if r.get("fingerprint")})
 
+    # 被擋下的那些也在 records 裡（2026-09-07 起會留紀錄），但它們沒有上
+    # 大螢幕——「訊息」這一欄要算的是真的播出去的數量，被擋的另外算一欄。
+    blocked = sum(1 for r in records if (r.get("status") or "shown") == "blocked")
+
     return {
         "id": sid,
         "started_at": started_at,
         "ended_at": ended_at,
         "duration_s": duration_s,
-        "msg_count": len(records),
+        "msg_count": len(records) - blocked,
+        "blocked_count": blocked,
         "viewer_count": viewers,
         "sparkline": sparkline[:60],
         "is_live": False,

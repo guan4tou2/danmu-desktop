@@ -14384,3 +14384,168 @@ body.is-light .admin-login-wordmark.is-on-light,
   font-size: var(--text-caption);
   color: var(--color-text-secondary);
 }
+
+
+/* ── 場次詳情（設計稿 10 · G2）──────────────────────────────────────
+   頁首（‹ 紀錄與匯出／場次名／時間／重播＋匯出）、KPI 四格、搜尋＋分段、
+   訊息表。被擋下的那幾列淡紅底＋刪除線＋標出是哪條規則擋的。
+
+   退場的：回放控制列（標籤自己寫著「(VISUAL ONLY)」，四顆倍速鈕點了只會
+   換 is-active）、右側 stats rail、熱門關鍵字卡。密度時間軸與標記收進
+   摺疊區——稿上沒有，但標記有後端與測試，拿掉唯一入口等於廢掉功能。 */
+.admin-sd-card {
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md-sm);
+}
+.admin-sd-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-4);
+  align-items: center;
+}
+.admin-sd-back-link {
+  grid-column: 1;
+  font-size: var(--text-caption);
+  color: var(--color-ink-accent);
+  text-decoration: none;
+}
+.admin-sd-name {
+  grid-column: 1;
+  font-size: var(--text-title3);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.admin-sd-time {
+  grid-column: 1;
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+.admin-sd-headactions {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  display: flex;
+  gap: var(--space-2);
+}
+
+.admin-sd-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+}
+@media (max-width: 760px) { .admin-sd-kpis { grid-template-columns: repeat(2, 1fr); } }
+.admin-sd-kpi {
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md-sm);
+}
+.admin-sd-kpi .k {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+.admin-sd-kpi .v {
+  margin-top: var(--space-1);
+  font-size: var(--text-title2);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+.admin-sd-kpi .sub {
+  margin-top: var(--space-1);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+.admin-sd-msgbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.admin-sd-search { flex: 1; min-width: 0; }
+.admin-sd-seg {
+  display: inline-flex;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.admin-sd-seg button {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  background: none;
+  border: 0;
+  border-right: 1px solid var(--color-border);
+  cursor: pointer;
+}
+.admin-sd-seg button:last-child { border-right: 0; }
+.admin-sd-seg button.is-active {
+  color: var(--color-ink-on-accent);
+  background: var(--color-accent);
+}
+.admin-sd-seg button:disabled { opacity: 0.45; cursor: default; }
+
+.admin-sd-msgs-list { display: flex; flex-direction: column; }
+.admin-sd-msg-row {
+  display: grid;
+  grid-template-columns: 4rem var(--space-2) minmax(0, 1fr) auto 7rem;
+  gap: var(--space-3);
+  align-items: center;
+  /* 稿上 48px 列高。3rem 在 4px 格上；沒有 --space-12 這顆 token */
+  min-height: 3rem;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-footnote);
+}
+.admin-sd-msg-row:last-child { border-bottom: 0; }
+.admin-sd-msg-time {
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+.admin-sd-msg-dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-pill);
+}
+.admin-sd-msg-text {
+  color: var(--color-text-primary);
+  word-break: break-word;
+}
+.admin-sd-msg-nick {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-sd-msg-rule {
+  font-size: var(--text-caption);
+  color: var(--color-danger);
+  white-space: nowrap;
+}
+/* 稿上是 rgba(220,38,38,.04)。用 color-mix 從語意 token 調出來，
+   淺深兩色都跟著 --color-danger 走，不用寫死一個 rgba。 */
+.admin-sd-msg-row.is-blocked {
+  background: color-mix(in srgb, var(--color-danger) 6%, transparent);
+}
+.admin-sd-msg-row.is-blocked .admin-sd-msg-text {
+  color: var(--color-danger);
+  text-decoration: line-through;
+}
+.admin-sd-msgs-empty {
+  padding: var(--space-8);
+  text-align: center;
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.admin-sd-timeline-summary {
+  cursor: pointer;
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}

@@ -181,6 +181,11 @@ class DanmuHistory:
             # 在這之前 /admin/search 讀 r.get("nickname") 一直是空字串——欄位
             # 從來沒被寫進紀錄裡。
             "nickname": str(danmu_data.get("nickname") or "")[:40],
+            # "shown"（預設）或 "blocked"。被擋的那些也要留下來——設計稿
+            # 10 · G2 的場次詳情要能列出「被擋下 N」並標出是哪條規則擋的。
+            # /admin/search 一直讀 r.get("status")，但這個欄位從來沒被寫過。
+            "status": danmu_data.get("status") or "shown",
+            "blockedBy": danmu_data.get("blockedBy") or "",
             "fontInfo": danmu_data.get("fontInfo"),
             "clientIp": danmu_data.get("clientIp"),
             "fingerprint": danmu_data.get("fingerprint"),

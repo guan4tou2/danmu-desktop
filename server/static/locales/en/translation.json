@@ -1481,7 +1481,7 @@
   "firetokenToastCopied": "Copied to clipboard",
   "sessionDetailKickerMid": "Slice breakdown",
   "sessionDetailPageTitle": "Session Detail",
-  "sessionDetailPageNote": "Drill into a single data slice: density timeline, message-by-message list, poll stats. Read-only content (fixed once the session ends).",
+  "sessionDetailPageNote": "What was said in this session, when it peaked, and what got blocked.",
   "sessionDetailBreadcrumbAria": "Back",
   "sessionDetailBackToList": "← Back to sessions",
   "sessionDetailLoadingText": "Loading session data…",
@@ -1492,7 +1492,7 @@
   "sessionDetailMsgsLabel": "Messages (up to 200 shown)",
   "sessionDetailStatsLabel": "Stats",
   "sessionDetailStatMsgCount": "Messages",
-  "sessionDetailStatViewerCount": "Viewers",
+  "sessionDetailStatViewerCount": "Audience",
   "sessionDetailStatDuration": "Duration",
   "sessionDetailStatStarted": "Started",
   "sessionDetailStatEnded": "Ended",
@@ -2793,5 +2793,11 @@
   "pollDeepdivePushFailed": "Could not push",
   "pollDeepdiveTimelineTooShort": "Not enough votes yet to draw a timeline.",
   "setupWizardTitle": "First-time setup",
-  "setupWizardThemeStepTitle": "Pick a starting theme"
+  "setupWizardThemeStepTitle": "Pick a starting theme",
+  "sessionDetailStatPeak": "Peak per minute",
+  "sessionDetailStatBlocked": "Blocked",
+  "sessionDetailSearchPlaceholder": "Search this session",
+  "sessionDetailFilterAll": "All",
+  "sessionDetailBlockedBy": "Blocked word “{rule}”",
+  "sessionDetailNoMatch": "No matching messages."
 }
