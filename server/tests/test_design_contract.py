@@ -1390,3 +1390,50 @@ def test_readme_banner_and_social_preview():
         head = text.split("\n# ", 1)[0]
         assert 'src="docs/banner.png"' in head, f"{readme}：橫幅要在 H1 之上"
         assert 'alt="' in head, f"{readme}：橫幅要有 alt"
+
+
+def test_dead_css_sweep_kept_the_dynamically_built_class_names():
+    """2026-09-07 死碼清理：219 個沒有任何標記引用的 class 從 style.css 移除。
+
+    這條測試釘的不是「哪些被刪了」（那是 2159 行的清單），而是**判死時
+    差點誤刪的那一類**——JS 不是只用字面值寫 class 名：
+
+      * `admin-quick-action.js`：`INLINE_BAR_CLASS + "-text"`
+      * `admin-fingerprints.js`：`"admin-fp-state" + variant`
+      * `admin-hud-modal.js`：`` `admin-hud-modal--${severity}` ``
+
+    最後那個是模板字串，第一版的掃描只還原了 `"字串" +` 的串接，沒還原
+    反引號，`--danger` / `--info` / `--success` 三個差點被當成死的刪掉。
+    掃描前先把這三種寫法還原成完整名字，才有資格說某個 class 沒人用。
+
+    另外「子字串比對」會反向出錯：`grep -F "hud-corners"` 會被
+    `hud-corners-auto` 命中，於是 `.hud-corners` 被誤判成活的留了下來——
+    那正是這次清理要收的尾。判死一律用邊界比對。
+    """
+    css = _read("server/static/css/style.css")
+    # 動態組出來的名字必須留著
+    for alive in (
+        ".admin-hud-modal--danger",
+        ".admin-hud-modal--info",
+        ".admin-hud-modal--success",
+        ".admin-quick-action-bar-text",
+        ".admin-quick-action-bar-undo",
+        ".admin-fp-state",
+    ):
+        assert alive in css, alive
+
+    # 子字串誤判留下來的那族已經清掉；`hud-corners-auto` 仍在（登入頁在用）
+    assert ".hud-corners-auto" in css
+    assert ".hud-corners {" not in css
+    assert ".hud-corner[" not in css
+
+    # 各族被改寫後的舊版殘骸不該再出現，新版必須還在
+    for gone, kept in (
+        ("admin-msgd-bubble", "admin-msgd-v4__body"),  # 訊息抽屜改寫
+        ("admin-bancfm-modal", "admin-bancfm-dchip"),  # 外殼改由 HudConfirm 提供
+        ("admin-err__subtitle", "admin-err__title"),  # 錯誤頁版型收斂成四段
+        ("admin-setup-dropzone", "admin-setup-theme-card"),  # 精靈移除 logo/語言/密碼步驟
+        ("hud-console-line", "hud-console-body"),  # 篩選頁 log 改用 admin-filter-log-row
+    ):
+        assert gone not in css, gone
+        assert kept in css, kept

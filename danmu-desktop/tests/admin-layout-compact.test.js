@@ -457,7 +457,9 @@ test("admin Security actions compose shared admin-ui controls instead of page-lo
   expect(styleSrc).toContain(".admin-ui-action.is-warn {");
   expect(styleSrc).toContain(".admin-ui-action.is-danger {");
 
-  expect(cssSrc).toContain(".admin-sec-action--end {");
+  // 2026-09-07 死碼清理：`.admin-sec-action--end` 沒有任何標記引用（安全頁的
+  // 動作全改用上面那組 admin-ui-action / admin-ui-danger-btn），規則已刪。
+  expect(cssSrc).not.toContain(".admin-sec-action--end {");
   expect(cssSrc).not.toContain(".admin-sec-card__link {");
   expect(cssSrc).not.toContain(".admin-sec-card__link:hover");
   expect(cssSrc).not.toContain(".admin-sec-danger {");
@@ -1094,8 +1096,12 @@ test("admin tab and table primitives use admin-ui naming", () => {
   const sessionsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-sessions.js"), "utf8");
   const tokensSrc = fs.readFileSync(path.join(staticDir, "js", "admin-api-tokens.js"), "utf8");
 
-  expect(styleCss).toContain(".admin-ui-tabbar {");
-  expect(styleCss).toContain(".admin-ui-tab {");
+  // 2026-09-07 死碼清理：`.admin-ui-tabbar` / `.admin-ui-tab` 一顆消費者都沒有——
+  // 分頁列由 shell 的 AdminTabs 提供，而它畫的是 `.admin-tabs-btn`。命名慣例
+  // （不准出現 admin-v2-*）由下面那組斷言守住，不需要留著沒人用的規則來守。
+  expect(styleCss).not.toContain(".admin-ui-tabbar {");
+  expect(styleCss).not.toContain(".admin-ui-tab {");
+  expect(styleCss).toContain(".admin-tabs-btn {");
   expect(styleCss).toContain(".admin-at-main .admin-ui-table-wrap {");
   // 場次頁自己不再畫分頁列：紀錄與匯出的分段由 shell 的 AdminTabs 提供
   // （設計稿 08 · H1），頁內那三顆「全部／進行中／已結束」稿上沒有。
