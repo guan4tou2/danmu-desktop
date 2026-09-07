@@ -120,6 +120,11 @@ document.addEventListener("DOMContentLoaded", () => {
     ratelimit:  { nav: "moderation", tab: "ratelimit" },
     audit:      { nav: "history", tab: "audit" },
     fonts:      { nav: "assets", tab: "fonts" },
+    // 2026-09-07 設計稿 08 · X1：擴充四合一，四條舊路由的書籤落到對應分頁。
+    webhooks:    { nav: "integrations", tab: "webhooks" },
+    plugins:     { nav: "integrations", tab: "plugins" },
+    "api-tokens": { nav: "integrations", tab: "api-tokens" },
+    scheduler:   { nav: "integrations", tab: "scheduler" },
   });
 
   // Maps deprecated single-segment routes → P0-0 nav homes.
@@ -154,12 +159,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // v7 S4 (2026-07-28): `automation` moved from _bareLegacyRedirects to an
     // alias so explicit-tab deep links (#/automation/webhooks) also translate
     // into the system accordion; its dead ADMIN_ROUTES entry is gone.
-    automation: { nav: "system", tab: "scheduler" },
+    automation: { nav: "integrations", tab: "scheduler" },
     // v7 S4: `appearance` retired — themes/fonts/viewer-config all have
     // first-class homes; old bookmarks land on the themes page. Alias (not
     // bare) so #/appearance/<anything> still resolves.
     appearance: { nav: "themes" },
-    scheduler: { nav: "system", tab: "scheduler" },
+    scheduler: { nav: "integrations", tab: "scheduler" },
     // 2026-05-19: webhooks/search/audience/about/security promoted to
     // first-class routes with their own ADMIN_ROUTES entries. Aliases
     // removed so _parseHashRoute returns the leaf slug directly.
@@ -1320,7 +1325,11 @@ document.addEventListener("DOMContentLoaded", () => {
     assets:    { title: "素材",           kicker: "ASSETS LIBRARY · 統一素材總覽", sections: ["sec-assets-overview", "sec-emojis", "sec-stickers", "sec-sounds", "sec-fonts"] },
     // v5.2 Sprint 1 (2026-04-27): Extensions catalog page — Slido / Discord
     // / OBS / Bookmarklet cards + shared Fire Token UI inline.
-    integrations: { title: "擴充",          kicker: "INTEGRATIONS · 第三方接入 · 共用 FIRE TOKEN", sections: ["sec-extensions-overview"] },
+    // 2026-09-07 設計稿 08 · X1：擴充四合一。原本 Webhook／插件／API 金鑰／
+    // 定時發送各自是一條路由（前三者沒有側欄入口、只能靠深連結或別的頁面
+    // 帶過去；定時發送藏在系統的分頁裡）。它們是同一群人在同一個場合會碰的
+    // 東西，收成一頁四個分段。
+    integrations: { title: "擴充", sections: ["sec-extensions-overview", "sec-webhooks", "sec-plugins", "sec-api-tokens-overview", "sec-scheduler"] },
     // v5.2 Sprint 2 deeplink-only (2026-04-27 audit §A.3): Fire Token sub-row
     // removed from sidebar. Route stays reachable via integrations → 詳細統計.
     firetoken:    { title: "Fire Token",     kicker: "ADMIN LANE · FIRE TOKEN · 用量 / IP / AUDIT",  sections: ["sec-firetoken-overview"] },
@@ -1332,8 +1341,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // v7 IA (2026-07-28): `ratelimit` demoted to _bareLegacyRedirects →
     // moderation/ratelimit (the tab owns sec-ratelimit).
     effects:   { title: "動畫效果",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
-    plugins:   { title: "伺服器插件",       kicker: "PLUGIN SDK · 熱重載 · SANDBOX", sections: ["sec-plugins"] },
-    webhooks:  { title: "Webhooks",          kicker: "WEBHOOKS · 端點 · 投遞紀錄 · 重送", sections: ["sec-webhooks"] },
     // v7 IA (2026-07-28): `fonts` demoted to _bareLegacyRedirects →
     // assets/fonts (fonts joined the assets tab strip).
     // v7 S3 (2026-07-28): the system accordion retired. System owns only
@@ -1341,7 +1348,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // / wcag / about, as an AdminTabs strip (TabConfig.system). Old
     // #/system/<leaf> deep links to rehomed leaves translate via the
     // legacy leaf map in applyRoute.
-    system:    { title: "系統",  kicker: "SYSTEM · 健康度與組態", sections: ["sec-system-overview", "sec-scheduler", "admin-security-v2-page", "sec-firetoken-overview", "sec-wcag-overview", "sec-about-overview"] },
+    system:    { title: "系統",  kicker: "SYSTEM · 健康度與組態", sections: ["sec-system-overview", "admin-security-v2-page", "sec-firetoken-overview", "sec-wcag-overview", "sec-about-overview"] },
     // Legacy alias target only. Security now resolves under system/security;
     // the v2 page handles its own visibility from activeRoute + activeLeaf.
     security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: ["admin-security-v2-page"] },
@@ -1380,7 +1387,6 @@ document.addEventListener("DOMContentLoaded", () => {
     sessions:     { title: "場次",            kicker: "SESSIONS · 場次列表 · 即時 / 歷史",  sections: ["sec-sessions-overview"] },
     "session-detail": { title: "場次詳情",    kicker: "SESSION DETAIL · 密度時間軸 · 訊息回顧", sections: ["sec-session-detail-overview"] },
     search:       { title: "搜尋",            kicker: "SEARCH · 全文搜尋 · 跨場次",          sections: ["sec-search-overview"] },
-    "api-tokens": { title: "API Tokens",      kicker: "API TOKENS · 開發者存取 · 權限管理",  sections: ["sec-api-tokens-overview"] },
     // A11y + i18n tools (2026-04-29)
     wcag:         { title: "WCAG 對比度",      kicker: "A11Y · WCAG 2.1 CONTRAST CHECKER",    sections: ["sec-wcag-overview"] },
     // Onboarding route — overlay only, no section
@@ -1456,10 +1462,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!dup) return;
         // 這一步在 add class 之前量：唯一 offsetParent 非 null 的重複頁首，
         // 就是當前分頁真正顯示的那個 —— 只取它的 note。
-        if (mergedNote === null && head.offsetParent !== null) {
-          mergedNote = head.querySelector(".admin-ui-page-note")?.innerHTML || "";
+        if (head.offsetParent !== null) {
+          if (mergedNote === null) {
+            mergedNote = head.querySelector(".admin-ui-page-note")?.innerHTML || "";
+          }
+          // 動作與 note 分開找：分頁式路由上，同時可見的頁首可能有好幾個
+          // （擴充頁的目錄卡片頁首排在 Webhook 分頁的頁首前面），而帶著
+          // 主要動作的通常不是第一個。綁在一起找會讓動作永遠取不到。
           const actions = head.querySelector(".admin-ui-page-actions");
-          if (actions && actionSlot) {
+          if (actions && actionSlot && !actionSlot.children.length) {
             actions._adminHomeHead = head;
             actionSlot.appendChild(actions);
           }
@@ -1532,9 +1543,10 @@ document.addEventListener("DOMContentLoaded", () => {
       system: { nav: "system", tab: "overview" },
       backup: { nav: "backup" },
       integrations: { nav: "integrations" },
-      "api-tokens": { nav: "api-tokens" },
-      webhooks: { nav: "webhooks" },
-      plugins: { nav: "plugins" },
+      "api-tokens": { nav: "integrations", tab: "api-tokens" },
+      webhooks: { nav: "integrations", tab: "webhooks" },
+      plugins: { nav: "integrations", tab: "plugins" },
+      scheduler: { nav: "integrations", tab: "scheduler" },
       sessions: { nav: "history", tab: "sessions" },
       search: { nav: "history", tab: "search" },
       audit: { nav: "history", tab: "audit" },

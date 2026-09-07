@@ -82,11 +82,27 @@
     // mostly duplicate doors to first-class routes. What genuinely lives
     // here is now a 6-tab strip; everything else rehomed (see the legacy
     // leaf map in admin.js applyRoute).
+    // 設計稿 08 · X1：擴充四合一（Webhook / 插件 / API 金鑰 / 定時發送）。
+    // 這四件事本來各自是一條路由，但它們是同一群人（IT）在同一個場合會碰的
+    // 東西；分成四個入口只是在逼使用者記住哪個功能住在哪一頁。
+    // sec-extensions-overview（Slido／Discord／OBS／Bookmarklet 目錄）歸在
+    // 「插件」分段：它本來是 route-level，四個分頁都看得到，等於每個分頁的
+    // 真正內容都被四張卡片推到摺線以下。稿上沒有這塊目錄，但 Slido 那張卡
+    // 帶著實際可用的下載與 Fire Token 設定，不能直接刪；插件是它最接近的家。
+    integrations: {
+      defaultTab: "webhooks",
+      tabs: [
+        { slug: "webhooks",   labelKey: "tabExtWebhooks", en: "WEBHOOKS", section: "sec-webhooks" },
+        { slug: "plugins",    labelKey: "tabExtPlugins", en: "PLUGINS",  sections: ["sec-plugins", "sec-extensions-overview"] },
+        { slug: "api-tokens", labelKey: "tabExtApiKeys", en: "API KEYS", section: "sec-api-tokens-overview" },
+        { slug: "scheduler",  labelKey: "tabExtScheduler", en: "SCHEDULER", section: "sec-scheduler" },
+      ],
+    },
+
     system: {
       defaultTab: "overview",
       tabs: [
         { slug: "overview",  labelKey: "tabSystemOverview", en: "OVERVIEW",  section: "sec-system-overview" },
-        { slug: "scheduler", labelKey: "tabSystemScheduler", en: "SCHEDULER", section: "sec-scheduler" },
         { slug: "security",  labelKey: "tabSystemSecurity", en: "SECURITY",  section: "admin-security-v2-page" },
         { slug: "firetoken", label: "Fire Token", en: "FIRETOKEN", section: "sec-firetoken-overview" },
         { slug: "wcag",      labelKey: "tabSystemWcag", en: "WCAG",      section: "sec-wcag-overview" },

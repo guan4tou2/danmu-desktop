@@ -1212,9 +1212,9 @@
   "webhooksTimeAgoMinutes": "{n}m ago",
   "webhooksTimeAgoHours": "{n}h ago",
   "webhooksTimeAgoDays": "{n}d ago",
-  "webhooksPageNote": "Centrally manage external notification endpoints. Signed with HMAC-SHA256 (X-Webhook-Signature). Events fire-and-forget with up to N retries (exponential backoff 1s/2s/4s).",
+  "webhooksPageNote": "The IT corner. Forward danmu straight to Discord or Slack, or let an outside service send danmu in.",
   "webhooksEndpointCountLabel": "ENDPOINTS · {n}",
-  "webhooksAddEndpointBtn": "＋ Add endpoint",
+  "webhooksAddEndpointBtn": "Add webhook",
   "webhooksRegisterBtn": "Register",
   "webhooksLoadingFallback": "Loading…",
   "webhooksLogLiveLabel": "Live",
@@ -1878,7 +1878,7 @@
   "extTokenDeepLink": "View details →",
   "extTokenCopyBtn": "Copy",
   "extTokenHint": "Paste the token into the extension's popup settings. Revoking immediately disables every extension (just paste the new one after regenerating).",
-  "extPageNote": "Centralized management of extensions and bot integrations. Slido extension / Discord bridge / OBS plugin / bookmarklet all share the same {tag}, a separate lane from admin's API Tokens (per-integration ACL).",
+  "extPageNote": "Hook existing tools into this event: Slido questions, a Discord bridge, an OBS plugin.",
   "extToastTokenGenerated": "Fire Token generated · copied to clipboard",
   "extToastTokenRevoked": "Fire Token revoked",
   "extTokenPrefixHint": "{prefix} (only the first 6 characters are shown; the full value is visible only right after generation)",
@@ -2823,5 +2823,9 @@
   "widgetPos_center": "Centre",
   "widgetPos_bottom_left": "Bottom left",
   "widgetPos_bottom_center": "Bottom",
-  "widgetPos_bottom_right": "Bottom right"
+  "widgetPos_bottom_right": "Bottom right",
+  "tabExtWebhooks": "Webhooks",
+  "tabExtPlugins": "Plugins",
+  "tabExtApiKeys": "API keys",
+  "tabExtScheduler": "Scheduled sends"
 }

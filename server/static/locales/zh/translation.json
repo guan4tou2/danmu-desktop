@@ -1212,9 +1212,9 @@
   "webhooksTimeAgoMinutes": "{n} 分鐘前",
   "webhooksTimeAgoHours": "{n} 小時前",
   "webhooksTimeAgoDays": "{n} 天前",
-  "webhooksPageNote": "集中管理外部通知 endpoints。簽名使用 HMAC-SHA256（X-Webhook-Signature）。 事件觸發時 fire-and-forget 並重試最多 N 次（指數退避 1s/2s/4s）。",
+  "webhooksPageNote": "給 IT 人員的區域。把彈幕即時轉發到 Discord／Slack，或讓外部服務發彈幕進來。",
   "webhooksEndpointCountLabel": "ENDPOINTS · {n} 個",
-  "webhooksAddEndpointBtn": "＋ 新增 endpoint",
+  "webhooksAddEndpointBtn": "新增 Webhook",
   "webhooksRegisterBtn": "註冊",
   "webhooksLoadingFallback": "載入中…",
   "webhooksLogLiveLabel": "即時",
@@ -1878,7 +1878,7 @@
   "extTokenDeepLink": "詳細統計 →",
   "extTokenCopyBtn": "複製",
   "extTokenHint": "擴充功能在 popup 設定中貼入 token。撤銷會立即停用所有 extension（重 regen 後重新貼即可）。",
-  "extPageNote": "集中管理擴充功能與機器人接入。 Slido extension / Discord bridge / OBS plugin / bookmarklet 等共用同一組 {tag}， 和 admin 的 API Tokens（per-integration ACL）是分開的兩條 lane。",
+  "extPageNote": "把現成的工具接上這場活動：Slido 提問、Discord 橋接、OBS 外掛。",
   "extToastTokenGenerated": "Fire Token 已產生 · 已複製到剪貼簿",
   "extToastTokenRevoked": "Fire Token 已撤銷",
   "extTokenPrefixHint": "{prefix} (僅顯示前 6 碼，完整值僅產生時可見)",
@@ -2823,5 +2823,9 @@
   "widgetPos_center": "中央",
   "widgetPos_bottom_left": "左下",
   "widgetPos_bottom_center": "底部",
-  "widgetPos_bottom_right": "右下"
+  "widgetPos_bottom_right": "右下",
+  "tabExtWebhooks": "Webhook",
+  "tabExtPlugins": "插件",
+  "tabExtApiKeys": "API 金鑰",
+  "tabExtScheduler": "定時發送"
 }

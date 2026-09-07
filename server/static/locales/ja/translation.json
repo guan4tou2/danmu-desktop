@@ -1212,9 +1212,9 @@
   "webhooksTimeAgoMinutes": "{n}分前",
   "webhooksTimeAgoHours": "{n}時間前",
   "webhooksTimeAgoDays": "{n}日前",
-  "webhooksPageNote": "外部通知 endpoints を一元管理。署名は HMAC-SHA256（X-Webhook-Signature）を使用。イベント発生時は fire-and-forget で送信し、最大 N 回リトライ（指数バックオフ 1s/2s/4s）。",
+  "webhooksPageNote": "IT 担当者向けの場所です。弾幕を Discord／Slack にそのまま転送したり、外部サービスから弾幕を送り込んだりできます。",
   "webhooksEndpointCountLabel": "ENDPOINTS · {n}件",
-  "webhooksAddEndpointBtn": "＋ endpoint を追加",
+  "webhooksAddEndpointBtn": "Webhook を追加",
   "webhooksRegisterBtn": "登録",
   "webhooksLoadingFallback": "読み込み中…",
   "webhooksLogLiveLabel": "リアルタイム",
@@ -1878,7 +1878,7 @@
   "extTokenDeepLink": "詳細統計 →",
   "extTokenCopyBtn": "コピー",
   "extTokenHint": "拡張機能のポップアップ設定で token を貼り付けます。失効するとすべての extension が即座に無効になります（再生成後、新しい token を貼り付ければ復帰します）。",
-  "extPageNote": "拡張機能とボット連携を一元管理します。Slido extension / Discord bridge / OBS plugin / bookmarklet はすべて同じ {tag} を共有し、admin の API Tokens（per-integration ACL）とは別のレーンです。",
+  "extPageNote": "既存のツールをこのイベントにつなぎます：Slido の質問、Discord ブリッジ、OBS プラグイン。",
   "extToastTokenGenerated": "Fire Token を生成しました · クリップボードにコピーしました",
   "extToastTokenRevoked": "Fire Token を失効しました",
   "extTokenPrefixHint": "{prefix}（先頭 6 文字のみ表示・完全な値は生成直後のみ表示されます）",
@@ -2823,5 +2823,9 @@
   "widgetPos_center": "中央",
   "widgetPos_bottom_left": "左下",
   "widgetPos_bottom_center": "下",
-  "widgetPos_bottom_right": "右下"
+  "widgetPos_bottom_right": "右下",
+  "tabExtWebhooks": "Webhook",
+  "tabExtPlugins": "プラグイン",
+  "tabExtApiKeys": "API キー",
+  "tabExtScheduler": "予約送信"
 }

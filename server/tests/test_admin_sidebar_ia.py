@@ -363,15 +363,18 @@ DEEP_LINK_ALIASES = {
     # v7 S3 (2026-07-28): accordion retired — replay lives in the history
     # tabbed nav (紀錄 & 匯出) alongside audit.
     "replay": ("history", "replay"),
-    "scheduler": ("system", "scheduler"),
+    # 2026-09-07 設計稿 08 · X1：定時發送搬進「擴充」的分段。
+    "scheduler": ("integrations", "scheduler"),
     # v7 S4 (2026-07-28): automation is an alias (not bare) so explicit-tab
-    # deep links pass their tab straight into the system accordion.
-    "automation": ("system", "scheduler"),
+    # deep links pass their tab straight through.
+    "automation": ("integrations", "scheduler"),
 }
 
 # Routes promoted from system accordion aliases to first-class ADMIN_ROUTES
 # entries. Verify they have their own route config (not aliased).
-PROMOTED_TO_FIRST_CLASS = ["sessions", "search", "audience", "webhooks", "security"]
+# 2026-09-07 設計稿 08 · X1：`webhooks` 從這份清單移出——它現在是「擴充」
+# 的第一個分段，不再有自己的 ADMIN_ROUTES entry。
+PROMOTED_TO_FIRST_CLASS = ["sessions", "search", "audience", "security"]
 
 
 @pytest.mark.parametrize("slug, parent_tab", list(DEEP_LINK_ALIASES.items()))
@@ -491,16 +494,22 @@ def test_appearance_parent_nav_not_bare_redirected(admin_js: str):
 
 # v7 S3 (2026-07-28): the system accordion retired. System is a normal
 # AdminTabs route now; only what has no other home stays as a tab.
-SYSTEM_TABS_EXPECTED = ["overview", "scheduler", "security", "firetoken", "wcag", "about"]
+# 2026-09-07 設計稿 08 · X1：`scheduler` 從系統搬到「擴充」的四個分段之一
+# （定時發送是拿來把彈幕丟出去的，跟 Webhook／插件／API 金鑰同一群人在用）。
+SYSTEM_TABS_EXPECTED = ["overview", "security", "firetoken", "wcag", "about"]
+
+# 擴充四合一（設計稿 08 · X1）。順序照稿：Webhook / 插件 / API 金鑰 / 定時發送。
+INTEGRATIONS_TABS_EXPECTED = ["webhooks", "plugins", "api-tokens", "scheduler"]
 
 # Old #/system/<leaf> deep links for rehomed leaves must translate via the
 # legacy leaf map in admin.js applyRoute.
 SYSTEM_LEGACY_LEAF_HOMES_EXPECTED = {
     "backup": ("backup", None),
     "integrations": ("integrations", None),
-    "api-tokens": ("api-tokens", None),
-    "webhooks": ("webhooks", None),
-    "plugins": ("plugins", None),
+    "api-tokens": ("integrations", "api-tokens"),
+    "webhooks": ("integrations", "webhooks"),
+    "plugins": ("integrations", "plugins"),
+    "scheduler": ("integrations", "scheduler"),
     "sessions": ("history", "sessions"),
     "search": ("history", "search"),
     "audit": ("history", "audit"),
@@ -540,6 +549,25 @@ def test_system_tab_group_declares_expected_tabs(tabs_js: str):
     assert (
         found == SYSTEM_TABS_EXPECTED
     ), f"system tab order drifted.\nexpected: {SYSTEM_TABS_EXPECTED}\nactual:   {found}"
+
+
+def test_integrations_tab_group_declares_expected_tabs(tabs_js: str):
+    """設計稿 08 · X1：擴充四合一，分段順序照稿。
+
+    Webhook／插件／API 金鑰／定時發送本來各自是一條路由——前三者連側欄入口
+    都沒有，只能靠深連結或別的頁面帶過去；定時發送藏在系統的分頁裡。它們是
+    同一群人在同一個場合會碰的東西。
+    """
+    block = re.search(
+        r"integrations:\s*\{\s*defaultTab:\s*\"([\w-]+)\",\s*tabs:\s*\[([\s\S]+?)\n\s*\]", tabs_js
+    )
+    assert block, "TabConfig.integrations not found in admin-tabs.js"
+    assert block.group(1) == "webhooks", "integrations defaultTab must be webhooks"
+    found = re.findall(r'slug:\s*"([\w-]+)"', block.group(2))
+    assert found == INTEGRATIONS_TABS_EXPECTED, (
+        f"integrations tab order drifted.\nexpected: {INTEGRATIONS_TABS_EXPECTED}\n"
+        f"actual:   {found}"
+    )
 
 
 def test_system_legacy_leaf_homes_cover_rehomed_leaves(admin_js: str):
@@ -715,14 +743,36 @@ def test_admin_routes_system_owns_exactly_its_tab_sections(admin_js: str):
     )
     assert system_match, "ADMIN_ROUTES.system entry not found"
     sections = re.findall(r'"([\w-]+)"', system_match.group(1))
+    # 2026-09-07 設計稿 08 · X1：sec-scheduler 跟著「定時發送」搬去擴充。
     assert sections == [
         "sec-system-overview",
-        "sec-scheduler",
         "admin-security-v2-page",
         "sec-firetoken-overview",
         "sec-wcag-overview",
         "sec-about-overview",
     ], f"ADMIN_ROUTES.system.sections drifted: {sections}"
+
+
+def test_admin_routes_integrations_owns_its_tab_sections(admin_js: str):
+    """設計稿 08 · X1：擴充路由要列出四個分段的 section。
+
+    sections 少列一個，syncRouteContainerVisibility() 會算出不含它的 owner
+    set，整個容器被藏起來——模組再怎麼把自己設成 display:"" 都沒用
+    （#/security 就這樣壞過）。
+    """
+    match = re.search(
+        r"\bintegrations:\s*\{\s*title:[^}]*?sections:\s*\[([^\]]+)\]",
+        admin_js,
+    )
+    assert match, "ADMIN_ROUTES.integrations entry not found"
+    sections = re.findall(r'"([\w-]+)"', match.group(1))
+    assert sections == [
+        "sec-extensions-overview",
+        "sec-webhooks",
+        "sec-plugins",
+        "sec-api-tokens-overview",
+        "sec-scheduler",
+    ], f"ADMIN_ROUTES.integrations.sections drifted: {sections}"
 
 
 # ─── admin-display.js viewer-config visibility gate ─────────────────────────

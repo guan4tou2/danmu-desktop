@@ -194,6 +194,17 @@ CSRF token，所以要把 `meta[name=csrf-token]` 換掉（`admin.js` 的
 
 `?` 與 ⌘/ 開快速鍵一覽；F1 與頂欄「?」按鈕開說明抽屜。
 
+### 5.4d 頁首右側的主要動作（設計稿 07/08）
+
+每一頁的主要動作在頁首右側，寫成 `.admin-ui-page-actions` 放在
+`.admin-ui-page-head` **裡面**。shell 會在頁首被併進 topbar 時，把這一塊搬進
+`[data-route-action]` 插槽，換路由再搬回原位（`admin.js` 的
+`_dedupSectionTitles`）。分頁式路由上只有「當下可見的那個分頁的頁首」會被搬。
+
+**那顆按鈕要自己綁 listener。** 搬走之後它不在 section 底下，委派在 section
+根節點上的 handler 收不到它的 click——按鈕看得到、按了沒反應，而且不會有任何
+錯誤訊息。
+
 ### 5.5 文案
 
 **全域名詞表**（設計稿 14 · 文案總表，2026-09-06 拍板）：

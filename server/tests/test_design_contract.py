@@ -600,3 +600,36 @@ def test_page_primary_action_has_a_home_in_the_shell(zh):
     head_start = backup.index('class="admin-ui-page-head"')
     head_end = backup.index("admin-ui-group-label", head_start)
     assert "admin-ui-page-actions" in backup[head_start:head_end]
+
+
+def test_extensions_page_is_four_segments(zh):
+    """設計稿 08 · X1：擴充四合一——Webhook / 插件 / API 金鑰 / 定時發送。
+
+    這四件事本來各自是一條路由：前三者連側欄入口都沒有（只能靠深連結或
+    別的頁面帶過去），定時發送藏在系統的分頁裡。它們是同一群人在同一個場合
+    會碰的東西，分成四個入口只是在逼使用者記住哪個功能住在哪一頁。
+    """
+    for key, value in {
+        "tabExtWebhooks": "Webhook",
+        "tabExtPlugins": "插件",
+        "tabExtApiKeys": "API 金鑰",
+        "tabExtScheduler": "定時發送",
+    }.items():
+        assert zh[key] == value, key
+    # 稿上的頁面說明落在預設分頁（Webhook）——shell 顯示的是當下分頁的說明
+    assert "給 IT 人員的區域" in zh["webhooksPageNote"]
+    assert "Discord／Slack" in zh["webhooksPageNote"]
+    # 按鈕只寫動詞、不加符號，也不要求使用者學會「endpoint」（設計稿 14）
+    assert zh["webhooksAddEndpointBtn"] == "新增 Webhook"
+
+    tabs = _strip_comments(_read("server/static/js/admin-tabs.js"))
+    block = tabs[tabs.index("integrations: {") :]
+    block = block[: block.index("],")]
+    assert 'defaultTab: "webhooks"' in block
+    for slug in ("webhooks", "plugins", "api-tokens", "scheduler"):
+        assert f'slug: "{slug}"' in block, slug
+
+    # 搬進 topbar 插槽的按鈕不能靠 section 上的事件委派——它已經不在 section
+    # 底下了。這條擋的是「按鈕看得到但按了沒反應」。
+    wh = _strip_comments(_read("server/static/js/admin-webhooks.js"))
+    assert ".admin-ui-page-actions [data-wh-action='show-add']" in wh

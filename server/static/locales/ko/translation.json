@@ -1212,9 +1212,9 @@
   "webhooksTimeAgoMinutes": "{n}분 전",
   "webhooksTimeAgoHours": "{n}시간 전",
   "webhooksTimeAgoDays": "{n}일 전",
-  "webhooksPageNote": "외부 알림 endpoint를 통합 관리합니다. 서명은 HMAC-SHA256(X-Webhook-Signature)을 사용합니다. 이벤트 발생 시 fire-and-forget 방식으로 전송하며 최대 N회 재시도합니다(지수 백오프 1s/2s/4s).",
+  "webhooksPageNote": "IT 담당자를 위한 영역입니다. 탄막을 Discord나 Slack으로 바로 전달하거나, 외부 서비스가 탄막을 보내게 할 수 있습니다.",
   "webhooksEndpointCountLabel": "ENDPOINTS · {n}개",
-  "webhooksAddEndpointBtn": "＋ endpoint 추가",
+  "webhooksAddEndpointBtn": "웹훅 추가",
   "webhooksRegisterBtn": "등록",
   "webhooksLoadingFallback": "로딩 중…",
   "webhooksLogLiveLabel": "실시간",
@@ -1878,7 +1878,7 @@
   "extTokenDeepLink": "상세 통계 →",
   "extTokenCopyBtn": "복사",
   "extTokenHint": "확장 프로그램의 팝업 설정에 token을 붙여넣으세요. 취소하면 모든 extension이 즉시 비활성화됩니다 (재생성 후 새 token을 다시 붙여넣으면 됩니다).",
-  "extPageNote": "확장 프로그램과 봇 연동을 한곳에서 관리합니다. Slido extension / Discord bridge / OBS plugin / bookmarklet은 모두 동일한 {tag}를 공유하며, admin의 API Tokens(per-integration ACL)와는 별개의 레인입니다.",
+  "extPageNote": "기존 도구를 이 행사에 연결합니다: Slido 질문, Discord 브리지, OBS 플러그인.",
   "extToastTokenGenerated": "Fire Token이 생성되었습니다 · 클립보드에 복사됨",
   "extToastTokenRevoked": "Fire Token이 취소되었습니다",
   "extTokenPrefixHint": "{prefix} (앞 6자리만 표시됨 · 전체 값은 생성 직후에만 볼 수 있음)",
@@ -2823,5 +2823,9 @@
   "widgetPos_center": "가운데",
   "widgetPos_bottom_left": "왼쪽 아래",
   "widgetPos_bottom_center": "아래",
-  "widgetPos_bottom_right": "오른쪽 아래"
+  "widgetPos_bottom_right": "오른쪽 아래",
+  "tabExtWebhooks": "웹훅",
+  "tabExtPlugins": "플러그인",
+  "tabExtApiKeys": "API 키",
+  "tabExtScheduler": "예약 발송"
 }
