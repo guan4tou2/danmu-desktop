@@ -14549,3 +14549,151 @@ body.is-light .admin-login-wordmark.is-on-light,
   font-size: var(--text-caption);
   color: var(--color-text-secondary);
 }
+
+/* ── 首次導覽氣泡（設計稿 10 · G1）──────────────────────────────────
+   3 步：顯示層 → 觀眾怎麼進來 → 遇到不當內容。
+
+   遮罩沒有獨立圖層：聚光燈本身用一圈 9999px 外陰影當遮罩，所以「打洞」
+   永遠不可能和遮罩對不齊（前一版用 clip-path polygon 手算八個頂點，
+   視窗一改變大小就漏一條縫）。 */
+.admin-ob-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9900;
+  pointer-events: none;
+}
+
+.admin-ob-spot {
+  position: absolute;
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 0 0 4px var(--color-bg-base),
+    0 0 0 9999px var(--color-overlay-soft);
+  transition:
+    top var(--motion-normal) ease,
+    left var(--motion-normal) ease,
+    width var(--motion-normal) ease,
+    height var(--motion-normal) ease;
+}
+
+/* 目標不在畫面上時退回整頁壓暗，氣泡置中 */
+.admin-ob-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--color-overlay-soft);
+}
+
+.admin-ob-bubble {
+  position: absolute;
+  width: 360px;
+  max-width: calc(100vw - var(--space-8));
+  pointer-events: auto;
+  background: var(--color-bg-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  box-shadow: 0 18px 48px var(--shadow-base);
+}
+
+/* 16px 45° 小三角。用 border-*: 0 只留兩條邊，卡片本體才能把三角形的
+   內側邊蓋掉，接縫看不出來。 */
+.admin-ob-bubble::before {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: var(--color-bg-base);
+  border: 1px solid var(--color-border);
+  transform: rotate(45deg);
+}
+/* --ob-arrow 由 JS 依目標中心算出（氣泡被視窗邊緣夾住時，箭頭還是要
+   指在目標上，不能跟著卡片走）。 */
+.admin-ob-bubble[data-arrow="top"]::before {
+  top: -9px; left: var(--ob-arrow, 32px); border-right: 0; border-bottom: 0;
+}
+.admin-ob-bubble[data-arrow="bottom"]::before {
+  bottom: -9px; left: var(--ob-arrow, 32px); border-left: 0; border-top: 0;
+}
+.admin-ob-bubble[data-arrow="left"]::before {
+  left: -9px; top: var(--ob-arrow, 28px); border-right: 0; border-top: 0;
+}
+.admin-ob-bubble[data-arrow="none"]::before { display: none; }
+
+.admin-ob-count {
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--color-ink-accent);
+}
+
+.admin-ob-title {
+  margin-top: var(--space-2);
+  font-size: var(--text-body);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* 稿上是 14px；字級刻度只有 13/15，取 15（--text-subhead，主力 body）——
+   這是氣泡裡唯一要讀完的一段話，往下取會比標題小兩階。 */
+.admin-ob-body {
+  margin-top: var(--space-2);
+  font-size: var(--text-subhead);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.admin-ob-foot {
+  margin-top: var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.admin-ob-foot-spacer { flex: 1 1 auto; }
+
+.admin-ob-skip {
+  height: 36px;
+  padding: 0 var(--space-2);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-subhead);
+  cursor: pointer;
+  transition: color var(--motion-fast) ease;
+}
+.admin-ob-skip:hover { color: var(--color-text-primary); }
+
+.admin-ob-next {
+  height: 36px;
+  padding: 0 var(--space-4);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  color: var(--color-ink-on-accent);
+  font-size: var(--text-subhead);
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter var(--motion-fast) ease;
+}
+.admin-ob-next:hover { filter: brightness(1.06); }
+
+/* 底部一行進度：1 顯示層 · 2 觀眾怎麼進來 · 3 遇到不當內容 */
+.admin-ob-progress {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.admin-ob-progress-sep { opacity: 0.5; }
+.admin-ob-progress-item.is-current {
+  color: var(--color-ink-accent);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-ob-spot { transition: none; }
+}

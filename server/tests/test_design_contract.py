@@ -944,3 +944,45 @@ def test_desktop_update_dialog_waits_for_the_display_to_close(electron_zh):
     assert "OverlayControl" in js and "isRunning" in js
     assert 'data-update-dialog="install"' in js
     assert 'data-update-dialog="later"' in js
+
+
+def test_onboarding_tour_is_three_bubbles_pointing_at_real_targets(zh):
+    """設計稿 10 · G1：3 步氣泡，指向控制台上真的存在的東西。
+
+    原本是 5 步，其中 3 步在教工具（⌘K／Fire Token／通知中心）——第一次
+    開這個頁面的人還沒有 webhook 會失敗，也還沒有東西要 POST 進來。稿上
+    收斂成「把場開起來」的最短路徑：顯示層 → 觀眾怎麼進來 → 遇到不當內容。
+    """
+    assert zh["obStep1Title"] == "先讓大螢幕連上"
+    assert "這張卡就會變綠" in zh["obStep1Body"]
+    # 底部進度行的三個短標籤
+    assert zh["obStep1Label"] == "顯示層"
+    assert zh["obStep2Label"] == "觀眾怎麼進來"
+    assert zh["obStep3Label"] == "遇到不當內容"
+    # 按鈕只寫動詞，不帶箭頭／勾勾（設計稿 14 詞彙表）
+    assert zh["obSkip"] == "略過導覽"
+    assert zh["obNext"] == "下一步"
+    assert zh["obDone"] == "完成"
+    for gone in ("obStep4Title", "obStep5Title", "obPrev"):
+        assert gone not in zh, gone
+
+    js = _strip_comments(_read("server/static/js/admin-onboarding.js"))
+    # 遮罩＝聚光燈自己的外陰影，不再手算 clip-path 頂點
+    assert "clip-path" not in js
+    assert "admin-ob-spot" in js and "admin-ob-bubble" in js
+    # 三個目標都是控制台上實際存在的選擇器
+    assert ".admin-cockpit-overlay" in js
+    assert ".admin-cockpit-stats-actions" in js
+    assert "#sec-live-feed" in js
+    # 步驟數就是 3
+    assert js.count("titleKey:") == 3
+
+    css = _read("server/static/css/style.css")
+    assert "width: 360px;" in css.split(".admin-ob-bubble {")[1].split("}")[0]
+    assert "border-radius: var(--radius-xl);" in css.split(".admin-ob-bubble {")[1].split("}")[0]
+    # 打洞：4px 白圈 + 9999px 遮罩
+    spot = css.split(".admin-ob-spot {")[1].split("}")[0]
+    assert "0 0 0 4px var(--color-bg-base)" in spot
+    assert "0 0 0 9999px var(--color-overlay-soft)" in spot
+    tokens = _read("shared/tokens.css")
+    assert "--color-overlay-soft: light-dark(rgba(15, 23, 42, 0.35)" in tokens

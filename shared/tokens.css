@@ -183,6 +183,11 @@
   --color-bg-input-disabled: light-dark(rgba(241, 245, 249, 0.8), rgba(30, 41, 59, 0.5));
   --color-overlay: light-dark(rgba(15, 23, 42, 0.45), rgba(0, 0, 0, 0.6));
 
+  /* 設計稿 10 · G1 導覽氣泡的遮罩：比 --color-overlay 淺一階（稿上指定
+   * rgba(15,23,42,.35)）。導覽的工作是「指出這一塊」，底下的 UI 還要看得
+   * 清楚；壓到 .45 就變成一般 modal 遮罩，兩者的語意不同。 */
+  --color-overlay-soft: light-dark(rgba(15, 23, 42, 0.35), rgba(2, 6, 23, 0.55));
+
   /* Theme-aware overlay tints — replace hardcoded rgba(255,255,255,X)
    * row/button hover so they correctly invert on light theme. Dark
    * mode = subtle white lift; light mode override below = subtle slate

@@ -1,73 +1,58 @@
 /**
- * Admin · Onboarding Tour (2026-04-29).
+ * Admin · 首次導覽（設計稿 10 · G1）。
  *
- * Mirrors docs/designs/design-v2/components/admin-batch9.jsx
- * AdminOnboardingTour. Shows a 5-step spotlight+tooltip overlay on the
- * first dashboard visit. Triggered again via:
- *   - AdminOnboarding.start() (called from About page)
- *   - URL hash #/onboarding-tour
+ * 3 步氣泡：顯示層 → 觀眾怎麼進來 → 遇到不當內容。第一次進控制台時
+ * 自動開；也可從「關於」頁 AdminOnboarding.start() 或 #/onboarding-tour
+ * 叫回來。
  *
- * Steps highlight specific UI regions via clip-path cutout + border ring.
- * Target regions are looked up via data attributes / CSS selectors at
- * runtime so the positions stay correct across viewport sizes.
+ * 2026-09-07 依設計稿重寫（原本是 5 步、深色 tooltip、clip-path 打洞）。
+ * 舊版的三個問題：
+ *   - 5 步裡有 3 步在教工具（⌘K／Fire Token／通知中心），第一次用的人
+ *     還沒有東西要通知；稿上收斂成「把場開起來」的最短路徑。
+ *   - clip-path polygon 手算八個頂點，視窗一縮就漏縫。改用聚光燈自己的
+ *     9999px 外陰影當遮罩，打洞和遮罩不可能對不齊。
+ *   - 樣式全部 inline 且寫死深色 hex，淺色主題下是深卡片配深字。
  *
- * Loaded as <script defer> in admin.html.
+ * 樣式在 server/static/css/style.css 的 .admin-ob-* 區塊。
+ * 以 <script defer> 掛在 admin.html。
  */
 (function () {
   "use strict";
 
-  const DONE_KEY  = "danmu.onboarding.done";
-  const ROOT_ID   = "admin-onboarding-root";
+  const DONE_KEY = "danmu.onboarding.done";
+  const ROOT_ID  = "admin-onboarding-root";
 
-  // The tour's spotlight ring animates via @keyframes, which has to live in a
-  // real style element — and `style-src-elem` only accepts the per-response
-  // nonce, so injecting one without it means the whole block is dropped and
-  // the ring just sits there. AdminUtils.styleTag() attaches the nonce.
-  function styleTag(css) {
-    return window.AdminUtils.styleTag("", css);
-  }
+  // 氣泡與目標的間距、聚光燈往外撐開的留白。
+  const GAP = 16;
+  const PAD = 8;
+  const BUBBLE_W = 360;
 
-  // D-4：STEPS 是頂層常數（parse 時 ServerI18n 未 init）——文案存 key，
-  // 渲染時才 t()。
+  // STEPS 是頂層常數（parse 時 ServerI18n 還沒 init），所以文案只存 key，
+  // 渲染當下才 t()。
+  //
+  // target 一律指向控制台上真的存在、而且看得見的東西——找不到就退回
+  // 置中無聚光燈，不會空指一塊。
   const STEPS = [
     {
-      n: 1,
       titleKey: "obStep1Title",
       bodyKey: "obStep1Body",
-      target: ".admin-dash-kpi-row, [data-section='dashboard-kpi']",
-      fallbackRect: { x: 12, y: 80, w: 700, h: 120 },
-      tipSide: "bottom",
+      labelKey: "obStep1Label",
+      target: ".admin-cockpit-overlay",
+      side: "bottom",
     },
     {
-      n: 2,
       titleKey: "obStep2Title",
       bodyKey: "obStep2Body",
-      target: "[data-admin-palette-trigger], .admin-palette-trigger, [data-cmd-palette-open]",
-      fallbackRect: { x: 0.55, y: 12, w: 240, h: 36, relative: true },
-      tipSide: "bottom",
+      labelKey: "obStep2Label",
+      target: ".admin-cockpit-stats-actions",
+      side: "bottom",
     },
     {
-      n: 3,
       titleKey: "obStep3Title",
       bodyKey: "obStep3Body",
-      target: "[data-route='integrations']",
-      fallbackRect: { x: 0, y: 480, w: 200, h: 36, relative: false },
-      tipSide: "right",
-    },
-    {
-      n: 4,
-      titleKey: "obStep4Title",
-      bodyKey: "obStep4Body",
-      target: "[data-route='notifications']",
-      fallbackRect: { x: 0, y: 440, w: 200, h: 36, relative: false },
-      tipSide: "right",
-    },
-    {
-      n: 5,
-      titleKey: "obStep5Title",
-      bodyKey: "obStep5Body",
-      target: null,
-      tipSide: "center",
+      labelKey: "obStep3Label",
+      target: "#sec-live-feed .admin-lf-v4__card, #sec-live-feed",
+      side: "top",
     },
   ];
 
@@ -78,27 +63,28 @@
 
   window.AdminOnboarding = {
     start: _start,
-    isDone: function () { try { return !!localStorage.getItem(DONE_KEY); } catch (_) { return false; } },
-    reset: function () { try { localStorage.removeItem(DONE_KEY); } catch (_) {} },
+    isDone: function () {
+      try { return !!localStorage.getItem(DONE_KEY); } catch (_) { return false; }
+    },
+    reset: function () {
+      try { localStorage.removeItem(DONE_KEY); } catch (_) {}
+    },
   };
 
   // ── trigger ──────────────────────────────────────────────────────
 
-  // Phase A IA reorg (2026-05-06): cockpit slug is now `live`; `dashboard`
-  // is a kept alias. Onboarding tour fires on either to survive bookmark
-  // drift while we land Phase B/D.
+  // cockpit slug 是 `live`；`dashboard` 是保留的別名，書籤還會指過來。
   const COCKPIT_ROUTES = new Set(["live", "dashboard"]);
 
   function _tryAutoStart() {
-    if (window.AdminOnboarding.isDone()) return;
-    const route = _currentRoute();
-    if (!COCKPIT_ROUTES.has(route)) return;
+    if (_active || window.AdminOnboarding.isDone()) return;
+    if (!COCKPIT_ROUTES.has(_currentRoute())) return;
     // 場次進行中絕不自動彈導覽（會直接蓋住即時訊息流——場中實測抓到）。
     // 用場次橫幅的 live 態當訊號；橫幅還沒渲染就先等一拍再判。
     const sessionLive = () => !!document.querySelector(".admin-session-banner-live");
     if (sessionLive()) return;
     setTimeout(() => {
-      if (window.AdminOnboarding.isDone() || sessionLive()) return;
+      if (_active || window.AdminOnboarding.isDone() || sessionLive()) return;
       if (!COCKPIT_ROUTES.has(_currentRoute())) return;
       _start();
     }, 1200);
@@ -120,58 +106,65 @@
     if (_active) return;
     _active = true;
     _step = 0;
-    _renderOverlay();
+    _mount();
   }
 
   function _stop(done) {
+    if (!_active) return;
     _active = false;
     document.body.removeEventListener("click", _handleBodyClick);
+    document.removeEventListener("keydown", _handleKeydown);
+    window.removeEventListener("resize", _renderStep);
     const root = document.getElementById(ROOT_ID);
     if (root) root.remove();
     if (done) {
       try { localStorage.setItem(DONE_KEY, "1"); } catch (_) {}
     }
-    // bounce hash away if we got here via #/onboarding-tour
+    // 從 #/onboarding-tour 進來的話把 hash 彈回控制台
     if (window.location.hash === "#/onboarding-tour") {
       try { history.replaceState(null, "", "#/live"); } catch (_) {}
       window.dispatchEvent(new HashChangeEvent("hashchange"));
     }
   }
 
-  // ── body-level click delegate ────────────────────────────────────
-  // root has pointer-events:none so we delegate from document.body instead.
+  function _advance() {
+    if (_step < STEPS.length - 1) { _step++; _renderStep(); }
+    else { _stop(true); }
+  }
+
+  // ── events ───────────────────────────────────────────────────────
+  // root 是 pointer-events:none（導覽不擋底下的 UI），所以從 body 委派。
 
   function _handleBodyClick(e) {
     const btn = e.target.closest("[data-ob-action]");
     if (!btn) return;
-    const action = btn.dataset.obAction;
-    if (action === "next") { e.stopPropagation(); _advance(); }
-    else if (action === "prev") { e.stopPropagation(); _retreat(); }
-    else if (action === "skip") { e.stopPropagation(); _stop(false); }
+    e.stopPropagation();
+    if (btn.dataset.obAction === "next") _advance();
+    else if (btn.dataset.obAction === "skip") _stop(false);
+  }
+
+  function _handleKeydown(e) {
+    if (!_active) return;
+    if (e.key === "Escape") { e.preventDefault(); _stop(false); }
   }
 
   // ── render ───────────────────────────────────────────────────────
 
-  function _renderOverlay() {
-    // Remove stale root if any
+  function _mount() {
     const old = document.getElementById(ROOT_ID);
     if (old) old.remove();
 
     const root = document.createElement("div");
     root.id = ROOT_ID;
+    root.className = "admin-ob-root";
     root.setAttribute("role", "dialog");
-    root.setAttribute("aria-modal", "true");
+    root.setAttribute("aria-modal", "false");
     root.setAttribute("aria-label", ServerI18n.t("obAriaLabel"));
-    // pointer-events:none on root so the overlay never blocks clicks on the
-    // underlying admin UI (logout button, nav, etc.).  Only the tooltip card
-    // is set to pointer-events:auto in _renderStep so its buttons work.
-    root.style.cssText = "position:fixed;inset:0;z-index:9900;pointer-events:none";
     document.body.appendChild(root);
 
-    // Delegate clicks from the tooltip card — no need for a root-level handler
-    // because root itself has pointer-events:none.  The tooltip div uses a
-    // data-ob-root attribute so we can target the correct element.
     document.body.addEventListener("click", _handleBodyClick);
+    document.addEventListener("keydown", _handleKeydown);
+    window.addEventListener("resize", _renderStep);
 
     _renderStep();
   }
@@ -182,175 +175,129 @@
 
     const cur = STEPS[_step];
     const total = STEPS.length;
-    const rect  = cur.target ? _findRect(cur.target) : null;
-    const isCenter = cur.tipSide === "center" || !rect;
-
+    const rect = _findRect(cur.target);
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const PAD = 6;
 
-    // ── dim layer ──
-    let clipPath = "none";
-    if (!isCenter && rect) {
-      const x1 = rect.left - PAD;
-      const y1 = rect.top - PAD;
-      const x2 = rect.right + PAD;
-      const y2 = rect.bottom + PAD;
-      clipPath = `polygon(
-        0 0, ${vw}px 0, ${vw}px ${vh}px, 0 ${vh}px, 0 0,
-        ${x1}px ${y1}px,
-        ${x1}px ${y2}px,
-        ${x2}px ${y2}px,
-        ${x2}px ${y1}px,
-        ${x1}px ${y1}px
-      )`;
+    // ── 聚光燈 ──
+    let spot = "";
+    if (rect) {
+      spot =
+        '<div class="admin-ob-spot" style="' +
+        "left:" + (rect.left - PAD) + "px;" +
+        "top:" + (rect.top - PAD) + "px;" +
+        "width:" + (rect.width + PAD * 2) + "px;" +
+        "height:" + (rect.height + PAD * 2) + "px;" +
+        '"></div>';
+    } else {
+      spot = '<div class="admin-ob-scrim"></div>';
     }
 
-    // ── tooltip position ──
-    const TIP_W = 340;
-    const TIP_H = 200; // approximate
-    let tipLeft = (vw - TIP_W) / 2;
-    let tipTop  = (vh - TIP_H) / 2;
-    let arrowClass = "";
+    // ── 氣泡位置 ──
+    // 高度先量不到（還沒進 DOM），先用估值定位，插入後再照實際高度修一次。
+    let left = (vw - BUBBLE_W) / 2;
+    let top = vh / 2 - 110;
+    let arrow = "none";
 
-    if (!isCenter && rect) {
-      if (cur.tipSide === "bottom") {
-        tipLeft = Math.max(8, Math.min(vw - TIP_W - 8, rect.left));
-        tipTop  = rect.bottom + 16;
-        arrowClass = "ob-tip-arrow-top";
-      } else if (cur.tipSide === "right") {
-        tipLeft = rect.right + 16;
-        tipTop  = Math.max(8, rect.top - 20);
-        arrowClass = "ob-tip-arrow-left";
-      } else if (cur.tipSide === "top") {
-        tipLeft = Math.max(8, Math.min(vw - TIP_W - 8, rect.left));
-        tipTop  = rect.top - TIP_H - 16;
-        arrowClass = "ob-tip-arrow-bottom";
+    if (rect) {
+      // 上／下方的氣泡對齊目標中心。靠左對齊在窄目標上還行，但控制台的
+      // 目標從 103px（QR 鈕）到 1103px（訊息流卡）都有，靠左對齊時箭頭
+      // 會被夾在卡片邊緣，看起來像指錯地方。
+      const cx = rect.left + rect.width / 2;
+      if (cur.side === "top") {
+        left = cx - BUBBLE_W / 2;
+        top = rect.top - GAP;      // 下面用實際高度往上推
+        arrow = "bottom";
+      } else if (cur.side === "right") {
+        left = rect.right + GAP + PAD;
+        top = rect.top;
+        arrow = "left";
+      } else {
+        left = cx - BUBBLE_W / 2;
+        top = rect.bottom + GAP + PAD;
+        arrow = "top";
       }
-      // Clamp within viewport
-      tipLeft = Math.max(8, Math.min(vw - TIP_W - 8, tipLeft));
-      tipTop  = Math.max(8, Math.min(vh - TIP_H - 8, tipTop));
+      left = Math.max(GAP, Math.min(vw - BUBBLE_W - GAP, left));
     }
 
-    const progressDots = STEPS.map(function (_, i) {
-      return `<span class="ob-prog-dot ${i <= _step ? "ob-prog-dot--done" : ""}"></span>`;
+    const progress = STEPS.map(function (s, i) {
+      return (
+        '<span class="admin-ob-progress-item' + (i === _step ? " is-current" : "") + '">' +
+        (i + 1) + " " + _esc(ServerI18n.t(s.labelKey)) +
+        "</span>" +
+        (i < total - 1 ? '<span class="admin-ob-progress-sep">·</span>' : "")
+      );
     }).join("");
 
-    root.innerHTML = `
-      <!-- dim overlay -->
-      <div class="ob-dim" style="
-        position:absolute;inset:0;
-        background:rgba(0,0,0,0.6);
-        clip-path:${clipPath};
-        transition:clip-path .3s ease;
-        pointer-events:none;
-      "></div>
+    root.innerHTML =
+      spot +
+      '<div class="admin-ob-bubble" data-arrow="' + arrow + '" style="left:' + left + "px;top:" + top + 'px">' +
+        '<div class="admin-ob-count">' + (_step + 1) + " / " + total + "</div>" +
+        '<div class="admin-ob-title">' + _esc(ServerI18n.t(cur.titleKey)) + "</div>" +
+        '<div class="admin-ob-body">' + _esc(ServerI18n.t(cur.bodyKey)) + "</div>" +
+        '<div class="admin-ob-foot">' +
+          '<button type="button" class="admin-ob-skip" data-ob-action="skip">' +
+            _esc(ServerI18n.t("obSkip")) +
+          "</button>" +
+          '<div class="admin-ob-foot-spacer"></div>' +
+          '<button type="button" class="admin-ob-next" data-ob-action="next">' +
+            _esc(ServerI18n.t(_step === total - 1 ? "obDone" : "obNext")) +
+          "</button>" +
+        "</div>" +
+        '<div class="admin-ob-progress">' + progress + "</div>" +
+      "</div>";
 
-      <!-- spotlight ring -->
-      ${!isCenter && rect ? `<div class="ob-ring" style="
-        position:absolute;
-        left:${rect.left - PAD}px;top:${rect.top - PAD}px;
-        width:${rect.width + PAD * 2}px;height:${rect.height + PAD * 2}px;
-        border:2px solid var(--color-primary,#38bdf8);
-        border-radius:6px;
-        box-shadow:0 0 0 2px rgba(56,189,248,.25),0 0 20px rgba(56,189,248,.45);
-        animation:ob-pulse 2s ease-in-out infinite;
-        pointer-events:none;
-      "></div>` : ""}
+    // 插入後才量得到實際高度：往上開的氣泡要整個推上去，往下開的要確定
+    // 沒有掉出視窗底（掉出去的話翻到上方，箭頭跟著換邊）。
+    const bubble = root.querySelector(".admin-ob-bubble");
+    if (!bubble || !rect) return;
+    const h = bubble.offsetHeight;
+    if (cur.side === "top") {
+      bubble.style.top = Math.max(GAP, rect.top - GAP - PAD - h) + "px";
+    } else if (top + h > vh - GAP) {
+      const flipped = rect.top - GAP - PAD - h;
+      if (flipped >= GAP) {
+        bubble.style.top = flipped + "px";
+        bubble.setAttribute("data-arrow", "bottom");
+      } else {
+        bubble.style.top = Math.max(GAP, vh - h - GAP) + "px";
+        bubble.setAttribute("data-arrow", "none");
+      }
+    }
+    _aimArrow(bubble, rect);
+  }
 
-      <!-- tooltip -->
-      <div class="ob-tip ${arrowClass}" style="
-        position:absolute;
-        left:${tipLeft}px;top:${tipTop}px;
-        width:${TIP_W}px;
-        pointer-events:auto;
-        background:var(--color-bg-base,#0f172a);
-        border:1px solid rgba(56,189,248,.45);
-        border-radius:8px;
-        padding:18px;
-        box-shadow:0 20px 48px rgba(0,0,0,.5),0 0 0 1px rgba(56,189,248,.15);
-      ">
-        <!-- progress header -->
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-          <span style="
-            font-family:var(--font-mono,'IBM Plex Mono',monospace);
-            font-size:11px;letter-spacing:1.5px;
-            color:var(--color-ink-accent);
-            padding:3px 8px;
-            background:rgba(56,189,248,.1);
-            border:1px solid rgba(56,189,248,.35);
-            border-radius:2px;
-          ">STEP ${cur.n} / ${total}</span>
-          <div style="flex:1;display:flex;gap:3px">${progressDots}</div>
-        </div>
-
-        <div style="font-size:16px;font-weight:600;color:var(--admin-text,#f1f5f9);margin-bottom:6px;letter-spacing:.2px">
-          ${ServerI18n.t(cur.titleKey)}
-        </div>
-        <div style="font-size:13px;color:var(--admin-text-dim,#94a3b8);line-height:1.6;letter-spacing:.2px">
-          ${ServerI18n.t(cur.bodyKey)}
-        </div>
-
-        <div class="ob-actions">
-          <button type="button" class="ob-btn ob-btn--ghost" data-ob-action="skip">
-            ${ServerI18n.t("obSkip")}
-          </button>
-          <div class="ob-actions__spacer"></div>
-          ${_step > 0 ? `<button type="button" class="admin-ui-action ob-btn" data-ob-action="prev">${ServerI18n.t("obPrev")}</button>` : ""}
-          <button type="button" class="admin-ui-action is-primary ob-btn" data-ob-action="next">
-            ${_step === total - 1 ? ServerI18n.t("obDone") : ServerI18n.t("obNext")}
-          </button>
-        </div>
-      </div>
-
-      ${styleTag(`
-        @keyframes ob-pulse {
-          0%,100% { box-shadow:0 0 0 2px rgba(56,189,248,.25),0 0 20px rgba(56,189,248,.45); }
-          50%      { box-shadow:0 0 0 4px rgba(56,189,248,.4),0 0 32px rgba(56,189,248,.7); }
-        }
-        .ob-tip-arrow-top::before {
-          content:"";position:absolute;top:-7px;left:40px;
-          width:12px;height:12px;
-          background:var(--color-bg-base,#0f172a);
-          border-top:1px solid rgba(56,189,248,.45);
-          border-left:1px solid rgba(56,189,248,.45);
-          transform:rotate(45deg);
-        }
-        .ob-tip-arrow-left::before {
-          content:"";position:absolute;top:28px;left:-7px;
-          width:12px;height:12px;
-          background:var(--color-bg-base,#0f172a);
-          border-top:1px solid rgba(56,189,248,.45);
-          border-left:1px solid rgba(56,189,248,.45);
-          transform:rotate(-45deg);
-        }
-        .ob-prog-dot {
-          display:inline-block;width:100%;height:2px;border-radius:1px;
-          background:rgba(56,189,248,.25);flex:1;
-        }
-        .ob-prog-dot--done { background:var(--color-primary,#38bdf8); }
-      `)}`;
+  // 箭頭永遠指在目標中心，不跟著卡片走——氣泡被視窗邊緣夾住時（例如
+  // 目標貼在最右邊），卡片只能往左退，箭頭再固定 32px 就會指到空白處。
+  function _aimArrow(bubble, rect) {
+    const side = bubble.getAttribute("data-arrow");
+    if (side === "none") return;
+    const box = bubble.getBoundingClientRect();
+    const isVertical = side === "top" || side === "bottom";
+    const center = isVertical
+      ? rect.left + rect.width / 2 - box.left
+      : rect.top + rect.height / 2 - box.top;
+    const span = isVertical ? box.width : box.height;
+    const offset = Math.max(16, Math.min(span - 32, center - 8));
+    bubble.style.setProperty("--ob-arrow", offset + "px");
   }
 
   function _findRect(selector) {
+    if (!selector) return null;
     const el = document.querySelector(selector);
     if (!el) return null;
     const r = el.getBoundingClientRect();
-    if (r.width === 0 && r.height === 0) return null;
+    if (r.width < 8 || r.height < 8) return null;
+    // 捲出視窗外的目標指了也看不到——退回置中。
+    if (r.bottom < 0 || r.top > window.innerHeight) return null;
     return r;
   }
 
-  function _advance() {
-    if (_step < STEPS.length - 1) {
-      _step++;
-      _renderStep();
-    } else {
-      _stop(true);
-    }
-  }
-
-  function _retreat() {
-    if (_step > 0) { _step--; _renderStep(); }
+  function _esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
   }
 
   // ── init ─────────────────────────────────────────────────────────
@@ -360,13 +307,9 @@
     window.addEventListener("hashchange", _onHashChange);
     _onHashChange();
 
-    // Auto-start on first cockpit visit (delay so cockpit content renders first)
     window.addEventListener("hashchange", function () {
-      if (COCKPIT_ROUTES.has(_currentRoute())) {
-        setTimeout(_tryAutoStart, 600);
-      }
+      if (COCKPIT_ROUTES.has(_currentRoute())) setTimeout(_tryAutoStart, 600);
     });
-    // Also check on initial load
     setTimeout(_tryAutoStart, 800);
   });
 })();
