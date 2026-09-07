@@ -7068,7 +7068,6 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 }
 
 @media (max-width: 720px) {
-  
   .admin-bancfm-duration { flex-wrap: wrap; }
   .admin-bancfm-dchip    { min-width: 80px; flex: 1 1 calc(50% - 4px); }
 }
