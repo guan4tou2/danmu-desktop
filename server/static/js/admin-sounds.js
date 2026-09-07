@@ -416,7 +416,7 @@
 
   function buildSectionHTML() {
     return `
-      <div id="${SECTION_ID}" class="admin-sounds-page hud-page-stack lg:col-span-2">
+      <div id="${SECTION_ID}" class="admin-sounds-page hud-page-stack lg:col-span-2" data-tpl="B">
         <div class="admin-ui-page-head">
           <h2 class="admin-ui-page-title">${ServerI18n.t("soundsPageTitle")}</h2>
           <p class="admin-ui-page-note">

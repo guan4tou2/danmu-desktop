@@ -179,7 +179,9 @@ jobs:
                   if msg == 'connection':
                       continue
                   data = json.loads(msg) if isinstance(msg, str) else msg
-                  if isinstance(data, dict) and data.get('type') in ('ping', 'heartbeat_ack'):
+                  # display_layer 是伺服器在 client 註冊完成當下補推的現況
+                  # （設計稿 16 · OS1），跟 ping 一樣不是「我剛送出的那則」。
+                  if isinstance(data, dict) and data.get('type') in ('ping', 'heartbeat_ack', 'display_layer'):
                       if data.get('type') == 'ping':
                           ws.send(json.dumps({'type': 'pong'}))
                       continue

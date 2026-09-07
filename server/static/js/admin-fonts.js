@@ -29,7 +29,7 @@
       : "";
 
     return `
-      <div id="sec-fonts" class="hud-page-stack lg:col-span-2">
+      <div id="sec-fonts" class="hud-page-stack lg:col-span-2" data-tpl="B">
         <div class="admin-ui-page-head">
           <h2 class="admin-ui-page-title">${ServerI18n.t("font")}</h2>
           <p class="admin-ui-page-note">
