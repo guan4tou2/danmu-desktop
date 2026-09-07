@@ -182,6 +182,19 @@
 
   }
 
+  // admin.js renders the control panel HTML asynchronously (after an HTTP fetch),
+  // so DOMContentLoaded fires before #addKeywordBtn and friends exist.
+  // admin.js dispatches "admin-panel-rendered" once the DOM is ready.
+  //
+  // 2026-09-07：這個 boot 區塊差點跟著「重播」分頁一起被刪掉——它原本夾在
+  // _initHistoryTabs 的定義後面，而那整段是要移除的。沒有它，黑名單的新增／
+  // 移除按鈕一顆 listener 都沒綁，畫面看起來正常但按了沒反應（CI 的
+  // test_browser_admin 兩條黑名單測試抓到）。
+  document.addEventListener("admin-panel-rendered", function () {
+    fetchBlacklist();
+    _initHistoryEventListeners();
+  });
+
   // 2026-09-07 設計稿 08 · H1：「重播」分頁退場，連同它底下的子分頁 strip
   // （sec-history-tabs）、訊息清單 pane（sec-history-list）與舊的 sec-history
   // 卡。彈幕歷史清單的抓取／渲染／清除、自動更新、全選重播都隨之移除——

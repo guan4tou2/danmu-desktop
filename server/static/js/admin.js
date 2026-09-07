@@ -1148,7 +1148,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `);
 
     // Danmu History Card
-    
+
 
     // Polls Builder (multi-question master-detail) — extracted to
     // admin-poll-builder.js (Group D-3 split, 2026-04-28). Self-binds
