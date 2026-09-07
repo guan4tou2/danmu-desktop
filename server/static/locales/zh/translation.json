@@ -2023,7 +2023,7 @@
   "lfToastMasked": "已遮罩 {ok} / {total}",
   "lfCountUnit": "{n} 筆",
   "lfAutoScrollPaused": "已暫停",
-  "lfAutoScrollOn": "自動滾動 · ON",
+  "lfAutoScrollOn": "自動捲動中",
   "lfAriaLabel": "即時訊息流",
   "lfPageTitle": "即時訊息流",
   "lfPageNote": "場次進行中的彈幕即時串；可就地封鎖、標記進審核佇列。",

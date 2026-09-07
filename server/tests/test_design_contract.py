@@ -1496,3 +1496,53 @@ def test_brand_lockup_and_favicon_match_spec_11():
     assert "hud-corners-auto" not in admin_html
     assert "DANMU · ADMIN · BOOT" not in admin_html
     assert "skeleton skeleton-title" in admin_html  # 骨架本身還在
+
+
+def test_ui_status_replaces_the_ad_hoc_status_dots():
+    """設計稿 14 §2／03「原則 4 · 狀態只有一個來源」：狀態＝色點＋文字。
+
+    稿上把狀態 chip 收斂成一個 `.ui-status`，取代 `.hud-dot` / `.hud-label` /
+    `.admin-lf-v4__statedot`（`.hud-label` 在 2026-09-07 的品牌那輪就沒消費者了）。
+    重點不只是換名字：原本兩個呼叫端都是「自己畫一顆點、旁邊另外擺一個 span」，
+    狀態要改兩個地方，點色與字色還可能各說各話。現在點是 `::before`（不進無障礙
+    樹，帶資訊的是字），換一個 `is-*` 就同時換掉點色、字色與底色。
+
+    **字色刻意不是純 `--color-ink-*`**：ink 層是對著「沒有淡底的卡片」調的，
+    淺色臂只剩約 0.4 的餘裕，疊上稿上那層 14% 同色薄膜就掉到 4.25/4.33，低於
+    設計稿 03 自己訂的「12–13px 文字對比 ≥ 4.5:1」。往 `--color-text-primary`
+    混 15% 之後六個組合最低 4.89——而且兩臂方向自動正確（淺色時主文字近黑、
+    深色時近白），不必寫 theme 分支也不必引入新色。
+
+    另外**沒有**動 `.hud-status-dot`：那是 `hud-inspector-head` / 效果卡標題前的
+    裝飾點，不是狀態 chip，稿上 §2 也沒點名它。
+    """
+    css = _read("server/static/css/style.css")
+
+    # 元件本體：稿上的 32 高、8px 點、13px/600
+    assert ".ui-status {" in css
+    assert ".ui-status::before {" in css
+    for want in ("height: 32px;", "width: 8px;", "font-size: var(--text-footnote);"):
+        assert want in css, want
+    for state in ("is-success", "is-warning", "is-danger"):
+        assert f".ui-status.{state} {{" in css, state
+    # 對比補償：三個訊號色都要混主文字色，不能退回純 ink
+    assert css.count("85%, var(--color-text-primary))") == 3
+
+    # 被取代的三個都不再有規則（`.hud-label` 早一輪就走了）
+    for gone in (".hud-dot", ".admin-lf-v4__statedot", ".admin-lf-v4__statelabel", ".hud-label"):
+        assert gone not in _strip_comments(css), gone
+
+    # 兩個呼叫端改用元件，且不再自己塞點
+    login = _strip_comments(_read("server/static/js/admin-login.js"))
+    assert 'class="ui-status is-success"' in login
+    assert "hud-dot" not in login
+    feed = _strip_comments(_read("server/static/js/admin-live-feed.js"))
+    assert 'class="ui-status is-success" data-lf-state' in feed
+    assert "statedot" not in feed and "statelabel" not in feed
+    # 暫停是警告不是錯誤
+    assert '"ui-status is-warning" : "ui-status is-success"' in feed
+
+    # 文案：狀態用「已／中／未」三態，不用全大寫（設計稿 14 · 文案規則）
+    zh = json.loads(_read("server/static/locales/zh/translation.json"))
+    assert zh["lfAutoScrollOn"] == "自動捲動中"
+    assert "ON" not in zh["lfAutoScrollOn"]

@@ -2023,7 +2023,7 @@
   "lfToastMasked": "マスク {ok} / {total}",
   "lfCountUnit": "{n} 件",
   "lfAutoScrollPaused": "一時停止",
-  "lfAutoScrollOn": "自動スクロール · ON",
+  "lfAutoScrollOn": "自動スクロール中",
   "lfAriaLabel": "ライブメッセージ",
   "lfPageTitle": "ライブフィード",
   "lfPageNote": "進行中セッションの弾幕ストリーム。その場でブロック / 審査キューへ。",

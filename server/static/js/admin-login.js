@@ -69,8 +69,9 @@
             <button class="admin-login-submit" type="submit" data-i18n="adminLoginSignIn">${ServerI18n.t("adminLoginSignIn")}</button>
           </form>
           <div class="admin-login-chiprow">
-            <span class="admin-login-chip">
-              <span class="hud-dot is-success" aria-hidden="true"></span>
+            <!-- 設計稿 03「原則 4」：狀態＝色點＋文字。點由 .ui-status::before
+                 畫，不再自己塞一顆 aria-hidden 的 span。 -->
+            <span class="ui-status is-success">
               <span data-i18n="adminLoginServerOnline">${ServerI18n.t("adminLoginServerOnline")}</span>${version ? ` · v${version}` : ""}
             </span>
           </div>

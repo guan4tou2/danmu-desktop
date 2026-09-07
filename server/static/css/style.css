@@ -282,29 +282,6 @@ button:disabled,
   flex-wrap: wrap;
 }
 
-.admin-login-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--admin-line);
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  letter-spacing: 1.5px;
-  color: var(--admin-text-dim);
-}
-
-.admin-login-chip.is-accent {
-  background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
-  border-color: var(--hud-cyan-line, rgba(56, 189, 248, 0.45));
-  color: var(--color-ink-accent);
-}
-
-.admin-login-chip .hud-dot {
-  width: 6px;
-  height: 6px;
-}
 
 .admin-dash-empty {
   padding: 20px 4px;
@@ -11758,14 +11735,6 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-login-chiprow { margin-top: 0; }
 
-.admin-login-chip {
-  border: 0;
-  padding: 0;
-  font-family: var(--font-ui);
-  font-size: var(--text-footnote);
-  letter-spacing: 0;
-}
-
 /* 密碼錯誤時欄位轉紅框（設計稿 06 · L2）—— 錯誤要指向出錯的地方，
    不能只在下面丟一行紅字。 */
 .admin-login-input.is-error {
@@ -12521,52 +12490,6 @@ body.is-light .admin-login-wordmark.is-on-light,
 .admin-replay-bar__spacer { flex: 1 1 auto; }
 
 
-/* Status dot with soft pulse — signals live / idle / offline. */
-.hud-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  box-shadow:
-    0 0 8px var(--color-primary),
-    0 0 16px color-mix(in srgb, var(--color-primary) 33%, transparent);
-  animation: hud-pulse 2s ease-in-out infinite;
-  vertical-align: middle;
-}
-
-
-.hud-dot.is-success {
-  background: var(--color-success);
-  box-shadow:
-    0 0 8px var(--color-success),
-    0 0 16px color-mix(in srgb, var(--color-success) 33%, transparent);
-}
-
-
-.hud-dot.is-warning {
-  background: var(--color-warning);
-  box-shadow:
-    0 0 8px var(--color-warning),
-    0 0 16px color-mix(in srgb, var(--color-warning) 33%, transparent);
-}
-
-
-.hud-dot.is-error {
-  background: var(--color-error);
-  box-shadow:
-    0 0 8px var(--color-error),
-    0 0 16px color-mix(in srgb, var(--color-error) 33%, transparent);
-}
-
-
-.hud-dot.is-idle {
-  background: var(--color-text-muted);
-  box-shadow: none;
-  animation: none;
-}
-
-
 @keyframes hud-pulse {
   0%,
   100% {
@@ -12576,15 +12499,6 @@ body.is-light .admin-login-wordmark.is-on-light,
   50% {
     opacity: 0.55;
     transform: scale(0.9);
-  }
-}
-
-
-
-/* Reduced-motion: kill pulse + keep the static dot visible. */
-@media (prefers-reduced-motion: reduce) {
-  .hud-dot {
-    animation: none;
   }
 }
 
@@ -12994,6 +12908,85 @@ body.is-light .admin-login-wordmark.is-on-light,
   align-items: center;
   gap: 4px;
   flex-wrap: wrap;
+}
+
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * 狀態指示 `.ui-status`（設計稿 03「原則 4 · 狀態只有一個來源」／14 §2）
+ *
+ * 色點 8px ＋ 文字，**永遠成對**——稿上寫死「顏色不單獨承載意義」。所以點是
+ * `::before`：它不進無障礙樹（帶資訊的是字），呼叫端也不必分別操作點和標籤，
+ * 換一個 `is-*` 就同時換掉點色、字色與底色。
+ *
+ * 取代 `.hud-dot`（登入頁「● 伺服器運作中」）與 `.admin-lf-v4__statedot`
+ * （訊息流底部「● 自動捲動：開／已暫停」）——兩者原本都是「自己畫一顆點、
+ * 旁邊另外擺一個 span」，狀態要改兩個地方，點色與字色還可能各說各話。
+ * ────────────────────────────────────────────────────────────────────────── */
+.ui-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+
+.ui-status::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+
+/* 訊號色分兩層：畫字用 --color-ink-*、畫面用 --color-*（淡底 14%，稿上的值）。
+ * 細節見 tokens.css 的 ink 層說明。
+ *
+ * **字色再往 --color-text-primary 混 15%**，這是這個元件獨有的一步。ink 層是
+ * 對著「沒有淡底的卡片」調的，淺色臂只剩 ~0.4 的餘裕（success 在白卡上 4.94）；
+ * 疊一層同色 14% 薄膜就把差距吃掉，實測 success 4.25、warning 4.33，低於設計稿
+ * 03 自己訂的「12–13px 文字對比 ≥ 4.5:1」。往主文字色混的好處是**兩臂方向自動
+ * 正確**——淺色時 text-primary 近黑（字變深）、深色時近白（字變亮），不必寫
+ * theme 分支，也不必引入新色。混完六個組合最低 4.89，色相仍清楚是綠／琥珀／紅。
+ *
+ * 量法（前一次量出 1.03:1 那種假數字就是踩到這兩點）：半透明底要一路合成到第一個
+ * 不透明祖先；oklch 要自己換算——canvas 的 fillStyle 解析不了它，會靜默沿用前值。 */
+.ui-status.is-success {
+  background: color-mix(in srgb, var(--color-success) 14%, transparent);
+  color: color-mix(in srgb, var(--color-ink-success) 85%, var(--color-text-primary));
+}
+
+
+.ui-status.is-warning {
+  background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  color: color-mix(in srgb, var(--color-ink-warning) 85%, var(--color-text-primary));
+}
+
+
+/* 用 --color-error（狀態紅）而不是 --color-danger（破壞性動作紅，Ban／刪除
+ * 按鈕那顆，深色臂刻意更亮）。「無法連線」是狀態不是動作，而且底色與字色要
+ * 同一個紅才不會一顆 chip 裡出現兩種紅。設計稿 14 §1 本來就要求把這兩個紅
+ * 合併，那是 token 層的獨立工項。 */
+.ui-status.is-danger {
+  background: color-mix(in srgb, var(--color-error) 14%, transparent);
+  color: color-mix(in srgb, var(--color-ink-error) 85%, var(--color-text-primary));
+}
+
+
+/* 未開啟：稿上點色比字色再深一階（#64748B vs #94A3B8）。這裡不引入
+ * slate-500——D-2（2026-07-28）已把 --color-text-muted 併回 secondary，
+ * 並定下「真正的 disabled 視覺請另用 opacity」。 */
+.ui-status.is-idle::before {
+  opacity: 0.7;
 }
 
 
@@ -14526,28 +14519,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   color: var(--hud-textDim);
 }
 
-.admin-lf-v4__statedot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--hud-lime, #84e100);
-  animation: lf-v4-pulse 1.4s ease-in-out infinite;
-}
-
-.admin-lf-v4__statedot[data-state="paused"] {
-  background: var(--hud-amber);
-  animation: none;
-}
-
-.admin-lf-v4__statelabel { color: inherit; }
-
 .admin-lf-v4__counts { font-size: var(--text-caption); }
-
-
-@keyframes lf-v4-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-
-@media (prefers-reduced-motion: reduce) {
-  .admin-lf-v4__statedot { animation: none; }
-}
 
 
 @media (max-width: 720px) {
@@ -17337,6 +17309,13 @@ body.is-light .admin-login-wordmark.is-on-light,
     background: ButtonFace;
   }
 
+  /* 狀態 chip 的 14% 淡底在高對比下直接失效，膠囊會糊進背景——補回邊界。
+     字色交給系統（旁邊永遠有字，訊息不會只剩顏色）。 */
+  .ui-status {
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+
   .admin-ui-action.is-primary,
   .admin-ui-seg > button.is-active,
   .admin-ui-seg > button[aria-selected="true"] {
@@ -17351,11 +17330,10 @@ body.is-light .admin-login-wordmark.is-on-light,
    * 這是**刻意挑過的清單**，不是所有的點：稿上明講「Admin 訊息流的顏色點
    * 旁不需名稱（顏色只是裝飾，內容才是資訊）」——裝飾性的點就該跟著系統
    * 色盤走。新增狀態點時要記得加進來。 */
+  .ui-status::before,
   .admin-cockpit-dot,
-  .hud-dot,
   .hud-status-dot,
   .admin-ui-dot,
-  .admin-lf-v4__statedot,
   .admin-bc-v4__statedot,
   .admin-session-live-dot,
   .admin-sessions-livedot,

@@ -413,12 +413,16 @@
   function _updateRateBar() {
     const rate = document.querySelector("[data-lf-rate]");
     const total = document.getElementById("liveFeedCount");
-    const dot = document.querySelector("[data-lf-statedot]");
-    const lbl = document.querySelector("[data-lf-statelabel]");
+    const state = document.querySelector("[data-lf-state]");
     if (rate) rate.textContent = `${_currentRate()} MSG/S`;
     if (total) total.textContent = `${entries.length} TOTAL`;
-    if (dot) dot.dataset.state = paused ? "paused" : "on";
-    if (lbl) lbl.textContent = paused ? ServerI18n.t("lfAutoScrollPaused") : ServerI18n.t("lfAutoScrollOn");
+    if (state) {
+      // 暫停是「還連著但不再自動捲」——是警告不是錯誤，所以走 is-warning。
+      state.className = paused ? "ui-status is-warning" : "ui-status is-success";
+      state.textContent = paused
+        ? ServerI18n.t("lfAutoScrollPaused")
+        : ServerI18n.t("lfAutoScrollOn");
+    }
   }
 
   function _updateChipCounts() {
@@ -534,8 +538,9 @@
 
           <!-- Bottom rate bar -->
           <div class="admin-lf-v4__bottom">
-            <span class="admin-lf-v4__statedot" data-lf-statedot></span>
-            <span class="admin-lf-v4__statelabel" data-lf-statelabel>${ServerI18n.t("lfAutoScrollOn")}</span>
+            <!-- 設計稿 03「原則 4」：狀態＝色點＋文字，一顆元素承載兩者。
+                 原本點與標籤是兩個 span，狀態要改兩個地方。 -->
+            <span class="ui-status is-success" data-lf-state>${ServerI18n.t("lfAutoScrollOn")}</span>
             <span class="admin-lf-v4__spacer"></span>
             <span class="admin-lf-v4__counts">
               <span class="admin-ui-monolabel admin-live-feed-count" id="liveFeedCount">0 TOTAL</span>

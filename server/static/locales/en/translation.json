@@ -2023,7 +2023,7 @@
   "lfToastMasked": "Masked {ok} / {total}",
   "lfCountUnit": "{n}",
   "lfAutoScrollPaused": "Paused",
-  "lfAutoScrollOn": "Auto-scroll · ON",
+  "lfAutoScrollOn": "Auto-scrolling",
   "lfAriaLabel": "Live message stream",
   "lfPageTitle": "Live Feed",
   "lfPageNote": "Live danmu stream for the running session; block or flag to the review queue in place.",
