@@ -15,6 +15,27 @@
 (function () {
   "use strict";
 
+  // 設計稿 15 · SK1：骨架「只做版面輪廓」，**超過 3 秒改顯示「連線較慢…」**。
+  //
+  // 三秒是分界線：三秒內的等待，一塊安靜的輪廓就夠了；超過三秒使用者會開始
+  // 懷疑是不是壞了，這時要講一句話告訴他還在跑。
+  const SLOW_AFTER_MS = 3000;
+
+  function _attachSlowHint(wrap) {
+    const hint = document.createElement("div");
+    hint.className = "admin-skel-slow";
+    hint.hidden = true;
+    hint.textContent =
+      (window.ServerI18n && ServerI18n.t("skeletonSlowHint")) || "連線較慢…";
+    wrap.appendChild(hint);
+    setTimeout(function () {
+      // 骨架早就被真的內容換掉的話，isConnected 是 false——不要對著一個已經
+      // 不在畫面上的節點動手。
+      if (hint.isConnected) hint.hidden = false;
+    }, SLOW_AFTER_MS);
+    return wrap;
+  }
+
   function _shimmerEl(cls, styles) {
     const el = document.createElement("div");
     el.className = "admin-skel " + (cls || "");
@@ -45,7 +66,7 @@
       row.appendChild(_shimmerEl("admin-skel-bar", { width: "60px", height: "10px" }));
       wrap.appendChild(row);
     }
-    return wrap;
+    return _attachSlowHint(wrap);
   }
 
   function statsTiles({ cols = 4 } = {}) {
@@ -61,7 +82,7 @@
       tile.appendChild(_shimmerEl("admin-skel-bar", { width: "90px", height: "8px" }));
       wrap.appendChild(tile);
     }
-    return wrap;
+    return _attachSlowHint(wrap);
   }
 
   function chart() {
@@ -86,7 +107,7 @@
     heights.forEach((h) => bars.appendChild(_shimmerEl("admin-skel-bar admin-skel-chart__bar", { height: h + "%" })));
     body.appendChild(bars);
     wrap.appendChild(body);
-    return wrap;
+    return _attachSlowHint(wrap);
   }
 
   // 模板字串脈絡的便利入口：五個「載入中…」佔位（D-6 尾項）都在

@@ -42,21 +42,17 @@
     });
   };
 
-  const STATE_META = {
-    active:    { color: "var(--hud-lime)", label: "ACTIVE" },
-    flagged:   { color: "var(--hud-amber)", label: "FLAGGED" },
-    blocked:   { color: "var(--hud-crimson)", label: "BLOCKED" },
-    duplicate: { color: "var(--hud-amber)", label: "DUPLICATE" },
-    extension: { color: "var(--color-primary, #38bdf8)", label: "EXTENSION" },
-    idle:      { color: "var(--color-text-muted, #94a3b8)", label: "IDLE" },
-  };
-
   // Pseudo-random color per fingerprint (stable across reloads)
   const AVATAR_COLORS = ["#38bdf8", "#fbbf24", "#86efac", "#f87171", "#94a3b8", "#64748b", "#334155", "#1e293b"];
+
+  const PAGE_SIZE = 20;
 
   let _state = {
     records: [],
     filter: "all",
+    shown: PAGE_SIZE,     // 設計稿 15 · AU1 底部的「顯示 N / M　載入更多」
+    search: "",
+    sort: "msgs",
     refreshTimer: 0,
     selectedFp: null,
     detailMessages: [],     // last-5-min messages for selectedFp
@@ -81,14 +77,6 @@
     return Math.floor(sec / 86400) + "d";
   }
 
-  function _stateClassFor(stateKey) {
-    if (stateKey === "blocked") return "is-danger";
-    if (stateKey === "flagged" || stateKey === "duplicate") return "is-warn";
-    if (stateKey === "extension") return "is-cyan";
-    if (stateKey === "idle") return "is-muted";
-    return "is-success";
-  }
-
   function _riskClassFor(level) {
     if (level === "blocked" || level === "high") return "is-danger";
     if (level === "mid") return "is-warn";
@@ -109,6 +97,18 @@
           <div class="admin-aud-main-row">
             <div class="admin-aud-table-wrap">
               <div class="admin-ui-toolbar admin-aud-toolbar">
+                <!-- 設計稿 15 · AU1 的篩選列：搜尋框＋排序。稿上還有一個
+                     「這場 · 37 人」的下拉，但這份名單是 in-memory 的即時
+                     聚合、沒有場次維度——與其做一個只有一個選項的下拉，
+                     不如不做。 -->
+                <input type="search" class="admin-ui-input admin-aud-search" data-aud-search
+                       placeholder="${ServerI18n.t("audienceSearchPlaceholder")}"
+                       aria-label="${ServerI18n.t("audienceSearchPlaceholder")}" />
+                <select class="admin-ui-select admin-aud-sort" data-aud-sort
+                        aria-label="${ServerI18n.t("audienceSortAria")}">
+                  <option value="msgs">${ServerI18n.t("audienceSortByMsgs")}</option>
+                  <option value="last_seen">${ServerI18n.t("audienceSortByLastSeen")}</option>
+                </select>
                 <span class="admin-ui-summary admin-aud-summary" data-aud-summary>${ServerI18n.t("audienceLoading")}</span>
                 <span class="admin-ui-spacer"></span>
                 <span class="admin-ui-chip-group admin-aud-filters" data-aud-filters></span>
@@ -127,8 +127,22 @@
   }
 
   function _filteredRecords() {
-    const records = _state.records.slice().sort(function (a, b) {
-      return (Number(b.message_count) || 0) - (Number(a.message_count) || 0);
+    const q = _state.search.trim().toLowerCase();
+    let records = _state.records.slice();
+    if (q) {
+      // 稿上寫「找暱稱或裝置識別」——就這兩個欄位，不要偷偷也搜 IP。
+      records = records.filter(function (r) {
+        return (
+          String(r.nickname || "").toLowerCase().indexOf(q) !== -1 ||
+          String(r.hash || "").toLowerCase().indexOf(q) !== -1
+        );
+      });
+    }
+    records.sort(function (a, b) {
+      if (_state.sort === "last_seen") {
+        return (Number(b.last_seen) || 0) - (Number(a.last_seen) || 0);
+      }
+      return (Number(b.msgs) || 0) - (Number(a.msgs) || 0);
     });
     if (_state.filter === "all") return records;
     if (_state.filter === "flagged") return records.filter(function (r) { return r.state === "flagged" || r.state === "blocked"; });
@@ -145,7 +159,7 @@
     const total = records.length;
     const flagged = records.filter(function (r) { return r.state === "flagged"; }).length;
     const blocked = records.filter(function (r) { return r.state === "blocked"; }).length;
-    const totalMsgs = records.reduce(function (s, r) { return s + (Number(r.message_count) || 0); }, 0);
+    const totalMsgs = records.reduce(function (s, r) { return s + (Number(r.msgs) || 0); }, 0);
     const activeFiveMin = records.filter(function (r) {
       const t = r.last_seen;
       if (!t) return false;
@@ -170,44 +184,93 @@
       <button type="button" class="admin-ui-chip admin-aud-filter ${_state.filter === "flagged" ? "is-active" : ""}" data-aud-filter="flagged">${ServerI18n.t("audienceFilterFlagged", { n: flagCount })}</button>`;
   }
 
+  // ── 表格（設計稿 15 · AU1）────────────────────────────────────────
+  //
+  // 欄位照稿：頭像／觀眾／裝置識別／訊息／被擋／最後活動／⋯
+  //
+  // **IP 與 UA 兩欄退場**：頁面說明寫著「用裝置識別區分，不收個資」，旁邊
+  // 卻擺著每個人的 IP，是自己打自己的臉。要查 IP 的場合是審核，那裡有。
+  //
+  // 「觀眾」與「訊息」兩欄之前**永遠是假的**：前端讀 `r.nickname` 與
+  // `r.message_count`，但 /admin/audience/list 從來沒有回過這兩個欄位——
+  // 所以每一列都顯示「匿名」和「0」，不管那個人送了幾則。nickname 這次補進
+  // fingerprint_tracker，訊息數改讀 API 真的有的 `msgs`。
+
+  const ANON_KEY = "__anon__";
+
+  function _isAnon(r) {
+    const n = (r.nickname || "").trim();
+    // 「匿名」是後端契約值（mod_queue.py 的 nickname fallback）
+    return !n || n === "匿名";
+  }
+
+  function _shortFp(r) {
+    const h = r.hash || r.fingerprint || "";
+    if (!h) return "—";
+    return h.length > 9 ? h.slice(0, 4) + "…" + h.slice(-4) : h;
+  }
+
+  /** 匿名者合併成一列（設計稿 15 · AU1：「Anonymous 合併成一列並標『×12 位』」）。 */
+  function _groupedRecords() {
+    const rows = [];
+    const anon = [];
+    _filteredRecords().forEach(function (r) {
+      if (_isAnon(r)) anon.push(r);
+      else rows.push(r);
+    });
+    if (anon.length) {
+      rows.push({
+        _anonGroup: true,
+        _count: anon.length,
+        fingerprint: ANON_KEY,
+        msgs: anon.reduce(function (n, r) { return n + (Number(r.msgs) || 0); }, 0),
+        blocked: anon.reduce(function (n, r) { return n + (Number(r.blocked) || 0); }, 0),
+        last_seen: Math.max.apply(null, anon.map(function (r) { return r.last_seen || 0; })),
+        state: anon.some(function (r) { return r.state === "blocked"; }) ? "blocked" : "active",
+      });
+    }
+    return rows;
+  }
+
   function _renderList() {
     const list = document.querySelector("[data-aud-list]");
     const summary = document.querySelector("[data-aud-summary]");
     if (!list) return;
-    const records = _filteredRecords();
-    if (summary) summary.textContent = ServerI18n.t("audienceSummaryShown", { n: records.length });
+    const records = _groupedRecords();
+    const shown = Math.min(records.length, _state.shown);
+    if (summary) {
+      summary.textContent = ServerI18n.t("audienceShownOfTotal", {
+        n: shown,
+        total: records.length,
+      });
+    }
     if (records.length === 0) {
-      // D-6 (2026-07-28): 自造 admin-aud-empty 換共用 AdminEmpty preset。
       list.innerHTML = "";
       const card = window.AdminEmpty.render("audience");
       card.dataset.emptyKind = "audience";
       list.appendChild(card);
       return;
     }
+
     const headerHtml = `
       <div class="admin-aud-row admin-aud-row--head">
         <span class="col col-avatar"></span>
-        <span class="col col-nick">NICK · FP</span>
-        <span class="col col-ip">IP · UA</span>
-        <span class="col col-joined">JOINED</span>
-        <span class="col col-msgs">MSGS</span>
-        <span class="col col-status">${ServerI18n.t("ulStatus")}</span>
-        <span class="col col-actions">ACTIONS</span>
+        <span class="col col-nick">${ServerI18n.t("audienceColViewer")}</span>
+        <span class="col col-fp">${ServerI18n.t("audienceColDeviceId")}</span>
+        <span class="col col-msgs">${ServerI18n.t("audienceColMsgs")}</span>
+        <span class="col col-blocked">${ServerI18n.t("audienceColBlocked")}</span>
+        <span class="col col-seen">${ServerI18n.t("audienceColLastSeen")}</span>
+        <span class="col col-actions"></span>
       </div>`;
-    const rowsHtml = records.map(function (r) {
+
+    const rowsHtml = records.slice(0, shown).map(function (r) {
       const fp = r.fingerprint || "—";
-      const fpShort = fp === "—" ? "—" : "fp:" + fp.slice(0, 8);
-      // 「匿名」是後端契約值（mod_queue.py 的 nickname fallback）——比對留字面，顯示走 i18n
-      const isAnon = !r.nickname || r.nickname === "匿名";
-      const nick = isAnon ? ServerI18n.t("audienceAnonymous") : r.nickname;
-      const initial = isAnon ? "?" : nick.slice(0, 1);
+      const isBlocked = r.state === "blocked";
+      const nick = r._anonGroup
+        ? ServerI18n.t("audienceAnonymous")
+        : (r.nickname || "").trim();
+      const initial = r._anonGroup ? "?" : nick.slice(0, 1);
       const color = _hashColor(fp);
-      const ip = r.ip || "—";
-      const ua = (r.ua || "").slice(0, 30) || "—";
-      const joined = _humanDelta(r.first_seen);
-      const msgs = Number(r.message_count) || 0;
-      const stateKey = r.state || "active";
-      const stateMeta = STATE_META[stateKey] || STATE_META.active;
       const selectedCls = _state.selectedFp === fp ? " is-selected" : "";
       return `
         <div class="admin-aud-row${selectedCls}" data-aud-row data-aud-fp="${escapeHtml(fp)}">
@@ -215,24 +278,31 @@
             <span class="avatar" style="background:${color}">${escapeHtml(initial)}</span>
           </span>
           <span class="col col-nick">
-            <div class="nick">${escapeHtml(nick)}</div>
-            <div class="fp">${escapeHtml(fpShort)}</div>
+            <span class="nick">${escapeHtml(nick)}</span>
+            ${r._anonGroup
+              ? `<span class="admin-aud-count">${ServerI18n.t("audienceAnonCount", { n: r._count })}</span>`
+              : ""}
+            ${isBlocked && !r._anonGroup
+              ? `<span class="admin-aud-blockedtag">${ServerI18n.t("audienceBlockedTag")}</span>`
+              : ""}
           </span>
-          <span class="col col-ip">
-            <div class="ip">${escapeHtml(ip)}</div>
-            <div class="ua">${escapeHtml(ua)}</div>
-          </span>
-          <span class="col col-joined">${escapeHtml(joined)}</span>
-          <span class="col col-msgs">${msgs}</span>
-          <span class="col col-status">
-            <span class="admin-ui-pill admin-aud-state-pill ${_stateClassFor(stateKey)}">${escapeHtml(stateMeta.label)}</span>
-          </span>
+          <span class="col col-fp">${r._anonGroup ? "—" : escapeHtml(_shortFp(r))}</span>
+          <span class="col col-msgs">${Number(r.msgs) || 0}</span>
+          <span class="col col-blocked">${Number(r.blocked) || 0}</span>
+          <span class="col col-seen">${escapeHtml(_humanDelta(r.last_seen))}</span>
           <span class="col col-actions">
-            <button type="button" class="admin-ui-action is-danger admin-aud-action" data-aud-action="ban" data-aud-fp="${escapeHtml(fp)}">ban</button>
+            ${r._anonGroup
+              ? ""
+              : `<button type="button" class="admin-ui-action is-danger admin-aud-action" data-aud-action="ban" data-aud-fp="${escapeHtml(fp)}">${ServerI18n.t("audienceBanBtn")}</button>`}
           </span>
         </div>`;
     }).join("");
-    list.innerHTML = headerHtml + rowsHtml;
+
+    const moreHtml = records.length > shown
+      ? `<button type="button" class="admin-aud-more" data-aud-action="more">${ServerI18n.t("audienceLoadMore")}</button>`
+      : "";
+
+    list.innerHTML = headerHtml + rowsHtml + moreHtml;
   }
 
   // ── detail panel ─────────────────────────────────────────────────
@@ -248,7 +318,7 @@
   function _assessRisk(rec) {
     if (!rec) return { level: "normal", color: "var(--hud-lime)", label: "NORMAL", rules: [] };
     const rules = [];
-    const msgs = Number(rec.message_count) || 0;
+    const msgs = Number(rec.msgs) || 0;
     const fp = rec.fingerprint || "";
     if (rec.state === "blocked") rules.push(ServerI18n.t("audienceRuleBlocked"));
     if (rec.state === "flagged") rules.push(ServerI18n.t("audienceRuleFlagged"));
@@ -569,10 +639,26 @@
   function _bind() {
     const page = document.getElementById(PAGE_ID);
     if (!page) return;
+
+    page.addEventListener("input", function (e) {
+      const box = e.target.closest("[data-aud-search]");
+      if (!box) return;
+      _state.search = box.value || "";
+      _state.shown = PAGE_SIZE;
+      _renderList();
+    });
+    page.addEventListener("change", function (e) {
+      const sel = e.target.closest("[data-aud-sort]");
+      if (!sel) return;
+      _state.sort = sel.value;
+      _renderList();
+    });
+
     page.addEventListener("click", function (e) {
       const filter = e.target.closest("[data-aud-filter]");
       if (filter) {
         _state.filter = filter.dataset.audFilter;
+        _state.shown = PAGE_SIZE;
         _renderFilters();
         _renderList();
         return;
@@ -586,6 +672,13 @@
       const refresh = e.target.closest("[data-aud-action='refresh']");
       if (refresh) {
         _fetch();
+        return;
+      }
+      // 設計稿 15 · AU1 底部的「載入更多」
+      const more = e.target.closest("[data-aud-action='more']");
+      if (more) {
+        _state.shown += PAGE_SIZE;
+        _renderList();
         return;
       }
       // Detail panel actions
@@ -614,6 +707,8 @@
       if (unkick) { e.stopPropagation(); _unkick(unkick.dataset.audFp); return; }
       // Row click → open detail (only if click wasn't on action / filter button)
       const row = e.target.closest("[data-aud-row]");
+      // 匿名那一列是好幾個人合起來的，沒有「這一個人」的明細可以看
+      if (row && row.dataset.audFp === ANON_KEY) return;
       if (row && !e.target.closest("button")) {
         _selectFp(row.dataset.audFp);
         return;

@@ -713,3 +713,92 @@ def test_notifications_is_a_popover_not_a_page(zh):
     # 舊書籤 #/notifications 還要能用——route 保留但沒有 section
     admin = _strip_comments(_read("server/static/js/admin.js"))
     assert 'notifications: { title: "通知", sections: [] }' in admin
+
+
+def test_audience_table_matches_au1(zh):
+    """設計稿 15 · AU1：觀眾表＝頭像／觀眾／裝置識別／訊息／被擋／最後活動／⋯
+
+    **IP 與 UA 兩欄退場**：頁面說明寫著「用裝置識別區分，不收個資」，旁邊
+    卻擺著每個人的 IP，是自己打自己的臉。要查 IP 的場合是審核，那裡有。
+
+    「觀眾」與「訊息」兩欄之前**永遠是假的**：前端讀 `r.nickname` 與
+    `r.message_count`，但 /admin/audience/list 從來沒回過這兩個欄位——每一列
+    都顯示「匿名」和「0」，不管那個人送了幾則。
+    """
+    assert zh["audiencePageNote"] == "這場活動有誰在發、發了多少。用裝置識別區分，不收個資。"
+    for key, value in {
+        "audienceColViewer": "觀眾",
+        "audienceColDeviceId": "裝置識別",
+        "audienceColMsgs": "訊息",
+        "audienceColBlocked": "被擋",
+        "audienceColLastSeen": "最後活動",
+        "audienceBlockedTag": "已封鎖",
+        "audienceSearchPlaceholder": "找暱稱或裝置識別",
+    }.items():
+        assert zh[key] == value, key
+
+    js = _strip_comments(_read("server/static/js/admin-audience.js"))
+    assert "col-fp" in js and "col-blocked" in js and "col-seen" in js
+    # 匿名合併成一列並標「×N 位」
+    assert "_groupedRecords" in js and "audienceAnonCount" in js
+    # 底部「顯示 N / M　載入更多」
+    assert "audienceShownOfTotal" in js and "audienceLoadMore" in js
+    # 讀 API 真的有的欄位，不要再讀不存在的 message_count
+    assert "r.message_count" not in js and "rec.message_count" not in js
+    for gone in ("col-ip", "col-joined", "col-status", '"NICK · FP"', '"IP · UA"'):
+        assert gone not in js, gone
+
+    # 暱稱要有來源——fingerprint_tracker 這次才開始記
+    tracker = _read("server/services/fingerprint_tracker.py")
+    assert '"nickname": self.nickname' in tracker
+    assert "nickname: Optional[str] = None" in tracker
+
+
+def test_search_page_matches_sr1(zh):
+    """設計稿 15 · SR1：單欄——搜尋框＋結果數、篩選 chip、匯出、結果列、載入更多。
+
+    退場的是左邊那塊 260px 篩選面板。裡頭有一段語法說明寫著
+    `fp:<fingerprint>` `nick:<nickname>` `session:<id>` `after:YYYY-MM-DD`——
+    **後端一個都沒實作**（/admin/search 只做 q 的子字串比對），等於教使用者
+    一套不存在的語法。時間範圍那六顆 chip 裡的「自訂」按了也沒有反應。
+    """
+    for key, value in {
+        "searchScopeSession": "這場",
+        "searchScopeAll": "所有場次",
+        "searchOnlyBlocked": "只看被擋的",
+        "searchWhoAnyone": "任何人",
+        "searchResultCount": "{n} 則",
+        "searchExportCsv": "匯出結果 CSV",
+    }.items():
+        assert zh[key] == value, key
+    assert "載入更多" in zh["searchMoreLeft"]
+
+    js = _strip_comments(_read("server/static/js/admin-search.js"))
+    assert "data-search-scope" in js and "data-search-blocked" in js
+    assert "data-search-who" in js and "data-search-more" in js
+    assert "admin-search-hit" in js  # 命中詞高亮
+    for gone in (
+        "admin-search-syntax-block",
+        "admin-search-range-chip",
+        "admin-search-status-cb",
+        "admin-search-chart",
+    ):
+        assert gone not in js, gone
+
+    # 暱稱要有來源——history 這次才開始記
+    history = _read("server/services/history.py")
+    assert '"nickname": str(danmu_data.get("nickname") or "")[:40]' in history
+
+
+def test_skeleton_says_something_after_three_seconds(zh):
+    """設計稿 15 · SK1：骨架只做版面輪廓，**超過 3 秒改顯示「連線較慢…」**。
+
+    三秒是分界線：三秒內一塊安靜的輪廓就夠了；超過三秒使用者會開始懷疑是不是
+    壞了，這時要講一句話告訴他還在跑。
+    """
+    assert zh["skeletonSlowHint"] == "連線較慢…"
+    js = _strip_comments(_read("server/static/js/admin-skeletons.js"))
+    assert "SLOW_AFTER_MS = 3000" in js
+    assert "_attachSlowHint" in js
+    # 骨架被真內容換掉之後不能再對那個節點動手
+    assert "hint.isConnected" in js

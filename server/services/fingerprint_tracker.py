@@ -18,6 +18,7 @@ RATE_WINDOW_SEC = 60  # rolling window for msgs-per-minute rate
 MAX_TIMESTAMPS = 200  # cap per-fp deque so runaway clients don't grow memory
 MAX_RECORDS = 1000  # evict LRU once this many distinct fingerprints exist
 UA_MAX_LEN = 256
+NICKNAME_MAX_LEN = 40
 
 _FLAG_RATE_PER_MIN = 60  # >60 msgs/min flags the fingerprint as hot
 
@@ -27,6 +28,7 @@ class _Record:
         "hash",
         "ip",
         "ua",
+        "nickname",
         "msgs",
         "blocked",
         "first_seen",
@@ -38,16 +40,21 @@ class _Record:
         self.hash = hashlib.sha256(fingerprint.encode("utf-8")).hexdigest()[:12]
         self.ip = ip
         self.ua = (ua or "")[:UA_MAX_LEN]
+        # 觀眾頁的「觀眾」欄要寫得出名字（設計稿 15 · AU1）。存最後一次用的
+        # 暱稱——觀眾可以隨時改，而主持人要認的是「現在這個人叫什麼」。
+        self.nickname = ""
         self.msgs = 0
         self.blocked = 0
         self.first_seen = now
         self.last_seen = now
         self._timestamps: Deque[float] = deque(maxlen=MAX_TIMESTAMPS)
 
-    def tick(self, ip: str, ua: str, now: float, blocked: bool) -> None:
+    def tick(self, ip: str, ua: str, now: float, blocked: bool, nickname: str = "") -> None:
         self.ip = ip or self.ip
         if ua:
             self.ua = ua[:UA_MAX_LEN]
+        if nickname:
+            self.nickname = nickname[:NICKNAME_MAX_LEN]
         self.last_seen = now
         self._timestamps.append(now)
         self.msgs += 1
@@ -73,6 +80,7 @@ class _Record:
             "hash": self.hash,
             "ip": self.ip,
             "ua": self.ua,
+            "nickname": self.nickname,
             "msgs": self.msgs,
             "blocked": self.blocked,
             "rate_per_min": self.rate_per_min(now),
@@ -91,6 +99,7 @@ def record(
     ip: Optional[str],
     ua: Optional[str],
     blocked: bool = False,
+    nickname: Optional[str] = None,
 ) -> None:
     """Log one observation for *fingerprint*. Silently no-ops if missing."""
     if not fingerprint:
@@ -105,7 +114,7 @@ def record(
                 _records.pop(victim_fp, None)
             rec = _Record(fingerprint, ip or "", ua or "", now)
             _records[fingerprint] = rec
-        rec.tick(ip or "", ua or "", now, blocked)
+        rec.tick(ip or "", ua or "", now, blocked, nickname or "")
 
 
 def list_all(limit: int = 100) -> List[Dict[str, Any]]:

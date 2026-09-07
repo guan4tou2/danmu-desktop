@@ -288,7 +288,11 @@ test("admin Audience composes shared toolbar, chips, pills, and actions", () => 
   expect(audienceSrc).toContain('class="admin-ui-action admin-aud-refresh"');
   expect(audienceSrc).toContain('class="admin-ui-chip admin-aud-filter ${_state.filter === "all" ? "is-active" : ""}"');
   expect(audienceSrc).toContain('class="admin-ui-chip admin-aud-filter ${_state.filter === "flagged" ? "is-active" : ""}"');
-  expect(audienceSrc).toContain('class="admin-ui-pill admin-aud-state-pill ${_stateClassFor(stateKey)}"');
+  // 2026-09-07 設計稿 15 · AU1：表列不再掛狀態 pill——「已封鎖」變成名字
+  // 旁邊一個小標記，其餘狀態（active/flagged）在列上是噪音。pill 本身仍在
+  // 明細窗用。
+  expect(audienceSrc).not.toContain("admin-aud-state-pill");
+  expect(audienceSrc).toContain("admin-aud-blockedtag");
   expect(audienceSrc).toContain('class="admin-ui-action is-danger admin-aud-action"');
   expect(audienceSrc).toContain("admin-ui-pill admin-aud-risk-pill ' + _riskClassFor(risk.level) + '");
   expect(audienceSrc).toContain('class="admin-ui-action admin-aud-detail-close"');
@@ -585,16 +589,21 @@ test("admin Fingerprints toolbar composes shared actions", () => {
   expect(cssSrc).not.toContain(".admin-fp-toolbar-btn");
 });
 
-test("admin Search range selector composes shared chips", () => {
+test("admin Search filters compose shared chips", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const staticDir = path.join(rootDir, "server", "static");
   const searchSrc = fs.readFileSync(path.join(staticDir, "js", "admin-search.js"), "utf8");
   const hudSrc = fs.readFileSync(path.join(staticDir, "css", "hud.css"), "utf8");
 
-  expect(searchSrc).toContain('class="admin-ui-chip admin-search-range-chip');
-  expect(searchSrc).toContain('btn.classList.contains("admin-search-range-chip")');
-  expect(searchSrc).toContain('page.querySelectorAll(".admin-search-range-chip")');
-  expect(searchSrc).not.toContain("admin-search-range-btn");
+  // 2026-09-07 設計稿 15 · SR1：篩選是「這場／所有場次／只看被擋的／任何人」，
+  // 不是六顆時間範圍 chip（其中「自訂」按了沒有反應）。
+  expect(searchSrc).toContain('class="admin-ui-chip admin-search-chip');
+  expect(searchSrc).toContain("data-search-scope");
+  expect(searchSrc).toContain("data-search-blocked");
+  expect(searchSrc).toContain("data-search-who");
+  expect(searchSrc).not.toContain("admin-search-range-chip");
+  // 教使用者一套後端沒實作的語法，比不給提示更糟
+  expect(searchSrc).not.toContain("admin-search-syntax-block");
   expect(hudSrc).toContain(".admin-ui-chip {");
 });
 
@@ -776,7 +785,7 @@ test("admin Security and Search status controls compose shared primitives", () =
   expect(securitySrc).toContain('statusEl.className = "admin-ui-chip admin-sec-status-chip " + (data.require_token ? "is-active" : "");');
   expect(securitySrc).toContain('statusEl.className = "admin-ui-chip is-danger admin-sec-status-chip";');
   expect(securitySrc).toContain('ipChip.className = "admin-ui-chip admin-sec-status-chip " + (ipEnabled ? "is-active" : "is-warn");');
-  expect(searchSrc).toContain('class="admin-ui-action admin-search-export-btn" hidden');
+  expect(searchSrc).toContain('id="admin-search-export-btn" class="admin-ui-action" hidden');
   expect(securitySrc).not.toContain("admin-v2-chip");
   expect(searchSrc).not.toContain("admin-v2-chip");
 });

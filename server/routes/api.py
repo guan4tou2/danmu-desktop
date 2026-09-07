@@ -238,6 +238,9 @@ def fire():
         fingerprint = data.pop("fingerprint", None)
         captcha_token = data.pop("captcha_token", None)
         text_content = data.get("text", "")
+        # 觀眾頁的「觀眾」欄要寫得出名字（設計稿 15 · AU1）。暱稱本來就跟著
+        # 彈幕送上大螢幕，這裡只是順手記給 fingerprint_tracker。
+        nickname = str(data.get("nickname") or "").strip()
         client_ip = _extract_client_ip()
         user_agent = request.headers.get("User-Agent", "")
 
@@ -267,16 +270,22 @@ def fire():
         # the overlay regardless of content. moderation_bans keeps its own state
         # map, so this is a dict lookup rather than a scan.
         if fingerprint and moderation_bans.is_banned("fingerprint", fingerprint):
-            fingerprint_tracker.record(fingerprint, client_ip, user_agent, blocked=True)
+            fingerprint_tracker.record(
+                fingerprint, client_ip, user_agent, blocked=True, nickname=nickname
+            )
             return _json_response({"error": "You are currently banned"}, 403)
         if client_ip and moderation_bans.is_banned("ip", client_ip):
-            fingerprint_tracker.record(fingerprint, client_ip, user_agent, blocked=True)
+            fingerprint_tracker.record(
+                fingerprint, client_ip, user_agent, blocked=True, nickname=nickname
+            )
             return _json_response({"error": "You are currently banned"}, 403)
 
         # Filter engine check (replaces simple blacklist check)
         filter_result = filter_engine.check(text_content, fingerprint)
         if filter_result.action == "block":
-            fingerprint_tracker.record(fingerprint, client_ip, user_agent, blocked=True)
+            fingerprint_tracker.record(
+                fingerprint, client_ip, user_agent, blocked=True, nickname=nickname
+            )
             return _json_response(
                 {"error": filter_result.reason or "Content blocked by filter rule"},
                 400,
@@ -358,7 +367,7 @@ def fire():
         accepted = status in ("sent", "queued")
 
         if accepted:
-            fingerprint_tracker.record(fingerprint, client_ip, user_agent)
+            fingerprint_tracker.record(fingerprint, client_ip, user_agent, nickname=nickname)
             _record_history_if_enabled(data, fingerprint, client_ip)
 
             # Webhook: emit on_danmu event (fire-and-forget)

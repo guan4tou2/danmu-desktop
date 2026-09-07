@@ -177,6 +177,10 @@ class DanmuHistory:
             "speed": danmu_data.get("speed", ""),
             "opacity": danmu_data.get("opacity", ""),
             "isImage": danmu_data.get("isImage", False),
+            # 暱稱：搜尋要能用它比對、結果列要寫得出「誰說的」（設計稿 15 · SR1）。
+            # 在這之前 /admin/search 讀 r.get("nickname") 一直是空字串——欄位
+            # 從來沒被寫進紀錄裡。
+            "nickname": str(danmu_data.get("nickname") or "")[:40],
             "fontInfo": danmu_data.get("fontInfo"),
             "clientIp": danmu_data.get("clientIp"),
             "fingerprint": danmu_data.get("fingerprint"),

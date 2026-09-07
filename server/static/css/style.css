@@ -9559,25 +9559,60 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   display: flex; flex-direction: column;
   overflow-x: auto;
 }
+/* 設計稿 15 · AU1：頭像／觀眾／裝置識別／訊息／被擋／最後活動／⋯
+   IP 與 UA 兩欄退場——頁面說明寫著「不收個資」，旁邊卻擺 IP 是自己打自己
+   的臉；要查 IP 的場合是審核，那裡有。 */
 .admin-aud-row {
   display: grid;
-  grid-template-columns: 32px 1.6fr 1.4fr 70px 70px 90px 80px;
-  gap: 8px;
-  padding: 8px 12px;
+  grid-template-columns: 32px minmax(0, 1.8fr) 7rem 4rem 4rem 6rem 5rem;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   align-items: center;
   border-bottom: 1px solid var(--color-border, var(--hud-line));
-  min-width: 720px;
+  min-width: 40rem;
 }
 .admin-aud-row--head {
-  font-family: var(--font-mono); font-size: var(--text-caption);
-  letter-spacing: 1.2px;
-  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
   background: var(--color-bg);
 }
 .admin-aud-row .col-msgs,
-.admin-aud-row .col-joined { text-align: right; }
-.admin-aud-row .col-status,
+.admin-aud-row .col-blocked,
+.admin-aud-row .col-seen { text-align: right; font-variant-numeric: tabular-nums; }
 .admin-aud-row .col-actions { text-align: right; }
+.admin-aud-row .col-fp {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+.admin-aud-row .col-nick {
+  display: flex; align-items: baseline; gap: var(--space-2);
+  min-width: 0;
+}
+.admin-aud-count,
+.admin-aud-blockedtag {
+  flex-shrink: 0;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-caption);
+}
+.admin-aud-count {
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-secondary);
+}
+.admin-aud-blockedtag {
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+}
+.admin-aud-more {
+  padding: var(--space-3);
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  cursor: pointer;
+  font-size: var(--text-footnote);
+  color: var(--color-ink-accent);
+}
 
 .admin-aud-row .avatar {
   width: 26px; height: 26px;
@@ -9589,30 +9624,10 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   font-size: var(--text-footnote); font-weight: 600;
   color: var(--color-text-strong);
 }
-.admin-aud-row .fp {
-  margin-top: 2px;
-  font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 0.3px;
-  color: var(--color-text-muted);
-}
-.admin-aud-row .ip {
-  font-family: var(--font-mono); font-size: var(--text-caption);
-  color: var(--color-text-strong);
-}
-.admin-aud-row .ua {
-  margin-top: 2px;
-  font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 0.3px;
-  color: var(--color-text-muted);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.admin-aud-row .col-joined {
-  font-family: var(--font-mono); font-size: var(--text-caption);
-  color: var(--color-text-strong);
-}
 .admin-aud-row .col-msgs {
   font-family: var(--font-mono); font-size: var(--text-footnote); font-weight: 600;
   color: var(--color-ink-success);
 }
-.admin-aud-state-pill { justify-content: center; min-width: 68px; }
 .admin-aud-row[data-aud-row]:not(.admin-aud-row--head) {
   cursor: pointer;
 }
@@ -14365,4 +14380,98 @@ body.is-light .admin-login-wordmark.is-on-light,
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
   cursor: pointer;
+}
+
+
+/* ── 搜尋訊息（設計稿 15 · SR1）──────────────────────────────────────
+   單欄：搜尋框＋結果數、一排篩選 chip、右側匯出、結果列、載入更多。
+   之前是左邊一塊 260px 篩選面板——六顆時間範圍 chip（「自訂」按了沒反應）、
+   四個狀態勾選、以及一塊寫著 fp:／nick:／session:／after: 的語法說明，
+   而那四個語法後端一個都沒實作。時間分布長條圖也退場：它回答的是「什麼
+   時候有人講話」，不是「我要找的那句在哪」。 */
+.admin-search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.admin-search-input { flex: 1; min-width: 0; }
+.admin-search-count {
+  flex-shrink: 0;
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+.admin-search-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.admin-search-results {
+  display: flex;
+  flex-direction: column;
+}
+.admin-search-row {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr) 8rem;
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-footnote);
+}
+.admin-search-row:last-child { border-bottom: 0; }
+.admin-search-row__ts {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+.admin-search-row__text {
+  color: var(--color-text-primary);
+  word-break: break-word;
+}
+.admin-search-row__nick {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-search-hit {
+  background: var(--glow-primary);
+  color: inherit;
+  border-radius: var(--radius-2xs);
+}
+.admin-search-empty {
+  padding: var(--space-8);
+  text-align: center;
+  font-size: var(--text-footnote);
+  color: var(--color-text-secondary);
+}
+.admin-search-more {
+  padding: var(--space-3);
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  cursor: pointer;
+  font-size: var(--text-footnote);
+  color: var(--color-ink-accent);
+}
+
+@media (max-width: 720px) {
+  .admin-search-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: var(--space-1);
+  }
+  .admin-search-row__text { grid-column: 1 / -1; }
+  .admin-search-row__nick { text-align: left; }
+}
+
+/* 設計稿 15 · SK1：骨架超過 3 秒才出現的「連線較慢…」 */
+.admin-skel-slow {
+  padding: var(--space-3);
+  text-align: center;
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
 }

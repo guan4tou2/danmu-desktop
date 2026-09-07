@@ -30,136 +30,74 @@
 
   // ── state ────────────────────────────────────────────────────────────────
 
+  var PAGE_SIZE = 20;
+
   var _state = {
     query: "",
-    hours: 168,   // default "全部" maps to 168h (7 days); 0 = all time
+    scope: "session",   // 設計稿 15 · SR1 的「這場 / 所有場次」
+    blockedOnly: false, // 「只看被擋的」
+    who: "",            // 「任何人」下拉——用暱稱過濾
+    shown: PAGE_SIZE,
     results: [],
     total: 0,
-    queryMs: 0,
     loading: false,
     searched: false,
   };
 
   var _debounceTimer = 0;
 
-  // ── range definitions ────────────────────────────────────────────────────
-
-  var RANGES = [
-    { labelKey: "searchRangeToday",  hours: 24 },
-    { labelKey: "searchRange7d",   hours: 168 },
-    { labelKey: "searchRange30d",  hours: 720 },
-    { labelKey: "searchRange90d",  hours: 2160 },
-    { labelKey: "searchRangeAll",  hours: 0 },
-    { labelKey: "searchRangeCustom",  hours: -1 },   // -1 = custom (UI only, not yet wired to a date-picker)
-  ];
-
   // ── HTML template ────────────────────────────────────────────────────────
 
-  function buildSection() {
-    var rangeButtons = RANGES.map(function (r) {
-      var active = r.hours === _state.hours ? " is-active" : "";
-      return '<button type="button" class="admin-ui-chip admin-search-range-chip' + active + '" data-hours="' + r.hours + '">'
-        + _escHtml(ServerI18n.t(r.labelKey)) + '</button>';
-    }).join("");
+  // ── 版面（設計稿 15 · SR1）────────────────────────────────────────
+  //
+  // 稿上是單欄：搜尋框＋結果數、一排篩選 chip、右側「匯出結果 CSV」、結果列
+  // （日期時間／內文命中詞高亮／暱稱／⋯）、底部「還有 N 則 · 載入更多」。
+  //
+  // 退場的是左邊那塊 260px 篩選面板：六顆時間範圍 chip（其中「自訂」按了
+  // 沒有反應）、四個狀態勾選、以及一塊寫著 `fp:<fingerprint>` `nick:<nickname>`
+  // `session:<id>` `after:YYYY-MM-DD` 的語法說明——那四個語法後端一個都沒有
+  // 實作（/admin/search 只做 q 的子字串比對），等於教使用者一套不存在的語法。
+  // 時間分布長條圖也一併退場：稿上沒有，而且它回答的是「什麼時候有人講話」，
+  // 不是「我要找的那句在哪」。
 
+  function buildSection() {
     return '<div id="' + PAGE_ID + '" class="admin-search-page hud-page-stack lg:col-span-2">'
 
-      // ── page header
       + '<div class="admin-ui-page-head">'
       +   '<h2 class="admin-ui-page-title">' + ServerI18n.t("searchPageTitle") + '</h2>'
       +   '<p class="admin-ui-page-note">' + ServerI18n.t("searchPageNote") + '</p>'
       + '</div>'
 
-      // ── two-column layout
-      + '<div class="admin-search-layout" style="display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start">'
+      + '<div class="admin-search-bar">'
+      +   '<input id="admin-search-input" type="search" class="admin-ui-input admin-search-input"'
+      +         ' placeholder="' + _escHtml(ServerI18n.t("searchInputPlaceholder")) + '"'
+      +         ' autocomplete="off" spellcheck="false" />'
+      +   '<span id="admin-search-count" class="admin-search-count"></span>'
+      + '</div>'
 
-      // LEFT: filter panel
-      + '<div class="admin-ui-card hud-page-stack" style="gap:14px">'
-      +   '<div class="admin-ui-monolabel">' + ServerI18n.t("searchFiltersLabel") + '</div>'
+      + '<div class="admin-search-filters">'
+      +   '<button type="button" class="admin-ui-chip admin-search-chip is-active" data-search-scope="session">'
+      +     _escHtml(ServerI18n.t("searchScopeSession")) + '</button>'
+      +   '<button type="button" class="admin-ui-chip admin-search-chip" data-search-scope="all">'
+      +     _escHtml(ServerI18n.t("searchScopeAll")) + '</button>'
+      +   '<button type="button" class="admin-ui-chip admin-search-chip" data-search-blocked>'
+      +     _escHtml(ServerI18n.t("searchOnlyBlocked")) + '</button>'
+      +   '<select class="admin-ui-select admin-search-who" data-search-who'
+      +           ' aria-label="' + _escHtml(ServerI18n.t("searchWhoAria")) + '">'
+      +     '<option value="">' + _escHtml(ServerI18n.t("searchWhoAnyone")) + '</option>'
+      +   '</select>'
+      +   '<span class="admin-ui-spacer"></span>'
+      +   '<button type="button" id="admin-search-export-btn" class="admin-ui-action" hidden>'
+      +     _escHtml(ServerI18n.t("searchExportCsv")) + '</button>'
+      + '</div>'
 
-      // Time range
-      +   '<div>'
-      +     '<div class="admin-ui-monolabel" style="margin-bottom:6px">' + ServerI18n.t("searchTimeRangeLabel") + '</div>'
-      +     '<div class="admin-search-range-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">'
-      +       rangeButtons
-      +     '</div>'
-      +   '</div>'
-
-      // Session note
-      +   '<div>'
-      +     '<div class="admin-ui-monolabel" style="margin-bottom:4px">' + ServerI18n.t("searchSessionLabel") + '</div>'
-      +     '<p style="font-size:11px;color:var(--admin-text-dim);margin:0">' + ServerI18n.t("searchSessionHint") + '</p>'
-      +   '</div>'
-
-      // Status checkboxes
-      +   '<div>'
-      +     '<div class="admin-ui-monolabel" style="margin-bottom:6px">' + ServerI18n.t("searchStatusLabel") + '</div>'
-      +     '<div class="admin-search-status-checks" style="display:flex;flex-direction:column;gap:6px">'
-      +       '<label class="admin-search-check-label" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--admin-text)">'
-      +         '<input type="checkbox" class="admin-search-status-cb" value="shown" checked /> ' + ServerI18n.t("searchStatusShown") + '</label>'
-      +       '<label class="admin-search-check-label" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--admin-text)">'
-      +         '<input type="checkbox" class="admin-search-status-cb" value="pinned" /> ' + ServerI18n.t("searchStatusPinned") + '</label>'
-      +       '<label class="admin-search-check-label" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--admin-text)">'
-      +         '<input type="checkbox" class="admin-search-status-cb" value="masked" /> ' + ServerI18n.t("searchStatusMasked") + '</label>'
-      +       '<label class="admin-search-check-label" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--admin-text)">'
-      +         '<input type="checkbox" class="admin-search-status-cb" value="blocked" /> ' + ServerI18n.t("searchStatusBlocked") + '</label>'
-      +     '</div>'
-      +   '</div>'
-
-      // Advanced syntax
-      +   '<div>'
-      +     '<div class="admin-ui-monolabel" style="margin-bottom:6px">' + ServerI18n.t("searchSyntaxLabel") + '</div>'
-      +     '<pre class="admin-search-syntax-block" style="'
-      +         'background:var(--admin-raised);border:1px solid var(--admin-line);'
-      +         'border-radius:4px;padding:8px 10px;margin:0;'
-      +         'font-family:var(--font-mono);font-size:11px;'
-      +         'color:var(--admin-text-dim);line-height:1.8;overflow-x:auto">'
-      +       'fp:&lt;fingerprint&gt;\nnick:&lt;nickname&gt;\nsession:&lt;id&gt;\nafter:YYYY-MM-DD'
-      +     '</pre>'
+      + '<div id="admin-search-results" class="admin-search-results">'
+      +   '<div id="admin-search-empty-state" class="admin-search-empty">'
+      +     _escHtml(ServerI18n.t("searchPromptStart"))
       +   '</div>'
       + '</div>'
 
-      // RIGHT: results panel
-      + '<div class="hud-page-stack" style="gap:14px">'
-
-      // Search bar
-      +   '<div style="position:relative">'
-      +     '<span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);'
-      +           'font-size:13px;color:var(--admin-text-dim);pointer-events:none;user-select:none">⌕</span>'
-      +     '<input id="admin-search-input" type="search" class="admin-ui-input"'
-      +           ' placeholder="' + ServerI18n.t("searchInputPlaceholder") + '"'
-      +           ' autocomplete="off" spellcheck="false"'
-      +           ' style="padding-left:30px;font-family:inherit;font-size:13px" />'
-      +   '</div>'
-
-      // Results header
-      +   '<div id="admin-search-results-head"'
-      +        ' style="display:flex;align-items:center;justify-content:space-between;min-height:22px">'
-      +     '<span id="admin-search-count" style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text-dim)"></span>'
-      +     '<button type="button" id="admin-search-export-btn"'
-      +             ' class="admin-ui-action admin-search-export-btn" hidden'
-      +             ' style="cursor:pointer">' + ServerI18n.t("searchExportCsv") + '</button>'
-      +   '</div>'
-
-      // Time distribution chart
-      +   '<div id="admin-search-chart" hidden'
-      +        ' style="display:flex;align-items:flex-end;gap:2px;height:32px;'
-      +               'background:var(--admin-raised);border:1px solid var(--admin-line);'
-      +               'border-radius:4px;padding:4px 8px;overflow:hidden">'
-      +   '</div>'
-
-      // Results list
-      +   '<div id="admin-search-results"'
-      +        ' style="display:flex;flex-direction:column;gap:6px">'
-      +     '<div id="admin-search-empty-state"'
-      +          ' style="padding:32px;text-align:center;color:var(--admin-text-dim);font-size:13px">'
-      +       ServerI18n.t("searchPromptStart")
-      +     '</div>'
-      +   '</div>'
-
-      + '</div>' // end right panel
-      + '</div>' // end layout grid
-      + '</div>'; // end page
+      + '</div>';
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────
@@ -181,7 +119,7 @@
     var escapedQuery = _escHtml(query);
     try {
       var re = new RegExp("(" + escapedQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi");
-      return escaped.replace(re, "<mark style=\"background:rgba(56,189,248,0.28);color:inherit;border-radius:2px\">$1</mark>");
+      return escaped.replace(re, '<mark class="admin-search-hit">$1</mark>');
     } catch (_) {
       return escaped;
     }
@@ -200,46 +138,41 @@
 
   // ── render functions ─────────────────────────────────────────────────────
 
-  function _renderCount() {
-    var countEl = document.getElementById("admin-search-count");
-    if (!countEl) return;
-    if (_state.loading) {
-      countEl.textContent = ServerI18n.t("searchSearching");
-      return;
+  function _visibleResults() {
+    var rows = _state.results;
+    if (_state.blockedOnly) {
+      rows = rows.filter(function (r) { return (r.status || "shown") === "blocked"; });
     }
-    if (!_state.searched) {
-      countEl.textContent = "";
-      return;
+    if (_state.who) {
+      rows = rows.filter(function (r) { return (r.nickname || "") === _state.who; });
     }
-    countEl.textContent = ServerI18n.t("searchResultCount", { n: _state.total, ms: _state.queryMs });
+    return rows;
   }
 
-  function _renderChart() {
-    var chartEl = document.getElementById("admin-search-chart");
-    if (!chartEl) return;
-    if (!_state.searched || _state.results.length === 0) {
-      chartEl.hidden = true;
-      return;
-    }
-    // Build 24 time buckets based on result timestamps.
-    var BAR_COUNT = 24;
-    var buckets = new Array(BAR_COUNT).fill(0);
-    var now = Date.now();
-    var windowMs = (_state.hours > 0 ? _state.hours : 168) * 3600 * 1000;
+  function _renderCount() {
+    var el = document.getElementById("admin-search-count");
+    if (!el) return;
+    if (!_state.searched || !_state.query.trim()) { el.textContent = ""; return; }
+    el.textContent = ServerI18n.t("searchResultCount", { n: _visibleResults().length });
+  }
+
+  /** 「任何人」下拉的選項＝這批結果裡實際出現過的暱稱。 */
+  function _renderWho() {
+    var sel = document.querySelector("[data-search-who]");
+    if (!sel) return;
+    var names = [];
     _state.results.forEach(function (r) {
-      if (!r.timestamp) return;
-      var ts = new Date(r.timestamp).getTime();
-      var idx = Math.floor(((ts - (now - windowMs)) / windowMs) * BAR_COUNT);
-      if (idx >= 0 && idx < BAR_COUNT) buckets[idx]++;
+      var n = (r.nickname || "").trim();
+      if (n && names.indexOf(n) === -1) names.push(n);
     });
-    var maxV = Math.max(1, Math.max.apply(null, buckets));
-    chartEl.innerHTML = buckets.map(function (v) {
-      var pct = Math.max(8, Math.round((v / maxV) * 100));
-      return '<span style="flex:1;height:' + pct + '%;min-height:2px;'
-        + 'background:var(--color-primary);opacity:' + (v > 0 ? 0.7 + (v / maxV) * 0.3 : 0.15)
-        + ';border-radius:1px 1px 0 0;transition:height 200ms"></span>';
-    }).join("");
-    chartEl.hidden = false;
+    names.sort();
+    var current = _state.who;
+    sel.innerHTML =
+      '<option value="">' + _escHtml(ServerI18n.t("searchWhoAnyone")) + "</option>" +
+      names.map(function (n) {
+        return '<option value="' + _escHtml(n) + '"' + (n === current ? " selected" : "") + ">" +
+          _escHtml(n) + "</option>";
+      }).join("");
   }
 
   function _renderResults() {
@@ -248,60 +181,50 @@
     var exportBtn = document.getElementById("admin-search-export-btn");
     if (!listEl) return;
 
-    // Remove all existing result cards (keep the empty-state placeholder).
-    var cards = listEl.querySelectorAll(".admin-search-result-card");
-    cards.forEach(function (c) { c.remove(); });
+    listEl.querySelectorAll(".admin-search-row, .admin-search-more").forEach(function (n) {
+      n.remove();
+    });
 
-    if (_state.loading) {
-      if (emptyEl) { emptyEl.style.display = "block"; emptyEl.textContent = ServerI18n.t("searchSearching"); }
+    var setEmpty = function (msg) {
+      if (emptyEl) { emptyEl.style.display = "block"; emptyEl.textContent = msg; }
       if (exportBtn) exportBtn.hidden = true;
-      return;
-    }
-    if (!_state.searched) {
-      if (emptyEl) { emptyEl.style.display = "block"; emptyEl.textContent = ServerI18n.t("searchPromptStart"); }
-      if (exportBtn) exportBtn.hidden = true;
-      return;
-    }
-    if (_state.results.length === 0) {
-      if (emptyEl) { emptyEl.style.display = "block"; emptyEl.textContent = ServerI18n.t("searchNoMatch"); }
-      if (exportBtn) exportBtn.hidden = true;
-      return;
-    }
+    };
+    if (_state.loading) return setEmpty(ServerI18n.t("searchSearching"));
+    if (!_state.searched) return setEmpty(ServerI18n.t("searchPromptStart"));
+
+    var rows = _visibleResults();
+    if (rows.length === 0) return setEmpty(ServerI18n.t("searchNoMatch"));
 
     if (emptyEl) emptyEl.style.display = "none";
     if (exportBtn) exportBtn.hidden = false;
 
+    var shown = Math.min(rows.length, _state.shown);
     var frag = document.createDocumentFragment();
-    _state.results.forEach(function (r) {
-      var hue = _hue(r.fingerprint || "");
-      var nick = _escHtml(r.nickname || ServerI18n.t("audienceAnonymous"));
-      var fp = _escHtml((r.fingerprint || "").slice(0, 10));
-      var ts = _formatTs(r.timestamp);
-      var textHtml = _highlight(r.text || "", _state.query);
-
-      var card = document.createElement("div");
-      card.className = "admin-search-result-card";
-      card.style.cssText = "background:var(--admin-raised);border:1px solid var(--admin-line);"
-        + "border-radius:5px;padding:10px 12px;display:flex;flex-direction:column;gap:6px";
-      card.innerHTML =
-        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-        +   '<span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;'
-        +         'background:hsl(' + hue + ',70%,60%)"></span>'
-        +   '<span style="font-size:13px;font-weight:600;color:var(--admin-text)">' + nick + '</span>'
-        +   '<span style="font-family:var(--font-mono);font-size:11px;color:var(--admin-text-dim)">' + fp + '</span>'
-        +   '<span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--admin-text-dim)">' + _escHtml(ts) + '</span>'
-        + '</div>'
-        + '<div style="font-size:13px;color:var(--admin-text);line-height:1.5;word-break:break-all">'
-        +   textHtml
-        + '</div>';
-      frag.appendChild(card);
+    rows.slice(0, shown).forEach(function (r) {
+      var row = document.createElement("div");
+      row.className = "admin-search-row";
+      row.innerHTML =
+        '<span class="admin-search-row__ts">' + _escHtml(_formatTs(r.timestamp)) + "</span>" +
+        '<span class="admin-search-row__text">' + _highlight(r.text || "", _state.query) + "</span>" +
+        '<span class="admin-search-row__nick">' +
+          _escHtml((r.nickname || "").trim() || ServerI18n.t("audienceAnonymous")) + "</span>";
+      frag.appendChild(row);
     });
     listEl.appendChild(frag);
+
+    if (rows.length > shown) {
+      var more = document.createElement("button");
+      more.type = "button";
+      more.className = "admin-search-more";
+      more.dataset.searchMore = "1";
+      more.textContent = ServerI18n.t("searchMoreLeft", { n: rows.length - shown });
+      listEl.appendChild(more);
+    }
   }
 
   function _renderAll() {
     _renderCount();
-    _renderChart();
+    _renderWho();
     _renderResults();
   }
 
@@ -314,7 +237,6 @@
       _state.searched = false;
       _state.results = [];
       _state.total = 0;
-      _state.queryMs = 0;
       _renderAll();
       return;
     }
@@ -322,8 +244,13 @@
     _renderAll();
 
     try {
+      // 「這場」＝目前這場開始之後；「所有場次」＝後端允許的最大回看窗。
+      // scope 不是憑空造的維度：場次有真的開始時間（/admin/session/current）。
       var url = "/admin/search?q=" + encodeURIComponent(q);
-      if (_state.hours > 0) url += "&hours=" + _state.hours;
+      if (_state.scope === "session") {
+        var since = await _sessionStartedAt();
+        if (since) url += "&since=" + encodeURIComponent(since);
+      }
       var t0 = Date.now();
       var r = await fetch(url, { credentials: "same-origin" });
       var elapsed = Date.now() - t0;
@@ -331,18 +258,36 @@
       var data = await r.json();
       _state.results = Array.isArray(data.results) ? data.results : [];
       _state.total = typeof data.total === "number" ? data.total : _state.results.length;
-      _state.queryMs = typeof data.query_ms === "number" ? data.query_ms : elapsed;
+      _state.shown = PAGE_SIZE;
     } catch (e) {
       console.error("[admin-search] fetch error:", e);
       _state.results = [];
       _state.total = 0;
-      _state.queryMs = 0;
       window.showToast && window.showToast(ServerI18n.t("searchToastFailed", { msg: e.message || "" }), false);
     } finally {
       _state.loading = false;
       _state.searched = true;
       _renderAll();
     }
+  }
+
+  var _sessionStartCache = null;
+
+  /** 目前這場的開始時間（ISO）。沒有進行中的場次就回 null＝不加時間下限。 */
+  async function _sessionStartedAt() {
+    if (_sessionStartCache !== null) return _sessionStartCache;
+    try {
+      var r = await fetch("/admin/session/current", { credentials: "same-origin" });
+      if (r.ok) {
+        var j = await r.json();
+        if (j.status === "live" && j.started_at) {
+          _sessionStartCache = new Date(j.started_at * 1000).toISOString();
+          return _sessionStartCache;
+        }
+      }
+    } catch (_) {}
+    _sessionStartCache = "";
+    return "";
   }
 
   function _scheduleSearch() {
@@ -399,19 +344,38 @@
       });
     }
 
-    // Range buttons
+    // 設計稿 15 · SR1 的篩選 chip
     page.addEventListener("click", function (e) {
-      var btn = e.target.closest("[data-hours]");
-      if (btn && btn.classList.contains("admin-search-range-chip")) {
-        var hours = parseInt(btn.dataset.hours, 10);
-        if (hours === -1) return; // "自訂" – not yet wired
-        _state.hours = hours;
-        // Update active state
-        page.querySelectorAll(".admin-search-range-chip").forEach(function (b) {
-          b.classList.toggle("is-active", b === btn);
+      var scope = e.target.closest("[data-search-scope]");
+      if (scope) {
+        _state.scope = scope.dataset.searchScope;
+        page.querySelectorAll("[data-search-scope]").forEach(function (b) {
+          b.classList.toggle("is-active", b === scope);
         });
         if (_state.query.trim()) _scheduleSearch();
+        return;
       }
+      var blocked = e.target.closest("[data-search-blocked]");
+      if (blocked) {
+        _state.blockedOnly = !_state.blockedOnly;
+        blocked.classList.toggle("is-active", _state.blockedOnly);
+        _state.shown = PAGE_SIZE;
+        _renderAll();
+        return;
+      }
+      if (e.target.closest("[data-search-more]")) {
+        _state.shown += PAGE_SIZE;
+        _renderResults();
+        return;
+      }
+    });
+
+    page.addEventListener("change", function (e) {
+      var who = e.target.closest("[data-search-who]");
+      if (!who) return;
+      _state.who = who.value || "";
+      _state.shown = PAGE_SIZE;
+      _renderAll();
     });
 
     // Export button
