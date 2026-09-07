@@ -142,20 +142,35 @@ def test_about_page_renders(admin_page):
     assert "MIT License" in license_text
 
 
-def test_notifications_page_renders(admin_page):
-    _go_to_route(admin_page, "notifications")
-    admin_page.wait_for_selector("#sec-notifications-overview", state="visible", timeout=5000)
-    # Filter sidebar tabs + sources (未讀 / 全部 / 已標記 / 已封存)
-    assert admin_page.locator("[data-notif-tab]").count() == 4
-    sources = admin_page.locator("[data-notif-src]").count()
-    # 全部 + Fire Token + Webhooks + System + Moderation。Backup 那顆在
-    # 2026-07-28 刪掉了 —— 它是死 placeholder（integrations catalog 寫死
-    # implemented=false，services/backup.py 也沒有任何 notif emit）。
-    assert sources == 5
-    assert admin_page.locator('[data-notif-src="Backup"]').count() == 0
-    # List + summary present
-    assert admin_page.is_visible("[data-notif-list]")
-    assert admin_page.is_visible("[data-notif-summary]")
+def test_notifications_is_a_topbar_popover(admin_page):
+    """設計稿 08 · N1：通知是頂欄鈴鐺開的右上彈出面板，不是一頁。
+
+    前一版是整頁三欄式收件匣（篩選欄／清單／詳情窗＋四個分頁＋來源篩選）。
+    """
+    _go_to_route(admin_page, "live")
+    admin_page.wait_for_selector("#admin-notif-bell", state="visible", timeout=5000)
+    assert admin_page.locator("#sec-notifications-overview").count() == 0
+    assert admin_page.locator("[data-notif-tab]").count() == 0
+    assert admin_page.locator("[data-notif-src]").count() == 0
+
+    # 鈴鐺開面板
+    admin_page.locator("#admin-notif-bell").click()
+    admin_page.wait_for_selector("#admin-notif-panel", state="visible", timeout=5000)
+    assert admin_page.locator("[data-notif-readall]").count() == 1
+    # 有通知就列出來，沒有就是空狀態——兩者都算「面板有渲染」
+    assert (
+        admin_page.locator(".admin-notif__item").count()
+        + admin_page.locator(".admin-notif__empty").count()
+        > 0
+    )
+
+    # Esc 收起
+    admin_page.keyboard.press("Escape")
+    admin_page.wait_for_selector("#admin-notif-panel", state="hidden", timeout=5000)
+
+    # 舊書籤 #/notifications 沒有頁面了，改成把面板打開
+    admin_page.evaluate('() => { window.location.hash = "#/notifications"; }')
+    admin_page.wait_for_selector("#admin-notif-panel", state="visible", timeout=5000)
 
 
 def test_audit_page_renders(admin_page):
