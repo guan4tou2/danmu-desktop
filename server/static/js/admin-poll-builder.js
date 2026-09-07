@@ -213,7 +213,6 @@
             <span class="idx">${idx + 1}</span>
             <div class="head-info">
               <span class="title">${ServerI18n.t("pollBuilderEditQuestionTitle", { n: idx + 1 })}</span>
-              <span class="kicker">${ServerI18n.t("pollBuilderEditingKicker")}</span>
             </div>
             <span class="progress">Q${idx + 1} / ${queue.length}</span>
           </div>
@@ -533,7 +532,6 @@
               <div class="admin-polls-results-winner">
                 <div class="badge">${escapeHtml(winner.key)}</div>
                 <div class="info">
-                  <div class="kicker">WINNER · ${ServerI18n.t("pollBuilderWinnerKicker")}</div>
                   <div class="lbl">${escapeHtml(winner.text || "—")}</div>
                   <div class="sub">${ServerI18n.t("pollBuilderVoteCount", { n: winner.count })} · ${winnerPct.toFixed(1)}% ${runnerUp ? ServerI18n.t("pollBuilderLeadOverRunnerUp", { lead: lead }) : ''}</div>
                 </div>

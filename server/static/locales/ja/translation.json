@@ -1881,7 +1881,7 @@
   "ratelimitSuggestTitle": "推奨調整",
   "ratelimitApplySuggestBtn": "提案を適用",
   "ratelimitViolationsTitle": "最近の違反",
-  "ratelimitFiveMinWindow": "5分間ウィンドウ",
+  "ratelimitFiveMinWindow": "直近 5 分間",
   "ratelimitNoViolationsYet": "違反はまだありません・待機中",
   "ratelimitIpPolicyTitle": "IP 許可/拒否リスト",
   "ratelimitLoadingEllipsis": "読み込み中…",
@@ -2808,5 +2808,16 @@
   "sohCopyFailed": "コピーに失敗しました",
   "sohMemorySub": "マシン全体・合計 {total} GB",
   "notifViewBtn": "表示",
-  "notifEmpty": "いま対応が必要な通知はありません。"
+  "notifEmpty": "いま対応が必要な通知はありません。",
+  "closeBtn": "閉じる",
+  "replayTitle": "再生",
+  "replayNote": "過去のメッセージを大画面に送り直します。日付を選び、タイムラインを動かして、1 件ずつでもまとめても再送できます。",
+  "noHistoryYet": "まだ記録がありません。",
+  "refireNow": "再送",
+  "replayTruncated": "最新 300 件のみ表示・全 ",
+  "day": "日付",
+  "mlType": "種類",
+  "mlAction": "動作",
+  "mlPattern": "パターン",
+  "ratelimitViolationsCount": "直近の違反 {n} 件"
 }

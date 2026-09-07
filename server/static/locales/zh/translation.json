@@ -1881,7 +1881,7 @@
   "ratelimitSuggestTitle": "建議調整",
   "ratelimitApplySuggestBtn": "套用建議",
   "ratelimitViolationsTitle": "近期違規",
-  "ratelimitFiveMinWindow": "5 分鐘窗口",
+  "ratelimitFiveMinWindow": "最近 5 分鐘",
   "ratelimitNoViolationsYet": "尚無違規 · 等待中",
   "ratelimitIpPolicyTitle": "IP 黑/白名單",
   "ratelimitLoadingEllipsis": "載入中…",
@@ -2808,5 +2808,16 @@
   "sohCopyFailed": "複製失敗",
   "sohMemorySub": "整台機器，共 {total} GB",
   "notifViewBtn": "查看",
-  "notifEmpty": "目前沒有需要處理的通知。"
+  "notifEmpty": "目前沒有需要處理的通知。",
+  "closeBtn": "關閉",
+  "replayTitle": "重播",
+  "replayNote": "把歷史訊息重新送上大螢幕。挑一天、拉時間軸、單則或整批重送。",
+  "noHistoryYet": "還沒有紀錄。",
+  "refireNow": "重送",
+  "replayTruncated": "只顯示最近 300 則，共 ",
+  "day": "日期",
+  "mlType": "類型",
+  "mlAction": "動作",
+  "mlPattern": "比對樣式",
+  "ratelimitViolationsCount": "最近 {n} 次違規"
 }

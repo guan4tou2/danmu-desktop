@@ -1881,7 +1881,7 @@
   "ratelimitSuggestTitle": "Suggested Adjustment",
   "ratelimitApplySuggestBtn": "Apply Suggestion",
   "ratelimitViolationsTitle": "Recent Violations",
-  "ratelimitFiveMinWindow": "5-minute window",
+  "ratelimitFiveMinWindow": "Last 5 minutes",
   "ratelimitNoViolationsYet": "No violations yet · waiting",
   "ratelimitIpPolicyTitle": "IP Allow/Deny List",
   "ratelimitLoadingEllipsis": "Loading…",
@@ -2808,5 +2808,16 @@
   "sohCopyFailed": "Copy failed",
   "sohMemorySub": "Whole machine, {total} GB total",
   "notifViewBtn": "View",
-  "notifEmpty": "Nothing needs your attention right now."
+  "notifEmpty": "Nothing needs your attention right now.",
+  "closeBtn": "Close",
+  "replayTitle": "Replay",
+  "replayNote": "Send historical messages back to the big screen. Pick a day, scrub the timeline, re-fire one or many.",
+  "noHistoryYet": "No history recorded yet.",
+  "refireNow": "Re-fire",
+  "replayTruncated": "Showing the latest 300 of ",
+  "day": "Day",
+  "mlType": "Type",
+  "mlAction": "Action",
+  "mlPattern": "Pattern",
+  "ratelimitViolationsCount": "{n} recent violations"
 }

@@ -67,7 +67,6 @@
             <!-- 24h hourly chart -->
             <section class="admin-ft-card">
               <div class="admin-ft-card-head">
-                <span class="admin-v3-card-kicker">${ServerI18n.t("firetokenChartKicker")}</span>
                 <span class="admin-ft-meta" data-ft-peak-meta>${ServerI18n.t("firetokenPeakPlaceholder")}</span>
               </div>
               <div class="admin-ft-chart" id="adminFtChart24h">
@@ -78,7 +77,6 @@
             <!-- Audit log -->
             <section class="admin-ft-card">
               <div class="admin-ft-card-head">
-                <span class="admin-v3-card-kicker">${ServerI18n.t("firetokenAuditKicker")}</span>
                 <span class="admin-ft-meta">in-memory · ${ServerI18n.t("firetokenAuditMeta")}</span>
               </div>
               <div class="admin-ft-audit" id="adminFtAudit">
@@ -89,7 +87,6 @@
             <!-- curl example -->
             <section class="admin-ft-card admin-ft-curl-card">
               <div class="admin-ft-card-head">
-                <span class="admin-v3-card-kicker">CURL · ${ServerI18n.t("firetokenCurlKicker")}</span>
                 <span class="admin-ft-meta">${ServerI18n.t("firetokenCurlMeta")}</span>
               </div>
               <pre class="admin-ft-curl" id="adminFtCurl"></pre>
@@ -100,7 +97,6 @@
           <aside class="admin-ft-rail">
             <section class="admin-ft-card">
               <div class="admin-ft-card-head">
-                <span class="admin-v3-card-kicker">${ServerI18n.t("firetokenIpKicker")}</span>
                 <span class="admin-ft-meta" data-ft-ip-count>—</span>
               </div>
               <div class="admin-ft-ip-list" id="adminFtIps">
@@ -110,7 +106,6 @@
 
             <section class="admin-ft-card admin-ft-rotation-card">
               <div class="admin-ft-card-head">
-                <span class="admin-v3-card-kicker">${ServerI18n.t("firetokenRotationKicker")}</span>
               </div>
               <div class="admin-ft-rotation-body">
                 <ul>

@@ -173,7 +173,7 @@
       +   '<h3 class="admin-sx-export__title">'
       +     _escHtml(ServerI18n.t("sessionsExportTitle", { name: _sessionName(sess) })) + '</h3>'
       +   '<button type="button" class="admin-sx-export__close" data-sessions-export-close'
-      +     ' aria-label="' + _escHtml(ServerI18n.t("closeBtn")) + '">×</button>'
+      +     ' aria-label="' + _escHtml(ServerI18n.t("close")) + '">×</button>'
       + '</div>'
       + '<div class="admin-sx-export__segs" role="group">' + segs + '</div>'
       + '<label class="admin-sx-export__pii">'

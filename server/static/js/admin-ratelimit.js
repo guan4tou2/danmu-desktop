@@ -125,7 +125,9 @@
           <div class="admin-ratelimit-violations">
             <div class="admin-ratelimit-vfeed-head">
               <span class="title">${ServerI18n.t("ratelimitViolationsTitle")}</span>
-              <span class="kicker" data-rl-vcount>RECENT VIOLATIONS · ${ServerI18n.t("ratelimitFiveMinWindow")}</span>
+              <!-- 設計稿 14：中文標籤旁邊不再擺一行大寫英文。這格的初始值就是
+                   「最近 5 分鐘」，有資料時由 _renderViolations 換成次數。 -->
+              <span class="kicker" data-rl-vcount>${ServerI18n.t("ratelimitFiveMinWindow")}</span>
             </div>
             <div class="admin-ratelimit-vfeed-table">
               <div class="admin-ratelimit-vfeed-row is-head">
@@ -262,7 +264,10 @@
       const count = section.querySelector("[data-rl-vcount]");
       if (!body) return;
       const arr = Array.isArray(events) ? events : [];
-      if (count) count.textContent = "RECENT VIOLATIONS · " + ServerI18n.t("ratelimitViolationsCountKicker", { n: arr.length });
+      // 2026-09-07：原本是 `"RECENT VIOLATIONS · " + t("ratelimitViolationsCountKicker")`。
+      // 那個 key 在 kicker 全域移除時被刪掉了，但呼叫端留著——畫面上直接印出
+      // 「RECENT VIOLATIONS · ratelimitViolationsCountKicker」。
+      if (count) count.textContent = ServerI18n.t("ratelimitViolationsCount", { n: arr.length });
       if (arr.length === 0) {
         body.innerHTML = `<div class="admin-ratelimit-vfeed-empty">${ServerI18n.t("ratelimitNoViolationsYet")}</div>`;
         return;
