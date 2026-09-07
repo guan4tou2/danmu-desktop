@@ -41,7 +41,7 @@ const _resources = {
       "importSettings": "Import Settings",
       "updateAvailableShort": "UPDATE",
       "updateAvailableTitle": "New version available",
-      "updateReadyTitle": "Update ready to install",
+      "updateReadyTitle": "Danmu Fire {v} is ready",
       "updateChecking": "Checking for updates…",
       "updateCheckFailed": "Update check failed",
       "updateCheckFailedShort": "CHECK FAILED",
@@ -133,7 +133,10 @@ const _resources = {
       "clientOnboardContinue": "Test and continue",
       "clientOnboardSkip": "Set up later",
       "clientOnboardTesting": "Testing…",
-      "clientOnboardFailed": "Couldn't reach it — you can continue anyway."
+      "clientOnboardFailed": "Couldn't reach it — you can continue anyway.",
+      "updateReadyBody": "Restarting finishes the update — about 10 seconds. Your settings and server address are kept.",
+      "updateReadyRestart": "Restart and update",
+      "updateReadyLater": "Update next time I close it"
     },
     "zh": {
       "skipToMainContent": "跳至主要內容",
@@ -169,7 +172,7 @@ const _resources = {
       "importSettings": "匯入設定",
       "updateAvailableShort": "可更新",
       "updateAvailableTitle": "有新版本可用",
-      "updateReadyTitle": "更新已準備就緒",
+      "updateReadyTitle": "Danmu Fire {v} 已準備好",
       "updateChecking": "正在檢查更新…",
       "updateCheckFailed": "檢查更新失敗",
       "updateCheckFailedShort": "檢查失敗",
@@ -261,7 +264,10 @@ const _resources = {
       "clientOnboardContinue": "測試並繼續",
       "clientOnboardSkip": "稍後設定",
       "clientOnboardTesting": "測試中…",
-      "clientOnboardFailed": "連不上，但你還是可以先繼續。"
+      "clientOnboardFailed": "連不上，但你還是可以先繼續。",
+      "updateReadyBody": "重新啟動即完成更新，約需 10 秒。設定與伺服器位址都會保留。",
+      "updateReadyRestart": "重新啟動並更新",
+      "updateReadyLater": "下次關閉時再更新"
     },
     "ja": {
       "skipToMainContent": "メインコンテンツへスキップ",
@@ -297,7 +303,7 @@ const _resources = {
       "importSettings": "設定をインポート",
       "updateAvailableShort": "更新あり",
       "updateAvailableTitle": "新しいバージョンが利用可能です",
-      "updateReadyTitle": "更新の準備ができました",
+      "updateReadyTitle": "Danmu Fire {v} の準備ができました",
       "updateChecking": "更新を確認中…",
       "updateCheckFailed": "更新の確認に失敗しました",
       "updateCheckFailedShort": "確認失敗",
@@ -389,7 +395,10 @@ const _resources = {
       "clientOnboardContinue": "テストして続ける",
       "clientOnboardSkip": "あとで設定",
       "clientOnboardTesting": "テスト中…",
-      "clientOnboardFailed": "接続できませんでしたが、このまま続けられます。"
+      "clientOnboardFailed": "接続できませんでしたが、このまま続けられます。",
+      "updateReadyBody": "再起動すると更新が完了します。10 秒ほどです。設定とサーバーアドレスはそのまま残ります。",
+      "updateReadyRestart": "再起動して更新",
+      "updateReadyLater": "次に閉じるときに更新"
     },
     "ko": {
       "skipToMainContent": "본문으로 건너뛰기",
@@ -425,7 +434,7 @@ const _resources = {
       "importSettings": "설정 가져오기",
       "updateAvailableShort": "업데이트",
       "updateAvailableTitle": "새 버전이 있습니다",
-      "updateReadyTitle": "업데이트 설치 준비 완료",
+      "updateReadyTitle": "Danmu Fire {v} 준비 완료",
       "updateChecking": "업데이트 확인 중…",
       "updateCheckFailed": "업데이트 확인 실패",
       "updateCheckFailedShort": "확인 실패",
@@ -517,7 +526,10 @@ const _resources = {
       "clientOnboardContinue": "테스트하고 계속",
       "clientOnboardSkip": "나중에 설정",
       "clientOnboardTesting": "테스트 중…",
-      "clientOnboardFailed": "연결하지 못했지만 계속 진행할 수 있습니다."
+      "clientOnboardFailed": "연결하지 못했지만 계속 진행할 수 있습니다.",
+      "updateReadyBody": "다시 시작하면 업데이트가 끝납니다. 약 10초 걸립니다. 설정과 서버 주소는 그대로 유지됩니다.",
+      "updateReadyRestart": "다시 시작하고 업데이트",
+      "updateReadyLater": "다음에 닫을 때 업데이트"
     }
   };
 
