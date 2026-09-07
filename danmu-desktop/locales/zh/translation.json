@@ -32,7 +32,7 @@
   "importSettings": "匯入設定",
   "updateAvailableShort": "可更新",
   "updateAvailableTitle": "有新版本可用",
-  "updateReadyTitle": "更新已準備就緒",
+  "updateReadyTitle": "Danmu Fire {v} 已準備好",
   "updateChecking": "正在檢查更新…",
   "updateCheckFailed": "檢查更新失敗",
   "updateCheckFailedShort": "檢查失敗",
@@ -124,5 +124,8 @@
   "clientOnboardContinue": "測試並繼續",
   "clientOnboardSkip": "稍後設定",
   "clientOnboardTesting": "測試中…",
-  "clientOnboardFailed": "連不上，但你還是可以先繼續。"
+  "clientOnboardFailed": "連不上，但你還是可以先繼續。",
+  "updateReadyBody": "重新啟動即完成更新，約需 10 秒。設定與伺服器位址都會保留。",
+  "updateReadyRestart": "重新啟動並更新",
+  "updateReadyLater": "下次關閉時再更新"
 }

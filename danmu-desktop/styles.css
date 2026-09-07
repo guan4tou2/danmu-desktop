@@ -1339,3 +1339,70 @@ body[data-os="mac"] .client-titlebar{
   .client-overlay-actions { display: none; }
   .client-titlebar-label { display: none; }
 }
+
+
+/* ── 更新已下載對話框（設計稿 10 · S7）──────────────────────────────
+   顯示中時不打斷，關閉顯示層後才出現。主持人正在台上放彈幕的時候，一個
+   「要不要重新啟動」的對話框是最糟的打斷——重新啟動就是把大螢幕關掉。 */
+.client-update-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+.client-update-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--color-overlay);
+}
+.client-update-dialog__panel {
+  position: relative;
+  width: 20rem;
+  padding: var(--space-6);
+  text-align: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 var(--space-4) var(--space-8) var(--shadow-base);
+}
+.client-update-dialog__icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-lg);
+}
+.client-update-dialog__title {
+  margin-top: var(--space-4);
+  font-size: var(--text-subhead);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.client-update-dialog__body {
+  margin: var(--space-2) 0 var(--space-5);
+  font-size: var(--text-footnote);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+.client-update-dialog__primary,
+.client-update-dialog__ghost {
+  display: block;
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--text-footnote);
+}
+.client-update-dialog__primary {
+  font-weight: 600;
+  color: var(--color-ink-on-accent);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+}
+.client-update-dialog__ghost {
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  background: none;
+  border: 0;
+}

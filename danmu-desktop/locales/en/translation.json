@@ -32,7 +32,7 @@
   "importSettings": "Import Settings",
   "updateAvailableShort": "UPDATE",
   "updateAvailableTitle": "New version available",
-  "updateReadyTitle": "Update ready to install",
+  "updateReadyTitle": "Danmu Fire {v} is ready",
   "updateChecking": "Checking for updates…",
   "updateCheckFailed": "Update check failed",
   "updateCheckFailedShort": "CHECK FAILED",
@@ -124,5 +124,8 @@
   "clientOnboardContinue": "Test and continue",
   "clientOnboardSkip": "Set up later",
   "clientOnboardTesting": "Testing…",
-  "clientOnboardFailed": "Couldn't reach it — you can continue anyway."
+  "clientOnboardFailed": "Couldn't reach it — you can continue anyway.",
+  "updateReadyBody": "Restarting finishes the update — about 10 seconds. Your settings and server address are kept.",
+  "updateReadyRestart": "Restart and update",
+  "updateReadyLater": "Update next time I close it"
 }

@@ -32,7 +32,7 @@
   "importSettings": "설정 가져오기",
   "updateAvailableShort": "업데이트",
   "updateAvailableTitle": "새 버전이 있습니다",
-  "updateReadyTitle": "업데이트 설치 준비 완료",
+  "updateReadyTitle": "Danmu Fire {v} 준비 완료",
   "updateChecking": "업데이트 확인 중…",
   "updateCheckFailed": "업데이트 확인 실패",
   "updateCheckFailedShort": "확인 실패",
@@ -124,5 +124,8 @@
   "clientOnboardContinue": "테스트하고 계속",
   "clientOnboardSkip": "나중에 설정",
   "clientOnboardTesting": "테스트 중…",
-  "clientOnboardFailed": "연결하지 못했지만 계속 진행할 수 있습니다."
+  "clientOnboardFailed": "연결하지 못했지만 계속 진행할 수 있습니다.",
+  "updateReadyBody": "다시 시작하면 업데이트가 끝납니다. 약 10초 걸립니다. 설정과 서버 주소는 그대로 유지됩니다.",
+  "updateReadyRestart": "다시 시작하고 업데이트",
+  "updateReadyLater": "다음에 닫을 때 업데이트"
 }

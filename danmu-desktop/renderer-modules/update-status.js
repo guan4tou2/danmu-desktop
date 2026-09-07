@@ -1,6 +1,7 @@
 // Auto-updater UX wiring (P2-3) — renders the title-bar badge, About card,
 // download progress bar, action buttons (install / later / skip), and the
-// download-complete toast. Receives lifecycle events from the main process
+// 「更新已下載」對話框（設計稿 10 · S7——顯示中不打斷，關閉顯示層後才問）。
+// Receives lifecycle events from the main process
 // via window.API.onUpdateStatus and dispatches user choices via
 // window.API.sendUpdateAction.
 
@@ -197,23 +198,89 @@ function applyState(t, showToast) {
   // ── About card ──────────────────────────────────────────────────────────
   renderAboutCard(t);
 
-  // ── Toast on download complete (only once per app session) ─────────────
-  if (phase === "downloaded" && !_toastShown && typeof showToast === "function") {
+  // ── 更新已下載（設計稿 10 · S7）─────────────────────────────────────
+  //
+  // **顯示中時不打斷；關閉顯示層後才提示。** 主持人正在台上放彈幕的時候，
+  // 一個「要不要重新啟動」的對話框是最糟的打斷——重新啟動就是把大螢幕關掉。
+  // 所以下載完成先記著，等顯示層停了再問。
+  if (phase === "downloaded" && !_toastShown) {
     _toastShown = true;
-    const msg =
-      tt(t, "updateDownloadedToast", "Update downloaded — restart to install") +
-      (version ? " (v" + version + ")" : "");
-    try {
-      showToast(msg, "success");
-    } catch (err) {
-      console.warn("[update-status] toast failed:", err && err.message);
-    }
+    _promptWhenOverlayIdle(t);
   }
-
-  // Reset toast guard if we drift away from "downloaded" (e.g. user skipped)
   if (phase !== "downloaded") {
     _toastShown = false;
   }
+}
+
+const DIALOG_ID = "client-update-dialog";
+
+function _overlayRunning() {
+  const c = window.OverlayControl;
+  return !!(c && typeof c.isRunning === "function" && c.isRunning());
+}
+
+function _promptWhenOverlayIdle(t) {
+  if (!_overlayRunning()) {
+    _showUpdateDialog(t);
+    return;
+  }
+  const c = window.OverlayControl;
+  if (!c || typeof c.subscribe !== "function") return;
+  const unsubscribe = c.subscribe(function () {
+    if (_overlayRunning()) return;
+    if (typeof unsubscribe === "function") unsubscribe();
+    _showUpdateDialog(t);
+  });
+}
+
+function _showUpdateDialog(t) {
+  if (document.getElementById(DIALOG_ID)) return;
+  const version = _state.version ? String(_state.version) : "";
+
+  const root = document.createElement("div");
+  root.id = DIALOG_ID;
+  root.className = "client-update-dialog";
+  root.setAttribute("role", "alertdialog");
+  root.setAttribute("aria-modal", "true");
+  root.setAttribute("aria-labelledby", "client-update-dialog-title");
+  root.innerHTML =
+    '<div class="client-update-dialog__backdrop"></div>' +
+    '<div class="client-update-dialog__panel">' +
+      '<img class="client-update-dialog__icon" src="assets/brand/icon-128.png" width="48" height="48" alt="" />' +
+      '<div class="client-update-dialog__title" id="client-update-dialog-title">' +
+        safeText(
+          tt(t, "updateReadyTitle", "Danmu Fire {v} 已準備好").replace("{v}", version)
+        ) +
+      "</div>" +
+      '<p class="client-update-dialog__body">' +
+        safeText(
+          tt(
+            t,
+            "updateReadyBody",
+            "重新啟動即完成更新，約需 10 秒。設定與伺服器位址都會保留。"
+          )
+        ) +
+      "</p>" +
+      '<button type="button" class="client-update-dialog__primary" data-update-dialog="install">' +
+        safeText(tt(t, "updateReadyRestart", "重新啟動並更新")) +
+      "</button>" +
+      '<button type="button" class="client-update-dialog__ghost" data-update-dialog="later">' +
+        safeText(tt(t, "updateReadyLater", "下次關閉時再更新")) +
+      "</button>" +
+    "</div>";
+  document.body.appendChild(root);
+
+  root.addEventListener("click", function (e) {
+    const btn = e.target.closest("[data-update-dialog]");
+    if (!btn) return;
+    const action = btn.dataset.updateDialog;
+    root.remove();
+    try {
+      if (window.API && typeof window.API.sendUpdateAction === "function") {
+        window.API.sendUpdateAction(action, _state.version);
+      }
+    } catch (_) {}
+  });
 }
 
 function bindActions() {

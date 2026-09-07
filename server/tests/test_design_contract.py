@@ -924,3 +924,23 @@ def test_session_detail_matches_g2(zh):
     # 「訊息」算真的播出去的，被擋的另外算一欄
     hist_routes = _read("server/routes/admin/history.py")
     assert '"msg_count": len(records) - blocked' in hist_routes
+
+
+def test_desktop_update_dialog_waits_for_the_display_to_close(electron_zh):
+    """設計稿 10 · S7：更新已下載——**顯示中時不打斷；關閉顯示層後才提示**。
+
+    主持人正在台上放彈幕的時候，一個「要不要重新啟動」的對話框是最糟的打斷
+    ——重新啟動就是把大螢幕關掉。原本下載完成直接彈 toast，不管當下在不在
+    放彈幕。
+    """
+    assert electron_zh["updateReadyTitle"] == "Danmu Fire {v} 已準備好"
+    assert "約需 10 秒" in electron_zh["updateReadyBody"]
+    assert "設定與伺服器位址都會保留" in electron_zh["updateReadyBody"]
+    assert electron_zh["updateReadyRestart"] == "重新啟動並更新"
+    assert electron_zh["updateReadyLater"] == "下次關閉時再更新"
+
+    js = _strip_comments(_read("danmu-desktop/renderer-modules/update-status.js"))
+    assert "_promptWhenOverlayIdle" in js
+    assert "OverlayControl" in js and "isRunning" in js
+    assert 'data-update-dialog="install"' in js
+    assert 'data-update-dialog="later"' in js
