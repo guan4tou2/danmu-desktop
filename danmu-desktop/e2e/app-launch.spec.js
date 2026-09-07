@@ -112,8 +112,10 @@ test.describe("App Launch", () => {
     // Verify i18n is still wired up by checking a known data-i18n element.
     const skipLink = mainWindow.locator('[data-i18n="skipToMainContent"]');
     await expect(skipLink).toHaveAttribute("data-i18n", "skipToMainContent");
+    // 2026-09-07 設計稿 17：<html lang> 改寫 BCP47（zh → zh-Hant）——單一個
+    // zh 沒說是正體還是簡體，螢幕閱讀器與 CJK 字型選擇都吃這個標籤。
     const langAttr = await mainWindow.locator("html").getAttribute("lang");
-    expect(["en", "zh", "ja", "ko"]).toContain(langAttr);
+    expect(["en", "zh-Hant", "ja", "ko"]).toContain(langAttr);
   });
 
   test("legacy advanced settings panel is removed (P5-2)", async () => {

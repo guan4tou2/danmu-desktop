@@ -564,7 +564,13 @@ def _open_style_sheet(page):
 
 
 def test_color_swatches_have_nonempty_aria_labels(viewer_page):
-    """6 個色票都應有非空 aria-label（預設 zh 語系的人話色名）"""
+    """6 個色票都應有非空 aria-label，且帶得出人話色名。
+
+    2026-09-07 設計稿 17 · 色盲替代：色票改成「色點＋名稱」磚，aria-label
+    照稿加上「顏色：」前綴（`aria-label="顏色：黃"`）。名稱同時是磚上的可見
+    文字，所以斷言改成「label 帶得出那個色名」而不是「label 等於色名」——
+    WCAG 2.5.3 要的是可見文字包含在 accessible name 裡，不是兩者相等。
+    """
     page, live_url = viewer_page
     page.goto(f"{live_url}/")
     page.wait_for_selector(".viewer-swatch-preset", timeout=5000)
@@ -581,7 +587,10 @@ def test_color_swatches_have_nonempty_aria_labels(viewer_page):
         assert label and label.strip(), f"Swatch {color} has empty aria-label"
         expected = _SWATCH_LABELS_ZH.get(color)
         if expected:
-            assert label == expected, f"Swatch {color}: expected '{expected}', got '{label}'"
+            assert expected in label, f"Swatch {color}: '{expected}' not in '{label}'"
+            assert (
+                label != expected
+            ), f"Swatch {color}: aria-label 應帶「顏色：」前綴（設計稿 17），got '{label}'"
 
 
 def test_color_swatches_aria_labels_follow_language_switch(viewer_page):
@@ -602,7 +611,7 @@ def test_color_swatches_aria_labels_follow_language_switch(viewer_page):
         expected = _SWATCH_LABELS_EN.get(color)
         assert label and label.strip(), f"Swatch {color} has empty aria-label after lang switch"
         if expected:
-            assert label == expected, f"Swatch {color}: expected '{expected}', got '{label}'"
+            assert expected in label, f"Swatch {color}: '{expected}' not in '{label}'"
 
 
 # ─── 5. 行動視口：sendbar 與狀態列不重疊（加分項）─────────────────────────────
