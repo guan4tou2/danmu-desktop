@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-_TOKENS_FILE = os.path.join(os.path.dirname(__file__), "..", "runtime", "api_tokens.json")
+_TOKENS_FILE = str(Path(__file__).resolve().parent.parent / "runtime" / "api_tokens.json")
 _LOCK = threading.Lock()
 
 VALID_SCOPES = frozenset({"read:history", "read:stats", "fire:danmu", "admin:*"})
@@ -28,21 +28,20 @@ EXPIRY_OPTIONS = {7: "7d", 30: "30d", 90: "90d", 0: "永久"}
 
 def _load() -> List[Dict]:
     try:
-        path = Path(_TOKENS_FILE)
+        path = Path(_TOKENS_FILE).resolve()
         if path.exists():
             return json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
-        logger.warning("api_tokens: load error: %s", exc)
+        logger.warning("Failed to load token store")
     return []
 
 
 def _save(tokens: List[Dict]) -> None:
-    path = Path(_TOKENS_FILE)
+    path = Path(_TOKENS_FILE).resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = str(path) + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(tokens, f, ensure_ascii=False, indent=2)
-    os.replace(tmp, str(path))
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(tokens, ensure_ascii=False, indent=2), encoding="utf-8")
+    os.replace(str(tmp), str(path))
 
 
 def _hash(raw: str) -> str:
