@@ -1030,6 +1030,14 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="admin-ui-page-head">
           <h2 class="admin-ui-page-title" data-i18n="styleThemePacks">${ServerI18n.t("styleThemePacks")}</h2>
           <p class="admin-ui-page-note" data-i18n="themesSectionDesc">${ServerI18n.t("themesSectionDesc")}</p>
+          <!-- 設計稿 08 · T1：頁首右側「新主題」。頁首被併進 topbar 時
+               shell 的 [data-route-action] 插槽會接住它——所以這顆鈕要
+               自己綁 listener（style-contract §5.4d）。 -->
+          <div class="admin-ui-page-actions">
+            <button type="button" class="admin-ui-action is-primary" id="themeNewBtn">
+              ${ServerI18n.t("themesNewBtn")}
+            </button>
+          </div>
         </div>
         <div class="admin-ui-card" style="padding:14px;margin-top:12px">
           <!-- 2026-09-07 設計稿 08 · T1：toolbar 只剩重新載入。
@@ -1044,6 +1052,49 @@ document.addEventListener("DOMContentLoaded", () => {
           <div id="themesList">
             <span class="theme-pack-muted" style="padding:14px">${ServerI18n.t("themesLoading")}</span>
           </div>
+        </div>
+
+        <!-- 「<主題> · 細部設定」（設計稿 08 · T1）。主題檔本身是 repo 裡的
+             YAML，改它等於改程式碼；這裡調的值存成一層覆寫，疊在 YAML 之上，
+             由 themes.get_active() 合併後吃到每一則彈幕。 -->
+        <div class="admin-ui-group-label" id="themeDetailLabel">—</div>
+        <div class="admin-ui-group" id="themeDetail" data-theme-detail>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${escapeHtml(ServerI18n.t("themeDetailFont"))}</span>
+            <span class="val">
+              <select class="admin-ui-input" data-theme-ov="font_family" id="themeOvFont"></select>
+            </span>
+          </div>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${escapeHtml(ServerI18n.t("themeDetailStroke"))}</span>
+            <span class="val admin-ui-seg" data-theme-seg="stroke">
+              <button type="button" data-theme-opt="none">${escapeHtml(ServerI18n.t("themeStrokeNone"))}</button>
+              <button type="button" data-theme-opt="thin">${escapeHtml(ServerI18n.t("themeStrokeThin"))}</button>
+              <button type="button" data-theme-opt="thick">${escapeHtml(ServerI18n.t("themeStrokeThick"))}</button>
+            </span>
+          </div>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${escapeHtml(ServerI18n.t("themeDetailShadow"))}</span>
+            <span class="val admin-ui-seg" data-theme-seg="shadow">
+              <button type="button" data-theme-opt="none">${escapeHtml(ServerI18n.t("themeShadowNone"))}</button>
+              <button type="button" data-theme-opt="soft">${escapeHtml(ServerI18n.t("themeShadowSoft"))}</button>
+              <button type="button" data-theme-opt="strong">${escapeHtml(ServerI18n.t("themeShadowStrong"))}</button>
+            </span>
+          </div>
+          <div class="admin-ui-group-row is-tall">
+            <span class="lbl">${escapeHtml(ServerI18n.t("themeDetailColor"))}
+              <span class="sub">${escapeHtml(ServerI18n.t("themeDetailColorHint"))}</span>
+            </span>
+            <span class="val">
+              <input type="color" class="admin-ui-input" data-theme-ov="color" id="themeOvColor" />
+            </span>
+          </div>
+        </div>
+        <div class="theme-pack-sample" id="themeDetailPreview">
+          <span class="theme-pack-sample-label">${ServerI18n.t("themesSampleLabel")}</span>
+          <span class="theme-pack-sample-line" data-theme-preview-line>
+            <span class="theme-pack-sample-nick">小明</span>講得好！+1
+          </span>
         </div>
       </div>
     `);

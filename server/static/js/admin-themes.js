@@ -13,6 +13,8 @@
   function showToast(msg, ok) { return window.showToast(msg, ok); }
 
   let _adminActiveTheme = "default";
+  let _themes = [];
+  let _overrides = {};
 
   // 2026-07-07 (C6): show a skeleton list while the fetch is in flight so the
   // themes page matches Effects' loading affordance instead of a blank pane.
@@ -32,7 +34,10 @@
       if (!res.ok) return;
       const data = await res.json();
       _adminActiveTheme = data.active || "default";
-      renderThemesList(data.themes || [], _adminActiveTheme);
+      _themes = data.themes || [];
+      _overrides = data.overrides || {};
+      renderThemesList(_themes, _adminActiveTheme);
+      renderDetail();
     } catch (e) {
       console.warn("[Themes] Failed to fetch themes:", e);
     }
@@ -115,6 +120,9 @@
           </span>
         </div>
         <div class="theme-pack-actions">
+          ${theme.custom
+            ? `<button class="admin-ui-action theme-delete-btn" data-theme="${escapeHtml(theme.name)}">${ServerI18n.t("themesDeleteBtn")}</button>`
+            : ""}
           ${isActive
             ? '<span class="admin-ui-chip admin-theme-pack-status is-active">' + ServerI18n.t("themesActiveChip") + '</span>'
             : `<button class="admin-ui-action is-primary admin-theme-pack-action theme-activate-btn" data-theme="${escapeHtml(theme.name)}">${ServerI18n.t("themesActivateBtn")}</button>`
@@ -122,6 +130,33 @@
         </div>
       `;
       container.appendChild(card);
+    });
+
+    // 刪除只出現在主持人自己建的主題上——內建的四個是 repo 檔案，
+    // 後端也會拒絕，這裡不畫按鈕是為了不讓人按到一個一定會失敗的東西。
+    container.querySelectorAll(".theme-delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const name = btn.dataset.theme;
+        // 破壞性動作走 HUD 確認框，不用原生 confirm（有 jest 在守）
+        const ok = await window.HudConfirm.open({
+          title: ServerI18n.t("themesDeleteBtn"),
+          severity: "danger",
+          body: ServerI18n.t("themesDeleteConfirm"),
+          confirmLabel: ServerI18n.t("themesDeleteBtn"),
+          cancelLabel: ServerI18n.t("cancel"),
+        });
+        if (!ok) return;
+        try {
+          const res = await csrfFetch("/admin/themes/" + encodeURIComponent(name), {
+            method: "DELETE",
+          });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          showToast(ServerI18n.t("themeDeleted"), true);
+          fetchThemes();
+        } catch (e) {
+          showToast(ServerI18n.t("themesDeleteFailed"), false);
+        }
+      });
     });
 
     // Bind activate buttons
@@ -141,6 +176,7 @@
             showToast(ServerI18n.t("themeActivated"), true);
             _adminActiveTheme = themeName;
             renderThemesList(themes, themeName);
+            renderDetail();
           } else {
             const err = await res.json().catch(() => ({}));
             showToast(err.error || ServerI18n.t("setThemeFailed"), false);
@@ -152,8 +188,155 @@
     });
   }
 
+  // ── 「<主題> · 細部設定」（設計稿 08 · T1）────────────────────────
+  //
+  // 調的是**使用中的那個主題**的覆寫。主題檔本身是 repo 裡的 YAML，改它
+  // 等於改程式碼；這一層存在 runtime/theme_overrides.json，由後端的
+  // themes.get_active() 疊上去，所以每一則彈幕都吃得到。
+
+  function _activeTheme() {
+    return _themes.find((t) => t.name === _adminActiveTheme) || null;
+  }
+
+  // 反推「現在是哪一段」：有覆寫就用覆寫，沒有就從主題本身的 styles 看。
+  // load_all 回的 styles 已經是套用覆寫後的結果，所以只能這樣讀。
+  function _segOf(kind, theme) {
+    const ov = _overrides[_adminActiveTheme] || {};
+    if (ov[kind]) return ov[kind];
+    const st = (theme && theme.styles) || {};
+    if (kind === "stroke") {
+      if (!st.textStroke) return "none";
+      return Number(st.strokeWidth) >= 3 ? "thick" : "thin";
+    }
+    if (!st.textShadow) return "none";
+    return Number(st.shadowBlur) >= 10 ? "strong" : "soft";
+  }
+
+  function renderDetail() {
+    const group = document.getElementById("themeDetail");
+    const label = document.getElementById("themeDetailLabel");
+    if (!group || !label) return;
+    const theme = _activeTheme();
+    if (!theme) return;
+
+    const themeLabel =
+      ServerI18n.t("theme_" + theme.name) !== "theme_" + theme.name
+        ? ServerI18n.t("theme_" + theme.name)
+        : theme.label || theme.name;
+    label.textContent = ServerI18n.t("themeDetailGroup", { name: themeLabel });
+
+    ["stroke", "shadow"].forEach((kind) => {
+      const cur = _segOf(kind, theme);
+      group.querySelectorAll(`[data-theme-seg="${kind}"] [data-theme-opt]`).forEach((b) => {
+        const on = b.getAttribute("data-theme-opt") === cur;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+    });
+
+    const colorInput = group.querySelector('[data-theme-ov="color"]');
+    if (colorInput) {
+      const c = _safeColor((theme.styles || {}).color, "#ffffff");
+      colorInput.value = /^#[0-9a-fA-F]{6}$/.test(c) ? c : "#ffffff";
+    }
+
+    _fillFontSelect(theme);
+    _renderDetailPreview(theme);
+  }
+
+  // 字型下拉的選項來自 /fonts（觀眾實際能用的那份清單）。第一個選項是
+  // 「用主題原本的」——值留空，後端收到空字串就把覆寫移除。
+  var _fontOptions = null;
+  async function _fillFontSelect(theme) {
+    const sel = document.getElementById("themeOvFont");
+    if (!sel) return;
+    if (!_fontOptions) {
+      try {
+        const r = await fetch("/fonts", { credentials: "same-origin" });
+        _fontOptions = r.ok ? ((await r.json()).fonts || []) : [];
+      } catch (_) { _fontOptions = []; }
+    }
+    const ov = _overrides[_adminActiveTheme] || {};
+    const current = ov.font_family || "";
+    sel.innerHTML =
+      `<option value="">${escapeHtml(ServerI18n.t("themeDetailFontInherit"))}</option>` +
+      _fontOptions
+        .map((f) => {
+          const name = String(f.name || f);
+          return `<option value="${escapeHtml(name)}"${name === current ? " selected" : ""}>${escapeHtml(name)}</option>`;
+        })
+        .join("");
+  }
+
+  function _renderDetailPreview(theme) {
+    const line = document.querySelector("[data-theme-preview-line]");
+    if (line) line.setAttribute("style", _sampleStyle(theme));
+  }
+
+  async function patchOverride(patch) {
+    try {
+      const res = await csrfFetch(
+        "/admin/themes/" + encodeURIComponent(_adminActiveTheme) + "/overrides",
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        }
+      );
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      showToast(ServerI18n.t("themeDetailSaved"), true);
+      // 重新抓：styles 是後端合併出來的，前端自己算會兩邊漂
+      await fetchThemes();
+    } catch (e) {
+      showToast(ServerI18n.t("themeDetailSaveFailed"), false);
+    }
+  }
+
+  function bindDetail() {
+    const group = document.getElementById("themeDetail");
+    if (!group) return;
+    group.addEventListener("click", (e) => {
+      const opt = e.target.closest("[data-theme-opt]");
+      if (!opt) return;
+      const wrap = opt.closest("[data-theme-seg]");
+      if (!wrap) return;
+      patchOverride({ [wrap.getAttribute("data-theme-seg")]: opt.getAttribute("data-theme-opt") });
+    });
+    group.addEventListener("change", (e) => {
+      const el = e.target.closest("[data-theme-ov]");
+      if (!el) return;
+      patchOverride({ [el.getAttribute("data-theme-ov")]: el.value });
+    });
+  }
+
+  // 「新主題」＝把現在這個主題（含細部設定）另存一份（設計稿 08 · T1）。
+  // 這顆鈕在 .admin-ui-page-actions 裡，頁首併進 topbar 時會被搬走——
+  // 委派在 section 上收不到它的 click，所以直接綁（style-contract §5.4d）。
+  function bindNewTheme() {
+    const btn = document.getElementById("themeNewBtn");
+    if (!btn) return;
+    btn.addEventListener("click", async () => {
+      const label = window.prompt(ServerI18n.t("themesNewPrompt"), "");
+      if (!label || !label.trim()) return;
+      try {
+        const res = await csrfFetch("/admin/themes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ label: label.trim(), base: _adminActiveTheme }),
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        showToast(ServerI18n.t("themeCreated"), true);
+        fetchThemes();
+      } catch (e) {
+        showToast(ServerI18n.t("themesNewFailed"), false);
+      }
+    });
+  }
+
   function init() {
     fetchThemes();
+    bindDetail();
+    bindNewTheme();
 
     const reloadBtn = document.getElementById("themeReloadBtn");
     if (reloadBtn) {

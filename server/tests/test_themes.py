@@ -314,3 +314,119 @@ class TestThemesPublicAPI:
         assert "active" in data
         names = [t["name"] for t in data["themes"]]
         assert "default" in names
+
+
+class TestThemeOverrides:
+    """設計稿 08 · T1「<主題> · 細部設定」——疊在 YAML 之上的覆寫層。"""
+
+    @staticmethod
+    def _auth(client):
+        with client.session_transaction() as sess:
+            sess["logged_in"] = True
+            sess["csrf_token"] = "test-csrf"
+        return {"X-CSRF-Token": "test-csrf"}
+
+    def test_stroke_segment_maps_to_real_style_fields(self, client):
+        headers = self._auth(client)
+        rv = client.patch(
+            "/admin/themes/default/overrides", json={"stroke": "thick"}, headers=headers
+        )
+        assert rv.status_code == 200
+
+        from server.services import themes as theme_svc
+
+        styles = theme_svc.get_active()["styles"]
+        assert styles["textStroke"] is True
+        assert styles["strokeWidth"] == 4
+
+    def test_empty_value_clears_the_override_instead_of_pinning_it(self, client):
+        """回到「主題原本的設定」要真的移除覆寫。
+
+        存一個「跟原本一樣」的值也會讓畫面對，但主題檔之後改版時那個欄位
+        就再也跟不上了。
+        """
+        headers = self._auth(client)
+        client.patch("/admin/themes/default/overrides", json={"stroke": "thick"}, headers=headers)
+        rv = client.patch("/admin/themes/default/overrides", json={"stroke": ""}, headers=headers)
+        assert rv.status_code == 200
+        assert rv.get_json()["overrides"] == {}
+
+        from server.services import themes as theme_svc
+
+        assert theme_svc.get_active()["styles"]["strokeWidth"] == 2  # default.yaml 原值
+
+    def test_rejects_unknown_segment(self, client):
+        headers = self._auth(client)
+        rv = client.patch(
+            "/admin/themes/default/overrides", json={"stroke": "bold"}, headers=headers
+        )
+        assert rv.status_code == 400
+
+    def test_unknown_theme_is_404(self, client):
+        headers = self._auth(client)
+        rv = client.patch("/admin/themes/nope/overrides", json={"stroke": "thin"}, headers=headers)
+        assert rv.status_code == 404
+
+    def test_overrides_reach_every_danmu(self, client):
+        """`/fire` 只呼叫 get_active()，所以覆寫自動吃到送出路徑上。"""
+        headers = self._auth(client)
+        client.patch("/admin/themes/default/overrides", json={"color": "#FF8800"}, headers=headers)
+
+        from server.services import themes as theme_svc
+
+        assert theme_svc.get_active()["styles"]["color"] == "#FF8800"
+
+
+class TestUserThemes:
+    """設計稿 08 · T1「新主題」——把現在這個主題另存一份。"""
+
+    @staticmethod
+    def _auth(client):
+        with client.session_transaction() as sess:
+            sess["logged_in"] = True
+            sess["csrf_token"] = "test-csrf"
+        return {"X-CSRF-Token": "test-csrf"}
+
+    def test_create_copies_the_base_theme_with_its_overrides_baked_in(self, client):
+        headers = self._auth(client)
+        client.patch("/admin/themes/default/overrides", json={"stroke": "thick"}, headers=headers)
+
+        rv = client.post(
+            "/admin/themes", json={"label": "夜場", "base": "default"}, headers=headers
+        )
+        assert rv.status_code == 201
+        name = rv.get_json()["name"]
+
+        from server.services import themes as theme_svc
+
+        made = theme_svc.get_theme(name)
+        assert made["styles"]["strokeWidth"] == 4
+        assert theme_svc.is_user_theme(name) is True
+
+    def test_builtin_themes_cannot_be_deleted(self, client):
+        headers = self._auth(client)
+        rv = client.delete("/admin/themes/default", headers=headers)
+        assert rv.status_code == 404
+
+        from server.services import themes as theme_svc
+
+        assert theme_svc.get_theme("default") is not None
+
+    def test_deleting_the_active_user_theme_falls_back_to_default(self, client):
+        headers = self._auth(client)
+        name = client.post(
+            "/admin/themes", json={"label": "夜場", "base": "default"}, headers=headers
+        ).get_json()["name"]
+        client.post("/admin/themes/active", json={"name": name}, headers=headers)
+
+        from server.services import themes as theme_svc
+
+        assert theme_svc.get_active_name() == name
+        assert client.delete("/admin/themes/" + name, headers=headers).status_code == 200
+        # 大螢幕不能指著一個不存在的主題
+        assert theme_svc.get_active_name() == "default"
+
+    def test_blank_label_is_rejected(self, client):
+        headers = self._auth(client)
+        rv = client.post("/admin/themes", json={"label": "   "}, headers=headers)
+        assert rv.status_code == 400

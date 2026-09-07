@@ -213,6 +213,39 @@ def _isolate_security_settings(tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_user_themes(tmp_path):
+    """使用者建的主題寫成 YAML；沒隔離的話會留在 repo 的 runtime/themes/。"""
+    from server.services import themes
+
+    original = themes._USER_THEMES_DIR
+    themes._USER_THEMES_DIR = str(tmp_path / "user_themes")
+    try:
+        yield
+    finally:
+        themes._USER_THEMES_DIR = original
+        themes._cache.clear()
+        themes._mtime_map.clear()
+        themes._path_to_name.clear()
+
+
+@pytest.fixture(autouse=True)
+def _isolate_theme_overrides(tmp_path):
+    """把主題細部設定的 runtime 檔導向 per-test tmp（設計稿 08 · T1）。
+
+    這層會被 `themes.get_active()` 疊到每一則彈幕上，沒隔離的話一條測試
+    設的描邊會讓後面所有 /fire 的 textStyles 斷言跟著漂。
+    """
+    from server.services import theme_overrides
+
+    original = theme_overrides._state.path
+    theme_overrides._state.reset_for_tests(tmp_path / "theme_overrides.json")
+    try:
+        yield
+    finally:
+        theme_overrides._state.reset_for_tests(original)
+
+
+@pytest.fixture(autouse=True)
 def _isolate_display_layer(tmp_path):
     """把顯示層設定的 runtime 檔導向 per-test tmp。
 

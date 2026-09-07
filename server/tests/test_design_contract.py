@@ -1112,3 +1112,36 @@ def test_assets_is_four_segments_with_counts(zh):
         assert gone not in src, gone
     assert zh["mlPacks"] == "貼圖包"
     assert "顯示層" in zh["soundsPageNote"] and "Desktop" not in zh["soundsPageNote"]
+
+
+def test_theme_detail_group_and_new_theme_exist(zh):
+    """設計稿 08 · T1：卡片下方的「<主題> · 細部設定」＋頁首右側「新主題」。
+
+    主題檔是 repo 裡的 YAML，改它等於改程式碼——所以細部設定另存一層覆寫，
+    由 `themes.get_active()` 疊上去。`/fire` 只呼叫 get_active()，覆寫因此
+    自動吃到每一則彈幕上，不必在送出路徑上再開一個分支。
+    """
+    assert zh["themeDetailGroup"] == "{name} · 細部設定"
+    assert zh["themeDetailStroke"] == "描邊"
+    assert zh["themeStrokeNone"] == "無" and zh["themeStrokeThick"] == "粗"
+    assert zh["themeShadowSoft"] == "柔和" and zh["themeShadowStrong"] == "強烈"
+    assert zh["themeDetailColor"] == "觀眾預設顏色"
+    assert zh["themesNewBtn"] == "新主題"
+
+    admin = _strip_comments(_read("server/static/js/admin.js"))
+    assert 'data-theme-seg="stroke"' in admin and 'data-theme-seg="shadow"' in admin
+    assert 'data-theme-ov="color"' in admin and 'id="themeOvFont"' in admin
+    assert 'id="themeNewBtn"' in admin
+    # 頁首動作插槽的規矩：那顆鈕要自己綁 listener（style-contract §5.4d）
+    themes_js = _strip_comments(_read("server/static/js/admin-themes.js"))
+    assert 'getElementById("themeNewBtn")' in themes_js
+
+    svc = _read("server/services/theme_overrides.py")
+    assert 'STROKE_MODES = ("none", "thin", "thick")' in svc
+    assert 'SHADOW_MODES = ("none", "soft", "strong")' in svc
+    # 唯一的合併點在 get_active()
+    themes_svc = _read("server/services/themes.py")
+    assert "theme_overrides.apply_to(theme)" in themes_svc
+    # 使用者主題寫在 runtime/，不是 repo 的 server/themes/
+    assert '"runtime", "themes"' in themes_svc
+    assert "def create_user_theme" in themes_svc and "def delete_user_theme" in themes_svc
