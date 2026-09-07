@@ -977,22 +977,12 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast{
   border-color: var(--color-primary);
 }
 
-.viewer-emoji-btn{
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  font-size: var(--text-subhead);
-  transition: background var(--motion-fast), color var(--motion-fast);
-  flex-shrink: 0;
-}
-
-.viewer-emoji-btn.is-active{
-  background: var(--hud-cyan-soft);
-  color: var(--color-primary);
+/* 聚焦：1px 主色框 ＋ 3px 光暈（設計稿 10 · V2）。在這之前只有「輸入框裡
+ * 有字」會換框色（.is-active），聚焦本身沒有任何回饋——手機上點進輸入框
+ * 跟沒點看起來一模一樣。 */
+.viewer-sendbar-pill:focus-within{
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 15%, transparent);
 }
 
 .viewer-sendbar-input{
@@ -1064,6 +1054,7 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast{
   padding: 0 4px;
   font-family: var(--font-mono);
   font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;   /* 字數跳動時位數不要抖 */
   color: var(--color-text-secondary);
   letter-spacing: 1px;
 }
@@ -1072,41 +1063,76 @@ body.viewer-body-v2.is-dark .viewer-reconnected-toast{
   color: var(--color-warning);
 }/* Emoji popover — absolute above the send bar pill. */
 
-.viewer-emoji-popover{
-  position: absolute;
-  left: 1.25rem;
-  right: 1.25rem;
-  bottom: 100%;
-  margin-bottom: 0.375rem;
+/* 自訂表情面板（設計稿 10 · V2 的「更多」）。
+ * 前身是 .viewer-emoji-popover：12 欄格線、寫死 32px 的 <img>、hover 用
+ * Tailwind 的 slate-700/50，而且**開關按鈕從來沒有綁 handler**——按鈕在、
+ * 面板填好了資料，就是打不開。2026-09-07 重做成快捷列同一套 44px 方格。 */
+.viewer-emoji-panel{
+  margin-bottom: var(--space-2);
   background: var(--color-bg-base);
   border: 1px solid var(--hud-line);
-  border-radius: var(--radius-md);
-  padding: 0.5rem;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
-  display: none;
-  z-index: 30;
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
 }
 
-.viewer-emoji-popover.is-open{
-  display: block;
+.viewer-emoji-panel-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
 }
 
-.viewer-emoji-popover-grid{
+.viewer-emoji-panel-title{
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.viewer-emoji-panel-close{
+  border: 0;
+  background: none;
+  padding: var(--space-1);
+  font-size: var(--text-footnote);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.viewer-emoji-panel-close:hover{ color: var(--color-text-primary); }
+
+.viewer-emoji-panel-grid{
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 0.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: var(--space-2);
+  max-height: 176px;   /* 44px 方格 × 3 列 ＋ 兩道 gap，第四列露一半提示可捲 */
+  overflow-y: auto;
 }
 
-@media (max-width: 520px) {
-  .viewer-emoji-popover-grid{
-    grid-template-columns: repeat(8, 1fr);
-  }}/* Reduced motion — kill hover transforms. */
+.viewer-emoji-panel-empty{
+  grid-column: 1 / -1;
+  font-size: var(--text-footnote);
+  color: var(--color-text-secondary);
+}
+
+.viewer-emoji-panel-item{
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--motion-fast);
+}
+.viewer-emoji-panel-item:hover{ background: var(--color-bg-row-hover); }
+.viewer-emoji-panel-item img{ width: 28px; height: 28px; }/* Reduced motion — kill hover transforms. */
 
 @media (prefers-reduced-motion: reduce) {
   .viewer-chip,
   .viewer-fire-btn,
   .viewer-preview-text,
-  .viewer-emoji-btn{
+  .viewer-emoji-panel-item{
     transition: none;
   }
   .viewer-fire-btn:not([disabled]):hover{
@@ -1979,9 +2005,11 @@ body.viewer-body-v2:not(.is-dark) .viewer-topbar-wordmark.is-on-light { display:
   width: 44px;
   height: 44px;
   border: 0;
-  border-radius: var(--radius-control, 10px);
+  border-radius: var(--radius-lg);
   background: var(--color-bg-elevated);
   color: var(--color-text-primary);
+  /* 稿上寫 24px；字級刻度最接近的是 --text-title2(22px)，emoji 字面上
+   * 差 2px 看不出來，不值得為它離開唯一刻度。 */
   font-size: var(--text-title2);
   line-height: 1;
   cursor: pointer;
@@ -1990,7 +2018,11 @@ body.viewer-body-v2:not(.is-dark) .viewer-topbar-wordmark.is-on-light { display:
   justify-content: center;
 }
 
-.viewer-quickbar-more { font-size: var(--text-body); color: var(--color-text-secondary); }
+.viewer-quickbar-more {
+  /* 「更多」是字不是 emoji，跟著次要文字走 */
+  font-size: var(--text-footnote);
+  color: var(--color-text-secondary);
+}
 
 /* ── 送出列（設計稿 05：48px 輸入框 ＋ 48px 圓形送出鍵）──────────── */
 .viewer-sendbar-input {

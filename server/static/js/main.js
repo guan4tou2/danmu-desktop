@@ -2699,8 +2699,38 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
 
-      // Load emoji picker
+      // 自訂表情面板（設計稿 10 · V2 的「更多」）。
+      //
+      // 2026-09-07：這顆按鈕在此之前**沒有任何 handler**——面板抓完 /emojis
+      // 也填好了格子，但 .is-open 沒人加，所以觀眾永遠打不開。開關與 Esc／
+      // 外點關閉一起補在這裡。
       const emojiPicker = document.getElementById("emojiPicker");
+      const emojiPanel = document.getElementById("emojiPopover");
+      const emojiToggle = document.getElementById("emojiToggle");
+
+      function setEmojiPanel(open) {
+        if (!emojiPanel || !emojiToggle) return;
+        emojiPanel.hidden = !open;
+        emojiToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+
+      if (emojiToggle && emojiPanel) {
+        emojiToggle.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          setEmojiPanel(emojiPanel.hidden);
+        });
+        const closeBtn = emojiPanel.querySelector("[data-emoji-panel-close]");
+        if (closeBtn) closeBtn.addEventListener("click", () => setEmojiPanel(false));
+        document.addEventListener("keydown", (ev) => {
+          if (ev.key === "Escape" && !emojiPanel.hidden) setEmojiPanel(false);
+        });
+        document.addEventListener("click", (ev) => {
+          if (emojiPanel.hidden) return;
+          if (emojiPanel.contains(ev.target) || emojiToggle.contains(ev.target)) return;
+          setEmojiPanel(false);
+        });
+      }
+
       if (emojiPicker) {
         fetch("/emojis")
           .then((r) => r.json())
@@ -2708,20 +2738,22 @@ document.addEventListener("DOMContentLoaded", () => {
             const emojis = data.emojis || [];
             emojiCache = emojis;
             updatePreview();
+            emojiPicker.textContent = "";
             if (emojis.length === 0) {
-              emojiPicker.innerHTML = '<span class="text-xs text-slate-400">No emojis available</span>';
+              const empty = document.createElement("span");
+              empty.className = "viewer-emoji-panel-empty";
+              empty.textContent = ServerI18n.t("viewerEmojiPanelEmpty");
+              emojiPicker.appendChild(empty);
               return;
             }
-            emojiPicker.innerHTML = "";
             emojis.forEach((em) => {
               const btn = document.createElement("button");
               btn.type = "button";
-              btn.className = "emoji-picker-btn p-1 rounded hover:bg-slate-700/50 transition-colors";
+              btn.className = "viewer-emoji-panel-item";
               btn.title = ":" + em.name + ":";
               const img = document.createElement("img");
               img.src = em.url;
               img.alt = em.name;
-              img.style.cssText = "width:32px;height:32px;";
               btn.appendChild(img);
               btn.addEventListener("click", (ev) => {
                 // Prevent the implicit submit + scroll-to-top behaviour: focusing
@@ -2753,7 +2785,11 @@ document.addEventListener("DOMContentLoaded", () => {
             });
           })
           .catch(() => {
-            emojiPicker.innerHTML = '<span class="text-xs text-slate-400">Failed to load emojis</span>';
+            emojiPicker.textContent = "";
+            const err = document.createElement("span");
+            err.className = "viewer-emoji-panel-empty";
+            err.textContent = ServerI18n.t("viewerEmojiPanelFailed");
+            emojiPicker.appendChild(err);
           });
       }
     })

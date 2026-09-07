@@ -283,9 +283,29 @@
             aria-live="polite"
             hidden
           ></div>
-          <!-- 鍵盤上方一列常用 emoji／短句（設計稿 16 · VK1）。 -->
-          <div id="emojiPopover" class="viewer-emoji-popover" aria-hidden="true">
-            <div id="emojiPicker" class="viewer-emoji-popover-grid"></div>
+          <!-- 鍵盤上方一列常用 emoji（設計稿 10 · V2 / 16 · VK1）：
+               6 格，常用五個 ＋「更多」開這場的自訂表情面板。 -->
+          <div
+            id="emojiPopover"
+            class="viewer-emoji-panel"
+            hidden
+            role="group"
+            aria-labelledby="emojiPanelTitle"
+          >
+            <div class="viewer-emoji-panel-head">
+              <span
+                id="emojiPanelTitle"
+                class="viewer-emoji-panel-title"
+                data-i18n="viewerEmojiPanelTitle"
+              >表情</span>
+              <button
+                type="button"
+                class="viewer-emoji-panel-close"
+                data-emoji-panel-close
+                data-i18n="viewerEmojiPanelClose"
+              >收起</button>
+            </div>
+            <div id="emojiPicker" class="viewer-emoji-panel-grid"></div>
           </div>
           <div class="viewer-quickbar" data-viewer-quickbar>
             <button type="button" class="viewer-quickbar-item" data-quick-insert="🔥">🔥</button>
@@ -296,10 +316,11 @@
             <button
               type="button"
               id="emojiToggle"
-              class="viewer-emoji-btn viewer-quickbar-more"
-              aria-label="Toggle emoji picker"
+              class="viewer-quickbar-more"
               aria-expanded="false"
-            >☺</button>
+              aria-controls="emojiPopover"
+              data-i18n="viewerEmojiMore"
+            >更多</button>
           </div>
           <div id="sendbarPill" class="viewer-sendbar-pill">
             <input

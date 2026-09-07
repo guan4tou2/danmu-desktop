@@ -986,3 +986,40 @@ def test_onboarding_tour_is_three_bubbles_pointing_at_real_targets(zh):
     assert "0 0 0 9999px var(--color-overlay-soft)" in spot
     tokens = _read("shared/tokens.css")
     assert "--color-overlay-soft: light-dark(rgba(15, 23, 42, 0.35)" in tokens
+
+
+def test_viewer_emoji_more_actually_opens_the_panel(zh):
+    """設計稿 10 · V2：快捷列第 6 格是「更多」，開的是這場的自訂表情面板。
+
+    在這之前那顆鈕寫著 `☺`、aria-label 是英文的 "Toggle emoji picker"，
+    而且**沒有綁任何 handler**——`/emojis` 抓回來了、格子也填好了，就是打
+    不開。設計稿 14 的詞彙表另外要求按鈕只寫動詞、不放圖示符號。
+    """
+    assert zh["viewerEmojiMore"] == "更多"
+    assert zh["viewerEmojiPanelTitle"] == "表情"
+    assert zh["viewerEmojiPanelClose"] == "收起"
+    assert zh["viewerEmojiPanelEmpty"] == "這場還沒有自訂表情"
+
+    html = _read("server/templates/index.html")
+    assert 'data-i18n="viewerEmojiMore"' in html
+    assert 'aria-controls="emojiPopover"' in html
+    assert "viewer-emoji-panel-grid" in html
+    assert "☺" not in html, "圖示符號按鈕（設計稿 14 詞彙表）"
+    assert "viewer-emoji-popover" not in html
+
+    js = _strip_comments(_read("server/static/js/main.js"))
+    assert "setEmojiPanel" in js
+    assert 'emojiToggle.addEventListener("click"' in js
+    assert "viewer-emoji-panel-item" in js
+    # 空狀態／失敗都要走 i18n，不能是寫死的英文
+    assert "No emojis available" not in js
+    assert "Failed to load emojis" not in js
+    assert 'ServerI18n.t("viewerEmojiPanelEmpty")' in js
+
+    css = _read("server/static/css/viewer-v2.css")
+    tile = css.split(".viewer-emoji-panel-item{")[1].split("}")[0]
+    assert "width: 44px;" in tile and "border-radius: var(--radius-lg);" in tile
+    # 輸入框聚焦：1px 主色框 ＋ 3px 光暈
+    focus = css.split(".viewer-sendbar-pill:focus-within{")[1].split("}")[0]
+    assert "border-color: var(--color-accent);" in focus
+    assert "0 0 0 3px color-mix(in srgb, var(--color-accent) 15%, transparent)" in focus
