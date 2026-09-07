@@ -401,32 +401,40 @@ def test_ia_tab_strip_renders_for_moderation(admin_page):
 
 def test_ia_system_tab_strip_renders(admin_page):
     """v7 S3 (2026-07-28): the system accordion retired — #/system mounts a
-    normal AdminTabs strip with 6 tabs, overview as the landing tab, and
-    security surviving as a tab (its first-class deeplink route remains)."""
+    normal AdminTabs strip, overview as the landing tab, and security
+    surviving as a tab (its first-class deeplink route remains).
+
+    2026-09-07 設計稿 08 · X1：`scheduler` 搬去「擴充」，系統剩 5 個分頁。
+    隔壁分頁「非作用中要隱藏」改用 security 驗——sec-scheduler 已經不屬於
+    這條路由了。
+    """
     _go_to_route(admin_page, "system")
     admin_page.wait_for_selector(
         "[data-admin-tabs-host] .admin-tabs-btn", state="attached", timeout=5000
     )
     assert admin_page.locator(".admin-system-accordion").count() == 0
     tabs = admin_page.locator("[data-admin-tabs-host] .admin-tabs-btn")
-    assert tabs.count() == 6
+    assert tabs.count() == 5
     active = admin_page.locator(".admin-tabs-btn.is-active").get_attribute("data-tab")
     assert active == "overview"
     assert admin_page.locator('.admin-tabs-btn[data-tab="security"]').count() == 1
+    assert admin_page.locator('.admin-tabs-btn[data-tab="scheduler"]').count() == 0
     # Overview body visible; a sibling tab's section hidden
     admin_page.wait_for_selector("#sec-system-overview", state="visible", timeout=5000)
-    sched_display = admin_page.evaluate(
-        '() => document.getElementById("sec-scheduler").style.display'
+    sec_display = admin_page.evaluate(
+        '() => document.getElementById("admin-security-v2-page").style.display'
     )
-    assert sched_display == "none"
+    assert sec_display == "none"
 
 
 def test_ia_system_legacy_leaf_deeplinks_rehome(admin_page):
     """v7 S3: old #/system/<leaf> deep links for rehomed leaves translate to
     the leaf's new home instead of dumping on the overview tab."""
+    # 2026-09-07 設計稿 08 · X1：webhooks 併進「擴充」的分段，舊 deep link
+    # 要落到那個分段，而不是一條已經不存在的路由。
     cases = {
         "backup": ("backup", "backup"),
-        "webhooks": ("webhooks", "webhooks"),
+        "webhooks": ("integrations", "webhooks"),
         "audit": ("history", "audit"),
     }
     for leaf, (want_route, want_leaf) in cases.items():

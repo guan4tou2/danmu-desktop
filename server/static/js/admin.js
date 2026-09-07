@@ -181,7 +181,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // === System accordion (Slice 6) — alias old C-tier routes to system/<slug> ===
     // 2026-05-18 v5: api-tokens / backup / integrations promoted to
     // first-class sidebar slugs.
-    extensions:   { nav: "integrations" },  // 2026-05-18 v5: sidebar "Extensions" → integrations route
+    // 2026-05-18 v5: sidebar "Extensions" → integrations route。
+    // 2026-09-07 設計稿 08 · X1：擴充變成四個分段，而目錄卡片（Slido／Discord／
+    // OBS／Bookmarklet，含 Fire Token 設定）歸在「插件」那一段——所以要明確
+    // 指定分頁，不然 #/extensions 會落在預設的 Webhook 段，目錄根本不在畫面上。
+    extensions:   { nav: "integrations", tab: "plugins" },
     // Dedicated mobile-admin was removed; admin relies on the normal RWD shell.
     mobile:       { nav: "system", tab: "system" },
   });
