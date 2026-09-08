@@ -2068,7 +2068,14 @@ body.viewer-body-v2:not(.is-dark) .viewer-topbar-wordmark.is-on-light { display:
   padding: 0 var(--space-4);
   border: 0;
   border-radius: var(--radius-control, 10px);
-  background: var(--color-accent);
+  /* 2026-09-08：淺色主題下 `--color-accent`（sky-600）配白字只有 4.10:1，
+   * 低於設計稿 17 的 4.5。改用 `--color-primary-hover` —— 它的淺色臂正是
+   * 深一階的 sky-700（5.93:1），深色臂是 sky-500，兩邊都過。
+   * **不動 `--color-accent` 本身**：它有 15 個使用者，多數是大字或圖示，
+   * 為了這一顆 13px 的按鈕把整組 accent 調深會波及一整片。
+   * 直接寫 `var(--sky-700)` 也不行 —— 那是色階不是語意 token，
+   * `check-css-tokens` 的 themeBlind 會擋（而且它擋得對：色階沒有深淺兩臂）。 */
+  background: var(--color-primary-hover);
   color: var(--color-ink-on-accent);
   font-size: var(--text-footnote);
   font-weight: 600;
@@ -2713,10 +2720,9 @@ input[type="range"]:focus-visible {
  * 只在 coarse pointer 生效：桌面滑鼠的要求是 32，本來就都過了，在桌面加大
  * 覆蓋層只會讓相鄰元素互相吃到對方的點擊。
  *
- * **`site-footer-link` 實際只會拿到約 68×31**：它貼在頁面最底部，44px 的
- * 覆蓋層往下溢出的那一半被 `body.viewer-body-v2` 的 `overflow: hidden` 裁掉。
- * 上半仍然擴大了（20 → 31）。要真的做到 44 得改頁尾的高度或內距，那會動到
- * 版面；這裡先擴到能擴的極限，並把限制寫下來而不是假裝達標。
+ * `site-footer-link` 另外需要頁尾本身留出空間：它貼在頁面最底部，44px 的
+ * 覆蓋層往下溢出的那半會被 `body.viewer-body-v2` 的 `overflow: hidden` 裁掉
+ * （第一版就只拿到 68×31）。下面那條 `.site-footer` 的內距是為了這件事。
  */
 @media (pointer: coarse) {
   .viewer-sendbar-nicklink,
@@ -2737,5 +2743,14 @@ input[type="range"]:focus-visible {
     width: max(100%, 44px);
     height: max(100%, 44px);
     transform: translate(-50%, -50%);
+  }
+}
+
+@media (pointer: coarse) {
+  /* 頁尾原本沒有下內距，44px 的命中區覆蓋層往下溢出就被 body 的
+   * `overflow: hidden` 裁掉。補 12px 讓它放得下——只在觸控裝置補，
+   * 桌面維持原本的緊湊版面。 */
+  .site-footer {
+    padding-bottom: var(--space-3);
   }
 }

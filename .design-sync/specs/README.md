@@ -193,8 +193,9 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
    deviceScaleFactor=2 重算，**不是**用設計專案附的那份 PNG——附的那份跟它
    自己的版型對不起來：手機 mock 疊到投影幕上、把三道彈幕中間那道整個蓋掉，
    social 版則掉了下方那條彈幕；稿上明講「匯出時彈幕停格於最佳位置」。
-   **還差一步只有你能做**：social preview 要在 GitHub repo Settings ›
-   Social preview 手動上傳 `docs/social-preview.png`，那不是 repo 檔案。
+   ~~**還差一步只有你能做**：social preview 要在 GitHub repo Settings ›
+   Social preview 手動上傳 `docs/social-preview.png`。~~
+   **2026-09-08 使用者已上傳，這條結案。**
 6. **設計稿 11 的四個「檔案在、但沒人引用」缺口**——2026-09-07 跟設計專案
    （`DesignSync list_files`，43 個資產、18 份文件，與手上的 zip 逐檔相同）
    對過之後補上。這四個的共同特徵是**畫面看起來正常**，所以先前都沒被發現：
@@ -424,8 +425,30 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
      白／黃／天藍／綠／紅／紫，命中區 ≥44。**與稿 16 · VP1 的「6 欄 grid、
      aspect-ratio:1」衝突時取 17**：色覺不同的人看到六個一樣的灰點是更嚴重
      的問題。
-   **剩下**：DPI（125/150/200%）與 VoiceOver／NVDA 要在真機上逐項自測，
-   那不是讀程式碼看得出來的。
+   **2026-09-08 自測了能自測的部分**（瀏覽器可驗的六項）：
+
+   - **12–13px 對比 ≥ 4.5**：深色 44 個全過（最低 4.74）；淺色抓到
+     `.viewer-nameask-ok` 只有 4.10（白字在 sky-600 上），改用
+     `--color-primary-hover`（淺臂是 sky-700）後 5.93 / 深色 6.82。
+     **不動 `--color-accent` 本身**——它有 15 個使用者。
+   - **焦點環**：`viewer-v2.css` 五處 `outline: none` 把 tokens.css 的全站
+     `:focus-visible` 一起壓掉，鍵盤走到送出框時 outline/border/box-shadow
+     全是 none。檔尾補一條還回來，並加測試釘住。
+   - **手機命中區 ≥ 44**：四個不到（暱稱連結只有 39×18）。用透明 `::after`
+     覆蓋層擴大、不動視覺尺寸，只在 `pointer: coarse` 生效；頁尾另補下內距，
+     否則覆蓋層會被 `overflow: hidden` 裁掉。四個都到 44。
+   - 通過的：色票都有 `aria-label`、`<html lang>` 是 `zh-Hant`、
+     reduce-motion 的 blanket 規則有進到觀眾頁、30 個可聚焦元素都有可讀名稱。
+
+   **兩個量測教訓**（都讓我一度誤報）：
+   1. **`transition: color` 進行中取樣會讀到中間值**。`.site-footer-link`
+      因此被報成 2.45，等過渡結束實際是 **7.24**。量顏色前要先等 transition。
+   2. **`.focus()` 不觸發 `:focus-visible`**（那是正確設計）。用它測焦點環會
+      得到「每一個都沒有」這種太整齊的假結果，要用真的鍵盤事件。
+
+   **剩下只有真機做得到的**：Windows 高對比（`forced-colors`）、系統層級 DPI
+   125/150/200%、NVDA。macOS VoiceOver 技術上可用字幕面板比對，但那是逐句
+   截圖、慢且易漏；改成稽核無障礙樹與焦點順序涵蓋了同一批問題。
 
 ## 契約測試
 
