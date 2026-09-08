@@ -369,7 +369,9 @@ def test_viewer_banned_state_url_preview(browser_session, live_url):
     try:
         page.goto(f"{live_url}/?state=banned", wait_until="domcontentloaded")
         page.wait_for_selector(".viewer-state--banned", state="visible", timeout=5000)
-        assert page.locator(".viewer-state-kicker").text_content() == "BLOCKED · 已被禁言"
+        # 2026-09-08 設計稿 04「雙語 → 單語白話」：kicker 原本是
+        # 「BLOCKED · 已被禁言」，英文那半是純冗字，中文已經講完了。
+        assert page.locator(".viewer-state-kicker").text_content() == "已被禁言"
         assert page.locator(".viewer-state-info .row").count() == 3
     finally:
         page.close()
