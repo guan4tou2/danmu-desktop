@@ -816,7 +816,7 @@
         const ok = await window.HudConfirm?.open({
               icon: "⊗",
               title: ServerI18n.t("fxDeleteTitle"),
-              subtitle: "DELETE · THIS ACTION CANNOT BE UNDONE",
+              subtitle: ServerI18n.t("cfmSubDeleteUndone"),
               severity: "danger",
               body: `
                 <div style="font-size:13px;color:var(--hud-text, #f1f5f9);line-height:1.7;">
@@ -1051,7 +1051,7 @@
 
     html += `<div class="fx-divider"></div>
       <div>
-        <div class="fx-section-head">LIVE PREVIEW</div>
+        <div class="fx-section-head">${ServerI18n.t("uiLivePreview")}</div>
         <div class="fx-preview-3">${previewCells}</div>
       </div>
       <div class="fx-warn-box${tone !== "lime" ? " is-" + tone : ""}">

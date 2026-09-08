@@ -183,7 +183,7 @@
               <table class="admin-ui-table admin-at-table">
                 <thead>
                   <tr>
-                    <th>LABEL</th>
+                    <th>${ServerI18n.t("uiLabel")}</th>
                     <th>${ServerI18n.t("apiTokensThPrefixScope")}</th>
                     <th>${ServerI18n.t("apiTokensThLastUsed")}</th>
                     <th>${ServerI18n.t("apiTokensThUsage")}</th>
@@ -227,7 +227,7 @@
               <form id="adminAtCreateForm" class="admin-at-form" novalidate>
                 <!-- Label -->
                 <div class="admin-at-field">
-                  <label class="admin-ui-monolabel" for="adminAtLabel">LABEL</label>
+                  <label class="admin-ui-monolabel" for="adminAtLabel">${ServerI18n.t("uiLabel")}</label>
                   <input
                     type="text"
                     id="adminAtLabel"
@@ -242,7 +242,7 @@
 
                 <!-- Scopes -->
                 <div class="admin-at-field">
-                  <div class="admin-ui-monolabel" style="margin-bottom:8px">SCOPES · ${ServerI18n.t("apiTokensScopesLabel")}</div>
+                  <div class="admin-ui-monolabel" style="margin-bottom:8px">${ServerI18n.t("uiScopes")} · ${ServerI18n.t("apiTokensScopesLabel")}</div>
                   <div class="admin-at-scopes" id="adminAtScopes">
                     ${scopeCheckboxes}
                   </div>
@@ -250,7 +250,7 @@
 
                 <!-- Expiry -->
                 <div class="admin-at-field">
-                  <div class="admin-ui-monolabel" style="margin-bottom:8px">EXPIRY · ${ServerI18n.t("apiTokensExpiryLabel")}</div>
+                  <div class="admin-ui-monolabel" style="margin-bottom:8px">${ServerI18n.t("uiExpiry")} · ${ServerI18n.t("apiTokensExpiryLabel")}</div>
                   <div class="admin-at-expiry-row" id="adminAtExpiryRow">
                     ${expiryBtns}
                   </div>
@@ -327,7 +327,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: ServerI18n.t("apiTokensRevokeModalTitle"),
-      subtitle: "REVOKE · THIS ACTION CANNOT BE UNDONE",
+      subtitle: ServerI18n.t("cfmSubRevokeUndone"),
       severity: "danger",
       body:
         `<div style="line-height:1.7">${ServerI18n.t("apiTokensRevokeBody")}</div>` +

@@ -251,7 +251,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⚠",
       title: ServerI18n.t("backupApplySettingsConfirmTitle"),
-      subtitle: "RESTORE SETTINGS · OVERWRITES MATCHING KEYS",
+      subtitle: ServerI18n.t("cfmSubRestoreSettings"),
       severity: "warn",
       body: ServerI18n.t("backupApplySettingsConfirmBody"),
       confirmLabel: ServerI18n.t("backupApplyBtn"),
@@ -299,7 +299,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: ServerI18n.t("backupClearHistoryConfirmTitle"),
-      subtitle: "CLEAR HISTORY · THIS ACTION CANNOT BE UNDONE",
+      subtitle: ServerI18n.t("cfmSubClearHistory"),
       severity: "danger",
       body: ServerI18n.t("backupClearHistoryConfirmBody"),
       confirmLabel: ServerI18n.t("backupClearHistoryConfirmLabel"),
@@ -340,7 +340,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: "Factory reset",
-      subtitle: "FACTORY RESET · WIPES RUNTIME STATE AND QUEUE",
+      subtitle: ServerI18n.t("cfmSubFactoryReset"),
       severity: "danger",
       body: ServerI18n.t("backupFactoryResetConfirmBody"),
       confirmLabel: ServerI18n.t("backupFactoryResetConfirmLabel"),
@@ -513,7 +513,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⚠",
       title: ServerI18n.t("backupApplyFullPackConfirmTitle"),
-      subtitle: "RESTORE PACK · OVERWRITES RUNTIME AND ASSETS",
+      subtitle: ServerI18n.t("cfmSubRestorePack"),
       severity: "danger",
       body: ServerI18n.t("backupApplyFullPackConfirmBody"),
       confirmLabel: ServerI18n.t("backupApplyPackConfirmLabel"),
@@ -625,7 +625,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⚠",
       title: ServerI18n.t("backupApplyAssetPackConfirmTitle"),
-      subtitle: "RESTORE ASSETS · OVERWRITES MATCHING FILES",
+      subtitle: ServerI18n.t("cfmSubRestoreAssets"),
       severity: "warn",
       body: ServerI18n.t("backupApplyAssetPackConfirmBody"),
       confirmLabel: ServerI18n.t("backupApplyAssetPackConfirmTitle"),

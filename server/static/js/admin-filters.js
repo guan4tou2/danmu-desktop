@@ -162,24 +162,24 @@
                     class="admin-ui-input" />
                 </div>
                 <div id="filterReplacementRow" class="hidden">
-                  <label for="filterReplacement" class="admin-v3-card-kicker" style="margin:0">REPLACEMENT</label>
+                  <label for="filterReplacement" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("fltColReplacement")}</label>
                   <input type="text" id="filterReplacement" placeholder="${t("filterReplacementPlaceholder", "Replacement text...")}"
                     class="admin-ui-input" />
                 </div>
                 <div id="filterRateLimitRow" class="hidden" style="display:none;grid-template-columns:1fr 1fr;gap:8px">
                   <div>
-                    <label for="filterMaxCount" class="admin-v3-card-kicker" style="margin:0">MAX COUNT</label>
+                    <label for="filterMaxCount" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("fltColMaxCount")}</label>
                     <input type="number" id="filterMaxCount" value="5" min="1" max="1000"
                       class="admin-ui-input" />
                   </div>
                   <div>
-                    <label for="filterWindowSec" class="admin-v3-card-kicker" style="margin:0">WINDOW (SEC)</label>
+                    <label for="filterWindowSec" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("fltColWindowSec")}</label>
                     <input type="number" id="filterWindowSec" value="60" min="1" max="86400"
                       class="admin-ui-input" />
                   </div>
                 </div>
                 <div>
-                  <label for="filterPriority" class="admin-v3-card-kicker" style="margin:0">PRIORITY · ${ServerI18n.t("fltPriorityTail")}</label>
+                  <label for="filterPriority" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("uiColPriority")} · ${ServerI18n.t("fltPriorityTail")}</label>
                   <input type="number" id="filterPriority" value="0" min="-9999" max="9999"
                     class="admin-ui-input" />
                 </div>
@@ -191,7 +191,7 @@
 
             <div class="hud-inspector" style="min-height:auto">
               <div class="hud-inspector-head">
-                <span class="admin-v3-card-kicker" style="margin:0">${t("testRule", "Test Rule")} \u00b7 SANDBOX</span>
+                <span class="admin-v3-card-kicker" style="margin:0">${t("testRule", "Test Rule")}</span>
               </div>
               <div style="padding:14px;display:flex;flex-direction:column;gap:8px">
                 <input id="filterTestText" type="text" placeholder="${t("sampleText", "Sample text...")}"
@@ -366,7 +366,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: ServerI18n.t("filtersDeleteTitle"),
-      subtitle: "DELETE FILTER RULE",
+      subtitle: ServerI18n.t("cfmSubDeleteFilterRule"),
       severity: "danger",
       body: t("confirmDeleteRule", "Delete this filter rule?"),
       confirmLabel: ServerI18n.t("filtersDeleteConfirm"),

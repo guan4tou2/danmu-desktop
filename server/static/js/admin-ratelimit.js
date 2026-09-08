@@ -56,7 +56,7 @@
           </div>
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-value is-crimson" data-rl-sum-locked>—</span>
-            <span class="hud-stat-tile-label">LOGIN · ${ServerI18n.t("ratelimitLockedHint")}</span>
+            <span class="hud-stat-tile-label">${ServerI18n.t("ratelimitLoginLabel")} · ${ServerI18n.t("ratelimitLockedHint")}</span>
           </div>
           <div class="hud-stat-tile">
             <span class="hud-stat-tile-value is-cyan" data-rl-sum-black>—</span>
@@ -67,7 +67,7 @@
           ${ROWS.map((r) => `
             <div class="admin-ratelimit-row" data-rl-key="${r.key}">
               <div class="admin-ratelimit-row-head">
-                <span class="admin-ratelimit-row-label">${escapeHtml(r.key.toUpperCase() + " · " + ServerI18n.t(r.labelKey))}</span>
+                <span class="admin-ratelimit-row-label">${escapeHtml(ServerI18n.t(r.labelKey))}</span>
                 <span class="admin-ratelimit-row-env">${r.envLimit}</span>
               </div>
               <div class="admin-ratelimit-row-body">
@@ -131,7 +131,7 @@
             </div>
             <div class="admin-ratelimit-vfeed-table">
               <div class="admin-ratelimit-vfeed-row is-head">
-                <span>TIME</span><span>${ServerI18n.t("lbScope")}</span><span>IP</span>
+                <span>${ServerI18n.t("uiColTime")}</span><span>${ServerI18n.t("lbScope")}</span><span>IP</span>
               </div>
               <div class="admin-ratelimit-vfeed-body" data-rl-vbody>
                 <div class="admin-ratelimit-vfeed-empty">${ServerI18n.t("ratelimitNoViolationsYet")}</div>
@@ -141,7 +141,7 @@
           <div class="admin-ratelimit-ip-policy">
             <div class="admin-ratelimit-vfeed-head">
               <span class="title">${ServerI18n.t("ratelimitIpPolicyTitle")}</span>
-              <span class="kicker" data-rl-ip-summary>IP POLICY · ${ServerI18n.t("ratelimitLoadingEllipsis")}</span>
+              <span class="kicker" data-rl-ip-summary>${ServerI18n.t("ratelimitIpPolicyLabel")} · ${ServerI18n.t("ratelimitLoadingEllipsis")}</span>
             </div>
             <div class="admin-ratelimit-ip-form">
               <input type="text" data-rl-ip-input placeholder="${ServerI18n.t("ratelimitIpInputPlaceholder")}" maxlength="43" autocomplete="off" spellcheck="false" />
@@ -550,7 +550,7 @@
       if (ipEls.summary) {
         const a = (ipState.allowlist || []).length;
         const d = (ipState.denylist || []).length;
-        ipEls.summary.textContent = "IP POLICY · " + ServerI18n.t("ratelimitIpCounts", { allow: a, deny: d });
+        ipEls.summary.textContent = ServerI18n.t("ratelimitIpPolicyLabel") + " · " + ServerI18n.t("ratelimitIpCounts", { allow: a, deny: d });
       }
     }
 
@@ -558,7 +558,7 @@
       try {
         const r = await fetch("/admin/ratelimit/ip-rules", { credentials: "same-origin" });
         if (!r.ok) {
-          if (ipEls.summary) ipEls.summary.textContent = "IP POLICY · " + ServerI18n.t("ratelimitLoadFailedStatus", { status: r.status });
+          if (ipEls.summary) ipEls.summary.textContent = ServerI18n.t("ratelimitIpPolicyLabel") + " · " + ServerI18n.t("ratelimitLoadFailedStatus", { status: r.status });
           return;
         }
         const data = await r.json();
@@ -570,7 +570,7 @@
           renderIpAll();
         }
       } catch (_) {
-        if (ipEls.summary) ipEls.summary.textContent = "IP POLICY · " + ServerI18n.t("ratelimitNetworkError");
+        if (ipEls.summary) ipEls.summary.textContent = ServerI18n.t("ratelimitIpPolicyLabel") + " · " + ServerI18n.t("ratelimitNetworkError");
       }
     }
 

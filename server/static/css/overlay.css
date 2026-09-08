@@ -177,10 +177,6 @@ body {
 #overlay-idle[data-state="scanning"] .overlay-idle-topbar-dot { background: #f0abfc; box-shadow: 0 0 8px #f0abfc; animation: overlay-idle-pulse 1.2s infinite; }
 #overlay-idle[data-state="paired"]   .overlay-idle-topbar-dot { background: #86efac; box-shadow: 0 0 8px #86efac; }
 #overlay-idle[data-state="failed"]   .overlay-idle-topbar-dot { background: #fb7185; box-shadow: 0 0 8px #fb7185; }
-#overlay-idle[data-state="idle"]     .overlay-idle-topbar-en { color: #38bdf8; }
-#overlay-idle[data-state="scanning"] .overlay-idle-topbar-en { color: #f0abfc; }
-#overlay-idle[data-state="paired"]   .overlay-idle-topbar-en { color: #86efac; }
-#overlay-idle[data-state="failed"]   .overlay-idle-topbar-en { color: #fb7185; }
 
 .overlay-idle-inner {
   position: relative;

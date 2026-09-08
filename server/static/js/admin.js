@@ -989,7 +989,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <span class="admin-effects-toolbar__spacer" data-toolbar-spacer></span>
               <label for="effectUploadInput" class="admin-ui-action is-primary admin-effects-action admin-effects-upload-btn" title="${ServerI18n.t("fxUploadTitle")}">${ServerI18n.t("fxUploadBtn")}</label>
               <input type="file" id="effectUploadInput" accept=".dme" class="hidden">
-              <button id="effectReloadBtn" class="admin-ui-action admin-effects-action" type="button">\u21bb ${ServerI18n.t("reload")}</button>
+              <button id="effectReloadBtn" class="admin-ui-action admin-effects-action" type="button">${ServerI18n.t("reload")}</button>
             </div>
             <div id="effectsList" class="hud-effects-grid">
               <span class="text-xs" style="color:var(--admin-text-dim);grid-column:1 / -1">${ServerI18n.t("loadingEffectsAdmin")}</span>
@@ -1003,7 +1003,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
               <pre class="hud-inspector-body" id="effectsInspectorBody"># ${ServerI18n.t("fxYamlIdle")}</pre>
               <div class="hud-inspector-foot">
-                <button type="button" class="admin-ui-action admin-effects-inspector-action" id="effectsInspectorReload" style="flex:1" disabled>\u21bb RELOAD</button>
+                <button type="button" class="admin-ui-action admin-effects-inspector-action" id="effectsInspectorReload" style="flex:1" disabled>${ServerI18n.t("uiReload")}</button>
                 <button type="button" class="admin-ui-action is-primary admin-effects-inspector-action" id="effectsInspectorEdit" style="flex:1" disabled>${ServerI18n.t("lbEdit")}</button>
               </div>
             </div>

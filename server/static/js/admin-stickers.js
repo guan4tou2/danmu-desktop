@@ -130,7 +130,7 @@
             '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="rename" data-pack-id="' + escapeAttr(pack.id) + '" title="' + ServerI18n.t("stickersRenameTitle") + '">✎</button>' +
             '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="up" data-pack-id="' + escapeAttr(pack.id) + '" title="' + ServerI18n.t("stickersMoveUp") + '">↑</button>' +
             '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="down" data-pack-id="' + escapeAttr(pack.id) + '" title="' + ServerI18n.t("stickersMoveDown") + '">↓</button>' +
-            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="toggle" data-pack-id="' + escapeAttr(pack.id) + '" title="' + (pack.enabled ? ServerI18n.t("stickersDisable") : ServerI18n.t("stickersEnable")) + '">' + (pack.enabled ? "ON" : "OFF") + '</button>' +
+            '<button type="button" class="admin-ui-chip admin-sticker-pack-action" data-pack-action="toggle" data-pack-id="' + escapeAttr(pack.id) + '" title="' + (pack.enabled ? ServerI18n.t("stickersDisable") : ServerI18n.t("stickersEnable")) + '">' + ServerI18n.t(pack.enabled ? "uiOn" : "uiOff") + '</button>' +
             '<button type="button" class="admin-ui-chip is-danger admin-sticker-pack-action" data-pack-action="delete" data-pack-id="' + escapeAttr(pack.id) + '" title="' + ServerI18n.t("stickersDeletePackTitle") + '">' + window.AdminUtils.closeIcon + '</button>' +
           '</div>';
       html +=
@@ -276,7 +276,7 @@
       const ok = await window.HudConfirm?.open({
         icon: "⊘",
         title: ServerI18n.t("stickersDeletePackTitle"),
-        subtitle: "DELETE PACK · ALL STICKERS INSIDE ARE REMOVED",
+        subtitle: ServerI18n.t("cfmSubDeletePack"),
         severity: "danger",
         body: ServerI18n.t("stickersDeletePackBody"),
         confirmLabel: ServerI18n.t("stickersDeletePackTitle"),
@@ -407,7 +407,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: ServerI18n.t("stickersDeleteTitle"),
-      subtitle: "DELETE STICKER",
+      subtitle: ServerI18n.t("cfmSubDeleteSticker"),
       severity: "danger",
       bodyText: ServerI18n.t("deleteStickerConfirm").replace("{name}", name),
       confirmLabel: ServerI18n.t("stickersDeleteConfirm"),

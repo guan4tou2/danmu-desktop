@@ -2073,7 +2073,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <span class="admin-offline-banner__dot"></span>
         <span class="admin-offline-banner__title">離線中 · 連線後將自動送出</span>
       </div>
-      <div class="admin-offline-banner__meta" data-offline-meta>RECONNECTING · 5s · 已排隊 0 則訊息</div>
+      <div class="admin-offline-banner__meta" data-offline-meta>重新連線中 · 5.0 秒 · 已排隊 0 則訊息</div>
       <div class="admin-offline-banner__progress"><div class="admin-offline-banner__progress-fill" data-offline-fill></div></div>`;
     document.body.appendChild(el);
     _offlineBannerEl = el;
@@ -2101,8 +2101,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const s = Math.floor(ms / 1000);
     const m = Math.floor(s / 60);
     const r = s % 60;
-    if (m === 0) return `${s} SEC`;
-    return `${m} MIN ${String(r).padStart(2, "0")} SEC`;
+    if (m === 0) return `${s} 秒`;
+    return `${m} 分 ${String(r).padStart(2, "0")} 秒`;
   }
 
   function _ensureExtendedOffline() {
@@ -2113,10 +2113,10 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="admin-eoff__card">
         <div class="admin-eoff__icon">⚡</div>
         <div class="admin-eoff__title">無法連線到伺服器</div>
-        <div class="admin-eoff__sub" data-eoff-sub>OFFLINE · 1 MIN 00 SEC</div>
+        <div class="admin-eoff__sub" data-eoff-sub>已離線 1 分 00 秒</div>
         <div class="admin-eoff__desc">已超過 60 秒無法連線。請確認網路狀態，或聯繫活動主辦方。</div>
         <div class="admin-eoff__queue" data-eoff-queue hidden>
-          <div class="admin-eoff__queue-label">QUEUED MESSAGE · <span data-eoff-queue-n>1</span> 則</div>
+          <div class="admin-eoff__queue-label">已排隊 <span data-eoff-queue-n>1</span> 則訊息</div>
           <div class="admin-eoff__queue-text" data-eoff-queue-text></div>
           <div class="admin-eoff__queue-foot">連線恢復後自動送出</div>
         </div>
@@ -2185,7 +2185,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Queued messages = 1 when there's text in the input we couldn't ship.
       const queuedText = (elements.danmuText && elements.danmuText.value.trim()) || "";
       const queued = queuedText ? 1 : 0;
-      if (meta) meta.textContent = `RECONNECTING · ${left.toFixed(1)}s · 已排隊 ${queued} 則訊息`;
+      if (meta) meta.textContent = `重新連線中 · ${left.toFixed(1)} 秒 · 已排隊 ${queued} 則訊息`;
       if (fill) fill.style.width = pct + "%";
       if (left <= 0) {
         // Bump backoff for the next cycle (capped). main.js's existing
@@ -2205,7 +2205,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const queueBox = card.querySelector("[data-eoff-queue]");
         const queueText = card.querySelector("[data-eoff-queue-text]");
         const queueN = card.querySelector("[data-eoff-queue-n]");
-        if (sub) sub.textContent = `OFFLINE · ${_fmtOfflineDuration(offlineDur)}`;
+        if (sub) sub.textContent = `已離線 ${_fmtOfflineDuration(offlineDur)}`;
         if (queueBox) {
           queueBox.hidden = !queuedText;
           if (queueText) queueText.textContent = queuedText;

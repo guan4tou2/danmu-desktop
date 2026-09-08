@@ -47,7 +47,7 @@
             </div>
 
             <div class="admin-vt-card">
-              <div class="admin-vt-card-head"><span class="title">${ServerI18n.t("viewerThemePreviewModeTitle")}</span><span class="kicker">PREVIEW MODE · ${ServerI18n.t("viewerThemePreviewModeKickerNote")}</span></div>
+              <div class="admin-vt-card-head"><span class="title">${ServerI18n.t("viewerThemePreviewModeTitle")}</span><span class="kicker">${ServerI18n.t("viewerThemePreviewModeKickerNote")}</span></div>
               <div class="admin-vt-mode" data-vt-mode>
                 <button type="button" data-vt-mode-btn="dark"><span class="icon">◐</span><span class="lbl">${ServerI18n.t("viewerThemeModeDark")}</span><span class="sub">${ServerI18n.t("lbDark")}</span></button>
                 <button type="button" data-vt-mode-btn="light"><span class="icon">☼</span><span class="lbl">${ServerI18n.t("viewerThemeModeLight")}</span><span class="sub">${ServerI18n.t("lbLight")}</span></button>
@@ -63,12 +63,12 @@
             <div class="admin-vt-card admin-vt-force">
               <div class="admin-vt-card-head">
                 <span class="title">${ServerI18n.t("viewerThemeForceOverrideTitle")}</span>
-                <span class="kicker">VIEWER FORCE OVERRIDE · ${ServerI18n.t("viewerThemeForceOverrideKickerNote")}</span>
+                <span class="kicker">${ServerI18n.t("viewerThemeForceOverrideKickerNote")}</span>
               </div>
               <div class="admin-vt-force-row">
                 <div class="admin-vt-force-label">
                   <span class="title">${ServerI18n.t("viewerThemeForceThemeLabel")}</span>
-                  <span class="kicker">THEME MODE · ${ServerI18n.t("viewerThemeThemeModeKickerNote")}</span>
+                  <span class="kicker">${ServerI18n.t("viewerThemeThemeModeKickerNote")}</span>
                 </div>
                 <div class="admin-vt-mode" data-vt-theme-force>
                   <button type="button" data-vt-theme-btn="auto"><span class="icon">◑</span><span class="lbl">${ServerI18n.t("viewerThemeModeAuto")}</span><span class="sub">${ServerI18n.t("lbAuto")}</span></button>
@@ -79,7 +79,7 @@
               <div class="admin-vt-force-row">
                 <div class="admin-vt-force-label">
                   <span class="title">${ServerI18n.t("viewerThemeForceLangLabel")}</span>
-                  <span class="kicker">LANGUAGE MODE · ${ServerI18n.t("viewerThemeLangModeKickerNote")}</span>
+                  <span class="kicker">${ServerI18n.t("viewerThemeLangModeKickerNote")}</span>
                 </div>
                 <div class="admin-vt-mode" data-vt-lang-force>
                   <button type="button" data-vt-lang-btn="auto"><span class="icon">⌬</span><span class="lbl">${ServerI18n.t("viewerThemeFollowBrowser")}</span><span class="sub">${ServerI18n.t("lbAuto")}</span></button>
@@ -115,7 +115,7 @@
             </div>
 
             <div class="admin-vt-card">
-              <div class="admin-vt-card-head"><span class="title">${ServerI18n.t("viewerThemeFontTitle")}</span><span class="kicker">UI FONT · ${ServerI18n.t("viewerThemeFontKickerNote")}</span></div>
+              <div class="admin-vt-card-head"><span class="title">${ServerI18n.t("viewerThemeFontTitle")}</span><span class="kicker">${ServerI18n.t("viewerThemeFontKickerNote")}</span></div>
               <select data-vt-font>
                 <option value="Zen Kaku Gothic New">Zen Kaku · ${ServerI18n.t("viewerThemeFontDescDefault")}</option>
                 <option value="Noto Sans TC">Noto Sans TC · ${ServerI18n.t("viewerThemeFontDescNotoTC")}</option>
@@ -134,7 +134,7 @@
 
           <div class="admin-vt-preview">
             <div class="admin-vt-preview-head">
-              <span class="kicker">LIVE PREVIEW · /fire</span>
+              <span class="kicker">${ServerI18n.t("uiLivePreview")} · /fire</span>
               <div class="admin-vt-device" data-vt-device>
                 <button type="button" data-vt-device-btn="desktop" class="is-active">${ServerI18n.t("viewerThemeDeviceDesktop")}</button>
                 <button type="button" data-vt-device-btn="tablet">${ServerI18n.t("viewerThemeDeviceTablet")}</button>
@@ -145,11 +145,11 @@
             <div class="admin-vt-preview-frame" data-vt-frame>
               <div class="admin-vt-preview-stage" data-vt-stage>
                 <div class="hero">
-                  <div class="logo" data-vt-preview-logo>DANMU FIRE</div>
+                  <div class="logo" data-vt-preview-logo>Danmu Fire</div>
                   <!-- D-4 REUSED：這是 /fire 頁面的 live 標語逐字重現於預覽卡片，
                        語意完全相同——直接複用既有 mainSubtitle key，不另開新 key。 -->
                   <p class="subtitle">${ServerI18n.t("mainSubtitle")}</p>
-                  <span class="admin-ui-chip admin-vt-preview-status"><span class="dot"></span>CONNECTED · LIVE</span>
+                  <span class="admin-ui-chip admin-vt-preview-status"><span class="dot"></span>${ServerI18n.t("viewerThemePreviewConnected")}</span>
                 </div>
                 <div class="stream">
                   <span class="row"><b>@guest</b><span>${ServerI18n.t("viewerThemeDemoMsgGuest")}</span></span>
@@ -158,7 +158,7 @@
                 </div>
                 <div class="composer">
                   <input type="text" placeholder="${ServerI18n.t("viewerThemeComposerPlaceholder")}" disabled />
-                  <button type="button">FIRE ▶</button>
+                  <button type="button">${ServerI18n.t("fireDanmu")}</button>
                 </div>
               </div>
             </div>
@@ -166,7 +166,7 @@
             <div class="admin-viewer-theme-legend" data-vt-legend>
               <div class="admin-viewer-theme-legend-head">
                 <span class="title">${ServerI18n.t("viewerThemeLegendTitle")}</span>
-                <span class="kicker">OUT OF SCOPE · ${ServerI18n.t("viewerThemeLegendKickerNote")}</span>
+                <span class="kicker">${ServerI18n.t("viewerThemeLegendOutOfScope")} · ${ServerI18n.t("viewerThemeLegendKickerNote")}</span>
               </div>
               <div class="admin-viewer-theme-legend-rows">
                 <button type="button" class="admin-viewer-theme-legend-row" data-vt-jump="themes">
@@ -332,7 +332,7 @@
       if (state.logo) {
         logoEl.innerHTML = `<img src="${state.logo}" style="max-height:40px" />`;
       } else {
-        logoEl.textContent = "DANMU FIRE";
+        logoEl.textContent = "Danmu Fire";
       }
     }
 

@@ -198,7 +198,7 @@
               <div class="text">${escapeHtml(q.text || ServerI18n.t("pollBuilderEmptyQuestionPlaceholder"))}</div>
               <div class="meta">${ServerI18n.t("pollBuilderOptionsCount", { n: q.options.length })} · ${q.timer === 0 ? ServerI18n.t("pollBuilderNoTimeLimit") : q.timer + "s"} · ${hasImg ? ServerI18n.t("pollBuilderHasImageCrop", { crop: q.crop }) : ServerI18n.t("pollBuilderPlainText")}</div>
             </div>
-            ${sessionRunning ? '<span class="editing-chip" style="background:rgba(134,239,172,0.12);color: var(--color-ink-success)">● LIVE</span>' : (q.id === activeId ? `<span class="editing-chip">${ServerI18n.t("pollBuilderEditingChip")}</span>` : "")}
+            ${sessionRunning ? '<span class="editing-chip" style="background:rgba(134,239,172,0.12);color: var(--color-ink-success)">● ' + ServerI18n.t("uiLive") + '</span>' : (q.id === activeId ? `<span class="editing-chip">${ServerI18n.t("pollBuilderEditingChip")}</span>` : "")}
           `;
           queueEl.appendChild(row);
         });
@@ -355,7 +355,7 @@
             <div class="admin-polls-live-card">
               <div class="admin-polls-live-strip">
                 <span class="admin-polls-live-chip">
-                  <span class="dot"></span>LIVE · #${escapeHtml((pollState.poll_id || "").slice(-6))}
+                  <span class="dot"></span>${ServerI18n.t("uiLive")} · #${escapeHtml((pollState.poll_id || "").slice(-6))}
                 </span>
                 <span class="admin-polls-live-progress">
                   ${ServerI18n.t("pollBuilderLiveQuestionProgress", { idx: `<strong>${idx + 1}</strong>`, total: total })}
@@ -380,7 +380,7 @@
               </div>
 
               <div class="admin-polls-live-question">
-                <div class="kicker">QUESTION Q${idx + 1}</div>
+                <div class="kicker">${ServerI18n.t("pollQuestionNo", { n: idx + 1 })}</div>
                 <div class="text">${escapeHtml(q.text || "")}</div>
               </div>
 
@@ -418,7 +418,7 @@
               <div class="admin-polls-live-rail-card">
                 <div class="admin-poll-card-head">
                   <span class="title">${ServerI18n.t("pollBuilderQuestionProgressTitle")}</span>
-                  <span class="kicker">PROGRESS · ${idx + 1}/${total}</span>
+                  <span class="kicker">${ServerI18n.t("uiProgress")} · ${idx + 1}/${total}</span>
                 </div>
                 <div class="admin-polls-live-queue">
                   ${pollState.questions.map((qq, i) => {
@@ -523,7 +523,7 @@
 
               <div class="admin-polls-results-head">
                 <div class="meta">
-                  <span class="admin-ui-chip admin-poll-result-state">ENDED</span>
+                  <span class="admin-ui-chip admin-poll-result-state">${ServerI18n.t("pollStateEnded")}</span>
                   <span>Q${safeIdx + 1}/${total} · ${ServerI18n.t("pollBuilderResultsMetaLine", { dur: fmtMmSs(durSec), n: totalVotes })}</span>
                 </div>
                 <div class="text">${escapeHtml(q.text || "")}</div>
@@ -541,7 +541,7 @@
               <div class="admin-polls-results-list">
                 <div class="admin-poll-card-head">
                   <span class="title">${ServerI18n.t("pollBuilderFullResultsTitle")}</span>
-                  <span class="kicker">RESULTS · ${ServerI18n.t("pollBuilderVoteCount", { n: totalVotes })}</span>
+                  <span class="kicker">${ServerI18n.t("uiResults")} · ${ServerI18n.t("pollBuilderVoteCount", { n: totalVotes })}</span>
                 </div>
                 ${ranked.map((o, rank) => {
                   const pct = totalVotes > 0 ? (o.count / totalVotes) * 100 : 0;
@@ -787,7 +787,7 @@
               const ok = await window.HudConfirm?.open({
                 icon: "⊘",
                 title: ServerI18n.t("pollBuilderRemoveQConfirmTitle"),
-                subtitle: "REMOVE QUESTION · DRAFT ONLY",
+                subtitle: ServerI18n.t("cfmSubRemoveQuestion"),
                 severity: "warn",
                 body: ServerI18n.t("pollBuilderRemoveQConfirmBody"),
                 confirmLabel: ServerI18n.t("pollBuilderRemoveQConfirmTitle"),

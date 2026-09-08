@@ -102,7 +102,7 @@
       : `<span class="admin-ext-flag is-soon">${ServerI18n.t("extFlagSoon")}</span>`;
     const installSection = isReady && ext.install
       ? `<div class="admin-ext-install">
-          <div class="admin-ui-monolabel">INSTALL · ${ServerI18n.t("extSecInstall")}</div>
+          <div class="admin-ui-monolabel">${ServerI18n.t("uiSectionInstall")}</div>
           <ol class="admin-ext-install-steps">
             ${ext.install.steps.map((s) => {
               if (s.kind === "download") {
@@ -116,7 +116,7 @@
     const tokenSection = ext.hasFireTokenUI
       ? `<div class="admin-ext-token" data-ext-token>
           <div class="admin-ui-monolabel">
-            FIRE TOKEN · ${ServerI18n.t("extSecFireToken")}
+            Fire token · ${ServerI18n.t("extSecFireToken")}
             <a href="#/firetoken" class="admin-ext-token-deeplink">${ServerI18n.t("extTokenDeepLink")}</a>
           </div>
           <div class="admin-ext-token-row">
@@ -172,7 +172,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⟳",
       title: ServerI18n.t("firetokenRegenModalTitle"),
-      subtitle: "ROTATE · EXISTING EXTENSIONS STOP WORKING IMMEDIATELY",
+      subtitle: ServerI18n.t("cfmSubRotateToken"),
       severity: "warn",
       body: ServerI18n.t("firetokenRegenModalBody"),
       confirmLabel: ServerI18n.t("firetokenRegenModalConfirm"),
@@ -202,7 +202,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: ServerI18n.t("firetokenRevokeModalTitle"),
-      subtitle: "REVOKE · ALL EXTENSIONS STOP WORKING",
+      subtitle: ServerI18n.t("cfmSubRevokeToken"),
       severity: "danger",
       body: ServerI18n.t("firetokenRevokeModalBody"),
       confirmLabel: ServerI18n.t("firetokenRevokeBtn"),

@@ -218,8 +218,8 @@
       </div>
 
       <div class="admin-wcag-fields">
-        ${_renderField("FOREGROUND", ServerI18n.t("wcagForegroundLabel"), _tester.fg, "fg")}
-        ${_renderField("BACKGROUND", ServerI18n.t("wcagBackgroundLabel"), _tester.bg, "bg")}
+        ${_renderField(ServerI18n.t("wcagForegroundLabel"), _tester.fg, "fg")}
+        ${_renderField(ServerI18n.t("wcagBackgroundLabel"), _tester.bg, "bg")}
       </div>
 
       <div class="admin-wcag-preview" data-wcag-specimen style="background:${escapeHtml(_tester.bg)}">
@@ -258,15 +258,15 @@
         </div>` : ""}`;
   }
 
-  function _renderField(en, label, value, which) {
+  function _renderField(label, value, which) {
     const id = "wcag-tester-" + which;
     return `
       <div class="admin-wcag-field">
-        <label class="admin-ui-monolabel" for="${id}">${escapeHtml(en)}</label>
+        <label class="admin-ui-monolabel" for="${id}">${escapeHtml(label)}</label>
         <div class="admin-wcag-field-row">
           <span class="admin-wcag-dot" style="background:${escapeHtml(value)}"></span>
           <input type="text" id="${id}" class="admin-ui-input" data-wcag-tester-${which}
-            aria-label="${escapeHtml(label)} HEX"
+            aria-label="${escapeHtml(ServerI18n.t("wcagHexAria", { label: label }))}"
             value="${escapeHtml(value)}" placeholder="#RRGGBB" maxlength="7" />
         </div>
       </div>`;

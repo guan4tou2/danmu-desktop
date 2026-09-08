@@ -297,14 +297,22 @@ test("Desktop runtime shells do not expose old Overlay labels", () => {
   // Google Fonts at runtime (assets/fonts woff2 + child.css @font-face).
   expect(childHtml).not.toContain("fonts.googleapis.com");
   expect(childHtml).not.toContain("fonts.gstatic.com");
-  expect(overlayJs).toContain("DESKTOP · SILENT MODE");
-  expect(overlayJs).toContain("NO DANMU RENDERING · DESKTOP PAUSED");
-  expect(overlayJs).not.toContain("OVERLAY · SILENT MODE");
-  expect(overlayJs).not.toContain("OVERLAY PAUSED");
+  // 2026-09-08 設計稿 14：這面畫面觀眾會在投影幕上看到，不該是全大寫英文。
+  // 上一輪把 OVERLAY 改成 DESKTOP，這一輪照詞彙表改成「顯示層」並改白話。
+  expect(overlayJs).toContain("顯示層 · 靜默模式");
+  expect(overlayJs).toContain("已暫停顯示彈幕");
+  for (const dead of [
+    "OVERLAY · SILENT MODE", "OVERLAY PAUSED",
+    "DESKTOP · SILENT MODE", "NO DANMU RENDERING · DESKTOP PAUSED",
+    "ATTEMPT ", "BACKOFF ", "LAST CONNECTED", "EXPONENTIAL",
+  ]) {
+    expect(overlayJs).not.toContain(dead);
+  }
   expect(overlayTemplate).toContain("<title>Danmu Fire Desktop</title>");
-  expect(overlayTemplate).toContain("DANMU FIRE · DESKTOP");
+  expect(overlayTemplate).toContain("Danmu Fire · 顯示層");
   expect(overlayTemplate).not.toContain("<title>Danmu Fire Overlay</title>");
   expect(overlayTemplate).not.toContain("DANMU FIRE · OVERLAY");
+  expect(overlayTemplate).not.toContain("DANMU FIRE · DESKTOP");
 });
 
 // 2026-09-06 設計稿 14 文案總表：全域名詞 Desktop / Overlay → 顯示層（en:

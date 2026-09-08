@@ -331,7 +331,7 @@
       helper.open({
         icon: "⊘",
         title: ServerI18n.t("modbansModalTitle"),
-        subtitle: "BAN · TIME-BOUND DURATION",
+        subtitle: ServerI18n.t("cfmSubBanTimed"),
         severity: "danger",
         confirmLabel: ServerI18n.t("modbansConfirmBan"),
         cancelLabel: ServerI18n.t("cancel"),
@@ -351,7 +351,7 @@
           helper.open({
             icon: "⚠",
             title: ServerI18n.t("modbansConfirmPermTitle"),
-            subtitle: "PERMANENT BAN · CANNOT AUTO-EXPIRE",
+            subtitle: ServerI18n.t("cfmSubBanPermanent"),
             severity: "warn",
             confirmLabel: ServerI18n.t("modbansConfirmPermLabel"),
             cancelLabel: ServerI18n.t("modbansBack"),

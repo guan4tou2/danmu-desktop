@@ -81,25 +81,25 @@ EVENT_CATALOG: List[Dict[str, str]] = [
     # Broadcast / session lifecycle
     {
         "slug": "on_session_start",
-        "zh": "場次開啟 / Overlay ON",
-        "en": "Session start",
-        "ja": "セッション開始 / Overlay ON",
-        "ko": "세션 시작 / Overlay ON",
+        "zh": "場次開啟 · 顯示層開啟",
+        "en": "Session start · display on",
+        "ja": "セッション開始 · 表示層オン",
+        "ko": "세션 시작 · 표시 레이어 켜짐",
     },
     {
         "slug": "on_session_end",
-        "zh": "場次結束 / Overlay OFF",
-        "en": "Session end",
-        "ja": "セッション終了 / Overlay OFF",
-        "ko": "세션 종료 / Overlay OFF",
+        "zh": "場次結束 · 顯示層關閉",
+        "en": "Session end · display off",
+        "ja": "セッション終了 · 表示層オフ",
+        "ko": "세션 종료 · 표시 레이어 꺼짐",
     },
-    # Overlay control
+    # 顯示層控制
     {
         "slug": "on_overlay_clear",
-        "zh": "清空 Overlay",
-        "en": "Overlay cleared",
-        "ja": "Overlay クリア",
-        "ko": "Overlay 지움",
+        "zh": "清空顯示層",
+        "en": "Display cleared",
+        "ja": "表示層をクリア",
+        "ko": "표시 레이어 지움",
     },
     # Operator surfaces
     {

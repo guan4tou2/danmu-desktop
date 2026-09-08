@@ -54,7 +54,7 @@
           <span class="slash" aria-hidden="true"></span>
         </div>
 
-        <div class="viewer-state-kicker">BLOCKED · 已被禁言</div>
+        <div class="viewer-state-kicker">已被禁言</div>
         <h2 class="viewer-state-title">你的訊息暫時無法送出</h2>
         <p class="viewer-state-desc">
           因違反活動社群守則，主辦方已暫停你發送彈幕的權限。<br>
@@ -126,7 +126,7 @@
           <span class="check">⏱</span>
         </div>
 
-        <div class="viewer-state-kicker viewer-state-kicker--warn">RATE LIMITED · 暫時限流</div>
+        <div class="viewer-state-kicker viewer-state-kicker--warn">暫時限流</div>
         <h2 class="viewer-state-title viewer-state-title--center">訊息送太快了</h2>
         <p class="viewer-state-desc viewer-state-desc--center">
           為了避免刷屏，系統暫時限制發送頻率。<br>

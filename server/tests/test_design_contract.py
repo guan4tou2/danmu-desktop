@@ -1665,3 +1665,82 @@ def test_notifications_old_bookmark_opens_the_panel_on_cold_start():
     assert "_openIfHashRequests();" in mount, "掛載後沒有補檢查 hash"
     bind = js[js.index("function _bind()") :]
     assert 'window.addEventListener("hashchange", _openIfHashRequests)' in bind
+
+
+# --- 設計稿 14 文案規則：按鈕用動詞、不加圖示符號 -------------------------
+
+# 稿上點名的是 ▶ ■ ⚡ ⌫ ◱，實際 codebase 裡同一類（媒體控制／狀態勾叉／
+# 方向箭頭當圖示用）的還有這些。→ 不在內：它是連結的方向提示，不是圖示。
+BUTTON_GLYPHS = "▶■⚡⌫◱↓⏸⏹⏺⏭◾◐▣⊘✕✓↻⊗◼"
+
+# ＋ 當「連接詞」用時保留（「4 選項＋圖片」），當「新增」圖示用時不行。
+# 這三個 key 是連接詞，其餘 key 一律不准出現 ＋ 開頭。
+_PLUS_AS_CONJUNCTION = {"pollTemplateFourImg", "pollTplMultiDesc", "auditKickerTail"}
+
+# 樣本彈幕內容不是按鈕文案，裡面的 ✓ 是使用者會打的字。
+_NOT_A_LABEL = {"overlayTestDanmuText"}
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        f"{base}/locales/{loc}/translation.json"
+        for base in ("server/static", "danmu-desktop")
+        for loc in ("zh", "en", "ja", "ko")
+    ],
+)
+def test_no_icon_glyphs_in_translation_strings(rel):
+    """i18n 值不得夾帶圖示符號。
+
+    2026-09-08 掃出 51 個 key 中鏢（`▶ 開始顯示`、`✓ APPROVE`、`↻ 測試`…），
+    其中 `previewBtn` 的 ▶ 還跟 `admin-sounds.js` 自己加的 ▶ 疊成兩個。
+    """
+    data = json.loads(_read(rel) or "{}")
+    bad = []
+    for key, value in data.items():
+        if not isinstance(value, str) or key in _NOT_A_LABEL:
+            continue
+        hit = [g for g in BUTTON_GLYPHS if g in value]
+        if "＋" in value and key not in _PLUS_AS_CONJUNCTION:
+            hit.append("＋")
+        if hit:
+            bad.append(f"{key}: {value!r} 夾帶 {''.join(hit)}")
+    assert not bad, f"{rel} 有圖示符號混進文案：\n" + "\n".join(bad)
+
+
+def test_no_icon_glyphs_glued_onto_button_labels():
+    """圖示不得直接黏在按鈕的文字標籤上。
+
+    禁的是「圖示黏文字」，不是「按鈕不能有圖示」——設計稿 06 自己就用
+    `⌕`（搜尋）、`☰`（抽屜）當純圖示鈕，中間寬度還會把側欄收成 64px
+    圖示欄。所以兩種寫法是合格的：
+
+    * 純圖示鈕（內文只有符號，配 `aria-label`）
+    * 圖示放在專用槽（`<span class="…icon">` / `…-mark` / `aria-hidden`），
+      文字標籤是另一個節點
+
+    不合格的是 `>▶ 開始顯示<`、`>✓ APPROVE<` 這種擠在同一個文字節點裡的。
+    2026-09-08 修掉 13 筆；當時第一版判準沒排除圖示槽，把 17 個合格寫法
+    一起判違規——**先看標記結構再判**。
+    """
+    icon_slot = re.compile(
+        r"<(span|i|div)\b[^>]*"
+        r'(?:class="[^"]*(?:icon|mark|check|dot)[^"]*"|aria-hidden="true")'
+        r"[^>]*>.*?</\1>",
+        re.S | re.I,
+    )
+    bad = []
+    for path in sorted((REPO / "server/static/js").glob("*.js")):
+        if path.name == "i18n.js":  # 產生物，由上面那支測試守
+            continue
+        src = _strip_comments(path.read_text(encoding="utf-8"))
+        # 原始碼裡的 `\\u21bb` 是**逸出序列**，不是那個字元。2026-09-08 那輪
+        # `admin.js` 的 `\\u21bb RELOAD` 就是這樣躲過第一版判準的——先還原再判。
+        src = re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), src)
+        for inner in re.findall(r"<button\b[^>]*>(.*?)</button>", src, re.S):
+            text = re.sub(r"<[^>]*>", "", icon_slot.sub("", inner))
+            hit = [g for g in BUTTON_GLYPHS + "＋" if g in text]
+            # 只有符號、沒有文字 → 純圖示鈕，合格
+            if hit and re.search(r"[A-Za-z\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]", text):
+                bad.append(f"{path.name}: {text.strip()[:60]!r} 夾帶 {''.join(hit)}")
+    assert not bad, "圖示黏在按鈕文字上：\n" + "\n".join(bad)

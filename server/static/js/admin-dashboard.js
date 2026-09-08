@@ -234,7 +234,7 @@
         const ok = await window.HudConfirm?.open({
           icon: "⊘",
           title: ServerI18n.t("dashBlacklistTitle"),
-          subtitle: "BLACKLIST FINGERPRINT · BLOCKS FUTURE MESSAGES",
+          subtitle: ServerI18n.t("cfmSubBlacklistFp"),
           severity: "danger",
           body:
             ServerI18n.t("dashBlacklistBody") +
@@ -310,7 +310,7 @@
         <div class="uptime">${uptimeLabel}</div>
         <div class="actions">
           <button type="button" class="admin-ui-chip admin-dash-widget-action${running ? " is-active" : ""}" data-widget-action="toggle" data-running="${running ? "1" : "0"}">${running ? "PAUSE" : "RUN"}</button>
-          <button type="button" class="admin-ui-chip admin-dash-widget-action" data-widget-action="config">CONFIG</button>
+          <button type="button" class="admin-ui-chip admin-dash-widget-action" data-widget-action="config">${ServerI18n.t("uiConfig")}</button>
         </div>
       </div>`;
   }
@@ -501,7 +501,7 @@
       const ok = await window.HudConfirm?.open({
         icon: "■",
         title: ServerI18n.t("dashCloseTitle"),
-        subtitle: "CLOSE SESSION · DESKTOP SWITCHES OFF",
+        subtitle: ServerI18n.t("cfmSubCloseSession"),
         severity: "danger",
         body: `
           <div style="font-size:13px;color:var(--hud-text,#f1f5f9);line-height:1.7;">

@@ -60,7 +60,7 @@
   "overlayActionTestDanmu": "Send a test",
   "overlayTestDanmuText": "測試彈幕 · Danmu Fire ✓",
   "overlayActionIdleQr": "Show join QR",
-  "overlayActionIdleQrClose": "◱ Close entry QR",
+  "overlayActionIdleQrClose": "Close entry QR",
   "sectionKeysTitle": "Shortcuts",
   "sectionKeysKicker": "SHORTCUTS",
   "sectionAboutTitle": "About",

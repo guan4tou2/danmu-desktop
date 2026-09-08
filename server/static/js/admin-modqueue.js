@@ -47,6 +47,10 @@
     low:    "var(--color-text-muted, #94a3b8)",
   };
 
+  // 稿 14「不用全大寫」：以前這裡是 sev.toUpperCase()，畫面上就是 LOW/HIGH，
+  // 而且四國語系都吃不到。未知嚴重度退回 low 的字樣，不讓 key 名漏到畫面上。
+  const SEV_KEY = { high: "modqueueSevHigh", medium: "modqueueSevMedium", low: "modqueueSevLow" };
+
   function _fpHue(fp) {
     let h = 0;
     const s = String(fp || "");
@@ -74,8 +78,8 @@
 
     const actionBlock = (col === "pending") ? `
       <div class="admin-mq-card__actions">
-        <button type="button" class="admin-mq-card__btn admin-mq-card__btn--approve" data-mq-action="approve" data-mq-id="${escapeHtml(msg.id || "")}">✓ APPROVE</button>
-        <button type="button" class="admin-mq-card__btn admin-mq-card__btn--reject" data-mq-action="reject" data-mq-id="${escapeHtml(msg.id || "")}">✕ REJECT</button>
+        <button type="button" class="admin-mq-card__btn admin-mq-card__btn--approve" data-mq-action="approve" data-mq-id="${escapeHtml(msg.id || "")}">${escapeHtml(ServerI18n.t("modqueueApproveBtn"))}</button>
+        <button type="button" class="admin-mq-card__btn admin-mq-card__btn--reject" data-mq-action="reject" data-mq-id="${escapeHtml(msg.id || "")}">${escapeHtml(ServerI18n.t("modqueueRejectBtn"))}</button>
         <button type="button" class="admin-mq-card__btn admin-mq-card__btn--more" data-mq-action="more" data-mq-id="${escapeHtml(msg.id || "")}" aria-label="More">⋯</button>
       </div>` : "";
 
@@ -83,13 +87,13 @@
       if (col === "approved") {
         return `<div class="admin-mq-card__stamp admin-mq-card__stamp--ok">
           <span class="admin-mq-card__stamp-dot"></span>
-          APPROVED · ${escapeHtml(msg.resolved_by || "admin")} · ${escapeHtml(msg.resolved_ago || "")}
+          ${escapeHtml(ServerI18n.t("modqueueStampApproved"))} · ${escapeHtml(msg.resolved_by || "admin")} · ${escapeHtml(msg.resolved_ago || "")}
         </div>`;
       }
       if (col === "rejected") {
         const tail = msg.auto_rejected
-          ? `AUTO-REJECTED · ${escapeHtml(String(_state.autoRejectSec))}s timeout`
-          : `REJECTED · ${escapeHtml(msg.resolved_by || "admin")} · ${escapeHtml(msg.resolved_ago || "")}`;
+          ? `${escapeHtml(ServerI18n.t("modqueueStampAutoRejected"))} · ${escapeHtml(ServerI18n.t("modqueueAutoRejectTimeout", { n: _state.autoRejectSec }))}`
+          : `${escapeHtml(ServerI18n.t("modqueueStampRejected"))} · ${escapeHtml(msg.resolved_by || "admin")} · ${escapeHtml(msg.resolved_ago || "")}`;
         return `<div class="admin-mq-card__stamp admin-mq-card__stamp--rej">
           <span class="admin-mq-card__stamp-dot"></span>${tail}
         </div>`;
@@ -114,8 +118,8 @@
         </div>
         <div class="admin-mq-card__body">${escapeHtml(msg.content || msg.text || "")}</div>
         <div class="admin-mq-card__meta">
-          <span class="admin-mq-card__sev" style="--mq-sev:${sevCol}">${escapeHtml(sev.toUpperCase())}</span>
-          <span class="admin-mq-card__rule">RULE: ${escapeHtml(msg.rule || msg.matched_rule || "?")}</span>
+          <span class="admin-mq-card__sev" style="--mq-sev:${sevCol}">${escapeHtml(ServerI18n.t(SEV_KEY[sev] || SEV_KEY.low))}</span>
+          <span class="admin-mq-card__rule">${escapeHtml(ServerI18n.t("modqueueRuleLabel"))}: ${escapeHtml(msg.rule || msg.matched_rule || "?")}</span>
           ${countdownChip}
         </div>
         ${actionBlock}
@@ -251,19 +255,19 @@
         <div class="admin-mq__toolbar">
           <span class="admin-mq__chip admin-mq__chip--pending">
             <span class="admin-mq__dot admin-mq__dot--amber"></span>
-            PENDING · <span data-mq-cnt-pending>0</span>
+            ${escapeHtml(ServerI18n.t("mqStatePending"))} · <span data-mq-cnt-pending>0</span>
           </span>
           <span class="admin-mq__counter admin-mq__counter--ok">
-            ✓ <span data-mq-cnt-approved>0</span> APPROVED
+            <span data-mq-cnt-approved>0</span> ${escapeHtml(ServerI18n.t("mqStateApproved"))}
           </span>
           <span class="admin-mq__counter admin-mq__counter--rej">
-            ✕ <span data-mq-cnt-rejected>0</span> REJECTED
+            <span data-mq-cnt-rejected>0</span> ${escapeHtml(ServerI18n.t("mqStateRejected"))}
           </span>
           <span class="admin-mq__spacer"></span>
-          <button type="button" class="admin-mq__bulk admin-mq__bulk--ok" data-mq-bulk="approve-low">✓ APPROVE ALL LOW</button>
-          <button type="button" class="admin-mq__bulk admin-mq__bulk--rej" data-mq-bulk="reject-high">✕ REJECT ALL HIGH</button>
+          <button type="button" class="admin-mq__bulk admin-mq__bulk--ok" data-mq-bulk="approve-low">${escapeHtml(ServerI18n.t("modqueueBulkApproveConfirm"))}</button>
+          <button type="button" class="admin-mq__bulk admin-mq__bulk--rej" data-mq-bulk="reject-high">${escapeHtml(ServerI18n.t("modqueueBulkRejectConfirm"))}</button>
           <div class="admin-mq__autoreject">
-            <span class="admin-mq__autoreject-label">AUTO-REJECT</span>
+            <span class="admin-mq__autoreject-label">${ServerI18n.t("mqStateAutoReject")}</span>
             <span class="admin-mq__autoreject-val" data-mq-autoreject>${AUTO_REJECT_DEFAULT_SEC}s</span>
           </div>
         </div>
@@ -278,7 +282,7 @@
           <div class="admin-mq__col">
             <div class="admin-mq__col-head admin-mq__col-head--pending">
               <span class="admin-mq__col-dot" style="background:var(--color-warning, #fbbf24)"></span>
-              <span class="admin-mq__col-title">PENDING</span>
+              <span class="admin-mq__col-title">${ServerI18n.t("mqStatePending")}</span>
               <span class="admin-mq__col-count" data-mq-cnt-pending>0</span>
               <span class="admin-mq__col-badge" data-mq-oldest></span>
             </div>
@@ -287,7 +291,7 @@
           <div class="admin-mq__col">
             <div class="admin-mq__col-head admin-mq__col-head--approved">
               <span class="admin-mq__col-dot" style="background:var(--color-success, #86efac)"></span>
-              <span class="admin-mq__col-title">APPROVED</span>
+              <span class="admin-mq__col-title">${ServerI18n.t("mqStateApproved")}</span>
               <span class="admin-mq__col-count" data-mq-cnt-approved>0</span>
             </div>
             <div class="admin-mq__col-cards" data-mq-col-approved></div>
@@ -295,7 +299,7 @@
           <div class="admin-mq__col">
             <div class="admin-mq__col-head admin-mq__col-head--rejected">
               <span class="admin-mq__col-dot" style="background:var(--color-danger, #ff4d4f)"></span>
-              <span class="admin-mq__col-title">REJECTED</span>
+              <span class="admin-mq__col-title">${ServerI18n.t("mqStateRejected")}</span>
               <span class="admin-mq__col-count" data-mq-cnt-rejected>0</span>
             </div>
             <div class="admin-mq__col-cards" data-mq-col-rejected></div>
@@ -307,11 +311,11 @@
 
         <!-- Footer: throughput stats -->
         <div class="admin-mq__footer">
-          <span>THROUGHPUT · <span data-mq-throughput>0</span> decisions/min</span>
-          <span>AVG REVIEW · <span data-mq-avg-review>0</span>s</span>
-          <span>AUTO-REJECT RATE · <span data-mq-auto-rate>0%</span></span>
+          <span>${ServerI18n.t("mqStatThroughput")} · <span data-mq-throughput>0</span> decisions/min</span>
+          <span>${ServerI18n.t("mqStatAvgReview")} · <span data-mq-avg-review>0</span>s</span>
+          <span>${ServerI18n.t("mqStatAutoRejectRate")} · <span data-mq-auto-rate>0%</span></span>
           <span class="admin-mq__spacer"></span>
-          <span class="admin-mq__health">● QUEUE HEALTHY</span>
+          <span class="admin-mq__health">● ${ServerI18n.t("mqQueueHealthy")}</span>
         </div>
       </div>`;
   }
@@ -334,7 +338,7 @@
         const ok = await window.HudConfirm?.open({
           icon: approving ? "✓" : "⊘",
           title: approving ? ServerI18n.t("modqueueBulkApproveTitle") : ServerI18n.t("modqueueBulkRejectTitle"),
-          subtitle: "BULK MODERATION · APPLIES TO THE WHOLE QUEUE",
+          subtitle: ServerI18n.t("cfmSubBulkModeration"),
           severity: approving ? "warn" : "danger",
           body: approving
             ? ServerI18n.t("modqueueBulkApproveBody")

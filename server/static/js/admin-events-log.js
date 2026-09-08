@@ -107,9 +107,9 @@
         <div class="admin-ui-toolbar admin-ev-v4__filterbar">
           <div class="admin-ui-chip-group admin-ev-v4__sev-chips" role="tablist">
             <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip is-active" data-ev-sev="all">${ServerI18n.t("evChipAll")} <span class="admin-ev-v4__sev-count" data-ev-cnt="all">0</span></button>
-            <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip" data-ev-sev="info">INFO <span class="admin-ev-v4__sev-count" data-ev-cnt="info">0</span></button>
-            <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip" data-severity="warn" data-ev-sev="warn">WARN <span class="admin-ev-v4__sev-count" data-ev-cnt="warn">0</span></button>
-            <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip" data-severity="danger" data-ev-sev="error">ERROR <span class="admin-ev-v4__sev-count" data-ev-cnt="error">0</span></button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip" data-ev-sev="info">${ServerI18n.t("uiLevelInfo")} <span class="admin-ev-v4__sev-count" data-ev-cnt="info">0</span></button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip" data-severity="warn" data-ev-sev="warn">${ServerI18n.t("uiLevelWarn")} <span class="admin-ev-v4__sev-count" data-ev-cnt="warn">0</span></button>
+            <button type="button" class="admin-ui-chip admin-ev-v4__sev-chip" data-severity="danger" data-ev-sev="error">${ServerI18n.t("uiLevelError")} <span class="admin-ev-v4__sev-count" data-ev-cnt="error">0</span></button>
           </div>
           <div class="admin-ui-chip-group admin-ev-v4__cat-chips" role="tablist" aria-label="Category filter">
             <button type="button" class="admin-ui-chip admin-ev-v4__cat-chip is-active" data-ev-cat="all">${ServerI18n.t("evChipAll")}</button>
@@ -125,7 +125,7 @@
           </div>
           <span class="admin-ui-spacer admin-ev-v4__spacer"></span>
           <span class="admin-ui-dot is-success admin-ev-v4__live-dot"></span>
-          <span class="admin-ui-summary admin-ev-v4__live-label">LIVE</span>
+          <span class="admin-ui-summary admin-ev-v4__live-label">${ServerI18n.t("uiLive")}</span>
           <span class="admin-ui-summary admin-ev-v4__count" data-ev-total>0</span>
           <button type="button" class="admin-ui-action admin-ev-v4__refresh" data-ev-action="refresh">${ServerI18n.t("evRefreshBtn")}</button>
           <button type="button" class="admin-ui-action admin-ev-v4__refresh" data-ev-action="export">${ServerI18n.t("evExportBtn")}</button>
@@ -134,11 +134,11 @@
         <!-- Events table -->
         <div class="admin-ev-v4__card">
           <div class="admin-ev-v4__row admin-ev-v4__row--head">
-            <span>TIME</span>
-            <span>SEV</span>
+            <span>${ServerI18n.t("uiColTime")}</span>
+            <span>${ServerI18n.t("uiColSeverity")}</span>
             <span>${ServerI18n.t("ulType")}</span>
-            <span>ACTOR</span>
-            <span>MESSAGE</span>
+            <span>${ServerI18n.t("uiColActor")}</span>
+            <span>${ServerI18n.t("uiColMessage")}</span>
             <span></span>
           </div>
           <div class="admin-ev-v4__rows" data-ev-rows>

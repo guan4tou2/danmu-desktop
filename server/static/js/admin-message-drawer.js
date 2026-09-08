@@ -224,7 +224,7 @@
              .admin-msgd-v4__seclabel mirrors .admin-ui-monolabel styling
              (style.css) so it's treated the same — left untouched, as are the
              two seclabel headers below. -->
-        <div class="admin-msgd-v4__seclabel">${ServerI18n.t("msgDrawerSecSender")} · SENDER PROFILE</div>
+        <div class="admin-msgd-v4__seclabel">${ServerI18n.t("msgDrawerSecSender")}</div>
         <div class="admin-msgd-v4__sender-stats">
           <div><div class="k">${ServerI18n.t("msgDrawerStatTotalMessages")}</div><div class="v">${totalCount || sameFp.length}</div></div>
           <div><div class="k">${ServerI18n.t("msgDrawerStatAvgLength")}</div><div class="v dim">${avgLen}<span class="u">${ServerI18n.t("msgDrawerCharUnit")}</span></div></div>
@@ -239,10 +239,10 @@
       <section class="admin-msgd-v4__section">
         <!-- D-4 i18n: same deferred EN·中文 bilingual monolabel pattern as
              SENDER PROFILE above — left untouched. -->
-        <div class="admin-msgd-v4__seclabel">${ServerI18n.t("msgDrawerSecModeration")} · MODERATION</div>
+        <div class="admin-msgd-v4__seclabel">${ServerI18n.t("msgDrawerSecModeration")}</div>
         <div class="admin-msgd-v4__mod-buttons">
-          <button type="button" class="admin-msgd-v4__modbtn is-ban" data-msgd-action="ban-fp" ${fp === "—" ? "disabled" : ""}>⊘ Ban</button>
-          <button type="button" class="admin-msgd-v4__modbtn is-mute" data-msgd-action="mute-fp" ${fp === "—" ? "disabled" : ""}>◐ Mute</button>
+          <button type="button" class="admin-msgd-v4__modbtn is-ban" data-msgd-action="ban-fp" ${fp === "—" ? "disabled" : ""}>${escapeHtml(ServerI18n.t("msgdBanFpBtn"))}</button>
+          <button type="button" class="admin-msgd-v4__modbtn is-mute" data-msgd-action="mute-fp" ${fp === "—" ? "disabled" : ""}>${escapeHtml(ServerI18n.t("msgdMuteFpBtn"))}</button>
           <button type="button" class="admin-msgd-v4__modbtn is-mask" data-msgd-action="mask-msg">◑ Mask</button>
           <button type="button" class="admin-msgd-v4__modbtn is-blacklist" data-msgd-action="blacklist-kw">${ServerI18n.t("msgDrawerBlacklistBtn")}</button>
         </div>
@@ -251,14 +251,14 @@
       <section class="admin-msgd-v4__section is-grow">
         <!-- D-4 i18n: same deferred EN·中文 bilingual monolabel pattern as
              SENDER PROFILE above — left untouched. -->
-        <div class="admin-msgd-v4__seclabel">${ServerI18n.t("msgDrawerSecReply")} · REPLY AS ADMIN</div>
+        <div class="admin-msgd-v4__seclabel">${ServerI18n.t("msgDrawerSecReply")}</div>
         <textarea class="admin-msgd-v4__reply" data-msgd-reply placeholder="${ServerI18n.t("msgDrawerReplyPlaceholder")}" rows="3"></textarea>
         <button type="button" class="admin-msgd-v4__replybtn" data-msgd-action="reply">${ServerI18n.t("msgDrawerSendReply")}</button>
       </section>
 
       <footer class="admin-msgd-v4__footer">
-        <button type="button" data-msgd-action="prev">← PREV</button>
-        <button type="button" data-msgd-action="next">NEXT →</button>
+        <button type="button" data-msgd-action="prev">← ${ServerI18n.t("uiPrev")}</button>
+        <button type="button" data-msgd-action="next">${ServerI18n.t("uiNext")} →</button>
       </footer>
     `;
   }
@@ -384,7 +384,7 @@
     const ok = await window.HudConfirm.open({
       icon: "⊘",
       title: ServerI18n.t("msgDrawerBanConfirmTitle"),
-      subtitle: "BAN CONFIRM · IRREVERSIBLE UNTIL MANUAL LIFT",
+      subtitle: ServerI18n.t("cfmSubBanConfirm"),
       severity: "danger",
       body,
       confirmLabel: ServerI18n.t("msgDrawerConfirmBan"),
@@ -418,7 +418,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: ServerI18n.t("msgDrawerBlacklistKwTitle"),
-      subtitle: "BLACKLIST KEYWORD · FUTURE MATCHES BLOCKED",
+      subtitle: ServerI18n.t("cfmSubBlacklistKeyword"),
       severity: "danger",
       body: ServerI18n.t("msgDrawerBlacklistKwBody"),
       confirmLabel: ServerI18n.t("msgDrawerBlacklistKwConfirm"),

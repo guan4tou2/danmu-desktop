@@ -86,7 +86,10 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(viewerThemeSrc).toContain('admin-ui-page-note');
   // D-4：note 文案走 viewerThemePageNote key，原文改釘 zh locale
   expect(viewerThemeSrc).toContain('t("viewerThemePageNote")');
-  expect(zhLocaleSrc).toContain("Desktop 排版與連線在「Desktop 控制」");
+  // 2026-09-08 詞彙表（設計稿 14）：Desktop / Overlay → 顯示層。這句原本是
+  // 「Desktop 排版與連線在「Desktop 控制」」。
+  expect(zhLocaleSrc).toContain("顯示層排版與連線在「顯示層控制」");
+  expect(zhLocaleSrc).not.toContain("Desktop 控制");
   // 2026-07-29：淺色主題修到可用後重新開啟切換鈕（產品決策：深淺兩個都要）。
   // 這條契約現在釘的是「開著」+ 關掉時的清理路徑仍在（旗標是唯一開關）。
   expect(themeSwitcherSrc).toContain("SHOW_TOPBAR_TOGGLE = true");
@@ -744,15 +747,28 @@ test("admin Filters and Fonts toolbar actions compose shared controls", () => {
   expect(fontsSrc).not.toContain("hud-toolbar-action");
 });
 
-test("admin Live Feed row and bulk actions compose shared controls", () => {
+test("admin Live Feed row composes shared controls; bulk flow retired", () => {
   const rootDir = path.join(__dirname, "..", "..");
   const liveFeedSrc = fs.readFileSync(path.join(rootDir, "server", "static", "js", "admin-live-feed.js"), "utf8");
 
   expect(liveFeedSrc).toContain('badge.className = "admin-ui-chip admin-live-feed-tag";');
   expect(liveFeedSrc).toContain('blockKwBtn.className = "admin-ui-chip is-danger admin-live-feed-action";');
   expect(liveFeedSrc).toContain('blockFpBtn.className = "admin-ui-chip is-warn admin-live-feed-action";');
-  expect(liveFeedSrc).toContain('id="liveFeedBulkBlock" class="admin-ui-action is-primary admin-live-feed-bulk-action"');
-  expect(liveFeedSrc).toContain('id="liveFeedBulkClear" class="admin-ui-action admin-live-feed-bulk-action"');
+  // 2026-09-08 設計稿 06 §3 / 14 §2 的移除清單：勾選框與批次列退場。
+  // 帳面上的代價是「勾選多則 → 批次封鎖裝置」，但實測那個流程**本來就
+  // 不可能生效**：`api.py` 在轉發前 `data.pop("fingerprint")`（不讓公開的
+  // overlay WS 收到指紋，這本身是對的），而 admin 的 live-feed buffer 吃的
+  // 是同一個已經被 pop 過的 dict，於是 `d.fingerprint` 永遠是空字串——
+  // `bulkBlock` 的 `if (!t.data.fingerprint) continue;` 會逐筆跳過，
+  // per-row 的「封鎖此人」按鈕（同樣 gate 在 `if (d.fingerprint)`）也從來
+  // 沒有渲染出來過。真正還能封鎖的是裝置識別頁與訊息抽屜。
+  // 底層那個 bug 另案處理，不在這次文案改動的範圍。
+  for (const gone of [
+    "liveFeedBulkBlock", "liveFeedBulkClear", "liveFeedBulk",
+    "admin-live-feed-check", "admin-lf-v4__bulk", "bulkBlock",
+  ]) {
+    expect(liveFeedSrc).not.toContain(gone);
+  }
   expect(liveFeedSrc).not.toContain("admin-v2-chip");
   expect(liveFeedSrc).not.toContain("admin-poll-btn");
 });

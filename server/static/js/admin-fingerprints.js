@@ -33,7 +33,7 @@
         <div class="admin-fp-toolbar">
           <span id="adminFingerprintCount" class="admin-fp-count">—</span>
           <span style="flex:1"></span>
-          <button id="adminFingerprintRefreshBtn" class="admin-ui-action admin-fp-toolbar-action" type="button">↻ ${escapeHtml(ServerI18n.t("refreshBtn"))}</button>
+          <button id="adminFingerprintRefreshBtn" class="admin-ui-action admin-fp-toolbar-action" type="button">${escapeHtml(ServerI18n.t("refreshBtn"))}</button>
           <button id="adminFingerprintResetBtn" class="admin-ui-action is-danger admin-fp-toolbar-action" type="button">${escapeHtml(ServerI18n.t("fingerprintResetBtn"))}</button>
         </div>
 
@@ -134,7 +134,7 @@
         var flagged = data.flagged != null
           ? data.flagged
           : records.filter(function (r) { return r.state === "flagged" || r.state === "blocked"; }).length;
-        countEl.textContent = unique + " UNIQUE · " + flagged + " FLAGGED";
+        countEl.textContent = ServerI18n.t("fpCountSummary", { unique: unique, flagged: flagged });
       }
     } catch (err) {
       console.error("[admin-fingerprints] fetch failed:", err);
@@ -152,7 +152,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⟳",
       title: ServerI18n.t("fpResetTitle"),
-      subtitle: "RESET FINGERPRINTS · OBSERVED DATA IS CLEARED",
+      subtitle: ServerI18n.t("cfmSubResetFingerprints"),
       severity: "danger",
       body: ServerI18n.t("fingerprintResetConfirm"),
       confirmLabel: ServerI18n.t("fpResetConfirm"),

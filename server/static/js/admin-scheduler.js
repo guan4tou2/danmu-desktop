@@ -64,7 +64,7 @@
         <div class="admin-scheduler-job-actions">
           <button type="button" class="admin-ui-chip scheduler-job-toggle ${isPaused ? "is-active" : "is-warn"}"
             data-job-id="${escapeAttr(job.id)}" data-action="${isPaused ? "resume" : "pause"}">
-            ${isPaused ? "▶" : "⏸"}
+            ${escapeHTML(ServerI18n.t(isPaused ? "resumeJobBtn" : "pauseJobBtn"))}
           </button>
           <button type="button" class="admin-ui-chip is-danger scheduler-job-cancel"
             data-job-id="${escapeAttr(job.id)}">${window.AdminUtils.closeIcon}</button>
@@ -229,8 +229,8 @@
           '<div class="admin-sch-timeline-row-body">' +
             '<span class="admin-sch-evt-icon is-' + t + '">' + ic + "</span>" +
             '<span class="admin-sch-evt-desc">' + escapeHTML(_jobDesc(job)) + "</span>" +
-            (conflict ? '<span class="admin-sch-evt-conflict">⚠ CONFLICT</span>' : "") +
-            '<span class="admin-sch-evt-state' + (on ? " is-on" : "") + '">' + (on ? "ON" : "OFF") + "</span>" +
+            (conflict ? '<span class="admin-sch-evt-conflict">⚠ ' + ServerI18n.t("schConflict") + '</span>' : "") +
+            '<span class="admin-sch-evt-state' + (on ? " is-on" : "") + '">' + ServerI18n.t(on ? "uiOn" : "uiOff") + "</span>" +
           "</div>" +
         "</div>"
       );
@@ -238,7 +238,7 @@
 
     host.innerHTML =
       '<div class="admin-sch-timeline-head">' +
-        '<div class="admin-sch-timeline-head-label">HOUR</div>' +
+        '<div class="admin-sch-timeline-head-label">' + ServerI18n.t("schHour") + '</div>' +
         '<div class="admin-sch-timeline-hours">' + hours.join("") + "</div>" +
       "</div>" +
       (rowsHtml || (window.AdminEmpty
@@ -415,8 +415,8 @@
              spread are obvious at a glance. Falls back to job list below. -->
         <div class="admin-ui-toolbar admin-sch-toolbar">
           <div class="admin-ui-chip-group admin-sch-view-toggle" role="tablist">
-            <button type="button" class="admin-ui-chip admin-sch-view-btn is-active" data-sch-view="timeline" role="tab" aria-selected="true">24H TIMELINE</button>
-            <button type="button" class="admin-ui-chip admin-sch-view-btn" data-sch-view="calendar" role="tab" aria-selected="false">7-DAY CALENDAR</button>
+            <button type="button" class="admin-ui-chip admin-sch-view-btn is-active" data-sch-view="timeline" role="tab" aria-selected="true">${ServerI18n.t("schTimeline24h")}</button>
+            <button type="button" class="admin-ui-chip admin-sch-view-btn" data-sch-view="calendar" role="tab" aria-selected="false">${ServerI18n.t("schCalendar7d")}</button>
           </div>
           <span class="admin-ui-spacer"></span>
           <span class="admin-ui-summary admin-sch-meta" data-sch-meta>—</span>
@@ -433,7 +433,7 @@
           <div class="admin-ui-monolabel" style="margin-bottom:10px">+ ${ServerI18n.t("schAddLabel")}</div>
           <div class="admin-scheduler-form-stack">
             <div>
-              <div class="admin-ui-monolabel" style="margin-bottom:6px">MESSAGES</div>
+              <div class="admin-ui-monolabel" style="margin-bottom:6px">${ServerI18n.t("schMessages")}</div>
               <div id="schedulerMessages" class="admin-scheduler-message-stack"></div>
               <button type="button" id="schedulerAddMsg" class="admin-ui-action admin-sch-add-msg">+ ${escapeHTML(ServerI18n.t("addMessageBtn"))}</button>
             </div>

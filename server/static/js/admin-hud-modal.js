@@ -8,7 +8,7 @@
  *   await window.HudConfirm.open({
  *     icon: "⊘",
  *     title: "刪除確認",
- *     subtitle: "DELETE · THIS ACTION CANNOT BE UNDONE",
+ *     subtitle: ServerI18n.t("cfmSubDeleteUndone"),
  *     severity: "danger",          // warn | danger | info | success
  *     body: "確定要刪除 <b>glow-neon.dme</b> 嗎？",  // string OR DOM node
  *     confirmLabel: "確認刪除",

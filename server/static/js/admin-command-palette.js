@@ -151,7 +151,7 @@
         const ok = await window.HudConfirm?.open({
           icon: "⊘",
           title: ServerI18n.t("cmdkActionClearHistory"),
-          subtitle: "CLEAR HISTORY · THIS ACTION CANNOT BE UNDONE",
+          subtitle: ServerI18n.t("cfmSubClearHistory"),
           severity: "danger",
           body: ServerI18n.t("cmdkClearHistoryBody"),
           confirmLabel: ServerI18n.t("cmdkClearHistoryConfirm"),

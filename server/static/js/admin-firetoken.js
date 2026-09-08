@@ -165,7 +165,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⟳",
       title: ServerI18n.t("firetokenRegenModalTitle"),
-      subtitle: "ROTATE · EXISTING EXTENSIONS STOP WORKING IMMEDIATELY",
+      subtitle: ServerI18n.t("cfmSubRotateToken"),
       severity: "warn",
       body: ServerI18n.t("firetokenRegenModalBody"),
       confirmLabel: ServerI18n.t("firetokenRegenModalConfirm"),
@@ -196,7 +196,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: ServerI18n.t("firetokenRevokeModalTitle"),
-      subtitle: "REVOKE · ALL EXTENSIONS STOP WORKING",
+      subtitle: ServerI18n.t("cfmSubRevokeToken"),
       severity: "danger",
       body: ServerI18n.t("firetokenRevokeModalBody"),
       confirmLabel: ServerI18n.t("firetokenRevokeBtn"),
@@ -357,7 +357,7 @@
       return `
         <div class="admin-ft-ip-row ${isTop ? "is-top" : ""}">
           <span class="ip">${escapeHtml(r.ip || "?")}</span>
-          ${isTop ? '<span class="tag is-top">★ TOP</span>' : ""}
+          ${isTop ? `<span class="tag is-top">${ServerI18n.t("uiTop")}</span>` : ""}
           ${isUnknown ? '<span class="tag is-warn">⚠ UA</span>' : ""}
           <span class="src">${escapeHtml(r.source || "—")}</span>
           <span class="cnt">${(r.count || 0)} hits</span>

@@ -534,7 +534,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "↩",
       title: ServerI18n.t("audienceUnkickTitle"),
-      subtitle: "UNKICK · FINGERPRINT CAN SEND AGAIN",
+      subtitle: ServerI18n.t("cfmSubUnkick"),
       severity: "warn",
       body: ServerI18n.t("audienceUnkickBody", { fpHtml: '<div style="margin-top:10px;font-family:var(--font-mono);font-size:13px;color:var(--color-text-muted)">fp:' + escapeHtml(fp.slice(0, 8)) + "</div>" }),
       confirmLabel: ServerI18n.t("audienceUnkickTitle"),
@@ -614,7 +614,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: ServerI18n.t("audienceBanTitle"),
-      subtitle: "BAN FINGERPRINT · FUTURE MESSAGES AUTO-MASKED",
+      subtitle: ServerI18n.t("cfmSubBanFp"),
       severity: "danger",
       body: ServerI18n.t("audienceBanBody", { fpHtml: '<div style="margin-top:10px;font-family:var(--font-mono);font-size:13px;color:var(--color-text-muted)">fp:' + escapeHtml(fp.slice(0, 8)) + "</div>" }),
       confirmLabel: ServerI18n.t("audienceBanConfirm"),

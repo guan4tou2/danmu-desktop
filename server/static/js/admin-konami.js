@@ -38,7 +38,7 @@
     el.className = "admin-konami-hud";
     el.setAttribute("aria-hidden", "true");
     el.innerHTML = `
-      <div class="admin-konami-hud-label">KONAMI</div>
+      <div class="admin-konami-hud-label">Konami</div>
       <div class="admin-konami-hud-keys"></div>
       <div class="admin-konami-hud-progress"></div>
     `;

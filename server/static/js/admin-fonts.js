@@ -277,11 +277,11 @@
           </div>
         </div>
         <div class="admin-font-subset-section">
-          <div class="admin-ui-monolabel">SUBSET PRESETS · ${ServerI18n.t("fontsSecPresets")}</div>
+          <div class="admin-ui-monolabel">${ServerI18n.t("fontsSubsetPresetsLabel")} · ${ServerI18n.t("fontsSecPresets")}</div>
           <div class="admin-font-subset-chips">${chips}</div>
         </div>
         <div class="admin-font-subset-section">
-          <div class="admin-ui-monolabel">CUSTOM UNICODE RANGE ${ServerI18n.t("fontsSecUnicodeRange")}</div>
+          <div class="admin-ui-monolabel">${ServerI18n.t("fontsCustomRangeLabel")}${ServerI18n.t("fontsSecUnicodeRange")}</div>
           <textarea class="admin-font-subset-custom" data-subset-custom
             placeholder="U+4E00-9FFF, U+FF00-FFEF">${escapeHtml(customRange)}</textarea>
           <div class="admin-font-subset-hint">${ServerI18n.t("fontsSubsetCustomHint")}</div>
@@ -303,7 +303,7 @@
     const ok = await window.HudConfirm.open({
       icon: "⊗",
       title: ServerI18n.t("fontsSubsetModalTitle"),
-      subtitle: "SUBSET · IRREVERSIBLE IN-PLACE OPERATION",
+      subtitle: ServerI18n.t("cfmSubFontSubset"),
       severity: "warn",
       confirmLabel: ServerI18n.t("fontsSubsetGenerateBtn"),
       cancelLabel: ServerI18n.t("cancel"),
@@ -630,7 +630,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: ServerI18n.t("fontsDeleteModalTitle"),
-      subtitle: "DELETE FONT",
+      subtitle: ServerI18n.t("cfmSubDeleteFont"),
       severity: "danger",
       bodyText: ServerI18n.t("deleteFontConfirm").replace("{name}", name),
       confirmLabel: ServerI18n.t("deleteBtn"),

@@ -258,21 +258,56 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
     所以用鍵盤切換的人看到的色點永遠是舊的。已修：刪掉 click 分支、視覺搬進
     `change`。
 
-11. **待辦（新發現，2026-09-08）· 三批文案／結構問題**
+11. **文案總掃（2026-09-08）· 圖示符號、全大寫、Desktop 詞彙**——**全數完成**
+    （含訊息流 checkbox 與批次列的移除）。
 
-    - **43 個確認對話框都有全大寫英文副標**：`subtitle: "DELETE · THIS ACTION
-      CANNOT BE UNDONE"` 這種，散在 26 個檔案。設計稿 14 文案規則明訂「不用
-      全大寫」，03 要求「單語」；稿上的確認對話框範例是中文說明句。這批要決定
-      是譯成中文說明還是整個拿掉副標。
-    - **admin i18n 還有約 40 個 zh key 寫「Desktop」**（en/ja/ko 同步），詞彙表
-      定案是「顯示層」（en: Display）。既有的 `test_electron_never_says_overlay`
-      只管 Electron 端，admin 端沒有守門。要逐句判斷——有些「Electron Desktop
-      客戶端」指的是那支 app 本身，不是「顯示層」這個概念。
-    - **訊息流的 checkbox 與批次列還在**：設計稿 06 §3 的移除清單有 checkbox，
-      14 §2 也寫「刪 checkbox／fp／density 欄」。fp 與 density 都收了，checkbox
-      沒有（它是用 `cb.type = "checkbox"` 建的，grep `type="checkbox"` 掃不到）。
-      拿掉它會連帶砍掉「勾選多則 → 批次封鎖裝置」——per-row「封鎖此人」、裝置
-      識別頁、訊息抽屜都還能封鎖，所以是便利性損失而非能力損失，但仍要先確認。
+    設計稿 14 的文案規則有三條可機器檢查：不加圖示符號、不用全大寫、Desktop /
+    Overlay → 顯示層。三條各自掃完之後才發現規模比原本估的大得多。
+
+    - **圖示符號**：i18n 48 個 key（`▶ 開始顯示`、`↻ 測試`、`⏭ 下一題`…）＋
+      寫死在 JS 的 13 處。`previewBtn` 的 ▶ 還跟 `admin-sounds.js` 自己加的 ▶
+      疊成兩個。**判準不是「按鈕不能有圖示」**——設計稿 06 自己就用 `⌕`（搜尋）
+      與 `☰`（抽屜）當純圖示鈕，中間寬度還要把側欄收成 64px 圖示欄。禁的是
+      「圖示黏在文字標籤上」。第一版判準沒排除圖示槽，把 17 個合格寫法誤判成
+      違規；先看標記結構再判。
+    - **全大寫**：一開始估 43 筆（確認框副標），實掃 **80＋**。多數同時沒進
+      i18n，四國語系都吃不到，所以這輪是「改文案」與「補 i18n」一起做的
+      （新增 ~145 個 key × 4 語）。觀眾看得到的那幾面優先：大螢幕靜默畫面整片
+      `ATTEMPT 7 / ∞ · BACKOFF 30s · EXPONENTIAL`、投票結果的 `★ POLL CLOSED`、
+      觀眾頁的 `BLOCKED · 已被禁言`、離線橫幅的 `OFFLINE · 1 MIN 00 SEC`。
+      審核佇列的 `LOW/MED/HIGH` 是 `sev.toUpperCase()` **產生**的，改不掉除非
+      改程式。剩下最大一類是**「中文 · ENGLISH」雙語標籤**（原始碼註解自己稱
+      它 "the sitewide EN·中文"、"deferred"）——設計稿 04 §「文字」那一列寫的
+      就是「SERVER · CONFIGURE 等雙語 → 單語白話」，一律砍英文那半。
+    - **Desktop 詞彙**：31 個 zh key ＋ en/ja/ko。兩個指的是 Electron **應用程式
+      本身**（`wsAuthDesc`、`helpDrawerWidgetsTip1`），不是投出去那層，另外處理。
+      `server/services/webhook.py` 有**第二份**寫死的事件標籤清單（還在講
+      "Overlay"），前端 i18n 掃乾淨也不會動到它——是實際開瀏覽器比對 DOM 與
+      `i18next.t()` 不一致才發現的。about 頁 changelog 裡的 "Desktop" 是歷史
+      commit 訊息，刻意不改。
+
+    **三個判準教訓**（都寫進了測試的註解）：
+
+    1. `>文字<` 這種正則會漏掉**文字中間夾標記**的（`PENDING · <span>0</span>`）。
+       改用 AST 抽樣板字串。
+    2. 原始碼裡的 `\u21bb` 是**逸出序列**不是那個字元，字面比對抓不到。
+    3. AST 也有盲點：字串串接、函式參數（`_renderField("FOREGROUND", …)`）、
+       `toUpperCase()` 產生的，都要**實際開瀏覽器走 DOM** 才看得到。
+
+    **訊息流的 checkbox 與批次列**——2026-09-08 **已移除**（設計稿 06 §3 的移除
+    清單有 checkbox，14 §2 也寫「刪 checkbox／fp／density 欄」；fp 與 density
+    先前已收，checkbox 沒有，因為它是用 `cb.type = "checkbox"` 建的，
+    grep `type="checkbox"` 掃不到）。
+
+    帳面上的代價是「勾選多則 → 批次封鎖裝置」，但**實測發現那個流程本來就
+    不可能生效**：`api.py` 在轉發前 `data.pop("fingerprint")`（不讓公開的
+    overlay WS 收到指紋——這本身是對的），而 admin 的 `live_feed_buffer` 吃的是
+    同一個已經被 pop 過的 dict，於是 `d.fingerprint` 永遠是空字串。
+    `bulkBlock` 的 `if (!t.data.fingerprint) continue;` 會逐筆跳過、一則都不封；
+    per-row 的「封鎖此人」按鈕 gate 在同一個條件上，**從來沒有渲染出來過**。
+    實測證據：帶 `fingerprint` 打 `/fire`，攔 `/ws` 封包裡完全沒有那個欄位，
+    admin 那一列只有「封鎖關鍵字」一顆按鈕。真正還能封鎖的是裝置識別頁與訊息
+    抽屜。**底層那個 bug 另案處理**，不在文案改動的範圍。
 
 12. **實跑 Electron app 才發現的（2026-09-08，用 computer use）**
 

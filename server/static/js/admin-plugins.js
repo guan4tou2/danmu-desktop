@@ -48,10 +48,10 @@
           </div>
 
           <div class="admin-ui-toolbar admin-plugins-toolbar">
-            <span class="admin-ui-monolabel">PLUGINS · <span data-plugins-count>0</span> ${ServerI18n.t("pluginsCountUnit")}</span>
+            <span class="admin-ui-monolabel">${ServerI18n.t("pluginsSectionLabel")} · <span data-plugins-count>0</span> ${ServerI18n.t("pluginsCountUnit")}</span>
             <span class="admin-ui-spacer"></span>
             <button id="pluginsUploadBtn" class="admin-ui-action is-primary admin-plugins-toolbar-btn" type="button">${ServerI18n.t("pluginsUploadBtnLabel")}</button>
-            <button id="pluginsReloadBtn" class="admin-ui-action admin-plugins-toolbar-btn" type="button">\u21bb ${ServerI18n.t("reloadBtn")}</button>
+            <button id="pluginsReloadBtn" class="admin-ui-action admin-plugins-toolbar-btn" type="button">${ServerI18n.t("reloadBtn")}</button>
           </div>
 
           <section class="admin-kpi-strip is-4col">
@@ -89,10 +89,10 @@
             <div class="admin-plugins-table">
               <div class="admin-plugins-row admin-plugins-row--head">
                 <span>\u25cf</span>
-                <span>PLUGIN · ${ServerI18n.t("pluginsSecDesc")}</span>
-                <span>VERSION</span>
-                <span>PRIORITY</span>
-                <span>LANG</span>
+                <span>${ServerI18n.t("pluginsSecDesc")}</span>
+                <span>${ServerI18n.t("uiColVersion")}</span>
+                <span>${ServerI18n.t("uiColPriority")}</span>
+                <span>${ServerI18n.t("uiColLang")}</span>
                 <span style="text-align:right">${ServerI18n.t("ulStatus")}</span>
               </div>
               <div id="pluginsList">
@@ -107,16 +107,16 @@
           <div class="admin-plugins-card admin-plugins-console-card">
             <div class="admin-plugins-console-head">
               <span class="admin-plugins-console-dot"></span>
-              <span class="admin-plugins-console-title">LIVE CONSOLE</span>
+              <span class="admin-plugins-console-title">${ServerI18n.t("pluginsConsoleTitle")}</span>
               <span class="admin-ui-monolabel" style="margin:0">stdout + stderr</span>
               <span class="admin-ui-spacer"></span>
               <span class="admin-ui-chip-group admin-plugins-console-filters" data-console-filters>
-                <button type="button" class="admin-ui-chip admin-plugins-console-chip is-active" data-console-filter="all">ALL</button>
-                <button type="button" class="admin-ui-chip admin-plugins-console-chip" data-console-filter="INFO">INFO</button>
-                <button type="button" class="admin-ui-chip admin-plugins-console-chip" data-console-filter="WARN">WARN</button>
-                <button type="button" class="admin-ui-chip admin-plugins-console-chip" data-console-filter="ERROR">ERROR</button>
+                <button type="button" class="admin-ui-chip admin-plugins-console-chip is-active" data-console-filter="all">${ServerI18n.t("uiLevelAll")}</button>
+                <button type="button" class="admin-ui-chip admin-plugins-console-chip" data-console-filter="INFO">${ServerI18n.t("uiLevelInfo")}</button>
+                <button type="button" class="admin-ui-chip admin-plugins-console-chip" data-console-filter="WARN">${ServerI18n.t("uiLevelWarn")}</button>
+                <button type="button" class="admin-ui-chip admin-plugins-console-chip" data-console-filter="ERROR">${ServerI18n.t("uiLevelError")}</button>
               </span>
-              <span class="admin-ui-monolabel" style="margin-left:8px">TAIL \u00b7 LIVE</span>
+              <span class="admin-ui-monolabel" style="margin-left:8px">${ServerI18n.t("uiLiveTail")}</span>
             </div>
             <div class="admin-plugins-console-body" id="pluginsConsoleBody">
               <div class="admin-plugins-console-line">
@@ -345,7 +345,7 @@
       const ok = await window.HudConfirm?.open({
         icon: "⊘",
         titleText: ServerI18n.t("pluginsRemoveModalTitle", { name: name }),
-        subtitle: "UNINSTALL PLUGIN · FILE IS DELETED",
+        subtitle: ServerI18n.t("cfmSubUninstallPlugin"),
         severity: "danger",
         bodyText: ServerI18n.t("pluginsRemoveBody", { filename: filename }),
         confirmLabel: ServerI18n.t("pluginsRemoveConfirm"),

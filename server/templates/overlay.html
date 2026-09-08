@@ -21,7 +21,7 @@
        Hidden automatically once WS connects (or after first message arrives). -->
   <div id="overlay-connecting" class="overlay-connecting is-visible" aria-hidden="true">
     <div class="overlay-connecting-pulse" aria-hidden="true">&#9670;</div>
-    <div class="overlay-connecting-label">CONNECTING&hellip;</div>
+    <div class="overlay-connecting-label">連線中&hellip;</div>
   </div>
 
   <!-- Overlay Idle · prototype priority-2-pieces.jsx:174 OverlayIdleQR.
@@ -38,14 +38,13 @@
     <span class="overlay-idle-corner is-bl" aria-hidden="true"></span>
     <span class="overlay-idle-corner is-br" aria-hidden="true"></span>
 
-    <!-- Top bar — DANMU FIRE · DESKTOP | version | state chip -->
+    <!-- Top bar — Danmu Fire · 顯示層 | version | state chip -->
     <div class="overlay-idle-topbar" aria-hidden="true">
-      <span class="overlay-idle-topbar-brand">DANMU FIRE · DESKTOP</span>
+      <span class="overlay-idle-topbar-brand">Danmu Fire · 顯示層</span>
       <span class="overlay-idle-topbar-sep">|</span>
       <span class="overlay-idle-topbar-meta">v{{ app_version }} · {{ join_label }}</span>
       <span class="overlay-idle-topbar-state" id="overlayIdleTopbarState">
         <span class="overlay-idle-topbar-dot" aria-hidden="true"></span>
-        <span class="overlay-idle-topbar-en">IDLE · WAITING FOR PAIR</span>
       </span>
     </div>
 

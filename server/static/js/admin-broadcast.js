@@ -136,7 +136,7 @@
           <!-- Status indicator (centered, calm) -->
           <div class="admin-bc-v5__status-row">
             <span class="admin-bc-v4__statedot" data-bc-statedot></span>
-            <span class="admin-bc-v5__status-label" data-bc-statelabel>DESKTOP OFF</span>
+            <span class="admin-bc-v5__status-label" data-bc-statelabel>${ServerI18n.t("uiDisplayOff")}</span>
           </div>
 
           <!-- Stats strip — 4 tiles (SESSION ACTIVITY framing) -->
@@ -169,7 +169,7 @@
 
           <!-- Session context card — overlay is the toggle, session is the data slice -->
           <div class="admin-bc-v5__session-ctx" data-bc-session-ctx>
-            <div class="admin-bc-v5__session-label">SESSION CONTEXT · ${ServerI18n.t("broadcastDataSliceLabel")}</div>
+            <div class="admin-bc-v5__session-label">${ServerI18n.t("uiSessionContext")} · ${ServerI18n.t("broadcastDataSliceLabel")}</div>
             <div class="admin-bc-v5__session-row">
               <span class="admin-bc-v5__session-id" data-bc-session-id>—</span>
               <span class="admin-bc-v5__session-meta" data-bc-session-started>Started · —</span>
@@ -233,8 +233,8 @@
     ended:   { titleKey: "broadcastEndedTitle",     en: "SESSION ENDED" },
   };
   const _statusLabels = {
-    standby: "DESKTOP OFF",
-    live:    "DESKTOP ON",
+    standby: ServerI18n.t("uiDisplayOff"),
+    live:    ServerI18n.t("uiDisplayOn"),
     paused:  "DESKTOP PAUSED",
     ended:   "SESSION ENDED",
   };
@@ -417,16 +417,16 @@
       const ok = await window.HudConfirm?.open({
             icon: "■",
             title: ServerI18n.t("broadcastStopLabel"),
-            subtitle: "STOP DESKTOP · MESSAGES CONTINUE TO BE RECEIVED",
+            subtitle: ServerI18n.t("cfmSubStopDisplay"),
             severity: "warn",
             body: `
               <div style="font-size:13px;color:var(--hud-text, #f1f5f9);line-height:1.7;">
                 ${ServerI18n.t("broadcastStopBodyDesc")}
               </div>
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 12px;margin-top:12px;background:var(--hud-bg2, #182239);border-radius:6px;border:1px solid var(--hud-line, rgba(148,163,184,0.18));text-align:center;">
-                <div><div style="font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:11px;letter-spacing:1px;color:var(--hud-text-dim, #94a3b8);">MSGS</div><div style="font-size:13px;font-weight:600;margin-top:2px;">${msgs.toLocaleString()}</div></div>
+                <div><div style="font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:11px;letter-spacing:1px;color:var(--hud-text-dim, #94a3b8);">${ServerI18n.t("uiStatMsgs")}</div><div style="font-size:13px;font-weight:600;margin-top:2px;">${msgs.toLocaleString()}</div></div>
                 <div><div style="font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:11px;letter-spacing:1px;color:var(--hud-text-dim, #94a3b8);">FP</div><div style="font-size:13px;font-weight:600;margin-top:2px;">${fp}</div></div>
-                <div><div style="font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:11px;letter-spacing:1px;color:var(--hud-text-dim, #94a3b8);">TIME</div><div style="font-size:13px;font-weight:600;margin-top:2px;">${elapsedStr}</div></div>
+                <div><div style="font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:11px;letter-spacing:1px;color:var(--hud-text-dim, #94a3b8);">${ServerI18n.t("uiColTime")}</div><div style="font-size:13px;font-weight:600;margin-top:2px;">${elapsedStr}</div></div>
               </div>
               <div style="margin-top:12px;font-family:var(--hud-font-mono, ui-monospace, monospace);font-size:11px;letter-spacing:0.3px;color: var(--color-ink-warning);">
                 ${ServerI18n.t("broadcastStopBodyWarn")}
@@ -438,7 +438,7 @@
       if (!ok) return;
       // Stop overlay rendering; session lifecycle stays separate.
       const success = await postToggle("standby");
-      if (success) window.showToast && showToast(ServerI18n.t("broadcastToastStopped") + " · DESKTOP OFF", true);
+      if (success) window.showToast && showToast(ServerI18n.t("broadcastToastStopped") + " · " + ServerI18n.t("uiDisplayOff"), true);
     }
     renderTick();
   }
@@ -448,7 +448,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⌫",
       title: ServerI18n.t("broadcastClearModalTitle"),
-      subtitle: "CLEAR SCREEN · MESSAGES STAY ARCHIVED",
+      subtitle: ServerI18n.t("cfmSubClearScreen"),
       severity: "warn",
       body: ServerI18n.t("broadcastClearModalBody"),
       confirmLabel: ServerI18n.t("broadcastClearModalConfirm"),

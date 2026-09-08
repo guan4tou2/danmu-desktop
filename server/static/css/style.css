@@ -14444,15 +14444,6 @@ body.is-light .admin-login-wordmark.is-on-light,
 }
 
 
-.admin-lf-v4__bulk {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 12px;
-  background: rgba(56, 189, 248, 0.05);
-  border-bottom: 1px solid var(--hud-line);
-}
-
-.admin-lf-v4__bulk[hidden] { display: none; }
-
 
 .admin-lf-v4__streamwrap {
   position: relative;
@@ -14531,12 +14522,6 @@ body.is-light .admin-login-wordmark.is-on-light,
   border-color: var(--color-primary);
 }
 
-
-.admin-live-feed-check {
-  margin: 0;
-  accent-color: var(--color-primary);
-  cursor: pointer;
-}
 
 
 .admin-live-feed-time {

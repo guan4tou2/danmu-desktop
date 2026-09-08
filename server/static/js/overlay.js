@@ -87,41 +87,43 @@
 
   // ── Overlay Idle / QR (4-state Hero Lockup) ──────────────────────────────
   // Prototype priority-2-pieces.jsx:174 OverlayIdleQR. States:
-  //   idle      — STANDBY, cyan dot, hint text
-  //   scanning  — amber pulse ring around QR, "PAIRING · HANDSHAKE"
-  //   paired    — green ✓ over QR, "PAIRED · CONNECTED" + 開始廣播 button
-  //   failed    — red ⚠ over QR, "UNREACHABLE" + 重試 / 手動輸入 buttons
+  //   idle / scanning / paired / failed。原本每個狀態還配一行全大寫英文
+  //   （STANDBY · WAITING FOR PAIR…）疊在中文標籤上——設計稿 04 要求
+  //   「單語白話」，那行連同 .overlay-idle-topbar-en 一起拿掉了。
   // Manual control — admin / tray / desktop client invoke setState(state).
   var idleEl = null;
   var idleStateConfig = {
     idle: {
-      en: "STANDBY · WAITING FOR PAIR",
       label: "等待配對",
       subtitle: function (host) { return "用手機掃描 QR 連入 " + host; },
       noteHtml: function (code) { return '或輸入 6 碼連線碼: <span class="overlay-idle-pair-code" id="overlayIdlePairCode">' + code + '</span>'; },
       actionsHtml: '<span class="overlay-idle-hint">⌥⌘C 複製配對碼 · ESC 進入設定</span>',
     },
+    // 2026-09-08：這個狀態實際上只有**重連**會進來（見 onclose 的
+    // _setIdleState("scanning")），首次配對握手從來沒有人呼叫過它。原本的
+    // 文案是原型稿逐字搬過來的假資料——投影幕上會出現一支不存在的
+    // 「iPhone · Safari · 192.168.1.84」。改成講重連這件真的在發生的事。
     scanning: {
-      en: "PAIRING · HANDSHAKE",
-      label: "掃描中",
-      subtitle: function () { return "偵測到裝置 · 正在握手"; },
-      noteHtml: function () { return "iPhone · Safari · 192.168.1.84"; },
+      label: "重新連線中",
+      subtitle: function (host) { return "與 " + host + " 的連線中斷 · 正在重試"; },
+      noteHtml: function () { return "觀眾送出的訊息會排隊，連上後補播"; },
       actionsHtml: '<span class="overlay-idle-hint">⌥⌘C 複製配對碼 · ESC 進入設定</span>',
     },
+    // `paired` 目前沒有任何呼叫端，但 `window.OverlayIdle.setState` 是公開的。
+    // 原本的副標寫死「247 位觀眾已進入」——那是原型稿的數字，一旦有人接上
+    // 這個狀態就會在投影幕上報一個假的人數。改成不需要資料也成立的說法。
     paired: {
-      en: "PAIRED · CONNECTED",
       label: "已連線",
-      subtitle: function () { return "247 位觀眾已進入 · Q&A 可開始"; },
+      subtitle: function () { return "觀眾可以開始送彈幕了"; },
       noteHtml: function () { return "Danmu Fire 已啟動 · 你可以講話了"; },
-      actionsHtml: '<button type="button" class="overlay-idle-btn overlay-idle-btn-primary" data-overlay-idle-action="broadcast">▶ 開始顯示 · SPACE</button>',
+      actionsHtml: '<button type="button" class="overlay-idle-btn overlay-idle-btn-primary" data-overlay-idle-action="broadcast">開始顯示 · SPACE</button>',
     },
     failed: {
-      en: "UNREACHABLE · NO SERVER",
       label: "連線失敗",
       subtitle: function (host) { return "找不到 " + host + " · 檢查網路"; },
       noteHtml: function () { return "確認 Server 啟動 · 或手動輸入 /ws 位址"; },
       actionsHtml:
-        '<button type="button" class="overlay-idle-btn overlay-idle-btn-primary" data-overlay-idle-action="retry">▶ 重試連線</button>' +
+        '<button type="button" class="overlay-idle-btn overlay-idle-btn-primary" data-overlay-idle-action="retry">重試連線</button>' +
         '<button type="button" class="overlay-idle-btn overlay-idle-btn-secondary" data-overlay-idle-action="manual">手動輸入位址</button>',
     },
   };
@@ -198,8 +200,6 @@
     if (subtitleEl) subtitleEl.textContent = cfg.subtitle(host);
     var chipLabel = idleEl.querySelector(".overlay-idle-chip-label");
     if (chipLabel) chipLabel.textContent = cfg.label;
-    var topbarEn = idleEl.querySelector(".overlay-idle-topbar-en");
-    if (topbarEn) topbarEn.textContent = cfg.en;
     var noteEl = document.getElementById("overlayIdleNote");
     if (noteEl) noteEl.innerHTML = cfg.noteHtml(_generatePairCode());
     var actionsEl = document.getElementById("overlayIdleActions");
@@ -308,9 +308,9 @@
       el.innerHTML = ''
         + '<div class="overlay-silent__chrome">'
         + '  <div class="overlay-silent__brand">Danmu Fire</div>'
-        + '  <span class="overlay-silent__mode">DESKTOP · SILENT MODE</span>'
+        + '  <span class="overlay-silent__mode">顯示層 · 靜默模式</span>'
         + '  <span class="overlay-silent__pill">'
-        + '    <span class="overlay-silent__pill-dot"></span>DISCONNECTED'
+        + '    <span class="overlay-silent__pill-dot"></span>未連線'
         + '  </span>'
         + '</div>'
         + '<div class="overlay-silent__center">'
@@ -319,13 +319,13 @@
         + '      <div class="overlay-silent__core"></div>'
         + '    </div>'
         + '  </div>'
-        + '  <div class="overlay-silent__title">重連中...</div>'
-        + '  <div class="overlay-silent__sub" data-silent-sub>WebSocket unreachable · — 秒後再試</div>'
-        + '  <div class="overlay-silent__note">NO DANMU RENDERING · DESKTOP PAUSED</div>'
-        + '  <div class="overlay-silent__attempt" data-silent-attempt>ATTEMPT — / ∞ · BACKOFF —</div>'
+        + '  <div class="overlay-silent__title">重新連線中</div>'
+        + '  <div class="overlay-silent__sub" data-silent-sub>連不到伺服器 · — 秒後再試</div>'
+        + '  <div class="overlay-silent__note">已暫停顯示彈幕</div>'
+        + '  <div class="overlay-silent__attempt" data-silent-attempt>第 — 次嘗試 · 間隔逐次加倍</div>'
         + '</div>'
-        + '<div class="overlay-silent__last" data-silent-last>LAST CONNECTED · —</div>'
-        + '<div class="overlay-silent__target" data-silent-target>TARGET · —</div>';
+        + '<div class="overlay-silent__last" data-silent-last>上次連線 · —</div>'
+        + '<div class="overlay-silent__target" data-silent-target>連線位址 · —</div>';
       document.body.appendChild(el);
       _silentModeEl = el;
     }
@@ -336,9 +336,9 @@
     var attemptEl = el.querySelector("[data-silent-attempt]");
     var lastEl = el.querySelector("[data-silent-last]");
     var targetEl = el.querySelector("[data-silent-target]");
-    if (subEl) subEl.textContent = "WebSocket unreachable · " + backoffSec + " 秒後再試";
-    if (attemptEl) attemptEl.textContent = "ATTEMPT " + info.attempt + " / ∞ · BACKOFF " + backoffSec + "s · EXPONENTIAL";
-    if (targetEl) targetEl.textContent = "TARGET · " + (info.target || "—");
+    if (subEl) subEl.textContent = "連不到伺服器 · " + backoffSec + " 秒後再試";
+    if (attemptEl) attemptEl.textContent = "第 " + info.attempt + " 次嘗試 · 間隔逐次加倍 · 下次 " + backoffSec + " 秒後";
+    if (targetEl) targetEl.textContent = "連線位址 · " + (info.target || "—");
 
     if (!_silentTimer) {
       _silentTimer = setInterval(function () {
@@ -346,11 +346,11 @@
         if (!lastNode || !_silentLastConnected) return;
         var ago = (Date.now() - _silentLastConnected) / 1000;
         var label;
-        if (ago < 60) label = Math.floor(ago) + "s AGO";
-        else label = Math.floor(ago / 60) + "m " + Math.floor(ago % 60) + "s AGO";
+        if (ago < 60) label = Math.floor(ago) + " 秒前";
+        else label = Math.floor(ago / 60) + " 分 " + Math.floor(ago % 60) + " 秒前";
         var d = new Date(_silentLastConnected);
         var pad = function (n) { return ("0" + n).slice(-2); };
-        lastNode.textContent = "LAST CONNECTED · "
+        lastNode.textContent = "上次連線 · "
           + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds())
           + " · " + label;
       }, 1000);

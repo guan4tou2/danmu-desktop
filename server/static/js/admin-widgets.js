@@ -194,7 +194,7 @@
       const ok = await window.HudConfirm?.open({
         icon: "⊘",
         title: ServerI18n.t("widgetsDeleteTitle"),
-        subtitle: "DELETE WIDGET",
+        subtitle: ServerI18n.t("cfmSubDeleteWidget"),
         severity: "danger",
         body: t,
         confirmLabel: ServerI18n.t("widgetsDeleteConfirmBtn"),
@@ -231,7 +231,7 @@
       const ok = await window.HudConfirm?.open({
         icon: "⊘",
         title: ServerI18n.t("widgetsClearTitle"),
-        subtitle: "CLEAR ALL WIDGETS · THIS ACTION CANNOT BE UNDONE",
+        subtitle: ServerI18n.t("cfmSubClearWidgets"),
         severity: "danger",
         body: t,
         confirmLabel: ServerI18n.t("clearAll"),

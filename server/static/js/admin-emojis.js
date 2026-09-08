@@ -306,7 +306,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: ServerI18n.t("emojisDeleteTitle"),
-      subtitle: "DELETE EMOJI",
+      subtitle: ServerI18n.t("cfmSubDeleteEmoji"),
       severity: "danger",
       bodyText: ServerI18n.t("deleteEmojiConfirm").replace("{name}", name),
       confirmLabel: ServerI18n.t("emojisDeleteConfirm"),

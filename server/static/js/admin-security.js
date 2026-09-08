@@ -440,7 +440,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⟳",
       title: ServerI18n.t("security2ResetWsTokenTitle"),
-      subtitle: "ROTATE WS TOKEN · DESKTOP MUST RECONNECT",
+      subtitle: ServerI18n.t("cfmSubRotateWsToken"),
       severity: "warn",
       body: ServerI18n.t("security2RotateConfirmBody"),
       confirmLabel: ServerI18n.t("security2GenerateNewTokenLabel"),
@@ -504,7 +504,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⚠",
       title: config.title || ServerI18n.t("security2ConfirmDefaultTitle"),
-      subtitle: config.subtitle || "SECURITY ACTION",
+      subtitle: config.subtitle || ServerI18n.t("cfmSubSecurityAction"),
       severity: config.severity || "warn",
       body: config.confirm,
       confirmLabel: config.confirmLabel || ServerI18n.t("security2ConfirmDefaultLabel"),

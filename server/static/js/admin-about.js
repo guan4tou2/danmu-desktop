@@ -143,30 +143,30 @@
           </article>
 
           <article class="admin-about-oss" data-about-system>
-            <div class="admin-ui-monolabel">SYSTEM · SERVER INFO</div>
+            <div class="admin-ui-monolabel">${ServerI18n.t("uiSectionServerInfo")}</div>
             <div class="admin-about-oss-list" style="margin-top:12px">
               <div class="admin-about-oss-row" data-about-system-row>
-                <span class="n">VERSION STATUS</span>
+                <span class="n">${ServerI18n.t("uiVersionStatus")}</span>
                 <span class="v" style="grid-column: span 2" data-about-update>—</span>
               </div>
               <div class="admin-about-oss-row" data-about-system-row>
-                <span class="n">LAST CHECK</span>
+                <span class="n">${ServerI18n.t("uiLastCheck")}</span>
                 <span class="v" style="grid-column: span 2" data-about-checked>${ServerI18n.t("aboutNeverChecked")}</span>
               </div>
               <div class="admin-about-oss-row" data-about-system-row>
-                <span class="n">SERVER UPTIME</span>
+                <span class="n">${ServerI18n.t("uiServerUptime")}</span>
                 <span class="v" style="grid-column: span 2" data-about-uptime>—</span>
               </div>
               <div class="admin-about-oss-row" data-about-system-row>
-                <span class="n">ENVIRONMENT</span>
+                <span class="n">${ServerI18n.t("uiEnvironment")}</span>
                 <span class="v" style="grid-column: span 2" data-about-env>production</span>
               </div>
               <div class="admin-about-oss-row" data-about-system-row>
-                <span class="n">WS PATH</span>
+                <span class="n">${ServerI18n.t("uiWsPath")}</span>
                 <span class="v" style="grid-column: span 2" data-about-ws-path>—</span>
               </div>
               <div class="admin-about-oss-row" data-about-system-row>
-                <span class="n">ADMIN URL</span>
+                <span class="n">${ServerI18n.t("uiAdminUrl")}</span>
                 <span class="v" style="grid-column: span 2" data-about-admin-url>${escapeHtml(location.origin + "/admin/")}</span>
               </div>
             </div>
@@ -174,7 +174,7 @@
 
           <article class="admin-about-changelog">
             <div class="admin-about-changelog-head">
-              <span class="admin-ui-monolabel">CHANGELOG · RECENT RELEASES</span>
+              <span class="admin-ui-monolabel">${ServerI18n.t("uiSectionChangelog")}</span>
               <a class="admin-about-changelog-more" href="${REPO_URL}/releases" target="_blank" rel="noopener noreferrer">${ServerI18n.t("aboutFullChangelog")}</a>
             </div>
             ${CHANGELOG.slice(0, 4).map((cl) => `
@@ -197,7 +197,7 @@
           </article>
 
           <article class="admin-about-oss" data-about-license style="grid-column:1 / -1">
-            <div class="admin-ui-monolabel">LICENSE · OPEN SOURCE</div>
+            <div class="admin-ui-monolabel">${ServerI18n.t("uiSectionLicense")}</div>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px">
               <span style="font-size:13px;color:var(--color-text-strong)">MIT License · © 2026 Danmu Fire Contributors</span>
               <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color: var(--color-ink-accent)">GitHub →</span>

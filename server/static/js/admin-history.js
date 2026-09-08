@@ -122,7 +122,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: ServerI18n.t("histRemoveKwTitle"),
-      subtitle: "REMOVE KEYWORD",
+      subtitle: ServerI18n.t("cfmSubRemoveKeyword"),
       severity: "warn",
       bodyText: ServerI18n.t("confirmRemoveKeyword").replace("{keyword}", keyword),
       confirmLabel: ServerI18n.t("histRemoveKwConfirm"),

@@ -572,7 +572,7 @@
       <div class="admin-sd-ann-modal-row">
         <div class="admin-ui-monolabel">${ServerI18n.t("mlTime")}</div>
         <div class="admin-sd-ann-modal-time">${_fmtTsMs(tsMs)}</div>
-        <div class="admin-sd-ann-modal-hint">PRE-FILLED FROM TIMELINE HOVER POSITION</div>
+        <div class="admin-sd-ann-modal-hint">${ServerI18n.t("sdAnnPrefilled")}</div>
       </div>
       <div class="admin-sd-ann-modal-row">
         <div class="admin-ui-monolabel">${ServerI18n.t("mlLabel")}</div>
@@ -592,7 +592,7 @@
         <!-- D-4 i18n: "NOTE · ≤ 280 字" is the same deferred EN·中文
              bilingual monolabel pattern — left untouched (see PLAYBACK
              note in buildSection() above). -->
-        <div class="admin-ui-monolabel">NOTE · ${ServerI18n.t("sessionDetailSecNote")}</div>
+        <div class="admin-ui-monolabel">${ServerI18n.t("uiNote")} · ${ServerI18n.t("sessionDetailSecNote")}</div>
         <textarea class="admin-sd-ann-modal-note" data-ann-modal-note
           placeholder="${ServerI18n.t("sessionDetailNotePlaceholder")}" maxlength="280"></textarea>
         <div class="admin-sd-ann-modal-counter" data-ann-modal-counter>0 / 280</div>
@@ -616,7 +616,7 @@
     helper.open({
       icon: "📌",
       title: ServerI18n.t("sessionDetailAddAnnotationModalTitle"),
-      subtitle: "ADD ANNOTATION · TIMELINE MARKER",
+      subtitle: ServerI18n.t("cfmSubAddAnnotation"),
       severity: "info",
       confirmLabel: ServerI18n.t("sessionDetailConfirmAdd"),
       cancelLabel: ServerI18n.t("cancel"),

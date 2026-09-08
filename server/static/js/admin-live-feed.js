@@ -25,7 +25,6 @@
   let searchTerm = "";
   let filterTab = "all"; // "all" | "muted"
   /** @type {Set<string>} */
-  const selected = new Set();
   let _entryCounter = 0;
 
   // DOM references (set after section is injected)
@@ -33,7 +32,6 @@
   let pauseBtn = null;
   let searchInput = null;
   let countBadge = null;
-  let bulkBar = null;
 
   // ── Helpers ──────────────────────────────────────────────
 
@@ -134,19 +132,6 @@
     // 浮現的動作鈕叫出來——鍵盤使用者才看得到自己正在對哪一列動手。
     row.tabIndex = -1;
 
-    // Bulk-select checkbox
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.className = "admin-live-feed-check";
-    cb.checked = selected.has(entry.id);
-    cb.addEventListener("click", (e) => e.stopPropagation());
-    cb.addEventListener("change", () => {
-      if (cb.checked) selected.add(entry.id);
-      else selected.delete(entry.id);
-      updateBulkBar();
-    });
-    row.appendChild(cb);
-
     // Timestamp
     const timeSpan = document.createElement("span");
     timeSpan.className = "admin-live-feed-time";
@@ -236,7 +221,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: ServerI18n.t("lfBlockTitle"),
-      subtitle: "BLOCK · FUTURE MESSAGES ARE FILTERED",
+      subtitle: ServerI18n.t("cfmSubBlockFuture"),
       severity: "danger",
       bodyText: ServerI18n.t("blockConfirm").replace("{label}", label).replace("{display}", display),
       confirmLabel: ServerI18n.t("lfBlockTitle"),
@@ -272,44 +257,6 @@
     }
   }
 
-  async function bulkBlock() {
-    if (selected.size === 0) return;
-    const ids = Array.from(selected);
-    const targets = ids
-      .map((id) => entries.find((e) => e.id === id))
-      .filter(Boolean);
-    if (targets.length === 0) return;
-    const confirmed = await window.HudConfirm?.open({
-      icon: "⊘",
-      title: ServerI18n.t("lfBulkMaskTitle"),
-      subtitle: "BULK MASK · BY FINGERPRINT",
-      severity: "danger",
-      body: ServerI18n.t("lfBulkMaskBody", { n: `<b>${targets.length}</b>` }),
-      confirmLabel: ServerI18n.t("lfBulkMaskConfirm"),
-    });
-    if (!confirmed) return;
-
-    let ok = 0;
-    for (const t of targets) {
-      if (!t.data.fingerprint) continue;
-      try {
-        const resp = await window.csrfFetch("/admin/live/block", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "fingerprint", value: t.data.fingerprint }),
-        });
-        if (resp.ok) {
-          t.muted = true;
-          ok += 1;
-        }
-      } catch (_) {
-        /* ignore */
-      }
-    }
-    selected.clear();
-    showToast(ServerI18n.t("lfToastMasked", { ok: ok, total: targets.length }));
-    renderList();
-  }
 
   // ── Full re-render of visible list ───────────────────────
 
@@ -336,7 +283,6 @@
     }
 
     updateCountBadge();
-    updateBulkBar();
     _updateRateBar();
     _updateChipCounts();
     _updateJumpPill();
@@ -348,19 +294,6 @@
     const buffered = pauseBuffer.length;
     countBadge.textContent =
       ServerI18n.t("lfCountUnit", { n: total }) + (buffered > 0 ? ` (+${buffered})` : "");
-  }
-
-  function updateBulkBar() {
-    if (!bulkBar) return;
-    if (selected.size === 0) {
-      bulkBar.classList.remove("is-active");
-      bulkBar.setAttribute("hidden", "");
-    } else {
-      bulkBar.classList.add("is-active");
-      bulkBar.removeAttribute("hidden");
-      const countEl = bulkBar.querySelector(".admin-live-feed-bulk-count");
-      if (countEl) countEl.textContent = String(selected.size);
-    }
   }
 
   // ── Add entry ────────────────────────────────────────────
@@ -379,7 +312,6 @@
     entries.push(entry);
     if (entries.length > MAX_ENTRIES) {
       const dropped = entries.splice(0, entries.length - MAX_ENTRIES);
-      dropped.forEach((d) => selected.delete(d.id));
     }
     // Simple full re-render — keeps filter tabs correct and perf is fine at MAX_ENTRIES=200.
     renderList();
@@ -487,15 +419,6 @@
             <button id="liveFeedClearBtn" type="button" class="admin-lf-v4__pausebtn">${escapeAttr(ServerI18n.t("clearBtn"))}</button>
           </div>
 
-          <!-- Bulk-select bar (kept for batch fingerprint block flow) -->
-          <div id="liveFeedBulk" class="admin-lf-v4__bulk" hidden>
-            <span class="admin-ui-monolabel">BULK ·
-              <span class="admin-live-feed-bulk-count">0</span> ${ServerI18n.t("lfBulkSelected")}
-            </span>
-            <span class="admin-lf-v4__spacer"></span>
-            <button type="button" id="liveFeedBulkBlock" class="admin-ui-action is-primary admin-live-feed-bulk-action">${ServerI18n.t("lfBulkBlockBtn")}</button>
-            <button type="button" id="liveFeedBulkClear" class="admin-ui-action admin-live-feed-bulk-action">${ServerI18n.t("lfBulkClearBtn")}</button>
-          </div>
 
           <!-- Message list (relative for sticky jump pill) -->
           <div class="admin-lf-v4__streamwrap">
@@ -513,7 +436,7 @@
               aria-label="${ServerI18n.t("lfAriaLabel")}"
             ></div>
             <div class="admin-lf-v4__jump" data-lf-jump hidden>
-              <button type="button" data-lf-jump-btn>↓ <span data-lf-jump-n>0</span> ${ServerI18n.t("lfJumpNew")}</button>
+              <button type="button" data-lf-jump-btn><span data-lf-jump-n>0</span> ${ServerI18n.t("lfJumpNew")}</button>
             </div>
           </div>
 
@@ -592,11 +515,8 @@
     pauseBtn = document.getElementById("liveFeedPauseBtn");
     searchInput = document.getElementById("liveFeedSearch");
     countBadge = document.getElementById("liveFeedCount");
-    bulkBar = document.getElementById("liveFeedBulk");
 
     const clearBtn = document.getElementById("liveFeedClearBtn");
-    const bulkBlockBtn = document.getElementById("liveFeedBulkBlock");
-    const bulkClearBtn = document.getElementById("liveFeedBulkClear");
     const tabs = document.querySelectorAll(".admin-live-feed-tab");
 
     if (pauseBtn) pauseBtn.addEventListener("click", togglePause);
@@ -604,14 +524,6 @@
       clearBtn.addEventListener("click", () => {
         entries = [];
         pauseBuffer = [];
-        selected.clear();
-        renderList();
-      });
-    }
-    if (bulkBlockBtn) bulkBlockBtn.addEventListener("click", bulkBlock);
-    if (bulkClearBtn) {
-      bulkClearBtn.addEventListener("click", () => {
-        selected.clear();
         renderList();
       });
     }
@@ -654,13 +566,13 @@
       wrap.className = "admin-live-feed-row__swipe-actions";
       wrap.innerHTML = `
         <button type="button" class="admin-live-feed-row__swipe-btn admin-live-feed-row__swipe-btn--mask" data-swipe-act="mask">
-          <span class="admin-live-feed-row__swipe-btn-icon">◐</span>MASK
+          <span class="admin-live-feed-row__swipe-btn-icon">◐</span>${ServerI18n.t("lfSwipeMask")}
         </button>
         <button type="button" class="admin-live-feed-row__swipe-btn admin-live-feed-row__swipe-btn--mute" data-swipe-act="mute">
-          <span class="admin-live-feed-row__swipe-btn-icon">◐</span>MUTE
+          <span class="admin-live-feed-row__swipe-btn-icon">◐</span>${ServerI18n.t("lfSwipeMute")}
         </button>
         <button type="button" class="admin-live-feed-row__swipe-btn admin-live-feed-row__swipe-btn--ban" data-swipe-act="ban">
-          <span class="admin-live-feed-row__swipe-btn-icon">⊘</span>BAN
+          <span class="admin-live-feed-row__swipe-btn-icon">⊘</span>${ServerI18n.t("lfSwipeBan")}
         </button>`;
       wrap.addEventListener("click", function (e) {
         const btn = e.target.closest("[data-swipe-act]");

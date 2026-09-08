@@ -80,7 +80,7 @@
           <div class="poll-overlay-row-head">
             <span class="key" style="color:${c}">${_esc(o.key)}</span>
             <span class="lbl">${_esc(o.text || o.label || "")}</span>
-            ${isLeading ? `<span class="lead" style="color:${c};border-color:${c}88;background:${c}33;">★ LEADING</span>` : ""}
+            ${isLeading ? `<span class="lead" style="color:${c};border-color:${c}88;background:${c}33;">領先</span>` : ""}
             <span class="pct" style="color:${c}">${pct}%</span>
             <span class="votes">${count} 票</span>
           </div>
@@ -101,8 +101,8 @@
 
         <div class="poll-overlay-panel">
           <div class="poll-overlay-meta">
-            <span class="qq">QUESTION ${String(qNum).padStart(2, "0")}</span>
-            <span class="counts">${total} votes</span>
+            <span class="qq">第 ${String(qNum).padStart(2, "0")} 題</span>
+            <span class="counts">${total} 票</span>
           </div>
           <h2 class="poll-overlay-question">${_esc(data.question || "")}</h2>
 
@@ -189,12 +189,12 @@
         <div class="poll-overlay-confetti">${confettiHtml}</div>
 
         <div class="poll-overlay-celebration-top">
-          <div class="kicker" style="color:${winnerColor}">★ POLL CLOSED · 投票結果 ★</div>
+          <div class="kicker" style="color:${winnerColor}">投票結果</div>
           <div class="question">${_esc(data.question || "")}</div>
         </div>
 
         <div class="poll-overlay-winner">
-          <div class="winner-kicker">WINNER · 最高票</div>
+          <div class="winner-kicker">最高票</div>
           <div class="winner-circle" style="border-color:${winnerColor};box-shadow:0 0 60px ${winnerColor}66, inset 0 0 40px ${winnerColor}22;background:radial-gradient(circle, ${winnerColor}33 0%, ${winnerColor}11 60%, transparent 100%);">
             <span class="winner-letter" style="color:${winnerColor}">${_esc(winner.key)}</span>
           </div>

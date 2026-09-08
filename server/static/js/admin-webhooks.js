@@ -141,7 +141,7 @@
                     </select>
                   </label>
                   <label class="admin-wh-form-field">
-                    <span class="admin-ui-monolabel">SECRET · HMAC</span>
+                    <span class="admin-ui-monolabel">${ServerI18n.t("whSecretLabel")}</span>
                     <input id="wh-secret" type="text" placeholder="optional" class="admin-ui-input" />
                   </label>
                 </div>
@@ -163,7 +163,7 @@
             <!-- Delivery log table -->
             <div class="admin-ui-card admin-wh-log-card">
               <div class="admin-ui-section-head admin-wh-section-head">
-                <span class="admin-ui-monolabel">DELIVERY LOG · ${ServerI18n.t("webhooksLogLiveLabel")}</span>
+                <span class="admin-ui-monolabel">${ServerI18n.t("webhooksDeliveryLogLabel")} · ${ServerI18n.t("webhooksLogLiveLabel")}</span>
                 <span class="admin-ui-spacer" aria-hidden="true"></span>
                 <span class="admin-ui-chip-group admin-wh-log-filters" data-wh-log-filters>
                   <button type="button" class="admin-ui-chip admin-wh-log-filter is-active" data-wh-log-filter="all">${ServerI18n.t("webhooksFilterAll")}</button>
@@ -173,8 +173,8 @@
                 </span>
               </div>
               <div class="admin-wh-log-row admin-wh-log-row--head">
-                <span>TIME</span><span>CODE</span><span>DUR</span>
-                <span>ENDPOINT</span><span>EVENT</span><span>RETRY</span>
+                <span>${ServerI18n.t("uiColTime")}</span><span>${ServerI18n.t("uiColCode")}</span><span>${ServerI18n.t("uiColDuration")}</span>
+                <span>${ServerI18n.t("uiColEndpoint")}</span><span>${ServerI18n.t("uiColEvent")}</span><span>${ServerI18n.t("uiColRetry")}</span>
               </div>
               <div id="wh-log-list" class="admin-ui-list-stack is-tight admin-wh-log-list">
                 ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : ServerI18n.t("webhooksLoadingFallback")}
@@ -505,7 +505,7 @@
         ${warnHtml}
         <div class="admin-wh-card-foot">
           <div class="admin-wh-card-rate">
-            <span class="lbl">SUCCESS RATE</span>
+            <span class="lbl">${ServerI18n.t("whSuccessRate")}</span>
             <div class="bar"><div class="fill" style="width:${successRate}%;background:${statusColor}"></div></div>
             <span class="pct" style="color:${statusColor}">${successRate}%</span>
           </div>
@@ -614,14 +614,14 @@
       '</div>' +
       '<div class="admin-ui-monolabel admin-wh-detail-label">' + ServerI18n.t("webhooksEventSubscriptionsLabel") + '</div>' +
       '<div class="admin-wh-detail-events">' + eventsHtml + '</div>' +
-      '<div class="admin-ui-monolabel admin-wh-detail-label">RETRY POLICY</div>' +
+      '<div class="admin-ui-monolabel admin-wh-detail-label">' + ServerI18n.t("whRetryPolicy") + '</div>' +
       '<div class="admin-wh-detail-policy">' +
         '<div><span class="k">Max retries</span><span class="v">' + (hook.retry_count != null ? hook.retry_count : 3) + '</span></div>' +
         '<div><span class="k">Backoff</span><span class="v">exponential · 1s → 2s → 4s</span></div>' +
         '<div><span class="k">Timeout</span><span class="v">5,000 ms</span></div>' +
         '<div><span class="k">HMAC sign</span><span class="v" style="color: var(--color-ink-success)">' + (hook.secret ? "SHA-256 · X-Webhook-Signature" : ServerI18n.t("webhooksSecretNotSet")) + '</span></div>' +
       '</div>' +
-      '<div class="admin-ui-monolabel admin-wh-detail-label">PAYLOAD SAMPLE</div>' +
+      '<div class="admin-ui-monolabel admin-wh-detail-label">' + ServerI18n.t("whPayloadSample") + '</div>' +
       '<pre class="admin-wh-detail-payload">' + _escHtml(JSON.stringify(samplePayload, null, 2)) + '</pre>' +
       '<div class="admin-wh-detail-actions">' +
         '<button type="button" class="admin-ui-action is-primary admin-wh-detail-action" data-wh-action="detail-ping" data-wh-hook-id="' + _escHtml(hook.id) + '">' + ServerI18n.t("webhooksDetailPingBtn") + '</button>' +
@@ -681,7 +681,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
       title: ServerI18n.t("webhooksDeleteModalTitle"),
-      subtitle: "DELETE WEBHOOK",
+      subtitle: ServerI18n.t("cfmSubDeleteWebhook"),
       severity: "danger",
       body: ServerI18n.t("deleteWebhookConfirm"),
       confirmLabel: ServerI18n.t("webhooksConfirmDeleteLabel"),

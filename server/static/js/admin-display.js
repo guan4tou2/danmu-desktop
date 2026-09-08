@@ -276,7 +276,7 @@
               <div style="display:grid;grid-template-columns:auto 1fr;gap:7px 12px;align-items:start;font-size:11px;line-height:1.45">
                 <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">UI language</span><span>Auto (follow browser)</span>
                 <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">Placeholder</span><span>${escapeHtml(t("displayPlaceholderExample"))}</span>
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">Submit button</span><span>FIRE</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">Submit button</span><span>${ServerI18n.t("fireDanmu")}</span>
                 <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">Poll prompt</span><span>${escapeHtml(t("displayPollPromptExample"))}</span>
               </div>
               <div style="padding-top:8px;border-top:1px solid var(--hud-line);font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);line-height:1.6">
@@ -626,7 +626,7 @@
     stage.dataset.layout = layout;
 
     if (footL) footL.textContent = `${layoutLabel(layout)} · ${fontSize}px · ${(+speed).toFixed(1)}×`;
-    if (footR) footR.textContent = `${Math.round(opacity)}% OPACITY`;
+    if (footR) footR.textContent = t("displayOpacitySuffix", { n: Math.round(opacity) });
   }
 
   function renderSummary() {
@@ -888,7 +888,7 @@
     const ok = await window.HudConfirm?.open({
       icon: "↩",
       title: t("displayRevertConfirmTitle"),
-      subtitle: "REVERT TO DEFAULTS · OVERWRITES CURRENT SETTINGS",
+      subtitle: ServerI18n.t("cfmSubRevertDefaults"),
       severity: "warn",
       body: t("displayRevertConfirm"),
       confirmLabel: t("displayDeployRevert"),
@@ -1411,7 +1411,7 @@
       const info = document.createElement("div");
       var badgeHtml = "";
       if (f.pinned) badgeHtml = '<span class="admin-vc-field-badge admin-vc-field-badge--required">' + escapeHtml(t("displayFieldBadgeRequired")) + '</span>';
-      if (f.blocked) badgeHtml = '<span class="admin-vc-field-badge admin-vc-field-badge--blocked">BE BLOCKED</span>';
+      if (f.blocked) badgeHtml = '<span class="admin-vc-field-badge admin-vc-field-badge--blocked">' + escapeHtml(t("displayFieldBadgeBlocked")) + '</span>';
       info.innerHTML =
         '<div class="admin-vc-field-label">' + escapeHtml(f.k) + badgeHtml + "</div>" +
         '<div class="admin-vc-field-desc">' + escapeHtml(f.desc) + "</div>";

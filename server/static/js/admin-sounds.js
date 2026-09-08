@@ -118,7 +118,7 @@
             '<span class="admin-ui-monolabel sound-volume-label" data-name="' + escapeHtml(sound.name) + '" style="min-width:32px;text-align:right">' + volPct + "%</span>" +
           "</div>" +
           '<div class="actions" style="margin-top:6px">' +
-          '<button type="button" class="admin-ui-chip is-active sound-play-btn" data-name="' + escapeHtml(sound.name) + '">▶ ' + escapeHtml(ServerI18n.t("previewBtn")) + "</button>" +
+          '<button type="button" class="admin-ui-chip is-active sound-play-btn" data-name="' + escapeHtml(sound.name) + '">' + escapeHtml(ServerI18n.t("previewBtn")) + "</button>" +
           '<button type="button" class="admin-ui-chip is-danger sound-delete-btn" data-name="' + escapeHtml(sound.name) + '">' + window.AdminUtils.closeIcon + '</button>' +
           "</div>" +
           "</div>"
@@ -147,7 +147,7 @@
         const ok = await window.HudConfirm?.open({
           icon: "⊘",
           title: ServerI18n.t("soundsDeleteTitle"),
-          subtitle: "DELETE SOUND",
+          subtitle: ServerI18n.t("cfmSubDeleteSound"),
           severity: "danger",
           bodyText: ServerI18n.t("deleteSoundConfirm").replace("{name}", name),
           confirmLabel: ServerI18n.t("soundsDeleteConfirm"),
