@@ -2676,3 +2676,66 @@ body.viewer-body-v2 #toast-container {
 
   .viewer-sendbar { padding-inline: var(--space-6); }
 }
+
+/* ── 焦點環的最後一道防線（2026-09-08）─────────────────────────────────
+ *
+ * 設計稿 17：「每個可互動元件有可見焦點」。`shared/tokens.css` 有一條全站的
+ * `:focus-visible { outline: 2px solid var(--focus) }`，但這個檔案裡有五處
+ * `outline: none`（送出框、暱稱框、下拉、兩種滑桿）把它壓掉了——那些
+ * `outline: none` 本意是拿掉瀏覽器預設的醜框，卻連 `:focus-visible` 一起殺。
+ *
+ * 實測：按 Tab 走到送出框時 outline / border / box-shadow **全部是 none**，
+ * 鍵盤使用者完全看不到自己在哪。（用 `.focus()` 測不出來——那不觸發
+ * `:focus-visible`，這也是為什麼它一直沒被發現。）
+ *
+ * 放在檔尾、選擇器帶元素型別以提高權重，好蓋過上面那些規則。這樣寫也涵蓋
+ * 之後新增的 `outline: none` —— 逐條去改容易漏掉一兩個，而漏掉的那個
+ * 畫面上看起來完全正常。
+ */
+input.viewer-sendbar-input:focus-visible,
+input.viewer-nick-input:focus-visible,
+select.viewer-select:focus-visible,
+input.viewer-range:focus-visible,
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ── 手機命中區 ≥ 44（設計稿 17，2026-09-08）──────────────────────────
+ *
+ * 稿上寫「手機所有可點命中區 ≥ 44；桌面 ≥ 32」。實測 375px 下有四個不到：
+ * 暱稱連結 39×18、頁尾連結 69×20、漢堡鈕 32×32、暱稱提示的關閉鈕 32×32。
+ *
+ * 用**透明的 ::after 覆蓋層**擴大命中區，而不是把元素本身加大 —— 後者會推開
+ * 版面（漢堡鈕在頂欄、暱稱連結在送出列裡，兩處都是排得很緊的地方）。
+ * 覆蓋層置中於元素，所以視覺完全不變。
+ *
+ * 只在 coarse pointer 生效：桌面滑鼠的要求是 32，本來就都過了，在桌面加大
+ * 覆蓋層只會讓相鄰元素互相吃到對方的點擊。
+ *
+ * **`site-footer-link` 實際只會拿到約 68×31**：它貼在頁面最底部，44px 的
+ * 覆蓋層往下溢出的那一半被 `body.viewer-body-v2` 的 `overflow: hidden` 裁掉。
+ * 上半仍然擴大了（20 → 31）。要真的做到 44 得改頁尾的高度或內距，那會動到
+ * 版面；這裡先擴到能擴的極限，並把限制寫下來而不是假裝達標。
+ */
+@media (pointer: coarse) {
+  .viewer-sendbar-nicklink,
+  .site-footer-link,
+  .viewer-hamburger,
+  .viewer-nameask-dismiss {
+    position: relative;
+  }
+
+  .viewer-sendbar-nicklink::after,
+  .site-footer-link::after,
+  .viewer-hamburger::after,
+  .viewer-nameask-dismiss::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}

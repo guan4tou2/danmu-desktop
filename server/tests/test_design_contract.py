@@ -1933,3 +1933,52 @@ def test_admin_bundle_manifest_lists_files_that_exist():
     bundle = REPO / "server/static/js/admin.bundle.js"
     assert bundle.exists(), "admin.bundle.js 不存在 —— 跑 npm run build:admin-js"
     assert "AUTO-GENERATED" in bundle.read_text(encoding="utf-8")[:200]
+
+
+# --- 設計稿 17：焦點環不得被 outline:none 壓掉 -----------------------------
+
+
+def test_outline_none_never_kills_the_focus_ring():
+    """每個被 `outline: none` 命中的可聚焦元件，都要有 `:focus-visible` 把環還回來。
+
+    設計稿 17：「每個可互動元件有可見焦點」。`shared/tokens.css` 有一條全站的
+    `:focus-visible { outline: 2px solid var(--focus) }`，但觀眾頁有五處
+    `outline: none`（送出框／暱稱框／下拉／兩種滑桿）連它一起殺掉了。
+    那些 `outline: none` 的本意是拿掉瀏覽器預設的醜框。
+
+    2026-09-08 實測：按 Tab 走到送出框時 outline / border / box-shadow **全部
+    是 none**，鍵盤使用者看不到自己在哪。**用 `.focus()` 測不出來**——那不會
+    觸發 `:focus-visible`，這也是為什麼它一直沒被發現；要用真的鍵盤事件。
+    """
+    css = _read("server/static/css/viewer-v2.css")
+    assert css, "找不到 viewer-v2.css"
+
+    # 哪些選擇器被 outline:none 命中
+    killed = set()
+    for block in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
+        sel, body = block[0].strip(), block[1]
+        if not re.search(r"outline\s*:\s*none", body):
+            continue
+        for part in sel.split(","):
+            part = part.strip()
+            m = re.search(r"\.([a-z][\w-]*)", part)
+            if m:
+                killed.add(m.group(1))
+
+    # 哪些有 :focus-visible 把環還回來
+    restored = set()
+    for block in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
+        sel, body = block[0], block[1]
+        if ":focus-visible" not in sel or not re.search(r"outline\s*:\s*\d", body):
+            continue
+        for m in re.finditer(r"\.([a-z][\w-]*)", sel):
+            restored.add(m.group(1))
+
+    # 只在意「可聚焦」的那些：輸入框 / 下拉 / 滑桿
+    interactive = {c for c in killed if re.search(r"input|select|range|sendbar|nick", c)}
+    missing = sorted(interactive - restored)
+    assert not missing, (
+        "這些元件被 outline:none 拿掉焦點環、又沒有 :focus-visible 還回來：\n  "
+        + "\n  ".join(missing)
+        + "\n（見 viewer-v2.css 檔尾的「焦點環的最後一道防線」）"
+    )
