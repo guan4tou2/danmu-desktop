@@ -291,9 +291,24 @@ def fire():
             _record_history_if_enabled(data, fingerprint, client_ip, blocked_by="ban")
             return _json_response({"error": "You are currently banned"}, 403)
 
+        # 投票不走內容過濾（2026-09-08 拍板）。
+        #
+        # 投票是用「把選項代號當成一則彈幕送出」實作的，所以在此之前，選項代號
+        # 會跟一般訊息一樣被過濾引擎與黑名單掃過——場中實測踩到：一條
+        # `keyword: a → block` 的規則讓「選項 A」完全投不出去，而觀眾只看到
+        # 內部訊息「Keyword match: 'a'」。過濾規則存在的目的是擋內容，不是
+        # 擋票；選項代號是主持人自己出的題，不是觀眾寫的字。
+        #
+        # **封鎖與限流仍然適用**（在這行之前）：被停權的人不該能投票，
+        # 也不該能靠洗票刷排行。這裡只跳過「內容」那一段。
+        is_poll_vote = (
+            poll_service.state == "active"
+            and text_content.strip().upper() in poll_service.get_option_keys()
+        )
+
         # Filter engine check (replaces simple blacklist check)
         filter_result = filter_engine.check(text_content, fingerprint)
-        if filter_result.action == "block":
+        if filter_result.action == "block" and not is_poll_vote:
             fingerprint_tracker.record(
                 fingerprint, client_ip, user_agent, blocked=True, nickname=nickname
             )
@@ -307,13 +322,13 @@ def fire():
                 {"error": filter_result.reason or "Content blocked by filter rule"},
                 400,
             )
-        if filter_result.action == "replace":
+        if filter_result.action == "replace" and not is_poll_vote:
             data["text"] = filter_result.text
             text_content = filter_result.text
         # 2026-05-18 design v4-r3: `review` action holds the message in
         # the moderation queue for human approve/reject. Respond 202 so
         # the viewer knows the message was accepted but isn't visible yet.
-        if filter_result.action == "review":
+        if filter_result.action == "review" and not is_poll_vote:
             try:
                 from ..services.mod_queue import mod_queue
 
@@ -336,8 +351,8 @@ def fire():
                 # than silently dropping it.
                 pass
 
-        # Fallback: also check legacy blacklist
-        blocked_keyword = matched_keyword(text_content)
+        # Fallback: also check legacy blacklist（同樣不套用在投票上）
+        blocked_keyword = None if is_poll_vote else matched_keyword(text_content)
         if blocked_keyword:
             fingerprint_tracker.record(
                 fingerprint, client_ip, user_agent, blocked=True, nickname=nickname

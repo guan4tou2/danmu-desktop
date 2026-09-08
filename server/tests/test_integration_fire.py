@@ -261,3 +261,55 @@ def test_fire_no_effects_input_gives_null_effect_css(client):
     assert resp.status_code == 200
     msg = ws_queue.dequeue_all()[0]
     assert msg.get("effectCss") is None
+
+
+# ─── 投票不走內容過濾（2026-09-08 拍板）────────────────────────────────────
+
+
+def _start_poll():
+    from server.services.poll import poll_service
+
+    poll_service.reset()
+    poll_service.create("測試題", ["甲", "乙"])
+    return poll_service
+
+
+def test_poll_vote_is_not_blocked_by_filter_rules(client):
+    """選項代號不該被內容過濾擋掉。
+
+    投票是用「把選項代號當一則彈幕送出」實作的，所以在這個修正之前，選項代號
+    會跟一般訊息一樣被過濾引擎掃過。場中實測踩到：一條 `keyword: a → block`
+    的規則讓「選項 A」完全投不出去，觀眾只看到內部訊息「Keyword match: 'a'」。
+    過濾規則是用來擋內容的，而選項代號是主持人自己出的題。
+    """
+    from server.services.filter_engine import filter_engine
+
+    svc = _start_poll()
+    rule_id = filter_engine.add_rule({"type": "keyword", "pattern": "a", "action": "block"})
+    try:
+        resp = client.post("/fire", json={"text": "A"})
+        assert resp.status_code == 200, resp.get_json()
+        assert resp.get_json().get("poll_vote", {}).get("accepted") is True
+        assert svc.get_status()["questions"][0]["options"][0]["count"] == 1
+
+        # 對照組：同樣命中規則、但**不是**選項代號的訊息仍然要被擋
+        assert client.post("/fire", json={"text": "banana"}).status_code == 400
+    finally:
+        filter_engine.remove_rule(rule_id)
+        svc.reset()
+
+
+def test_poll_vote_still_respects_bans(client):
+    """跳過的只有「內容」那一段——被停權的人仍然不能投票。"""
+    from server.services import moderation_bans
+
+    svc = _start_poll()
+    fp = "banned-voter-fp"
+    moderation_bans.add_ban("fingerprint", fp, reason="test")
+    try:
+        resp = client.post("/fire", json={"text": "A", "fingerprint": fp})
+        assert resp.status_code == 403
+        assert svc.get_status()["questions"][0]["options"][0]["count"] == 0
+    finally:
+        moderation_bans.remove_ban("fingerprint", fp)
+        svc.reset()
