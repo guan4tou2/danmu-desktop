@@ -59,6 +59,32 @@ def _build_hsts_header(config) -> str:
     return "; ".join(parts)
 
 
+_I18N_SUPPORTED = ("zh", "en", "ja", "ko")
+
+
+def _pick_i18n_lang() -> str:
+    """哪一支 `i18n.<lang>.js` 要被 <script> 進去。
+
+    2026-09-08 把翻譯從單一 670 KB 的 i18n.js 拆成每語言一支之後才需要這個。
+    伺服器必須在**送出 HTML 之前**就決定語言，否則就只剩兩條路：四語全載
+    （＝沒拆），或是等前端偵測完再非同步抓（首屏會先閃一次未翻譯的字）。
+
+    順序：cookie（前端 setLanguage 會寫）→ Accept-Language → zh。
+    cookie 只是提示，不是憑證：值不在白名單就直接忽略，不做任何解析。
+    前端若偵測到別的語言（例如 localStorage 與 cookie 不同步），runtime 會
+    自己補載那一支再重繪——所以這裡猜錯只是多一次請求，不會壞掉。
+    """
+    cookie = request.cookies.get("danmu-server-lang", "")
+    if cookie in _I18N_SUPPORTED:
+        return cookie
+    accept = (request.headers.get("Accept-Language") or "").lower()
+    for tag in accept.replace(" ", "").split(","):
+        code = tag.split(";")[0].split("-")[0]
+        if code in _I18N_SUPPORTED:
+            return code
+    return "zh"
+
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
@@ -155,6 +181,7 @@ def create_app(config_class=Config):
     def inject_security_template_state():
         return {
             "csp_nonce": getattr(g, "csp_nonce", ""),
+            "i18n_lang": _pick_i18n_lang(),
             "app_version": Config.APP_VERSION,
             "app_name": Config.APP_NAME,
             "captcha_provider": Config.CAPTCHA_PROVIDER,

@@ -177,8 +177,17 @@
 
   // ── 這張表本身 ────────────────────────────────────────────────────
 
+  // 2026-09-08：原本這裡各自實作，而且漏跳引號（屬性位置會被撐開）。
+  // 全站統一走 AdminUtils.escapeHtml；fallback 保留是為了載入順序的保險，
+  // 內容與那支一致（`& < > " '` 五個都跳）。
   function _esc(s) {
-    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    if (window.AdminUtils && window.AdminUtils.escapeHtml) {
+      return window.AdminUtils.escapeHtml(s);
+    }
+    if (s == null) return "";
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
+    });
   }
 
   function _rowsHtml(group) {

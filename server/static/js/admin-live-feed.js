@@ -35,13 +35,14 @@
 
   // ── Helpers ──────────────────────────────────────────────
 
+  // 2026-09-08：全站的跳脫統一走 AdminUtils.escapeHtml（五個字元都跳，屬性
+  // 位置安全）。這裡原本各自實作，scheduler 那份還漏了單引號。
   function escapeAttr(s) {
-    return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+    return (window.AdminUtils && window.AdminUtils.escapeHtml)
+      ? window.AdminUtils.escapeHtml(s)
+      : String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+          return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
+        });
   }
 
   function truncate(s, len) {

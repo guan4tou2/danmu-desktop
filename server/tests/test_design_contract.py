@@ -1744,3 +1744,156 @@ def test_no_icon_glyphs_glued_onto_button_labels():
             if hit and re.search(r"[A-Za-z\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]", text):
                 bad.append(f"{path.name}: {text.strip()[:60]!r} 夾帶 {''.join(hit)}")
     assert not bad, "圖示黏在按鈕文字上：\n" + "\n".join(bad)
+
+
+# --- BREACH 前提：admin 模板不得反射請求輸入 -------------------------------
+
+
+def test_admin_template_reflects_no_request_input():
+    """`admin.html` 不得把任何請求輸入 templating 進去。
+
+    2026-09-08 在 nginx 開 gzip 時把這件事變成前提。nginx 的 `text/html` 是
+    **隱含永遠壓縮**的（`gzip_types` 拿不掉），而這份模板裡有一個穩定的祕密：
+    `<meta name="csrf-token" content="{{ session.get('csrf_token','') }}">`。
+
+    「壓縮 + 同一份回應裡有攻擊者可控的反射內容 + 有祕密」＝ BREACH。第二項
+    不成立時前兩項就無害——攻擊者沒有管道把猜測字元塞進同一份回應去量長度差。
+    另一道獨立的防線是 `SESSION_COOKIE_SAMESITE=Strict`（跨站請求不帶 cookie，
+    拿到的是登入頁、token 是空的）。
+
+    **這支測試就是那個前提。** 有人加了 `{{ request.args.get(...) }}` 之類的東西
+    時它會先失敗——屆時要嘛拿掉那個反射點，要嘛對該 location 關掉 gzip。
+    """
+    html = _read("server/templates/admin.html")
+    assert html, "找不到 admin.html"
+    hits = re.findall(
+        r"\{\{[^}]*\brequest\s*\.\s*(args|values|form|path|full_path|url|headers|"
+        r"query_string|cookies|referrer|user_agent)\b[^}]*\}\}",
+        html,
+    )
+    assert not hits, (
+        "admin.html 反射了請求輸入："
+        + ", ".join(sorted(set(hits)))
+        + "\n這會讓 nginx gzip 的 BREACH 評估失效（見 nginx/nginx.conf 的註解）。"
+    )
+    # `{% ... %}` 語句塊裡繞一手也算
+    stmt = re.findall(r"\{%[^%]*\brequest\s*\.\s*(args|values|form|path|headers)\b", html)
+    assert not stmt, "admin.html 在 {% %} 裡用了請求輸入：" + ", ".join(sorted(set(stmt)))
+
+
+# --- i18n 依語言分檔（2026-09-08）-------------------------------------------
+
+
+def test_i18n_runtime_carries_no_translations():
+    """`i18n.js` 只能是 runtime，翻譯內容不得再內嵌回去。
+
+    分檔前它是 670 KB，而**觀眾頁**（活動現場每支手機都要下載）載的是同一支。
+    現在 runtime 約 6 KB，翻譯在 `i18n.<lang>.js`，伺服器依 cookie /
+    Accept-Language 挑一支送。
+
+    判準用「檔案大小」而不是「有沒有某個 key」——有人若把 resources 內嵌回來，
+    不管用什麼寫法，檔案都會胖回去。
+    """
+    runtime = REPO / "server/static/js/i18n.js"
+    assert runtime.exists()
+    size_kb = runtime.stat().st_size / 1024
+    assert size_kb < 40, (
+        f"i18n.js 變成 {size_kb:.0f} KB —— 翻譯又被內嵌回 runtime 了？"
+        "翻譯應該在 i18n.<lang>.js。"
+    )
+
+    for lang in ("zh", "en", "ja", "ko"):
+        bundle = REPO / f"server/static/js/i18n.{lang}.js"
+        assert bundle.exists(), f"缺少 {bundle.name} —— 跑 npm run build:i18n"
+        assert f'__I18N_BUNDLE["{lang}"]' in bundle.read_text(encoding="utf-8")
+
+
+def test_templates_load_a_single_language_bundle():
+    """兩個模板都要用伺服器挑出來的那一支，不能寫死語言、也不能四語全載。"""
+    for tpl in ("server/templates/admin.html", "server/templates/index.html"):
+        html = _read(tpl)
+        assert "js/i18n.' ~ i18n_lang ~ '.js" in html, f"{tpl} 沒有用 i18n_lang"
+        # 寫死某個語言就等於別人切語言時拿不到東西
+        for lang in ("zh", "en", "ja", "ko"):
+            assert f"js/i18n.{lang}.js" not in html, f"{tpl} 寫死了 {lang}"
+
+
+@pytest.mark.parametrize(
+    "headers,cookies,expected",
+    [
+        ({"Accept-Language": "zh-TW,zh;q=0.9"}, {}, "zh"),
+        ({"Accept-Language": "ja,en;q=0.8"}, {}, "ja"),
+        ({"Accept-Language": "ko-KR"}, {}, "ko"),
+        ({"Accept-Language": "en-GB"}, {}, "en"),
+        # 不支援的語言 → 預設 zh
+        ({"Accept-Language": "de-DE,fr;q=0.9"}, {}, "zh"),
+        # cookie 蓋過 Accept-Language
+        ({"Accept-Language": "ja"}, {"danmu-server-lang": "ko"}, "ko"),
+        # cookie 是提示不是憑證：不在白名單就整個忽略，不做任何解析
+        ({"Accept-Language": "ja"}, {"danmu-server-lang": "../../etc/passwd"}, "ja"),
+        ({"Accept-Language": "ja"}, {"danmu-server-lang": ""}, "ja"),
+    ],
+)
+def test_server_picks_the_right_language_bundle(client, headers, cookies, expected):
+    """伺服器必須在送出 HTML 前決定語言，否則首屏會先閃一次未翻譯的字。"""
+    for k, v in cookies.items():
+        client.set_cookie(k, v)
+    try:
+        resp = client.get("/", headers=headers)
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        assert (
+            f"js/i18n.{expected}.js" in body
+        ), f"headers={headers} cookies={cookies} 應該送 {expected}，實際：" + ", ".join(
+            re.findall(r"js/i18n\.[a-z]{2}\.js", body)
+        )
+    finally:
+        for k in cookies:
+            client.delete_cookie(k)
+
+
+# --- 觀眾頁不載 admin 樣式表（2026-09-08）----------------------------------
+
+
+def test_viewer_does_not_load_the_admin_stylesheet():
+    """`index.html` 不得載 `style.css`。
+
+    `style.css` 是 **admin 的**樣式表（17,307 行 / 482 KB，2026-09-07 把
+    hud.css 併進來之後更大），但觀眾頁一直也載它。實測觀眾頁只 match 到裡面
+    2,789 條規則的 **21 條**——活動現場每支手機下載 482 KB 換 21 條 reset。
+
+    現在改載 `viewer-base.css`（15 KB，由 `scripts/build-viewer-css.mjs` 從
+    style.css 生成）。**style.css 本身沒有動**，所以 admin 的層疊順序完全不變。
+
+    驗證不是靠這支測試，是 computed-style golden master：同一頁切換
+    viewer-base.css ↔ HEAD 版 style.css 逐元素比對，七個狀態、226–252 個元素、
+    零差異。這支測試守的是「別又改回去」。
+    """
+    html = _read("server/templates/index.html")
+    assert "css/viewer-base.css" in html, "index.html 應該載 viewer-base.css"
+    assert "css/style.css" not in html, (
+        "index.html 又載了 admin 的 style.css —— 那是 482 KB，觀眾頁只用得到其中 15 KB。"
+    )
+    # admin 反過來：它要的是完整那份，不是抽出來的子集
+    admin = _read("server/templates/admin.html")
+    assert "css/style.css" in admin
+    assert "css/viewer-base.css" not in admin, (
+        "admin.html 不該載 viewer-base.css —— 那是 style.css 的子集，"
+        "兩份一起載只會讓層疊變複雜。"
+    )
+
+
+def test_viewer_base_css_is_generated_not_handwritten():
+    """`viewer-base.css` 是生成物；手改會在下次重生時被蓋掉。"""
+    css = _read("server/static/css/viewer-base.css")
+    assert css, "viewer-base.css 不存在 —— 跑 npm run build:viewer-css"
+    assert "AUTO-GENERATED" in css.split("\n")[0]
+    assert "build-viewer-css.mjs" in css
+    # 觀眾頁靠它拿到 token
+    assert '@import url("tokens.css")' in css
+    # 大小護欄：抽出來的子集不該接近原檔（接近就代表判準壞了）
+    full = _read("server/static/css/style.css")
+    assert len(css) < len(full) * 0.1, (
+        f"viewer-base.css 是 {len(css)/1024:.0f} KB，style.css 是 {len(full)/1024:.0f} KB"
+        " —— 抽取判準可能壞了"
+    )

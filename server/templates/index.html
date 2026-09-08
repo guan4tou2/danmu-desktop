@@ -23,7 +23,7 @@
          全部只為了排介面——系統字體本來就排得更好，中英混排也更穩。
          顯示層啟動動畫用的 Bebas / Orbitron 由 Electron 端 child.css
          以 woff2 自帶，不走網路。 -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/viewer-base.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/viewer-v2.css') }}" />
 </head>
 
@@ -711,7 +711,10 @@
 
   <!-- Scripts -->
   <script src="{{ url_for('static', filename='vendor/i18next.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <!-- 翻譯依語言分檔（2026-09-08）：伺服器用 cookie / Accept-Language 挑一支，
+         前端要別的語言時由 i18n.js 自己補載。原本四語全載是 670 KB。 -->
+    <script src="{{ url_for('static', filename='js/i18n.' ~ i18n_lang ~ '.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
   <script nonce="{{ csp_nonce }}">
     // 2026-05-16: viewer is system-driven — sweep any stale user-saved
     // language so detectLang() falls through to navigator.language.

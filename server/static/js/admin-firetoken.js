@@ -424,11 +424,15 @@
       });
     }
 
-    _fetchAll();
-    _state.pollTimer = setInterval(() => {
-      _fetchUsage();
-      _fetchAudit();
-    }, REFRESH_MS);
+    // 2026-09-08：改成只在自己那一區看得見時才輪詢。以前是無條件跑，
+    // 而 admin 的模組是全部一起載入的 —— 停在別的頁也照打。
+    if (!_state.stopPoll) {
+      _state.stopPoll = window.AdminUtils.pollWhileVisible({
+        el: () => document.getElementById(PAGE_ID),
+        intervalMs: REFRESH_MS,
+        tick: () => { _fetchUsage(); _fetchAudit(); },
+      });
+    }
   }
 
   document.addEventListener("DOMContentLoaded", () => {

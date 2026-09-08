@@ -117,7 +117,12 @@ jobs:
         working-directory: server
         run: |
           node scripts/build-i18n.js
-          git diff --exit-code static/js/i18n.js || { echo "❌ server i18n.js is stale — run 'npm run build:i18n' in server/ and commit"; exit 1; }
+          # 2026-09-08 起翻譯依語言分檔：除了 runtime 的 i18n.js，還有
+          # i18n.{en,zh,ja,ko}.js 四支。只檢查 i18n.js 會漏掉真正的翻譯內容。
+          git diff --exit-code static/js/i18n.js static/js/i18n.*.js \
+            || { echo "❌ server i18n bundles are stale — run 'npm run build:i18n' in server/ and commit"; exit 1; }
+          git status --porcelain static/js/ | grep . \
+            && { echo "❌ build-i18n.js produced untracked files — commit them"; exit 1; } || true
 
       - name: Verify tokens.css symlink
         run: |
@@ -141,6 +146,15 @@ jobs:
         run: |
           npm run build:css
           git diff --exit-code static/css/tailwind.css || { echo "❌ tailwind.css is stale — run 'npm run build:css' in server/ and commit"; exit 1; }
+
+      - name: Verify viewer-base.css is up-to-date
+        working-directory: server
+        run: |
+          # 觀眾頁載的是從 style.css 抽出來的那一小塊（482 KB → 15 KB）。
+          # style.css 改了卻沒重生，觀眾頁就會缺樣式——而且只在特定狀態才看得出來。
+          node scripts/build-viewer-css.mjs
+          git diff --exit-code static/css/viewer-base.css \
+            || { echo "❌ viewer-base.css is stale — run 'npm run build:viewer-css' in server/ and commit"; exit 1; }
 
       - name: Check CSS token lint metrics still fire (self-test)
         run: node scripts/check-css-tokens.test.mjs

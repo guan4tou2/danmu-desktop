@@ -341,7 +341,9 @@ class FilterRuleUpdateSchema(FilterRuleSchema):
 class WebhookSchema(Schema):
     """Webhook 註冊請求驗證"""
 
-    url = fields.Url(required=True)
+    # 2026-09-08：marshmallow 的 `fields.Url` 預設放行 ftp/ftps。webhook 只會
+    # 用 urllib 發 POST，ftp 沒有意義，收成兩個 scheme。
+    url = fields.Url(required=True, schemes={"http", "https"})
     # Whitelist derives from services.webhook.EVENT_CATALOG — the same list
     # /admin/webhooks/events serves the picker and WebhookConfig filters
     # against. Hard-coding it here let the two drift: the FE offered 10

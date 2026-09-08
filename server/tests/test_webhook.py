@@ -199,3 +199,60 @@ def test_update_hook():
 def test_update_hook_nonexistent():
     svc = _make_service()
     assert svc.update_hook("nope", {"url": "https://x.com"}) is False
+
+
+# ── 出站 URL：擋 link-local、放行區網（2026-09-08）──────────────────────────
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://discord.com/api/webhooks/abc",
+        "http://192.168.1.50:3000/hook",  # 區網服務
+        "http://10.0.0.5/hook",  # 區網服務
+        "http://172.16.0.9/hook",  # 區網服務
+        "http://localhost:9000/hook",  # 同機 sidecar
+        "https://hooks.internal.example/x",
+    ],
+)
+def test_outbound_url_allows_normal_and_lan_targets(url):
+    """私有網段**刻意放行**。
+
+    這是自架軟體：「把彈幕轉發到區網裡的一台服務」是真實且常見的用法。
+    這支測試存在的目的，是讓之後任何想「順手把私網也擋掉」的改動先撞到它、
+    先看到這段理由，而不是靜悄悄弄壞現場。
+    """
+    from server.services.webhook import _reject_link_local
+
+    _reject_link_local(url)  # 不該丟例外
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://169.254.169.254/latest/meta-data/",  # AWS/GCP/Azure/Oracle metadata
+        "http://169.254.1.1/x",
+        "http://[fe80::1]/x",
+    ],
+)
+def test_outbound_url_rejects_link_local(url):
+    """link-local 永遠不是合法的 webhook 目標；擋的主要是雲端 metadata。"""
+    from server.services.webhook import _reject_link_local
+
+    with pytest.raises(ValueError):
+        _reject_link_local(url)
+
+
+def test_webhook_schema_rejects_non_http_schemes():
+    """marshmallow 的 fields.Url 預設放行 ftp/ftps —— 這裡收成 http/https。"""
+    from server.services.validation import WebhookSchema, validate_request
+
+    ok, errors = validate_request(
+        WebhookSchema, {"url": "https://example.com/h", "events": ["on_danmu"]}
+    )
+    assert not errors, errors
+
+    _, errors = validate_request(
+        WebhookSchema, {"url": "ftp://example.com/h", "events": ["on_danmu"]}
+    )
+    assert errors and "url" in errors

@@ -9,6 +9,7 @@
 
   const REFRESH_INTERVAL = 5000;
   let refreshTimer = null;
+  let stopPoll = null;   // AdminUtils.pollWhileVisible 的解除函式
 
   // --- HTML helpers ---
 
@@ -74,12 +75,10 @@
 
   // --- Utility ---
 
-  function escapeAttr(str) {
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+  // 2026-09-08：全站的跳脫統一走 AdminUtils.escapeHtml（五個字元都跳，屬性
+  // 位置安全）。這裡原本各自實作，scheduler 那份還漏了單引號。
+  function escapeAttr(s) {
+    return escapeHTML(s);
   }
 
   // --- Core logic ---
@@ -528,18 +527,19 @@
       });
     }
 
-    // Initial fetch + auto-refresh
-    fetchJobs();
-    if (refreshTimer) clearInterval(refreshTimer);
-    refreshTimer = setInterval(fetchJobs, REFRESH_INTERVAL);
-
-    // Cleanup on page unload
-    window.addEventListener("beforeunload", function () {
-      if (refreshTimer) {
-        clearInterval(refreshTimer);
-        refreshTimer = null;
-      }
-    });
+    // 2026-09-08：改成只在自己那一區看得見時才輪詢。以前是無條件跑，
+    // 而 admin 的模組是全部一起載入的 —— 停在別的頁也照打。
+    if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+    if (!stopPoll) {
+      stopPoll = window.AdminUtils.pollWhileVisible({
+        el: function () { return document.getElementById(SECTION_ID); },
+        intervalMs: REFRESH_INTERVAL,
+        tick: fetchJobs,
+      });
+      window.addEventListener("beforeunload", function () {
+        if (stopPoll) { stopPoll(); stopPoll = null; }
+      });
+    }
   }
 
   // Wait for admin.js to finish rendering.

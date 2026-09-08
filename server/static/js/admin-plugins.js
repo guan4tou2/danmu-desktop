@@ -227,8 +227,12 @@
 
     function startConsoleTail() {
       if (_consoleTimer) return;
-      pollConsole();
-      _consoleTimer = setInterval(pollConsole, 5000);
+      // 2026-09-08：主控台只在擴充頁看得見時才 tail。
+      _consoleTimer = window.AdminUtils.pollWhileVisible({
+        el: function () { return document.getElementById("sec-plugins"); },
+        intervalMs: 5000,
+        tick: pollConsole,
+      });
     }
 
     // ---- API helpers ----

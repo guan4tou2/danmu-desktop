@@ -9,11 +9,13 @@ Webhook 整合服務
 
 import hashlib
 import hmac
+import ipaddress
 import json
 import logging
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -209,6 +211,42 @@ class WebhookConfig:
         )
 
 
+# ── 出站 URL 的安全檢查（2026-09-08）────────────────────────────────────────
+#
+# webhook 的 URL 由管理員填，而伺服器會照著它發請求——典型的 SSRF 面。
+# 這裡**刻意只擋 link-local**，不擋私有網段：
+#
+#   * `169.254.0.0/16` 與 `fe80::/10` 裡最有價值的是 `169.254.169.254`
+#     （AWS/GCP/Azure/Oracle 的 instance metadata），從 webhook 的角度永遠
+#     不是合法目標。正式環境就跑在 VPS 上，這條是有意義的。
+#   * **私有網段（192.168/10/172.16）刻意放行**：這是自架軟體，「把彈幕轉發到
+#     區網裡的一台服務」是真實且常見的用法，擋掉會弄壞正常情境。
+#
+# 這不是「防住有惡意的管理員」——管理員本來就能上傳 .py 擴充（設計上的 RCE）。
+# 這是防呆與防禦縱深：擋掉一個誤填或被社交工程騙出去的 metadata 位址。
+_BLOCKED_URL_REASON = "URL 指向 link-local 位址（例如雲端 metadata），不允許"
+
+
+def _reject_link_local(url: str) -> None:
+    """Raise ValueError if *url* points at a link-local address.
+
+    只看字面的 host：不做 DNS 解析。解析了也擋不住 DNS rebinding（發請求時
+    會再解析一次），徒增一次同步查詢與一個掛住的可能。字面檢查擋的是誤填。
+    """
+    try:
+        host = urllib.parse.urlparse(url).hostname or ""
+    except ValueError as exc:  # urlparse 對畸形 IPv6 會丟這個
+        raise ValueError("URL 格式無效") from exc
+    if not host:
+        raise ValueError("URL 缺少主機名稱")
+    try:
+        ip = ipaddress.ip_address(host.strip("[]"))
+    except ValueError:
+        return  # 是網域名稱，不是字面 IP —— 放行
+    if ip.is_link_local:
+        raise ValueError(_BLOCKED_URL_REASON)
+
+
 class WebhookService:
     """Singleton webhook manager — thread-safe, file-backed persistence."""
 
@@ -359,6 +397,7 @@ class WebhookService:
         url = (config_data.get("url") or "").strip()
         if not url:
             raise ValueError("url is required")
+        _reject_link_local(url)
 
         with self._lock:
             if len(self._hooks) >= _MAX_HOOKS:
@@ -414,6 +453,7 @@ class WebhookService:
             if "url" in data:
                 url = (data["url"] or "").strip()
                 if url:
+                    _reject_link_local(url)  # 目前沒有路由走這條，但它是公開 API
                     hook.url = url
             if "events" in data:
                 hook.events = [e for e in data["events"] if e in _VALID_EVENTS]

@@ -1,0 +1,682 @@
+/* AUTO-GENERATED — do NOT edit. Source: static/css/style.css
+ * Regenerate: node scripts/build-viewer-css.mjs  (or npm run build:viewer-css)
+ * 為什麼存在、判準是什麼、怎麼驗證：見 scripts/build-viewer-css.mjs 的檔頭。
+ */
+@import url("tokens.css");
+
+html {
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+*,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  font-family: var(--font-ui);
+  /* 2026-08-19 設計稿 07：body 基準字級落在 SF Subheadline (15px)。
+   * 在此之前 body 沒設 font-size，3,200+ 個元素直接繼承瀏覽器預設 16px；
+   * 設在 body 而非 html——tokens 是 rem，要讓它們續以 16px 為基準換算。 */
+  font-size: var(--text-subhead);
+  background-color: var(--color-bg-deep);
+  color: white;
+}
+
+:lang(zh) {
+  --font-ui: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei UI",
+    "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+}
+
+:lang(ja) {
+  --font-ui: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI",
+    "Yu Gothic", "Meiryo", "Noto Sans JP", system-ui, sans-serif;
+}
+
+:lang(ko) {
+  --font-ui: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic",
+    "Noto Sans KR", system-ui, sans-serif;
+}
+
+[data-tabular],
+.history-dashboard-value,
+.chart-label,
+[class*="-value"],
+[class*="-count"],
+[class*="-num"],
+[class*="-metric"],
+[class*="-pct"],
+[class*="-percent"],
+[class*="-stat-v"] {
+  font-variant-numeric: tabular-nums;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary,
+label[for],
+select:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  /* Theme-aware track — token resolves to light slate-darken in light
+     mode. (2026-05-18 polestar light audit pass 2.) */
+  background: var(--color-border-strong, rgba(255, 255, 255, 0.2));
+  border-radius: var(--radius-pill);
+  outline: none;
+  transition: background-color var(--motion-normal) ease, box-shadow var(--motion-normal) ease;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--color-primary);
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid var(--color-bg-base);
+  transition: transform var(--motion-normal) ease, box-shadow var(--motion-normal) ease, background-color var(--motion-normal) ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px var(--color-primary);
+}
+
+summary:focus-visible {
+  border-radius: var(--radius-lg);
+}
+
+@keyframes fadeInScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+#blacklistWarningModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  opacity: 0;
+  transition: opacity var(--motion-slow) ease-in-out;
+  pointer-events: none;
+}
+
+#blacklistWarningModal.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#blacklistWarningModal .modal-content {
+  background-color: var(--color-bg-elevated);
+  padding: var(--space-8);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  border: 2px solid var(--color-error);
+  box-shadow: 0 10px 25px var(--shadow-base);
+  transform: scale(0.95);
+  transition: transform var(--motion-slow) ease-in-out;
+}
+
+#blacklistWarningModal.visible .modal-content {
+  transform: scale(1);
+}
+
+#blacklistWarningModal .warning-triangle {
+  fill: var(--color-error);
+  margin-bottom: 1rem;
+  width: 48px;
+  height: 48px;
+  display: inline-block;
+}
+
+#blacklistWarningModal .warning-message {
+  color: var(--color-text-primary);
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+#blacklistWarningModal .ok-button {
+  background-color: var(--color-error);
+  color: white;
+  font-weight: bold;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--motion-normal);
+}
+
+#blacklistWarningModal .ok-button:hover {
+  background-color: var(--color-error-hover);
+}
+
+@keyframes flashWarningBorder {
+
+  0%,
+  100% {
+    border-color: var(--color-error);
+  }
+
+  50% {
+    border-color: var(--color-error-light);
+  }
+}
+
+#blacklistWarningModal.flashing .modal-content {
+  animation: flashWarningBorder 0.7s infinite;
+}
+
+@keyframes flashIcon {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+#blacklistWarningModal.flashing .warning-triangle {
+  animation: flashIcon 0.7s infinite ease-in-out;
+}
+
+.effect-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  min-width: 44px;
+  padding-inline: 0.9rem;
+  padding-block: 0.65rem;
+}
+
+.effect-btn--active {
+  /* Prototype alignment (viewer.jsx):
+   * selected = cyanSoft tint + accent border + 600 weight.
+   * Use !important to override the generic .viewer-chip baseline. */
+  background-color: var(--hud-cyan-soft) !important;
+  color: var(--color-ink-accent) !important;
+  border-color: var(--color-primary) !important;
+  font-weight: 600;
+}
+
+.connection-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.connection-dot--connected {
+  background-color: var(--color-success);
+  box-shadow: 0 0 6px var(--glow-success);
+}
+
+.connection-dot--connecting {
+  background-color: var(--color-warning);
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.connection-dot--disconnected {
+  background-color: var(--color-error);
+}
+
+@keyframes pulse-dot {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.btn-spinner {
+  width: 20px;
+  height: 20px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.site-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 1.25rem;
+  /* Was var(--color-slate-600) — tailwind.css's raw scale, which never flips,
+     so the footer stayed slate-600 on the dark viewer page (CR 2.63). These are
+     theme-following text, so they belong on the semantic tokens. */
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.site-footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text-secondary);
+  transition: color var(--motion-normal) ease;
+}
+
+.site-footer-link:hover {
+  color: var(--color-ink-accent);
+}
+
+.site-footer-separator {
+  color: var(--color-text-secondary);
+}
+
+.site-footer-version {
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 639px) {
+.site-footer {
+    flex-wrap: wrap;
+    gap: 0.3rem 0.45rem;
+    font-size: 0.8125rem;
+  }
+}
+
+@keyframes hud-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+body[data-setup-wizard-open="1"] { overflow: hidden; }
+
+@keyframes admin-help-slide {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@media (max-width: 600px) {
+@keyframes admin-help-slide-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+}
+
+.admin-eoff {
+  position: fixed; inset: 0; z-index: 9070;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(5, 9, 16, 0.65);
+  padding: 16px;
+}
+
+.admin-eoff__card {
+  width: 300px; max-width: 100%;
+  padding: 32px 24px; text-align: center;
+  background: var(--hud-bg1);
+  border: 1px solid rgba(255, 77, 79, 0.21);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 48px var(--color-overlay, rgba(0, 0, 0, 0.6));
+}
+
+.admin-eoff__icon {
+  width: 56px; height: 56px; margin: 0 auto;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 77, 79, 0.05);
+  border: 1px solid rgba(255, 77, 79, 0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--text-title1);
+  color: var(--color-danger);
+}
+
+.admin-eoff__title {
+  font-size: var(--text-subhead); font-weight: 600; margin-top: 12px;
+  color: var(--color-text-primary);
+}
+
+.admin-eoff__sub {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption); letter-spacing: 1px;
+  color: var(--color-danger);
+  margin-top: 4px;
+}
+
+.admin-eoff__desc {
+  font-size: var(--text-caption); line-height: 1.6;
+  color: var(--color-text-muted);
+  margin-top: 8px;
+}
+
+.admin-eoff__queue {
+  margin-top: 12px; padding: 8px 8px; border-radius: var(--radius-md-sm);
+  background: rgba(251, 191, 36, 0.05);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+  text-align: left;
+}
+
+.admin-eoff__queue-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption); letter-spacing: 0.5px;
+  color: var(--color-ink-warning);
+  margin-bottom: 4px;
+}
+
+.admin-eoff__queue-text {
+  font-size: var(--text-caption);
+  color: var(--color-text-primary);
+  word-break: break-word;
+}
+
+.admin-eoff__queue-foot {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption); letter-spacing: 0.3px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+.admin-eoff__retry {
+  width: 100%; margin-top: 16px;
+  padding: 8px 24px; border-radius: var(--radius-md-sm); cursor: pointer;
+  border: 1px solid var(--color-danger);
+  background: var(--color-danger);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption); font-weight: 700; letter-spacing: 1.5px;
+}
+
+.admin-eoff__retry:hover { filter: brightness(1.05); }
+
+.admin-eoff__home {
+  display: inline-block; margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption); letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.admin-eoff__home:hover { text-decoration: underline; }
+
+@keyframes dropzone-drop-pulse {
+  0%, 100% { box-shadow: 0 0 32px rgba(56, 189, 248, 0.19); }
+  50%      { box-shadow: 0 0 48px rgba(56, 189, 248, 0.33); }
+}
+
+@keyframes dropzone-spin {
+  to { transform: rotate(360deg); }
+}
+
+.admin-offline-banner {
+  /* viewer 借用此橫幅；軟鍵盤開啟時跟著 --viewer-kb-offset 抬高
+   * （admin 沒人設這顆變數，fallback 0 = 原行為）。 */
+  position: fixed; left: 0; right: 0; bottom: var(--viewer-kb-offset, 0);
+  z-index: 9050;
+  padding: 12px 16px;
+  background: rgba(251, 191, 36, 0.08);
+  border-top: 1px solid rgba(251, 191, 36, 0.33);
+  font-family: var(--font-sans);
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.admin-offline-banner__head {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.admin-offline-banner__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--color-warning);
+  animation: hud-pulse 1.5s ease-in-out infinite;
+}
+
+.admin-offline-banner__title {
+  font-size: var(--text-footnote); font-weight: 600;
+  color: var(--color-ink-warning);
+}
+
+.admin-offline-banner__meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption); letter-spacing: 0.3px;
+  color: var(--color-text-muted);
+}
+
+.admin-offline-banner__progress {
+  height: 3px; border-radius: var(--radius-2xs);
+  background: var(--color-bg-elevated, #182239);
+  overflow: hidden;
+}
+
+.admin-offline-banner__progress-fill {
+  height: 100%; width: 0%;
+  background: var(--color-warning);
+  border-radius: var(--radius-2xs);
+  transition: width var(--motion-normal) linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+.admin-offline-banner__dot { animation: none; }
+.admin-offline-banner__progress-fill { transition: none; }
+}
+
+@keyframes hud-mobile-nav-slide {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+@media (max-width: 768px) {
+body:has(input:focus, textarea:focus, [contenteditable=true]:focus) .admin-mobile-nav,
+  body.admin-mobile-nav--hidden .admin-mobile-nav {
+    transform: translateY(100%);
+    transition: transform var(--motion-normal) ease-out;
+  }
+}
+
+@media (max-width: 600px) {
+@keyframes hud-mobile-sheet-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+}
+
+@keyframes hud-modal-rise {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+
+@keyframes admin-skel-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@keyframes msgd-slide-up { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+@keyframes msgd-slide {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.admin-vc-info-accent { color: var(--color-ink-accent); letter-spacing: 1.2px; }
+
+[data-admin-tabs-host] {
+  /* 2026-07-30 重新設計：分段式控制項自帶外框，不再需要裸色帶＋底線。
+   * 上下給呼吸空間，底透明，靠 strip 本身的框定義視覺邊界。 */
+  padding: var(--space-4) var(--space-6) 0;
+  background: transparent;
+  border-bottom: 0;
+}
+
+[data-admin-tabs-host][hidden] { display: none; }
+
+@media (max-width: 640px) {
+[data-admin-tabs-host] { padding: var(--space-3) var(--space-3) 0; }
+}
+
+[data-quick-action-host] {
+  padding: 0 24px;
+  margin-top: 8px;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+[data-quick-action-host] { padding: 0 12px; }
+}
+
+@keyframes admin-modbans-custom-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pu-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes hud-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes dme-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+@keyframes dme-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-12px); }
+}
+
+@keyframes dme-glow-medium {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 4px currentColor); }
+  50%       { filter: brightness(1.2) drop-shadow(0 0 16px currentColor); }
+}
+
+@keyframes dme-rainbow {
+  0%   { color: #ff0000; }
+  16%  { color: #ff8800; }
+  33%  { color: #ffee00; }
+  50%  { color: #00cc44; }
+  66%  { color: #0088ff; }
+  83%  { color: #8844ff; }
+  100% { color: #ff0000; }
+}
+
+@keyframes dme-shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-5px); }
+  75%      { transform: translateX(5px); }
+}
+
+@keyframes dme-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dme-wave {
+  0%, 100% { transform: skewX(0deg); }
+  50%       { transform: skewX(8deg); }
+}
+
+@keyframes dme-zoom {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.3); }
+}
+
+@keyframes admin-identity-flash {
+  0% {
+    background-color: var(--hud-cyan-soft);
+    box-shadow: inset 0 0 0 1px var(--color-primary);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px transparent;
+  }
+}
+
+[data-admin-ui-replaced="1"] { display: none !important; }
+
+@keyframes admin-cmdk-slide {
+  from { transform: translateY(-12px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+[data-dsp-mode="values"] [data-dsp-only="audience"],
+[data-dsp-mode="audience"] [data-dsp-only="values"] {
+  display: none;
+}
+
+@keyframes bc-v4-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+@media (forced-colors: active) {
+.ui-status::before,
+  .admin-cockpit-dot,
+  .admin-ui-dot,
+  .admin-bc-v4__statedot,
+  .admin-session-live-dot,
+  .admin-sessions-livedot,
+  .admin-poll-status-dot,
+  .admin-ext-status-dot,
+  .admin-plugins-dot,
+  .admin-soh-chip__dot,
+  .admin-offline-banner__dot,
+  .admin-rcb__dot,
+  .admin-audit-sev-dot,
+  .admin-ev-v4__sev-dot {
+    forced-color-adjust: none;
+  }
+}

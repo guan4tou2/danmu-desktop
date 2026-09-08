@@ -21,18 +21,25 @@
     "themeBlind": 0
   },
   "server/static/css/overlay.css": {
-    "hex": 75,
+    "hex": 71,
     "gridPx": 39,
     "rgba": 38,
     "offGrid": 0,
-    "themeBlind": 14
+    "themeBlind": 12
   },
   "server/static/css/style.css": {
     "hex": 198,
-    "gridPx": 1361,
-    "rgba": 411,
+    "gridPx": 1358,
+    "rgba": 410,
     "offGrid": 0,
     "themeBlind": 11
+  },
+  "server/static/css/viewer-base.css": {
+    "hex": 9,
+    "gridPx": 22,
+    "rgba": 10,
+    "offGrid": 0,
+    "themeBlind": 0
   },
   "server/static/css/viewer-v2.css": {
     "hex": 50,
