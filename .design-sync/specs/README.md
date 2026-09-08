@@ -274,12 +274,33 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
       拿掉它會連帶砍掉「勾選多則 → 批次封鎖裝置」——per-row「封鎖此人」、裝置
       識別頁、訊息抽屜都還能封鎖，所以是便利性損失而非能力損失，但仍要先確認。
 
-12. **刻意留著的規格殘留**——`--font-brand: "Unbounded"` 與
+12. **實跑 Electron app 才發現的（2026-09-08，用 computer use）**
+
+    先前桌面端只測「用 http 伺服 `index.html` / `child.html` 的靜態頁」，沒跑過
+    真的 app。實際跑起來、連上 server、開顯示層之後：
+
+    - **已修 · 入場 QR 畫面字標與網址疊在一起**。`child.css` 有一條裸的
+      `img { position: absolute }`（給 track-manager 生出來的貼圖／表情定位用，
+      比入場畫面早存在），而 `.overlay-idle-wordmark` 沒宣告 position，於是字標
+      被絕對定位、壓在「掃 QR 或打開 / <網址>」上面。修法是
+      `#overlay-idle img { position: static }`——範圍寫在畫面上而不是只修字標。
+      彈幕本身仍照舊絕對定位（實跑確認過彈幕還會飛）。
+    - **待辦 · 主視窗還有三處英文**：伺服器列的 `✗ Connection failed`、
+      螢幕選擇器旁的 `DISPLAY · 偵測到 1 個螢幕`、編輯模式的 `Test connection`
+      按鈕。設計稿 14 的狀態文案表給的是「已連線 · 連線中… · 無法連線 ·
+      顯示中 · 未開啟」，P1 那顆按鈕是「測試連線」。Toast 是中文的沒問題。
+      （`LINK START` 是稿上明列保留的，不算。）
+    - **測試環境備忘**：app 只走 `wss://`，純 http 的開發 server 連不上。不用
+      Docker 的做法是本機架一個 TLS 終結代理（純 TCP 轉發，HTTP 與 WS upgrade
+      都原樣通過）指到 Flask 的 port，app 的 `certificate-error` handler 會接受
+      自簽憑證。
+
+13. **刻意留著的規格殘留**——`--font-brand: "Unbounded"` 與
    `server/static/fonts/unbounded-800-latin.woff2`（1788 B）目前沒有任何
    `@font-face` 或消費者。原因是設計稿 11 要求字標「文字外框化後交付」，四個
    位置都用 SVG，活字字體根本用不到。token 是設計稿 12 明列的，先留著。
 
-13. **設計稿 16/17 的收尾**——安全區（OS1）與淺底描邊（OS2）2026-09-07
+14. **設計稿 16/17 的收尾**——安全區（OS1）與淺底描邊（OS2）2026-09-07
    **已接上**：Admin › 顯示層 › 投影畫面 兩列（安全區 `0% / 5% / 8%` 分段、
    描邊 `自動／總是描邊／不描邊` 分段），值存進 `display_layer.json`。
    **顯示層那半 2026-08 就寫好了，但沒有任何東西會去設它**——`child.css`

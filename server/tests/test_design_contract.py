@@ -1619,3 +1619,27 @@ def test_filter_rule_toggle_has_one_source_of_truth():
     assert "toggleRule(cb.dataset.ruleId, cb.checked)" in change_body
     assert 'classList.toggle("is-on", cb.checked)' in change_body
     assert "style.opacity = cb.checked" in change_body
+
+
+def test_overlay_idle_images_are_in_flow():
+    """顯示層的 `img { position: absolute }` 是給彈幕內容的，不能打到入場畫面。
+
+    2026-09-08 **實跑 Electron app** 才發現的既有 bug：`child.css` 有一條裸的
+    `img { position: absolute }`（track-manager.js 用 createElement("img") 生出來
+    的貼圖／表情要靠它定位在軌道上，那條規則比入場畫面早存在）。
+    `.overlay-idle-wordmark` 只宣告了 display/width/height，**沒宣告 position**，
+    所以那條全域規則生效——字標被絕對定位，直接疊在「掃 QR 或打開 / <網址>」
+    上面。
+
+    靜態測試看不到：要真的把顯示層開起來、再切到入場畫面才會出現，而
+    `child.html` 用 http 伺服起來時 `#overlay-idle` 預設是隱藏的。
+
+    修法把重設範圍寫在 `#overlay-idle` 而不是只修字標，之後往這個畫面加圖
+    （贊助商標、第二個 QR…）也不會再踩。
+    """
+    css = _read("danmu-desktop/child.css")
+    assert "#overlay-idle img" in css
+    idx = css.index("#overlay-idle img")
+    assert "position: static;" in css[idx : idx + 120]
+    # 彈幕那條全域規則要留著，否則貼圖會掉出軌道
+    assert "img{\n  position: absolute;" in css or "img {\n  position: absolute;" in css

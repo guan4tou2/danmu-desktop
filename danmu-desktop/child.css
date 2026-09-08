@@ -60,9 +60,24 @@ body {
   overflow: hidden;
 }
 /* Text stroke and shadow are now controlled dynamically via inline styles */
+
+/* 這條裸的 img 規則是給**彈幕內容**用的：track-manager.js 用
+ * `createElement("img")` 生出來的貼圖／表情要靠它絕對定位在軌道上。
+ * 它比入場畫面早存在，所以是全域的。 */
 img{
   position: absolute;
   overflow: hidden;
+}
+
+/* 入場 QR 畫面不是彈幕軌道，它的圖要照文件流排。
+ *
+ * 2026-09-08 實跑 app 才發現：`.overlay-idle-wordmark` 只宣告了
+ * display/width/height，沒宣告 position，所以上面那條全域規則生效——字標被
+ * 絕對定位、直接疊在「掃 QR 或打開 / <網址>」上面。靜態測試看不到這個，
+ * 因為要真的把顯示層開起來、再切到入場畫面才會出現。
+ * 範圍寫在 #overlay-idle 上而不是只修字標，這樣之後往這個畫面加圖也不會再踩。 */
+#overlay-idle img {
+  position: static;
 }
 
 
