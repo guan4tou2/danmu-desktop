@@ -758,7 +758,9 @@ def test_clear_history_shows_hud_panel_and_cancel_sends_nothing(admin_page):
     panel = admin_page.locator(".admin-hud-modal__panel")
     panel.wait_for(state="visible", timeout=5000)
     assert "清除所有彈幕歷史" in panel.inner_text()
-    assert "CANNOT BE UNDONE" in panel.inner_text()
+    # 2026-09-08 設計稿 14「不用全大寫」：確認框副標從全大寫英文改成中文，
+    # 並走 i18n（cfmSub* 系列）。這幾行原本釘的是英文原文。
+    assert "此動作無法復原" in panel.inner_text()
 
     admin_page.locator(".admin-hud-modal__btn--cancel").click()
     admin_page.wait_for_timeout(600)
@@ -792,7 +794,9 @@ def test_factory_reset_shows_hud_panel_and_cancel_sends_nothing(admin_page):
     panel = admin_page.locator(".admin-hud-modal__panel")
     panel.wait_for(state="visible", timeout=5000)
     assert "Factory reset" in panel.inner_text()
-    assert "WIPES RUNTIME STATE" in panel.inner_text()
+    # 2026-09-08 設計稿 14「不用全大寫」：確認框副標從全大寫英文改成中文，
+    # 並走 i18n（cfmSub* 系列）。這幾行原本釘的是英文原文。
+    assert "清掉執行期狀態與佇列" in panel.inner_text()
 
     admin_page.locator(".admin-hud-modal__btn--cancel").click()
     admin_page.wait_for_timeout(600)
@@ -840,7 +844,9 @@ def test_revoke_fire_token_shows_hud_panel_and_cancel_sends_nothing(admin_page, 
     panel = admin_page.locator(".admin-hud-modal__panel")
     panel.wait_for(state="visible", timeout=5000)
     assert "撤銷 Fire Token" in panel.inner_text()
-    assert "ALL EXTENSIONS STOP WORKING" in panel.inner_text()
+    # 2026-09-08 設計稿 14「不用全大寫」：確認框副標從全大寫英文改成中文，
+    # 並走 i18n（cfmSub* 系列）。這幾行原本釘的是英文原文。
+    assert "所有 extension 都會失效" in panel.inner_text()
 
     try:
         admin_page.locator(".admin-hud-modal__btn--cancel").click()

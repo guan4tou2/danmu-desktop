@@ -1871,9 +1871,9 @@ def test_viewer_does_not_load_the_admin_stylesheet():
     """
     html = _read("server/templates/index.html")
     assert "css/viewer-base.css" in html, "index.html 應該載 viewer-base.css"
-    assert "css/style.css" not in html, (
-        "index.html 又載了 admin 的 style.css —— 那是 482 KB，觀眾頁只用得到其中 15 KB。"
-    )
+    assert (
+        "css/style.css" not in html
+    ), "index.html 又載了 admin 的 style.css —— 那是 482 KB，觀眾頁只用得到其中 15 KB。"
     # admin 反過來：它要的是完整那份，不是抽出來的子集
     admin = _read("server/templates/admin.html")
     assert "css/style.css" in admin
