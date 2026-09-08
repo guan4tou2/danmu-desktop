@@ -1643,3 +1643,25 @@ def test_overlay_idle_images_are_in_flow():
     assert "position: static;" in css[idx : idx + 120]
     # 彈幕那條全域規則要留著，否則貼圖會掉出軌道
     assert "img{\n  position: absolute;" in css or "img {\n  position: absolute;" in css
+
+
+def test_notifications_old_bookmark_opens_the_panel_on_cold_start():
+    """`#/notifications` 是保留給舊書籤的路由——它沒有頁面，要把通知面板打開。
+
+    2026-09-08 走訪全部 27 條 admin 路由時抓到：**直接開
+    `/admin#/notifications` 只會看到一個空白頁**，載入後再切到這個 hash 反而
+    正常。原因是 `_bind()`（裡面立刻檢查一次 hash）跑在 `init()`
+    （`_mountBell()` 建面板 DOM）之前，而 `openPanel()` 開頭是
+    `if (!panel) return`——**靜默**放棄。冷啟動壞、熱切換好，這種差異最容易漏。
+
+    修法：把 hash 檢查抽成 `_openIfHashRequests()`，並在 `_mountBell()` 掛載
+    成功後再呼叫一次。面板本來就是被 MutationObserver 重複掛載的（shell 會重繪
+    topbar），所以掛載完成才是「可以開了」的正確時機。
+    """
+    js = _read("server/static/js/admin-notifications.js")
+    assert "function _openIfHashRequests()" in js
+    # 掛載完成後要補一次；只在 _bind() 檢查是不夠的
+    mount = js[js.index("function _mountBell()") : js.index("function _bind()")]
+    assert "_openIfHashRequests();" in mount, "掛載後沒有補檢查 hash"
+    bind = js[js.index("function _bind()") :]
+    assert 'window.addEventListener("hashchange", _openIfHashRequests)' in bind

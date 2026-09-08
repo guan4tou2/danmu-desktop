@@ -263,6 +263,10 @@
     if (!_state.refreshTimer) _state.refreshTimer = setInterval(_fetchAll, 30000);
   }
 
+  function _openIfHashRequests() {
+    if ((location.hash || "").replace(/^#\/?/, "").split("/")[0] === "notifications") openPanel();
+  }
+
   function closePanel() {
     const panel = document.getElementById(PANEL_ID);
     if (panel) panel.hidden = true;
@@ -302,6 +306,13 @@
       document.body.appendChild(panel);
     }
     _renderBadge();
+    // 面板剛剛才存在——如果網址就是要開它，現在補開。
+    // 舊書籤 `#/notifications` 走的正是這條路：`_bind()` 在載入時就檢查過一次
+    // hash，但那時 shell 還沒畫出 topbar，`_mountBell()` 直接 early-return，
+    // `openPanel()` 因為 `if (!panel) return` 而**靜默**什麼都沒做。
+    // 所以直接開 `/admin#/notifications` 只會看到一個空頁面；載入後再切 hash
+    // 反而正常——這種「只有冷啟動壞掉」的差異最容易被漏掉。
+    _openIfHashRequests();
   }
 
   function _bind() {
@@ -333,13 +344,8 @@
     });
 
     // 舊書籤 #/notifications 沒有頁面了，改成把面板打開。
-    const onHash = () => {
-      if ((location.hash || "").replace(/^#\/?/, "").split("/")[0] === "notifications") {
-        openPanel();
-      }
-    };
-    window.addEventListener("hashchange", onHash);
-    onHash();
+    window.addEventListener("hashchange", _openIfHashRequests);
+    _openIfHashRequests();
   }
 
   function init() {
