@@ -126,7 +126,7 @@
       if (screenCount) {
         screenCount.textContent = (typeof i18n !== "undefined")
           ? i18n.t("overlayScreenCount", { count: opts.length })
-          : ("DISPLAY · 偵測到 " + opts.length + " 個螢幕");
+          : ("偵測到 " + opts.length + " 個螢幕");
       }
       screenRow.innerHTML = "";
       opts.forEach(function (opt) {
@@ -158,7 +158,7 @@
       if (opts.length === 0 && screenCount) {
         screenCount.textContent = (typeof i18n !== "undefined")
           ? i18n.t("overlayScreenDetecting")
-          : "DISPLAY · 偵測中…";
+          : "偵測螢幕中…";
       }
     }
 

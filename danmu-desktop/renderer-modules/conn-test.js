@@ -31,15 +31,19 @@ function createConnTest({ api }) {
     }
   }
 
+  // 2026-09-08：chip 的成功／失敗本來就靠 `data-state` 上色
+  // （styles.css 的 `[data-state="ok"]` / `[data-state="fail"]`），
+  // 前面再黏一個 ✓ / ✗ 是同一件事講兩次；設計稿 14 也明訂按鈕與狀態
+  // 不加圖示符號。文字本身已經是三態（測試中…／延遲／錯誤原因）。
   function _setSuccess(latencyMs) {
     state = "ok";
-    chipLabel = `✓ ${latencyMs}ms`;
+    chipLabel = `${latencyMs}ms`;
     _fireChange();
   }
 
   function _setFailure(code) {
     state = "fail";
-    chipLabel = `✗ ${_errorLabel(code)}`;
+    chipLabel = _errorLabel(code);
     _fireChange();
   }
 

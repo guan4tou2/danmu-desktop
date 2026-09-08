@@ -17,6 +17,9 @@ function makeApiMock(result) {
   };
 }
 
+// 2026-09-08：chip 文字不再帶 ✓ / ✗。成功失敗本來就靠 `data-state` 上色
+// （styles.css 的 [data-state="ok"] / [data-state="fail"]），圖示是同一件事
+// 講兩次；設計稿 14 也明訂狀態不加圖示符號。
 describe("ConnTest state machine", () => {
   test("initial state is idle", () => {
     const ct = createConnTest({ api: { testConnection: jest.fn() } });
@@ -37,7 +40,7 @@ describe("ConnTest state machine", () => {
     resolve();
     await promise;
     expect(ct.getState()).toBe("ok");
-    expect(ct.getChipLabel()).toBe("✓ 23ms");
+    expect(ct.getChipLabel()).toBe("23ms");
     expect(states).toEqual(["testing", "ok"]);
   });
 
@@ -51,7 +54,7 @@ describe("ConnTest state machine", () => {
     resolve();
     await promise;
     expect(ct.getState()).toBe("fail");
-    expect(ct.getChipLabel()).toBe("✗ 1008 Unauthorized");
+    expect(ct.getChipLabel()).toBe("1008 Unauthorized");
   });
 
   test("error code map covers documented vocabulary", async () => {
@@ -70,7 +73,7 @@ describe("ConnTest state machine", () => {
       const p = ct.start({ host: "danmu.local", port: 443 });
       resolve();
       await p;
-      expect(ct.getChipLabel()).toBe(`✗ ${label}`);
+      expect(ct.getChipLabel()).toBe(label);
     }
   });
 
