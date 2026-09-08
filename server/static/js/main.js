@@ -75,40 +75,20 @@ document.addEventListener("DOMContentLoaded", () => {
     pollOptions: document.querySelector("[data-vpoll-options]"),
   };
 
-  function _resolveViewerPollEnabled() {
-    // Prototype baseline (Danmu Redesign.html) defaults pollEnabled=false.
-    // Keep viewer poll closed unless explicitly enabled.
-    try {
-      const cfg = window.DANMU_CONFIG?.viewer?.pollEnabled;
-      if (cfg === true || cfg === "true" || cfg === 1 || cfg === "1") return true;
-    } catch (_) {
-      /* ignore */
-    }
-    try {
-      const q = new URLSearchParams(window.location.search).get("poll");
-      if (!q) return false;
-      return q === "1" || q.toLowerCase() === "true" || q.toLowerCase() === "on";
-    } catch (_) {
-      return false;
-    }
-  }
-
-  const VIEWER_POLL_ENABLED = _resolveViewerPollEnabled();
-
-  function _applyViewerPollGate() {
-    if (VIEWER_POLL_ENABLED) return;
-    const pollTabBtn = document.querySelector('[data-viewer-tab="poll"]');
-    if (pollTabBtn) pollTabBtn.remove();
-    if (elements.viewerPollPane) {
-      elements.viewerPollPane.remove();
-      elements.viewerPollPane = null;
-    }
-    const tabbar = document.querySelector(".viewer-tabbar");
-    elements.viewerTabButtons = Array.from(document.querySelectorAll("[data-viewer-tab]"));
-    if (tabbar && elements.viewerTabButtons.length <= 1) {
-      tabbar.setAttribute("hidden", "");
-    }
-  }
+  // 2026-09-08：這裡原本是 `_resolveViewerPollEnabled()` —— 沒有 `?poll=1`
+  // 就把投票分頁與整個面板從 DOM 裡拿掉。那條 gate 讀的是
+  // `window.DANMU_CONFIG?.viewer?.pollEnabled`，而 `DANMU_CONFIG` **只在
+  // admin.html 裡定義**，觀眾頁從來沒有，所以唯一的開法是手動在網址後面加
+  // `?poll=1`。結果是：主持人開了投票，觀眾頁什麼都不會發生。
+  //
+  // 設計稿 05 · V6 與表尾對照表寫的是「**有投票時才浮出**分段控制並帶紅點」
+  // ——不是「預設關閉、要靠網址參數開」。浮出／收起的機制本來就寫好了
+  // （`viewer-style-sheet.js` 的 `refreshPollTab` 看面板內容決定 tabbar 的
+  // hidden），只是被這條 gate 擋在 DOM 之外永遠跑不到。所以整條移除：
+  // 沒有投票時 tabbar 仍然是 hidden，首屏一樣乾淨。
+  // 「這一刻有沒有進行中的投票」。由 /session/public-state 的 poll_active
+  // 維護（見 _pollViewerState），決定要不要花第三支請求去抓投票內容。
+  let _pollMaybeLive = false;
 
   // --- Helper utilities ---
   const scheduleIdleTask = (cb, timeout = 500) => {
@@ -581,8 +561,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function _setViewerMode(mode) {
-    const nextMode =
-      VIEWER_POLL_ENABLED && mode === "poll" ? "poll" : "fire";
+    const nextMode = mode === "poll" ? "poll" : "fire";
     _viewerMode = nextMode;
     if (elements.viewerFirePane) {
       const isFire = nextMode === "fire";
@@ -675,7 +654,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function _renderPollPane() {
-    if (!VIEWER_POLL_ENABLED) return;
     if (!elements.pollQuestion || !elements.pollMeta || !elements.pollOptions) {
       return;
     }
@@ -891,7 +869,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function _applyPollState(raw) {
-    if (!VIEWER_POLL_ENABLED) return;
     _viewerPollState = _normalizePollState(raw);
     if (_viewerPollState.question) {
       window._lastPollQuestion = _viewerPollState.question;
@@ -1403,14 +1380,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   })();
 
-  _applyViewerPollGate();
   _bindViewerTabs();
   _renderPollPane();
-  if (VIEWER_POLL_ENABLED) {
-    window.addEventListener("viewer-poll-state", (event) => {
-      _applyPollState(event.detail || {});
-    });
-  }
+  window.addEventListener("viewer-poll-state", (event) => {
+    _applyPollState(event.detail || {});
+  });
 
   if (elements.userFontSelect) {
     elements.userFontSelect.addEventListener("change", updatePreview);
@@ -2478,7 +2452,10 @@ document.addEventListener("DOMContentLoaded", () => {
       fetch("/get_settings", { credentials: "same-origin" })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
-      VIEWER_POLL_ENABLED
+      // 只在「上一輪知道有投票」時才抓完整內容。開場的那一輪一定是 false，
+      // 所以投票開始後分頁最多晚一個 tick（2 秒）才浮出來——那跟輪詢本來
+      // 就有的延遲同一個量級，換掉的是每支手機每 2 秒一支長期空轉的請求。
+      _pollMaybeLive
         ? fetch("/poll/public-status", { credentials: "same-origin" })
             .then((r) => (r.ok ? r.json() : null))
             .catch(() => null)
@@ -2513,10 +2490,16 @@ document.addEventListener("DOMContentLoaded", () => {
     // Poll state — feed straight into the existing renderer.
     if (pollState) {
       _applyPollState(pollState);
+    } else if (!_pollMaybeLive && _viewerPollState.state !== "idle") {
+      // 投票剛收掉：這一輪沒抓內容，但面板還停在上一場。清成 idle，
+      // `viewer-style-sheet.js` 的 observer 才會把分段控制收起來。
+      _applyPollState({ state: "idle" });
     }
 
     // Session — fire ended handler on live → ended transition.
     if (sessionState) {
+      // 下一輪要不要抓投票內容看這裡（見上面 fetches 的註解）。
+      _pollMaybeLive = sessionState.poll_active === true;
       const status = sessionState.status || sessionState.state || null;
       if (status === "ended" && _lastSessionStatus === "live") {
         _handleSessionEnded(sessionState.viewer_end_behavior || "continue");

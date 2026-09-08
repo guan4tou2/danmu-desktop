@@ -348,7 +348,7 @@ def test_poll_vote_marks_option_voted_without_counts(viewer_page, admin_http):
     # 結果，理由見 _fire_accepts_vote 的說明。
     _go_online(page)
     fired = _fire_accepts_vote(page, option_key, "Favorite color?")
-    page.goto(f"{live_url}/?poll=1")
+    page.goto(f"{live_url}/")
     page.wait_for_timeout(2500)  # let the 2s poll tick pick up poll state
 
     poll_tab = page.locator('[data-viewer-tab="poll"]')
@@ -409,7 +409,7 @@ def test_poll_pane_never_shows_percentage_text(viewer_page, admin_http):
     page, live_url = viewer_page
     _create_and_start_poll(admin_http, "Best season?", ["Spring", "Summer", "Fall"])
 
-    page.goto(f"{live_url}/?poll=1")
+    page.goto(f"{live_url}/")
     page.wait_for_timeout(2500)
     page.locator('[data-viewer-tab="poll"]').click()
     page.wait_for_selector("[data-vpoll-options]", state="visible", timeout=5000)
@@ -433,7 +433,7 @@ def test_voted_marker_does_not_leak_into_the_next_poll(viewer_page, admin_http):
 
     _go_online(page)
     _fire_accepts_vote(page, option_key, "Round one?")
-    page.goto(f"{live_url}/?poll=1")
+    page.goto(f"{live_url}/")
     page.wait_for_timeout(2500)
 
     poll_tab = page.locator('[data-viewer-tab="poll"]')

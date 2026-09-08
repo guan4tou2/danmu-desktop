@@ -106,9 +106,9 @@ test.describe("後台互動與自動化（投票 / 排程 / Webhooks）", () => 
 
   /** 開一個「開了 Poll 分頁」的 viewer。 */
   async function openPollViewer() {
-    // viewer 的 Poll 分頁預設關閉（main.js `_resolveViewerPollEnabled`：
-    // 只有 DANMU_CONFIG.viewer.pollEnabled 或 ?poll=1 才開），沒有 server 端
-    // 設定會打開它 —— 這是產品行為不是測試問題，所以測試用 ?poll=1 進場。
+    // 2026-09-08 前這裡要帶 ?poll=1：舊 gate 沒帶參數就把投票面板整個從
+    // DOM 拿掉。gate 已移除（設計稿 05 · V6「有投票時才浮出」），一般網址
+    // 就能進——參數留著也無害，但已經不是必要條件。
     const page = await browser.newPage();
     await page.goto(new URL("/?poll=1", SERVER).toString());
     await page.waitForSelector("#danmuText", { timeout: 15000 });

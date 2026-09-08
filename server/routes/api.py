@@ -597,10 +597,18 @@ def session_public_state():
     / viewer_end_behavior). Viewer polls this every ~5 s and triggers
     `_handleSessionEnded(behavior)` when status transitions
     live → ended.
+
+    **`poll_active`（2026-09-08 新增）**：設計稿 05 · V6 要求投票分段控制
+    「有投票時才浮出」，所以觀眾頁必須知道現在有沒有投票。但要是為此讓每支
+    手機每 2 秒多打一次 `/poll/public-status`，等於把觀眾端的輪詢量從 2 支
+    變 3 支——中型活動幾百支手機，那是白付的頻寬。這裡多回一個布林，觀眾頁
+    只在它為真時才去抓完整的投票內容。
     """
     from ..services import session_service
 
-    return _json_response(session_service.get_state(), 200)
+    state = dict(session_service.get_state())
+    state["poll_active"] = poll_service.state == "active"
+    return _json_response(state, 200)
 
 
 @api_bp.route("/fonts", methods=["GET"])

@@ -1982,3 +1982,60 @@ def test_outline_none_never_kills_the_focus_ring():
         + "\n  ".join(missing)
         + "\n（見 viewer-v2.css 檔尾的「焦點環的最後一道防線」）"
     )
+
+
+def test_viewer_poll_pane_is_not_gated_behind_a_url_parameter():
+    """觀眾頁的投票分頁不能靠 `?poll=1` 才開（設計稿 05 · V6）。
+
+    2026-09-08。`main.js` 原本有 `_resolveViewerPollEnabled()`：沒有 `?poll=1`
+    就把投票分頁與整個面板從 DOM 移除。它先讀
+    `window.DANMU_CONFIG?.viewer?.pollEnabled`——但 `DANMU_CONFIG` **只在
+    `admin.html` 裡定義**（grep 得到唯一一處），觀眾頁從來沒有這個物件。
+    所以那條 config 分支永遠是 undefined，實際上唯一的開法是手動改網址。
+
+    後果不是「預設關閉」而是「等於沒有」：主持人開了投票，觀眾頁毫無反應，
+    而 2026-09-08 新做的「一次按下即投票」也跟著到不了任何人手上。
+
+    設計稿 05 · V6 與桌面／手機對照表寫的都是「**有投票時才浮出**分段控制
+    並帶紅點」。浮出／收起的機制在 `viewer-style-sheet.js::refreshPollTab`
+    早就寫好了，只是被 gate 擋在 DOM 之外跑不到。
+    """
+    main_js = _read("server/static/js/main.js")
+    assert main_js, "找不到 main.js"
+
+    # 只看程式碼——整行註解要剝掉，否則「解釋這條 gate 為什麼被移除」的
+    # 註解本身就會讓這條測試失敗（第一版就是這樣紅的）。不處理行尾註解與
+    # 區塊註解：這裡要找的兩個識別字都只出現在整行註解或真的程式碼裡。
+    main_js = re.sub(r"^\s*//.*$", "", main_js, flags=re.M)
+
+    assert "_resolveViewerPollEnabled" not in main_js, (
+        "`?poll=1` gate 又回來了。投票分頁要留在 DOM 裡，"
+        "由 viewer-style-sheet.js 的 refreshPollTab 依有沒有投票決定顯示。"
+    )
+    assert (
+        "VIEWER_POLL_ENABLED" not in main_js
+    ), "VIEWER_POLL_ENABLED 已於 2026-09-08 移除；別再引入靜態開關。"
+
+    # 面板與分頁必須留在樣板裡——refreshPollTab 靠它們在 DOM 中才能浮出來。
+    index_html = _read("server/templates/index.html")
+    assert 'data-viewer-tab="poll"' in index_html
+    assert 'id="viewerPollPane"' in index_html
+
+    # 浮出／收起的實作仍在
+    sheet = _read("server/static/js/viewer-style-sheet.js")
+    assert "refreshPollTab" in sheet, "浮出／收起的機制不見了"
+
+
+def test_session_public_state_carries_poll_active():
+    """`/session/public-state` 要帶 `poll_active`，觀眾頁才不用長期空轉輪詢。
+
+    移掉 `?poll=1` gate 之後，觀眾頁如果每 2 秒無條件多打一次
+    `/poll/public-status`，等於把每支手機的輪詢從 2 支變 3 支。改成先看
+    這個布林，沒投票時就不抓——投票分頁最多晚一個 tick 浮出來。
+    """
+    api = _read("server/routes/api.py")
+    assert 'state["poll_active"]' in api, "/session/public-state 沒有回 poll_active"
+
+    main_js = _read("server/static/js/main.js")
+    assert "_pollMaybeLive" in main_js, "觀眾頁沒有依 poll_active 決定要不要抓投票內容"
+    assert "sessionState.poll_active" in main_js, "poll_active 沒有被讀進來"

@@ -200,8 +200,18 @@ def test_viewer_identity_label_uses_nickname(browser_session, server_ports):
         context.close()
 
 
-def test_viewer_poll_tab_hidden_by_default(browser_session, server_ports):
-    """Viewer should keep poll tab disabled by default (prototype pollEnabled=false)."""
+def test_viewer_poll_tab_hidden_when_no_poll(browser_session, server_ports):
+    """沒有進行中的投票時，觀眾頁首屏看不到投票分頁（設計稿 05 · V6）。
+
+    2026-09-08 改寫。這條原本叫 `..._hidden_by_default`，釘的是舊的
+    `?poll=1` gate——沒帶參數就把分頁與面板整個從 DOM 移除。那條 gate 讀
+    `window.DANMU_CONFIG.viewer.pollEnabled`，而 `DANMU_CONFIG` 只在
+    admin.html 定義，觀眾頁沒有，所以投票分頁實際上**任何觀眾都看不到**，
+    主持人開了投票也一樣。設計稿 05 要的是「有投票時才浮出」，不是關掉。
+
+    所以判準從「元素不存在」改成「元素在、但不可見」——分頁要能在投票開始
+    時浮出來，就必須先留在 DOM 裡。
+    """
     http_port, _ = server_ports
 
     context = browser_session.new_context(locale="zh-TW")
@@ -209,13 +219,17 @@ def test_viewer_poll_tab_hidden_by_default(browser_session, server_ports):
     try:
         page.goto(f"http://127.0.0.1:{http_port}/")
         page.wait_for_selector("#danmuText", timeout=8000)
+        page.wait_for_selector("body[data-viewer-ready]", timeout=8000)
 
-        # Poll tab/pane should be hidden by default; fire pane stays active.
         page.wait_for_selector("#viewerFirePane", state="visible", timeout=5000)
         assert page.locator("#viewerFirePane").count() == 1
         assert page.locator("#viewerFirePane").is_visible()
-        assert page.locator('[data-viewer-tab="poll"]').count() == 0
-        assert page.locator("#viewerPollPane").count() == 0
+
+        # 元素留在 DOM（投票一開始就靠它浮出來），但現在不可見。
+        assert page.locator('[data-viewer-tab="poll"]').count() == 1
+        assert not page.locator('[data-viewer-tab="poll"]').is_visible()
+        assert page.locator("#viewerPollPane").count() == 1
+        assert not page.locator("#viewerPollPane").is_visible()
     finally:
         page.close()
         context.close()
@@ -276,7 +290,7 @@ def test_viewer_poll_tab_hides_results(browser_session, server_ports):
         )
         assert created["status"] < 400, f"poll setup failed: {created}"
 
-        page.goto(f"http://127.0.0.1:{http_port}/?poll=1")
+        page.goto(f"http://127.0.0.1:{http_port}/")
         # DOM 立刻就在，但 script 還沒跑——這時 dispatch 事件會掉進虛空。
         # 等 viewer-style-sheet.js（最後一個 defer script）掛好就緒旗標。
         page.wait_for_selector("body[data-viewer-ready]", timeout=8000)
