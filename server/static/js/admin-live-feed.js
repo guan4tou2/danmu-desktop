@@ -155,15 +155,18 @@
     text.title = d.text || "";
     row.appendChild(text);
 
-    // Identity stack (@nick / fp:xxx) via shared AdminIdentity.
-    // Live-feed payload has no IP; we get the @nick + fp lines.
+    // Identity stack via shared AdminIdentity — **只給暱稱，不給 fp**。
+    // 設計稿 06 §3 的移除清單明列「fp 識別碼」：訊息流是拿來讀訊息的，一整排
+    // 8 碼 hex 只會讓人讀不下去。指紋仍然在 `d.fingerprint` 裡，給下面那顆
+    // 「封鎖指紋」按鈕用——2026-09-08 之前它是空字串，所以那顆按鈕從來沒
+    // 出現過，這一行也一直是空的（於是沒有人發現稿上的移除其實沒做到）。
     const identity = document.createElement("span");
     identity.className = "admin-live-feed-identity";
     if (window.AdminIdentity) {
       identity.appendChild(
         AdminIdentity.render({
           nickname: d.nickname || "",
-          fp: d.fingerprint || "",
+          fp: "",
           onNicknameClick: function (nick) {
             if (!nick || !searchInput) return;
             searchInput.value = nick;

@@ -244,7 +244,10 @@ def fire():
         if not isinstance(data, dict):
             return _internal_plain_error_response()
 
-        fingerprint = data.pop("fingerprint", None)
+        # 指紋**不 pop**：admin 的訊息流要靠它才畫得出「封鎖此人」。
+        # 「不讓公開 overlay 看到指紋」收口在 ws_queue.enqueue_message，
+        # 那是所有送往 overlay 的 payload 的唯一出口（見那邊的註解）。
+        fingerprint = data.get("fingerprint")
         captcha_token = data.pop("captcha_token", None)
         text_content = data.get("text", "")
         # 觀眾頁的「觀眾」欄要寫得出名字（設計稿 15 · AU1）。暱稱本來就跟著

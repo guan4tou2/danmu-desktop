@@ -131,3 +131,45 @@ def test_forward_skips_live_feed_for_settings_changed(app):
     with app.app_context():
         messaging.forward_to_ws_server({"type": "settings_changed"})
     assert live_feed_buffer.snapshot() == []
+
+
+# ─── 指紋分流：admin 看得到、公開 overlay 看不到 ────────────────────────────
+
+
+def test_fingerprint_reaches_live_feed_but_not_the_overlay_payload(app):
+    """指紋只進 admin 的 live-feed buffer，不進送往 overlay 的 WS payload。
+
+    2026-09-08：這兩件事以前是同一個 `data.pop("fingerprint")` 在管，而且 pop
+    的位置在 `api.py` 最上面——於是 overlay 拿不到（對的），admin 的訊息流也
+    拿不到（錯的），每一列的「封鎖此人」按鈕因此從來沒有渲染出來過。
+
+    上面那支 `test_forward_appends_danmu_to_live_feed_buffer` 一直是綠的，
+    因為它直接餵 `forward_to_ws_server` 一個還帶著指紋的 dict——**跳過了真正
+    的呼叫端**。所以這支之外另有一支走 `/fire` 的端到端測試。
+    """
+    with app.app_context():
+        messaging.forward_to_ws_server(
+            {"text": "split-check", "fingerprint": "fp-split-1", "clientIp": "10.0.0.9"}
+        )
+
+    snap = live_feed_buffer.snapshot()
+    assert len(snap) == 1
+    assert snap[0]["data"]["fingerprint"] == "fp-split-1"
+
+    queued = ws_queue.dequeue_all()
+    assert len(queued) == 1
+    assert "fingerprint" not in queued[0]
+    assert "clientIp" not in queued[0]
+    assert queued[0]["text"] == "split-check"
+
+
+def test_enqueue_message_does_not_mutate_the_callers_dict(app):
+    """剝欄位是複製出來剝的，呼叫端手上那個 dict 不能被動到。
+
+    `_raw_forward` 的順序是「先 enqueue、再餵 live-feed buffer」，就地刪會讓
+    buffer 拿到已經被剝乾淨的 dict——修完等於沒修。
+    """
+    payload = {"text": "no-mutate", "fingerprint": "fp-keep"}
+    ws_queue.enqueue_message(payload)
+    assert payload["fingerprint"] == "fp-keep"
+    assert "fingerprint" not in ws_queue.dequeue_all()[0]

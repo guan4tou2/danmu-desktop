@@ -72,6 +72,29 @@ def test_fire_fingerprint_not_in_enqueued_payload(client):
     assert "fingerprint" not in msg
 
 
+def test_fire_fingerprint_does_reach_the_admin_live_feed(client):
+    """同一則彈幕的指紋要進得了 admin 的訊息流緩衝區。
+
+    這是上面那支的另一半，2026-09-08 才補上。在這之前只有「overlay 拿不到」
+    被釘住，於是 `api.py` 用 `data.pop("fingerprint")` 一次滿足它——順手也把
+    admin 專用的 `live_feed_buffer` 一起餓死了。訊息流每一列的「封鎖此人」
+    按鈕 gate 在 `if (d.fingerprint)`，因此從來沒有渲染出來過，而且畫面上
+    看起來完全正常（就是少一顆按鈕）。
+
+    兩支要一起看才是完整的契約：**公開的 overlay 看不到，admin 看得到。**
+    """
+    from server.services import live_feed_buffer
+
+    live_feed_buffer.reset()
+    resp = client.post("/fire", json={"text": "feed-fp", "fingerprint": "fp-e2e-42"})
+    assert resp.status_code == 200, resp.get_json()
+
+    snap = live_feed_buffer.snapshot()
+    assert len(snap) == 1, snap
+    assert snap[0]["data"]["fingerprint"] == "fp-e2e-42"
+    assert snap[0]["data"]["text"] == "feed-fp"
+
+
 # ─── 黑名單整合 ────────────────────────────────────────────────────────────────
 
 

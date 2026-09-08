@@ -769,6 +769,13 @@ test("admin Live Feed row composes shared controls; bulk flow retired", () => {
   ]) {
     expect(liveFeedSrc).not.toContain(gone);
   }
+
+  // 設計稿 06 §3 同一份移除清單裡還有「fp 識別碼」。這條先前看起來像做到了，
+  // 其實是因為 `d.fingerprint` 一直是空字串（見 2026-09-08 的指紋修正）——
+  // 指紋一補上，那行 8 碼 hex 就會自己冒回訊息流裡。所以要釘的是「傳給
+  // AdminIdentity 的 fp 是空的」，不是「畫面上剛好沒有」。
+  expect(liveFeedSrc).toContain('fp: "",');
+  expect(liveFeedSrc).not.toContain('fp: d.fingerprint');
   expect(liveFeedSrc).not.toContain("admin-v2-chip");
   expect(liveFeedSrc).not.toContain("admin-poll-btn");
 });

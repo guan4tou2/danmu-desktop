@@ -306,8 +306,33 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
     `bulkBlock` 的 `if (!t.data.fingerprint) continue;` 會逐筆跳過、一則都不封；
     per-row 的「封鎖此人」按鈕 gate 在同一個條件上，**從來沒有渲染出來過**。
     實測證據：帶 `fingerprint` 打 `/fire`，攔 `/ws` 封包裡完全沒有那個欄位，
-    admin 那一列只有「封鎖關鍵字」一顆按鈕。真正還能封鎖的是裝置識別頁與訊息
-    抽屜。**底層那個 bug 另案處理**，不在文案改動的範圍。
+    admin 那一列只有「封鎖關鍵字」一顆按鈕。
+
+    **底層那個 bug 已於同日修好**（見下）。批次能力**不補回來**——設計稿沒有
+    要求，而且 per-row 的「封鎖指紋」現在真的能用了。
+
+16. **指紋分流修正（2026-09-08）**——原本 `api.py` 用 `data.pop("fingerprint")`
+    一次滿足「公開 overlay 不能看到指紋」，但位置太早：admin 專用的
+    `live_feed_buffer` 吃的是同一個已經被 pop 過的 dict。
+
+    收口改放在 `ws_queue.enqueue_message`——那是**所有**送往 overlay 的 payload
+    的唯一出口（七個呼叫端：widgets／poll／replay／scheduler／messaging，其中
+    四個完全繞過 `messaging`，所以「多傳一個參數」的做法顧不到）。剝的是
+    `fingerprint` 與 `clientIp`，而且是複製出來剝——`_raw_forward` 的順序是
+    「先 enqueue、再餵 live-feed buffer」，就地刪等於沒修。
+
+    **一起壞掉、一起修好的有六件事**（都 gate 在同一個 `d.fingerprint` 上）：
+    每列的「封鎖指紋」按鈕、鍵盤 `B`、左滑封鎖、封鎖後把同指紋的列標成
+    `is-muted`、用指紋搜尋、以及（反過來）設計稿 06 §3 要求移除的 `fp:` 識別碼
+    ——那一行先前是空的，指紋一補上就自己冒回來了，所以順手把它明確關掉。
+
+    **為什麼單元測試沒抓到**：`test_forward_appends_danmu_to_live_feed_buffer`
+    一直是綠的，它直接餵 `forward_to_ws_server` 一個還帶著指紋的 dict——
+    跳過了真正的呼叫端。補了一支走 `/fire` 的端到端測試釘住另一半。
+
+    實跑驗證：帶指紋打 `/fire` → 訊息流出現「封鎖指紋」、公開 WS frame 沒有
+    該欄位；按下去 → 同指紋再送回 400 `Fingerprint blocked`、別的指紋照常
+    200；該列變 `is-muted`；搜尋框輸入指紋前綴能精準篩出那列。
 
 12. **實跑 Electron app 才發現的（2026-09-08，用 computer use）**
 
