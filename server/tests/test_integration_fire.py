@@ -1,5 +1,7 @@
 """整合測試：POST /fire → ws_queue → 驗證 payload 結構與業務邏輯"""
 
+import json
+
 import pytest
 
 from server import state
@@ -335,4 +337,151 @@ def test_poll_vote_still_respects_bans(client):
         assert svc.get_status()["questions"][0]["options"][0]["count"] == 0
     finally:
         moderation_bans.remove_ban("fingerprint", fp)
+        svc.reset()
+
+
+# ─── 一次按下即投票（POST /poll/vote，2026-09-08）─────────────────────────
+
+
+def test_poll_vote_endpoint_records_without_producing_danmu(client):
+    """點選項就投票，而且**不產生彈幕**。
+
+    在這之前投票是「把選項代號當彈幕送出」，於是幾百人同時投時大螢幕被一整片
+    A / B / C / D 洗版。這條路完全不碰彈幕管線。
+    """
+    from server.services import ws_queue
+
+    svc = _start_poll()
+    ws_queue.dequeue_all()
+    try:
+        resp = client.post("/poll/vote", json={"key": "A", "fingerprint": "fp-tap-1"})
+        assert resp.status_code == 200, resp.get_json()
+        assert resp.get_json()["accepted"] is True
+
+        assert svc.get_status()["questions"][0]["options"][0]["count"] == 1
+
+        # 會有一則 `poll_update` —— 那是大螢幕的投票面板要更新長條，是必要的。
+        # 不該有的是**彈幕**（帶 `text` 的那種）。
+        sent = ws_queue.dequeue_all()
+        danmu = [m for m in sent if m.get("text") is not None]
+        assert danmu == [], f"投票不該產生彈幕，實際: {danmu}"
+        assert any(m.get("type") == "poll_update" for m in sent), "大螢幕面板沒收到更新"
+    finally:
+        svc.reset()
+
+
+def test_poll_vote_response_never_leaks_counts(client):
+    """回應裡不得出現票數／百分比。
+
+    `viewer never sees counts or percentages` 是 v5 鎖定的產品決策
+    （priority reset 2026-05-05）。`/poll/public-status` 一直有守這條，
+    新增的投票端點也必須守。
+    """
+    svc = _start_poll()
+    try:
+        client.post("/poll/vote", json={"key": "A", "fingerprint": "fp-leak-1"})
+        body = client.post("/poll/vote", json={"key": "B", "fingerprint": "fp-leak-2"}).get_json()
+        assert set(body) <= {"accepted", "key", "error"}, body
+        blob = json.dumps(body)
+        for leak in ("count", "votes", "percent", "pct", "total"):
+            assert leak not in blob.lower(), f"回應洩漏了 {leak}: {body}"
+    finally:
+        svc.reset()
+
+
+def test_poll_vote_duplicate_is_not_an_error(client):
+    """重投 → accepted=False 但仍是 200。
+
+    重投的人該看到的是「你投的是這個」，不是紅字錯誤，所以不回 4xx。
+    """
+    svc = _start_poll()
+    try:
+        first = client.post("/poll/vote", json={"key": "A", "fingerprint": "fp-dup"})
+        assert first.get_json()["accepted"] is True
+        again = client.post("/poll/vote", json={"key": "A", "fingerprint": "fp-dup"})
+        assert again.status_code == 200
+        assert again.get_json()["accepted"] is False
+    finally:
+        svc.reset()
+
+
+def test_poll_vote_rejects_unknown_option(client):
+    svc = _start_poll()
+    try:
+        assert (
+            client.post("/poll/vote", json={"key": "Z", "fingerprint": "fp-u"}).status_code == 400
+        )
+    finally:
+        svc.reset()
+
+
+def test_poll_vote_requires_a_key(client):
+    svc = _start_poll()
+    try:
+        assert client.post("/poll/vote", json={}).status_code == 400
+    finally:
+        svc.reset()
+
+
+def test_poll_vote_without_active_poll_is_409(client):
+    from server.services.poll import poll_service
+
+    poll_service.reset()
+    assert client.post("/poll/vote", json={"key": "A"}).status_code == 409
+
+
+def test_poll_vote_respects_bans(client):
+    """封禁優先於投票 —— 被封的人不該能靠投票繞過。"""
+    from server.services import moderation_bans
+
+    svc = _start_poll()
+    fp = "fp-banned-voter"
+    moderation_bans.add_ban("fingerprint", fp, reason="test")
+    try:
+        assert client.post("/poll/vote", json={"key": "A", "fingerprint": fp}).status_code == 403
+        assert svc.get_status()["questions"][0]["options"][0]["count"] == 0
+    finally:
+        moderation_bans.remove_ban("fingerprint", fp)
+        svc.reset()
+
+
+def test_typed_vote_is_dimmed_on_the_overlay(client, monkeypatch):
+    """打字投票的那些票仍會上大螢幕，但要被調暗。
+
+    這支要連打三發 `/fire`，會撞到 per-IP 限流（memory：跑多輪前先把限流拉高）
+    ——所以這裡直接把上限拉開，測的是調暗邏輯不是限流。
+    """
+    from flask import current_app
+
+    from server.services import display_layer, ws_queue
+
+    monkeypatch.setitem(current_app.config, "FIRE_RATE_LIMIT", 1000)
+
+    svc = _start_poll()
+    display_layer._reset_for_tests()
+    ws_queue.dequeue_all()
+
+    # 投票會先廣播一則 `poll_update` 更新大螢幕面板，彈幕排在它後面 ——
+    # 直接取 [0] 會拿到面板更新然後 KeyError。只看帶 `text` 的那些。
+    def _danmu():
+        return [m for m in ws_queue.dequeue_all() if m.get("text") is not None]
+
+    try:
+        assert client.post("/fire", json={"text": "A", "opacity": 100}).status_code == 200
+        sent = _danmu()
+        assert len(sent) == 1, sent
+        assert sent[0]["opacity"] == 25, f"投票彈幕應該被調暗，實際 {sent[0]['opacity']}"
+
+        # 一般留言不受影響
+        assert (
+            client.post("/fire", json={"text": "這是一般留言", "opacity": 100}).status_code == 200
+        )
+        assert _danmu()[0]["opacity"] == 100
+
+        # 開關關掉之後就不調暗
+        display_layer.set_state({"dim_poll_votes": False})
+        assert client.post("/fire", json={"text": "B", "opacity": 100}).status_code == 200
+        assert _danmu()[0]["opacity"] == 100
+    finally:
+        display_layer._reset_for_tests()
         svc.reset()

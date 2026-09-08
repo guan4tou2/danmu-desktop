@@ -202,6 +202,29 @@
                 <button type="button" data-dl-opt="never">${escapeHtml(t("dlStrokeNever"))}</button>
               </span>
             </div>
+
+            <!-- 2026-09-08：投票是用「送出選項代號當彈幕」實作的，所以打字投票
+                 的人會讓大螢幕出現一整片 A / B / C / D。不藏起來——看得到大家在
+                 投票本身就是氣氛——而是調暗，讓真正的留言仍然讀得到。
+                 一次按下即投票（POST /poll/vote）根本不產生彈幕，不受這裡影響。 -->
+            <div class="admin-ui-group-row">
+              <span class="lbl">${escapeHtml(t("dlDimPollVotes"))}
+                <span class="sub">${escapeHtml(t("dlDimPollVotesHint"))}</span>
+              </span>
+              <span class="val">
+                <input type="checkbox" class="admin-ui-checkbox" data-dl-toggle="dim_poll_votes" />
+              </span>
+            </div>
+            <div class="admin-ui-group-row is-tall" data-dl-row="poll_vote_opacity">
+              <span class="lbl">${escapeHtml(t("dlPollVoteOpacity"))}
+                <span class="sub">${escapeHtml(t("dlPollVoteOpacityHint"))}</span>
+              </span>
+              <span class="val admin-ui-seg" data-dl-seg="poll_vote_opacity">
+                <button type="button" data-dl-opt="15">15%</button>
+                <button type="button" data-dl-opt="25">25%</button>
+                <button type="button" data-dl-opt="40">40%</button>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -1093,8 +1116,10 @@
         if (!wrap) return;
         const key = wrap.getAttribute("data-dl-seg");
         const raw = opt.getAttribute("data-dl-opt");
-        // safe_area 是數字、stroke_mode 是字串——後端會擋型別，這裡照鍵送對的
-        postDisplayLayer(key, key === "safe_area" ? Number(raw) : raw);
+        // safe_area / poll_vote_opacity 是數字、stroke_mode 是字串
+        // ——後端會擋型別，這裡照鍵送對的
+        const numericSegs = ["safe_area", "poll_vote_opacity"];
+        postDisplayLayer(key, numericSegs.indexOf(key) !== -1 ? Number(raw) : raw);
       }
     });
 

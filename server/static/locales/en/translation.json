@@ -2923,5 +2923,12 @@
   "pollVotesCount": "{n} votes",
   "wcagHexAria": "{label} hex",
   "fpCountSummary": "{unique} unique · {flagged} flagged",
-  "displayOpacitySuffix": "{n}% opacity"
+  "displayOpacitySuffix": "{n}% opacity",
+  "viewerPollAlreadyVoted": "You've already voted on this one",
+  "viewerPollVoteFailed": "Vote didn't go through · try again",
+  "viewerPollVoteBlocked": "You can't vote right now",
+  "dlDimPollVotes": "Dim vote danmu",
+  "dlDimPollVotesHint": "Typed votes flood the display with A B C D — dimming keeps real messages readable",
+  "dlPollVoteOpacity": "Dim to",
+  "dlPollVoteOpacityHint": "Lower is less distracting; never brighter than the global opacity"
 }

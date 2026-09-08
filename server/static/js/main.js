@@ -725,12 +725,16 @@ document.addEventListener("DOMContentLoaded", () => {
         row.appendChild(text);
         button.appendChild(row);
 
+        // 2026-09-08：點一下就投票。在這之前這裡只是把選項代號填進彈幕輸入框
+        // 再切到彈幕分頁，觀眾還要自己按一次「發送」——而且那一票會以彈幕的
+        // 樣子飛過大螢幕（幾百人同時投就是一整片單字母）。
+        // `POST /poll/vote` 不產生彈幕；打字投票的舊路徑保留給習慣打字的人。
         button.addEventListener("click", () => {
-          if (!elements.danmuText) return;
-          elements.danmuText.value = opt.key;
-          elements.danmuText.dispatchEvent(new Event("input", { bubbles: true }));
-          elements.danmuText.focus();
-          _setViewerMode("fire");
+          if (button.disabled) return;
+          button.disabled = true;
+          _submitPollVote(opt.key).finally(() => {
+            button.disabled = false;
+          });
         });
         elements.pollOptions.appendChild(button);
       });
@@ -796,6 +800,37 @@ document.addEventListener("DOMContentLoaded", () => {
   // the server confirms accepted=true, instead of only reacting via the
   // (separately timed) thank-you card. Never renders a count/percentage —
   // just a border + "已投出" confirmation, per product rule.
+  /** 送出一票。不產生彈幕，也不會拿到票數（觀眾永遠看不到票數）。 */
+  async function _submitPollVote(key) {
+    try {
+      const resp = await fetch("/poll/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: key, fingerprint: clientFingerprint }),
+      });
+      const body = await resp.json().catch(() => ({}));
+      if (resp.ok) {
+        // accepted=false 幾乎都是「這題投過了」——一樣把選項標成已投，
+        // 讓重按的人看到「你投的是這個」而不是紅字。
+        _markPollOptionVoted(key);
+        if (body.accepted === false && window.showToast) {
+          showToast(ServerI18n.t("viewerPollAlreadyVoted"), true);
+        }
+        return;
+      }
+      if (window.showToast) {
+        showToast(
+          resp.status === 403
+            ? ServerI18n.t("viewerPollVoteBlocked")
+            : ServerI18n.t("viewerPollVoteFailed"),
+          false,
+        );
+      }
+    } catch (_) {
+      if (window.showToast) showToast(ServerI18n.t("viewerPollVoteFailed"), false);
+    }
+  }
+
   function _markPollOptionVoted(key) {
     if (!elements.pollOptions || !key) return;
     const btn = elements.pollOptions.querySelector(`[data-vpoll-key="${CSS.escape(String(key))}"]`);

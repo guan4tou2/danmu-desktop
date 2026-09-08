@@ -17,6 +17,8 @@ query 帶，displayArea 則是寫死的 {top:0, height:100}。
   area_height   使用畫面高度，% 。10–100
   safe_area     投影安全區內縮 %。0 / 5（預設）/ 8 —— 設計稿 16 · OS1
   stroke_mode   淺底描邊：auto（自動判斷）/ always / never —— 設計稿 16 · OS2
+  dim_poll_votes    投票進行中時，把「用打字投票」那些彈幕調暗。預設開
+  poll_vote_opacity 調暗成多少（%）。1–100
 
 area_top + area_height 允許超過 100（下緣落在畫面外）——那是主持人刻意把
 彈幕推出畫面下方的用法，不擋。
@@ -41,6 +43,13 @@ _DEFAULT: Dict[str, Any] = {
     "area_height": 100,
     "safe_area": 5,
     "stroke_mode": "auto",
+    # 2026-09-08：投票是用「送出選項代號當彈幕」實作的，所以投票期間大螢幕
+    # 會被一整片 A / B / C / D 洗版。**不是把它們藏起來**——看得到大家在投票
+    # 本身就是氣氛的一部分——而是調暗，讓真正的留言仍然讀得到。
+    # 一次按下即投票（POST /poll/vote）走的是另一條路、根本不產生彈幕；
+    # 這兩個欄位管的是「還是用打字投票」的那些人。
+    "dim_poll_votes": True,
+    "poll_vote_opacity": 25,
 }
 
 # (最小, 最大)。max_tracks 的 0 是「自動」哨兵，另外放行。
@@ -48,6 +57,7 @@ _RANGES = {
     "max_tracks": (0, 20),
     "area_top": (0, 90),
     "area_height": (10, 100),
+    "poll_vote_opacity": (1, 100),
 }
 
 _SAFE_AREA_CHOICES = (0, 5, 8)
@@ -72,11 +82,12 @@ def _normalize(raw: Any) -> Dict[str, Any]:
             raise ValueError(f"{key} must be between {lo} and {hi}")
         out[key] = value
 
-    if "avoid_overlap" in raw:
-        value = raw["avoid_overlap"]
-        if not isinstance(value, bool):
-            raise ValueError("avoid_overlap must be a boolean")
-        out["avoid_overlap"] = value
+    for flag in ("avoid_overlap", "dim_poll_votes"):
+        if flag in raw:
+            value = raw[flag]
+            if not isinstance(value, bool):
+                raise ValueError(f"{flag} must be a boolean")
+            out[flag] = value
 
     if "safe_area" in raw:
         value = raw["safe_area"]

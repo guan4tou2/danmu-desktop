@@ -398,9 +398,25 @@ def fire():
                     "key": text_upper,
                     "question": question_text,
                 }
-                # Vote still passes through as normal danmu
 
         data = _resolve_danmu_style(data)
+
+        # 2026-09-08：用**打字**投票的那些人，票還是會以彈幕的樣子飛過大螢幕
+        # ——幾百人同時投就是一整片單字母，真正的留言全被蓋掉。
+        # 不藏起來（看得到大家在投票本身就是氣氛的一部分），改成調暗。
+        # 一次按下即投票走 `POST /poll/vote`，那條路根本不產生彈幕。
+        if poll_vote_meta is not None:
+            try:
+                from ..services import display_layer
+
+                dl = display_layer.get_state()
+                if dl.get("dim_poll_votes"):
+                    dim = int(dl.get("poll_vote_opacity", 25))
+                    current = data.get("opacity")
+                    # 取較小值：主持人把全站透明度調更低時，不要反而被我們調亮。
+                    data["opacity"] = min(int(current), dim) if current is not None else dim
+            except Exception:  # 調暗失敗不該擋住彈幕
+                current_app.logger.warning("poll-vote dimming failed", exc_info=True)
 
         forward_result = messaging.forward_to_ws_server(data)
         status = forward_result.get("status")
@@ -530,6 +546,46 @@ def poll_public_status():
     authenticated admin route.
     """
     return _json_response(_sanitize_poll_for_viewer(poll_service.get_status()), 200)
+
+
+@api_bp.route("/poll/vote", methods=["POST"])
+@rate_limit("fire", "FIRE_RATE_LIMIT", "FIRE_RATE_WINDOW")
+def poll_vote():
+    """一次按下即投票 —— 觀眾點選項就送出，不再要求他再按一次「發送」。
+
+    2026-09-08 新增。在這之前投票是「把選項代號當彈幕送出」實作的，帶來三個
+    問題：(1) 觀眾要點兩次（點選項只是把字母填進輸入框、切回彈幕分頁）；
+    (2) 幾百人同時投時大螢幕被一整片 A / B / C / D 洗版；(3) 那些字母會走
+    完整的彈幕管線，於是過濾規則、限流、字數檢查都在管一件不是留言的事。
+
+    這條路**完全不產生彈幕**。打字投票的舊路徑（`/fire` 的字母攔截）保留，
+    習慣打字的人不受影響；那些票會被調暗（見 display_layer.dim_poll_votes）。
+
+    **不回傳票數**——`viewer never sees counts or percentages` 是 v5 鎖定的
+    產品決策（priority reset 2026-05-05），`/poll/public-status` 也是照這條
+    過濾過的。這裡只回「收下了沒有」。
+    """
+    data = request.get_json(silent=True) or {}
+    key = str(data.get("key") or "").strip().upper()
+    if not key:
+        return _json_response({"error": "key is required"}, 400)
+
+    if poll_service.state != "active":
+        return _json_response({"error": "No active poll", "accepted": False}, 409)
+
+    if key not in poll_service.get_option_keys():
+        return _json_response({"error": "Unknown option", "accepted": False}, 400)
+
+    fingerprint = str(data.get("fingerprint") or "").strip()
+    voter_id = fingerprint or _extract_client_ip() or "unknown"
+
+    if fingerprint and moderation_bans.is_banned("fingerprint", fingerprint):
+        return _json_response({"error": "Fingerprint blocked", "accepted": False}, 403)
+
+    accepted = poll_service.vote(key, voter_id)
+    # accepted=False 幾乎都是「這題已經投過了」。那不是錯誤，回 200 讓前端
+    # 直接把該選項標成已投——重投的人看到的應該是「你投的是這個」，不是紅字。
+    return _json_response({"accepted": bool(accepted), "key": key}, 200)
 
 
 @api_bp.route("/session/public-state", methods=["GET"])

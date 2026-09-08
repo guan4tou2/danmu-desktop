@@ -42,6 +42,11 @@ def test_defaults_match_engine_semantics():
         # 設計稿 16 · OS1／OS2（2026-09-07）
         "safe_area": 5,
         "stroke_mode": "auto",
+        # 2026-09-08：投票是用「送出選項代號當彈幕」實作的，打字投票的人會讓
+        # 大螢幕出現一整片 A B C D。預設**開著**調暗——現場真的會塞滿，
+        # 而且調暗是可逆的、藏起來不是。
+        "dim_poll_votes": True,
+        "poll_vote_opacity": 25,
     }
 
 

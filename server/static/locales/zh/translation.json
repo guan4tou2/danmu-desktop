@@ -2923,5 +2923,12 @@
   "pollVotesCount": "{n} 票",
   "wcagHexAria": "{label} 色碼",
   "fpCountSummary": "不重複 {unique} · 已標記 {flagged}",
-  "displayOpacitySuffix": "{n}% 不透明度"
+  "displayOpacitySuffix": "{n}% 不透明度",
+  "viewerPollAlreadyVoted": "這題你已經投過了",
+  "viewerPollVoteFailed": "投票沒送出去 · 再試一次",
+  "viewerPollVoteBlocked": "你目前無法投票",
+  "dlDimPollVotes": "調暗投票彈幕",
+  "dlDimPollVotesHint": "打字投票的人會讓大螢幕出現一整片 A B C D，調暗讓留言仍讀得到",
+  "dlPollVoteOpacity": "調暗到",
+  "dlPollVoteOpacityHint": "越低越不搶戲；主持人已把全站調更暗時不會被拉亮"
 }

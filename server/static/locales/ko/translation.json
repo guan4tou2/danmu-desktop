@@ -2923,5 +2923,12 @@
   "pollVotesCount": "{n}표",
   "wcagHexAria": "{label} 색상 코드",
   "fpCountSummary": "고유 {unique} · 플래그 {flagged}",
-  "displayOpacitySuffix": "불투명도 {n}%"
+  "displayOpacitySuffix": "불투명도 {n}%",
+  "viewerPollAlreadyVoted": "이 문항에는 이미 투표했습니다",
+  "viewerPollVoteFailed": "투표가 전송되지 않았습니다 · 다시 시도하세요",
+  "viewerPollVoteBlocked": "지금은 투표할 수 없습니다",
+  "dlDimPollVotes": "투표 탄막 흐리게",
+  "dlDimPollVotesHint": "타이핑 투표는 화면을 A B C D로 채웁니다 — 흐리게 하면 메시지를 읽을 수 있습니다",
+  "dlPollVoteOpacity": "흐리게 정도",
+  "dlPollVoteOpacityHint": "낮을수록 덜 눈에 띕니다; 전체 설정보다 밝아지지 않습니다"
 }

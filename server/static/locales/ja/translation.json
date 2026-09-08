@@ -2923,5 +2923,12 @@
   "pollVotesCount": "{n} 票",
   "wcagHexAria": "{label} の色コード",
   "fpCountSummary": "ユニーク {unique} · フラグ {flagged}",
-  "displayOpacitySuffix": "不透明度 {n}%"
+  "displayOpacitySuffix": "不透明度 {n}%",
+  "viewerPollAlreadyVoted": "この質問にはもう投票済みです",
+  "viewerPollVoteFailed": "投票を送れませんでした · もう一度",
+  "viewerPollVoteBlocked": "現在は投票できません",
+  "dlDimPollVotes": "投票の弾幕を暗くする",
+  "dlDimPollVotesHint": "打ち込みでの投票は画面が A B C D だらけになる。暗くしてメッセージを読めるように",
+  "dlPollVoteOpacity": "暗くする度合い",
+  "dlPollVoteOpacityHint": "低いほど目立たない。全体設定より明るくはならない"
 }
