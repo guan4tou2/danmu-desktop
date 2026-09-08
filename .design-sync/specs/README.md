@@ -437,3 +437,35 @@ token 對照、class 對照、刪除清單、8 步遷移順序、Electron 參數
 
 設計契約變了就更新那份清單，並在 commit 說明為什麼——不要為了讓它變綠
 而繞過去。
+
+17. **資安與效能稽核（2026-09-08）**——稿外的工程項目，記在這裡是因為它改動了
+    觀眾頁與 admin 的載入方式，之後做設計改動時會踩到。
+
+    **稽核沒有發現可被外部利用的漏洞**：197 條路由的 authz/CSRF 覆蓋、10 個
+    上傳點（全都用比 `secure_filename` 更嚴格的正規白名單，貼圖還做 libmagic
+    MIME 嗅探）、入站 webhook 強制 HMAC、CSP 有 `script-src-attr 'none'`、
+    pip-audit 與 npm audit 都 0 筆。
+
+    **觀眾頁 `/fire` 從 1392 KB 降到 76 KB gzipped（18.2x）**，四個來源：
+
+    - 觀眾頁本來載 **admin 的 `style.css`**（482 KB），實測只 match 到那 2,789
+      條規則裡的 **21 條**。改載 `viewer-base.css`（15 KB），由
+      `server/scripts/build-viewer-css.mjs` 生成。**`style.css` 沒有動**——搬家
+      會改變 admin 的層疊順序，所以是生成一份子集而不是抽出來。
+    - i18n 四語全載 670 KB → runtime 6.2 KB ＋ 每語言一支。伺服器依 cookie /
+      `Accept-Language` 挑一支，模板吃 `{{ i18n_lang }}`。
+    - nginx 開 gzip（原本兩份設定都沒開）。
+    - 輪詢綁區段可見性（`AdminUtils.pollWhileVisible`），66 → 39 requests/min。
+
+    **改設計時要記得的三件事**：
+    1. **動 `style.css` 之後要重生 `viewer-base.css`**（`npm run build:viewer-css`，
+       CI 有守）。忘了的話觀眾頁會缺樣式，而且只在特定狀態才看得出來。
+    2. **新增 i18n key 之後四支 bundle 都要重生**，不是只有 `i18n.js`
+       （那支現在只剩 runtime）。
+    3. 新的 admin 模組如果要輪詢，用 `AdminUtils.pollWhileVisible`，不要直接
+       `setInterval` —— 模組是全部一起載入的。
+
+    另外修掉一個實測發現的缺陷：`AdminUtils.escapeHtml` 用 `textNode → innerHTML`，
+    **不跳脫引號**，36 個 admin 檔都指向它。當下被 CSP 擋住不可利用，但
+    `value="${escapeHtml(x)}"` 這種寫法可以被撐開長出額外屬性。已改成
+    `replace(/[&<>"']/g, …)`。
