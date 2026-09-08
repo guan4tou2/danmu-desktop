@@ -15,6 +15,11 @@ const parser = require("@babel/parser");
 const traverse = require("@babel/traverse").default;
 
 const REPO_ROOT = path.join(__dirname, "..", "..");
+
+// 生成物不掃：`i18n*.js` 是翻譯、`admin.bundle.js` 是那 66 支來源檔打包後的
+// 結果。掃 bundle 只會把來源檔的問題重複報一次，而且行號指向 bundle、
+// 修不了東西。判準看的是**來源**。
+const GENERATED = /^(i18n(\.[a-z]{2})?\.js|admin\.bundle\.js)$/;
 const JS_DIR = path.join(REPO_ROOT, "server/static/js");
 
 const ACRONYMS = new Set(
@@ -34,7 +39,7 @@ const ALLOWED = new Set(["admin-plugins.js::INFO"]);
 
 test("no all-caps English in rendered copy (spec 14)", () => {
   const bad = [];
-  for (const fn of fs.readdirSync(JS_DIR).filter((f) => f.endsWith(".js") && f !== "i18n.js")) {
+  for (const fn of fs.readdirSync(JS_DIR).filter((f) => f.endsWith(".js") && !GENERATED.test(f))) {
     const ast = parser.parse(fs.readFileSync(path.join(JS_DIR, fn), "utf8"), {
       sourceType: "unambiguous",
       errorRecovery: false,

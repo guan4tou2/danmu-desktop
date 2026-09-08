@@ -147,6 +147,15 @@ jobs:
           npm run build:css
           git diff --exit-code static/css/tailwind.css || { echo "❌ tailwind.css is stale — run 'npm run build:css' in server/ and commit"; exit 1; }
 
+      - name: Verify admin.bundle.js is up-to-date
+        working-directory: server
+        run: |
+          # admin 只載這一支 bundle。改了任何一支來源檔卻沒重打包，線上跑的
+          # 就是舊的程式 —— 而且畫面看起來完全正常，只是行為是上一版的。
+          node scripts/build-admin-bundle.mjs
+          git diff --exit-code static/js/admin.bundle.js \
+            || { echo "❌ admin.bundle.js is stale — run 'npm run build:admin-js' in server/ and commit"; exit 1; }
+
       - name: Verify viewer-base.css is up-to-date
         working-directory: server
         run: |

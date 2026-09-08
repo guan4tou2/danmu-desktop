@@ -82,71 +82,15 @@
     <script src="{{ url_for('static', filename='js/i18n.' ~ i18n_lang ~ '.js') }}"></script>
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
     <script nonce="{{ csp_nonce }}">ServerI18n.init();</script>
-    <script defer src="{{ url_for('static', filename='js/toast.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-utils.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-tabs.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-quick-action.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-hud-modal.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-skeletons.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-empty-states.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-identity.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-themes.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-effects-mgmt.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-events.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-events-log.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-modqueue.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-modbans.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-mobile-nav.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-session-expired.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-reconnect-banner.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-help-drawer.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-shortcuts.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-theme-switcher.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-store.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-login.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-dashboard.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-display.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-poll.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-history.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-history-v2.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-replay-bar.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-replay-controls.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-ratelimit.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-viewer-theme.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-system-overview.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-poll-builder.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-live-feed.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-plugins.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-plugins-upload.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-webhooks.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-sounds.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-emojis.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-stickers.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-extensions.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-firetoken.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-about.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-setup-wizard.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-poll-deepdive.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-message-drawer.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-notifications.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-audit.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-audience.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-konami.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-fonts.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-scheduler.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-security.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-backup.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-broadcast.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-filters.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-fingerprints.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-widgets.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-command-palette.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-sessions.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-session-detail.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-search.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-api-tokens.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-wcag.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/admin-onboarding.js') }}"></script>
+    <!-- 2026-09-08：這裡原本是 66 個 <script defer>。合成一支 bundle 之後
+         gzip 前 1319 → 784 KB、gzip 後 337 → 191 KB，請求數 66 → 1。
+
+         **這不是模組化改寫**：那 66 支仍是全域 IIFE、靠 41 個 window.*
+         溝通、相依於載入順序。bundle 只是照原順序串接後 minify，語意不變。
+
+         檔案清單在 static/js/admin-bundle.manifest.json（不在這裡 —— 從模板
+         讀清單會變成循環相依）。加新模組：manifest 加一行，再跑
+         `npm run build:admin-js`；CI 會檢查 bundle 是不是最新的。 -->
+    <script defer src="{{ url_for('static', filename='js/admin.bundle.js') }}"></script>
   </body>
 </html>

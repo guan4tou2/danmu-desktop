@@ -14,13 +14,18 @@ const parser = require("@babel/parser");
 const traverse = require("@babel/traverse").default;
 
 const REPO_ROOT = path.join(__dirname, "..", "..");
+
+// 生成物不掃：`i18n*.js` 是翻譯、`admin.bundle.js` 是那 66 支來源檔打包後的
+// 結果。掃 bundle 只會把來源檔的問題重複報一次，而且行號指向 bundle、
+// 修不了東西。判準看的是**來源**。
+const GENERATED = /^(i18n(\.[a-z]{2})?\.js|admin\.bundle\.js)$/;
 const SCAN_DIRS = ["server/static/js", "danmu-desktop"];
 
 function jsFiles(rel) {
   const dir = path.join(REPO_ROOT, rel);
   return fs
     .readdirSync(dir)
-    .filter((f) => f.endsWith(".js") && f !== "i18n.js")
+    .filter((f) => f.endsWith(".js") && !GENERATED.test(f))
     .map((f) => ({ rel: `${rel}/${f}`, abs: path.join(dir, f) }));
 }
 

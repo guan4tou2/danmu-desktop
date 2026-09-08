@@ -1897,3 +1897,39 @@ def test_viewer_base_css_is_generated_not_handwritten():
         f"viewer-base.css 是 {len(css)/1024:.0f} KB，style.css 是 {len(full)/1024:.0f} KB"
         " —— 抽取判準可能壞了"
     )
+
+
+# --- admin JS 打包（2026-09-08）---------------------------------------------
+
+
+def test_admin_template_loads_only_the_bundle():
+    """`admin.html` 不得再逐一列 66 個 `<script>`。
+
+    合成一支 bundle 之後 gzip 前 1319 → 784 KB、gzip 後 337 → 191 KB，
+    請求數 66 → 1。**這不是模組化改寫**：那 66 支仍是全域 IIFE、靠 41 個
+    `window.*` 溝通、相依載入順序；bundle 只是照原順序串接後 minify。
+    """
+    html = _read("server/templates/admin.html")
+    assert "js/admin.bundle.js" in html
+
+    srcs = re.findall(r"filename='js/([^']+)'", html)
+    # 允許的只有 bundle 本身與 i18n 三兄弟（runtime 用 currentScript 推路徑，
+    # 打包進去會推錯；語言檔由伺服器挑一支）
+    for src in srcs:
+        assert src == "admin.bundle.js" or src.startswith(
+            "i18n"
+        ), f"admin.html 又逐一載了 {src} —— 應該加進 admin-bundle.manifest.json"
+
+
+def test_admin_bundle_manifest_lists_files_that_exist():
+    """manifest 是清單的唯一來源；列了不存在的檔案會讓打包直接失敗。"""
+    manifest = json.loads(_read("server/static/js/admin-bundle.manifest.json") or "{}")
+    files = manifest.get("files") or []
+    assert len(files) > 50, f"manifest 只有 {len(files)} 個檔，看起來被清掉了"
+    for f in files:
+        assert (REPO / "server/static/js" / f).exists(), f"manifest 列了不存在的 {f}"
+        assert not f.startswith("i18n"), f"{f} 不該進 bundle（見 build-admin-bundle.mjs 檔頭）"
+
+    bundle = REPO / "server/static/js/admin.bundle.js"
+    assert bundle.exists(), "admin.bundle.js 不存在 —— 跑 npm run build:admin-js"
+    assert "AUTO-GENERATED" in bundle.read_text(encoding="utf-8")[:200]
