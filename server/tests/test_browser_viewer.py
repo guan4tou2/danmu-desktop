@@ -193,23 +193,6 @@ def _go_offline(page):
     )
 
 
-def _go_online(page):
-    """攔截 /overlay_status，回傳 overlay_count=1，模擬 overlay 上線
-
-    測試環境沒有真的 overlay 連線，所以 #btnSend 會停在 disabled
-    (`data-state="offline"`)——那是產品的正確行為，不是 bug。任何需要真的按下
-    FIRE 的測試都得先讓 overlay 看起來是上線的。
-    """
-    page.route(
-        "**/overlay_status",
-        lambda route: route.fulfill(
-            status=200,
-            content_type="application/json",
-            body=json.dumps({"overlay_count": 1}),
-        ),
-    )
-
-
 def test_screen_off_shows_one_chip_one_card_one_hint(viewer_page):
     """設計稿 05 · V4：大螢幕未開時，畫面上只有三處說明，而且是同一件事的
     三個層級——頂欄灰 chip、一張說明卡、送出列下方一行。**沒有**紅色警語
@@ -299,41 +282,6 @@ def test_screen_on_clears_the_offline_surfaces(viewer_page):
 # ─── 2. 投票即時確認（is-voted / 已投出 / 絕不顯示票數）───────────────────────
 
 
-def _fire_accepts_vote(page, option_key: str, question: str) -> dict:
-    """攔截 POST /fire，回應「這則訊息被接受為一票」。
-
-    測試環境沒有真的 overlay WS 連線，所以 server 的 /fire 一律回 503
-    ("No overlay connected")，viewer 永遠收不到 poll_vote.accepted —— 而這個
-    測試要驗的正是收到之後的 UI 行為（.is-voted + 已投出 + 絕不出現票數）。
-    server 端「這則訊息算不算一票」的判定另有 test_poll_multiquestion.py 的
-    18 個測試覆蓋，這裡不重複。
-
-    回傳的 dict 會被填入實際送出的 request body，讓呼叫端可以斷言 UI 真的把
-    選項 key 送出去了 —— 否則 mock 會連 UI 的錯誤一起蓋掉。
-    """
-    captured: dict = {}
-
-    def handler(route):
-        request = route.request
-        if request.method != "POST":
-            route.continue_()
-            return
-        captured["post_data"] = request.post_data
-        route.fulfill(
-            status=200,
-            content_type="application/json",
-            body=json.dumps(
-                {
-                    "status": "sent",
-                    "poll_vote": {"accepted": True, "key": option_key, "question": question},
-                }
-            ),
-        )
-
-    page.route("**/fire", handler)
-    return captured
-
-
 def test_poll_vote_marks_option_voted_without_counts(viewer_page, admin_http):
     """建立投票後，透過 UI 點選項目、送出投票，選項應標記 .is-voted +
     已投出文字，且畫面上絕不出現任何票數/百分比元素（產品鐵則）。"""
@@ -343,11 +291,6 @@ def test_poll_vote_marks_option_voted_without_counts(viewer_page, admin_http):
     assert len(options) >= 2, f"expected >=2 options, got: {body}"
     option_key = options[0]["key"] if isinstance(options[0], dict) else options[0]
 
-    # 這個測試會真的按下 FIRE 送出投票，所以 overlay 必須看起來是上線的，
-    # 否則 #btnSend 一直是 disabled；/fire 本身也要回一個「被接受為投票」的
-    # 結果，理由見 _fire_accepts_vote 的說明。
-    _go_online(page)
-    fired = _fire_accepts_vote(page, option_key, "Favorite color?")
     page.goto(f"{live_url}/")
     page.wait_for_timeout(2500)  # let the 2s poll tick pick up poll state
 
@@ -359,28 +302,32 @@ def test_poll_vote_marks_option_voted_without_counts(viewer_page, admin_http):
     option_btn.wait_for(timeout=5000)
     assert option_btn.count() == 1
 
-    # Drive the real UI flow: clicking the option fills the input with the
-    # option key (main.js click handler), then FIRE submits it as a vote.
+    # 2026-09-08：一次按下即投票。這裡原本走的是舊流程——點選項只是把選項代號
+    # 填進 #danmuText 再切到彈幕分頁，觀眾還要自己按 #btnSend，那一票會以彈幕
+    # 飛過大螢幕。現在點下去就直接 `POST /poll/vote`：不碰輸入框、不切分頁、
+    # 不產生彈幕，所以這條測試也不再需要 _go_online / _fire_accepts_vote
+    # （那兩個是為了讓 #btnSend 不是 disabled、並騙過 /fire 的 503）。
+    vote_posts: list = []
+    page.on(
+        "request",
+        lambda r: (
+            vote_posts.append(r.post_data)
+            if r.method == "POST" and r.url.endswith("/poll/vote")
+            else None
+        ),
+    )
     option_btn.click()
-    page.wait_for_selector("#danmuText", timeout=2000)
-    assert page.locator("#danmuText").input_value() == option_key
-    page.locator("#btnSend").click()
     page.wait_for_timeout(1000)
 
-    # UI 真的把選項 key 送出去了嗎 —— 確保上面的 mock 沒有掩蓋掉送出流程的錯誤。
-    assert fired.get("post_data"), "沒有攔截到 POST /fire —— FIRE 沒送出？"
-    assert (
-        option_key in fired["post_data"]
-    ), f"送出的內容沒有帶選項 key {option_key!r}：{fired['post_data']!r}"
+    assert vote_posts, "點了選項卻沒有 POST /poll/vote"
+    assert option_key in (
+        vote_posts[0] or ""
+    ), f"送出的內容沒有帶選項 key {option_key!r}：{vote_posts[0]!r}"
 
-    # 投票被接受後 main.js 會蓋上感謝卡（ViewerStates.showThankYou），把整個
-    # viewer UI 遮住 —— 連分頁按鈕都點不到。感謝卡本身不是這個測試的主題，
-    # 收掉它，回到使用者關掉卡片後看到的畫面。
-    page.evaluate("() => { window.ViewerStates && window.ViewerStates.hide(); }")
+    # 投票不再經過彈幕輸入框——輸入框要保持原樣（這正是這次改動的重點）。
+    assert page.locator("#danmuText").input_value() == ""
 
-    # 點選項時 main.js 會 _setViewerMode("fire") 把畫面切到輸入框（好讓使用者
-    # 直接送出），所以送完之後 poll 面板是隱藏的。切回來才看得到投票確認。
-    poll_tab.click()
+    # 也不再切走分頁：確認就在原地出現，觀眾不必自己切回來看。
     page.wait_for_selector("[data-vpoll-options]", state="visible", timeout=5000)
 
     voted_option = page.locator(f'[data-vpoll-key="{option_key}"].is-voted')
@@ -431,19 +378,14 @@ def test_voted_marker_does_not_leak_into_the_next_poll(viewer_page, admin_http):
     options = body.get("options") or []
     option_key = options[0]["key"] if isinstance(options[0], dict) else options[0]
 
-    _go_online(page)
-    _fire_accepts_vote(page, option_key, "Round one?")
     page.goto(f"{live_url}/")
     page.wait_for_timeout(2500)
 
     poll_tab = page.locator('[data-viewer-tab="poll"]')
     poll_tab.click()
     page.wait_for_selector("[data-vpoll-options]", state="visible", timeout=5000)
+    # 一次按下即投票（2026-09-08）——不再填輸入框、不再按 #btnSend。
     page.locator(f'[data-vpoll-key="{option_key}"]').click()
-    page.locator("#btnSend").click()
-    page.wait_for_timeout(1000)
-    page.evaluate("() => { window.ViewerStates && window.ViewerStates.hide(); }")
-    poll_tab.click()
     page.wait_for_selector(f'[data-vpoll-key="{option_key}"].is-voted', timeout=5000)
 
     # 換一場新的投票（reset + create），選項 key 相同、index 同樣是 0。
