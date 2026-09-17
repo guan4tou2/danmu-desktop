@@ -42,9 +42,9 @@
     "themeBlind": 0
   },
   "server/static/css/viewer-v2.css": {
-    "hex": 29,
+    "hex": 27,
     "gridPx": 0,
-    "rgba": 41,
+    "rgba": 20,
     "offGrid": 0,
     "themeBlind": 7
   },

@@ -364,7 +364,7 @@ body.viewer-body-v2.is-dark{
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #94a3b8;
+  background: var(--color-text-secondary);
   flex-shrink: 0;
 }
 
@@ -528,8 +528,8 @@ body.viewer-body-v2.is-dark{
 }
 
 .viewer-poll-option:hover{
-  border-color: rgba(56, 189, 248, 0.68);
-  background: rgba(56, 189, 248, 0.08);
+  border-color: color-mix(in srgb, var(--color-primary) 68%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
   transform: translateY(-1px);
 }
 
@@ -558,7 +558,7 @@ body.viewer-body-v2.is-dark{
 
 .viewer-poll-option.is-voted{
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.1);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   cursor: default;
 }
 
@@ -754,8 +754,8 @@ body.viewer-body-v2.is-dark{
 .viewer-effect-params-card{
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md-sm);
-  border: 1px solid rgba(56, 189, 248, 0.20); /* accent + 0x33 alpha */
-  background: rgba(56, 189, 248, 0.05);       /* hudTokens.cyanSoft */
+  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent); /* accent + 0x33 alpha */
+  background: color-mix(in srgb, var(--color-primary) 5%, transparent);       /* hudTokens.cyanSoft */
 }/* 2026-07-29：--viewer-accent / --viewer-text-dim 是**幽靈 token**——全 repo
  * 從來沒有任何地方定義過它們，所以這四條規則永遠落在 fallback，也就是硬寫死
  * 的深色臂。淺色主題下整張卡 15 段文字全部 2.06–2.11:1（改後 5.71 / 7.29）。
@@ -1441,7 +1441,7 @@ body[data-viewer-state]{
 
 .viewer-state-tip{
   margin-top: var(--space-4); padding: var(--space-2) var(--space-3);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
   border: 1px solid var(--glow-primary);
   border-radius: var(--radius-sm);
   font-size: var(--text-caption); line-height: 1.6;
@@ -1462,22 +1462,22 @@ body[data-viewer-state]{
   margin-top: 40px;
   margin-bottom: var(--space-4);
   border-radius: 50%;
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
   border: 2px solid var(--color-primary);
   display: flex; align-items: center; justify-content: center;
   color: var(--color-primary);
   font-size: 48px;
-  box-shadow: 0 0 40px rgba(56, 189, 248, 0.35), inset 0 0 24px rgba(56, 189, 248, 0.14);
+  box-shadow: 0 0 40px color-mix(in srgb, var(--color-primary) 35%, transparent), inset 0 0 24px color-mix(in srgb, var(--color-primary) 14%, transparent);
 }
 .viewer-state-thanks-icon .ring{
   position: absolute; border-radius: 50%;
   pointer-events: none;
 }
 .viewer-state-thanks-icon .ring-1{
-  inset: -10px; border: 1px solid rgba(56, 189, 248, 0.35);
+  inset: -10px; border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 .viewer-state-thanks-icon .ring-2{
-  inset: -22px; border: 1px solid rgba(56, 189, 248, 0.14);
+  inset: -22px; border: 1px solid color-mix(in srgb, var(--color-primary) 14%, transparent);
 }
 
 .viewer-state-recap{
@@ -1500,7 +1500,7 @@ body[data-viewer-state]{
 .viewer-state-recap .choice{
   display: flex; align-items: center; gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-sm);
 }
@@ -1545,7 +1545,7 @@ body[data-viewer-state]{
   font-size: var(--text-footnote); font-weight: 600;
   letter-spacing: 0.4px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-primary) 35%, transparent);
   transition: transform var(--motion-fast) ease;
 }
 .viewer-state-action:hover{ transform: translateY(-1px); }
@@ -1561,17 +1561,17 @@ body[data-viewer-state]{
 
 .viewer-state-ratelimit-icon{
   border-color: var(--viewer-ink-warning);
-  background: rgba(251, 191, 36, 0.08);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
   color: var(--viewer-ink-warning);
-  box-shadow: 0 0 40px rgba(251, 191, 36, 0.3), inset 0 0 24px rgba(251, 191, 36, 0.14);
+  box-shadow: 0 0 40px color-mix(in srgb, var(--color-warning) 30%, transparent), inset 0 0 24px color-mix(in srgb, var(--color-warning) 14%, transparent);
 }
 .viewer-state-kicker--warn{
   color: var(--viewer-ink-warning);
 }
 .viewer-state-action--warn{
-  background: #fbbf24;
+  background: var(--color-warning);
   color: #111827;
-  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.35);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-warning) 35%, transparent);
 }/* Light theme — design v4 brief 0518-v3 #3 fix (2026-05-18).
    sky-400 chip border is too pale on white. Swap to sky-600 (-2 shade
    for AA contrast) and bump border opacity 0.25 → 0.35 per audit. */
@@ -1591,8 +1591,8 @@ body[data-viewer-state]{
   width: 32px;
   height: 32px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
   /* ☰ 是字形（文字門檻 4.5），不是圖示字體——sky-600 疊在青底上只有 3.85:1。 */
   color: var(--viewer-ink-accent);
   font-size: var(--text-subhead);
@@ -1602,7 +1602,7 @@ body[data-viewer-state]{
   flex-shrink: 0;
 }
 .viewer-hamburger:active{
-  background: rgba(56, 189, 248, 0.2);
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
 }/* Visible on mobile only — desktop 用 hero 工具列的 .viewer-theme-chip */
 
 @media (max-width: 768px) {
@@ -1702,7 +1702,7 @@ body[data-viewer-state]{
 }
 .viewer-mobile-sheet-seg.is-active{
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.10);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   color: var(--color-primary);
 }
 .viewer-mobile-sheet-foot{
