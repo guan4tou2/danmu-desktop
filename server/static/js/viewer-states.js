@@ -62,7 +62,7 @@
         </p>
 
         <div class="viewer-state-info">
-          <div class="row"><span class="k">你的識別碼</span><span class="v">${fpShort}</span></div>
+          <div class="row"><span class="k">你的識別碼</span><span class="v">${_escape(fpShort)}</span></div>
           <div class="row"><span class="k">禁言原因</span><span class="v">${_escape(reason)}</span></div>
           <div class="row"><span class="k">禁言時間</span><span class="v">${_escape(duration)}</span></div>
         </div>
@@ -111,7 +111,7 @@
         </div>
 
         <button type="button" class="viewer-state-action" data-vs-action="hide">← 回到聊天</button>
-        ${voteId ? `<div class="viewer-state-trace">記錄編號 ${_escape(voteId)}${fpShort ? " · " + fpShort : ""}</div>` : ""}
+        ${voteId ? `<div class="viewer-state-trace">記錄編號 ${_escape(voteId)}${fpShort ? " · " + _escape(fpShort) : ""}</div>` : ""}
       </div>`;
   }
 

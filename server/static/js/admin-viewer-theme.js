@@ -192,11 +192,30 @@
       </div>`;
   }
 
+  // 2026-09-17（CodeQL #81）：從 localStorage 讀回的主題會被插進
+  // `style="background:…"`、`<input value="…">`、`<img src="…">`。
+  // UI 的輸入路徑都有驗證（hex 正則、FileReader 產生的 data URL），但讀回
+  // 這條路徑原本是整包 spread 不驗——被竄改過的 localStorage 就能帶屬性進來。
+  // 只收認得的欄位、形狀不對就丟，讓它退回預設值。
+  const _HEX = /^#[0-9a-f]{6}$/i;
+  const _LOGO = /^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i;
+  function _sanitizeStored(obj) {
+    const out = {};
+    if (!obj || typeof obj !== "object") return out;
+    ["bg", "primary", "hero"].forEach((k) => {
+      if (typeof obj[k] === "string" && _HEX.test(obj[k])) out[k] = obj[k];
+    });
+    if (obj.mode === "dark" || obj.mode === "light") out.mode = obj.mode;
+    if (typeof obj.font === "string" && /^[\w .-]{1,64}$/.test(obj.font)) out.font = obj.font;
+    if (obj.logo === null || (typeof obj.logo === "string" && _LOGO.test(obj.logo))) out.logo = obj.logo;
+    return out;
+  }
+
   function _wire(root) {
     let state = { ...PRESETS[0], logo: null };
     try {
       const raw = localStorage.getItem(STORAGE);
-      if (raw) state = { ...state, ...JSON.parse(raw) };
+      if (raw) state = { ...state, ..._sanitizeStored(JSON.parse(raw)) };
     } catch (_) { /* */ }
     let presetId = "default";
 

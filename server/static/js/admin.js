@@ -1650,7 +1650,11 @@ document.addEventListener("DOMContentLoaded", () => {
       var _titleText = _t(_titleKey);
       var _kickerText = _t(_kickerKey);
       if (kicker) kicker.textContent = (_kickerText !== _kickerKey) ? _kickerText : cfg.kicker;
-      if (title) title.innerHTML = (_titleText !== _titleKey) ? _titleText : cfg.title;
+      // textContent 而不是 innerHTML（2026-09-17，CodeQL #84）：標題全是純文字
+      // （四語 locale 與 ADMIN_ROUTES 都沒有任何標記）。currentRoute 雖已對
+      // ADMIN_ROUTES 白名單過濾、實際打不進來，但 i18next 對缺字的 key 會原樣
+      // 回傳 key——那是從網址 hash 組出來的字串，沒理由讓它有機會被當 HTML 解析。
+      if (title) title.textContent = (_titleText !== _titleKey) ? _titleText : cfg.title;
 
       // Phase A IA reorg: `live` is the cockpit successor to `dashboard`;
       // until Phase C reframes the dashboard view, `data-route-view=
