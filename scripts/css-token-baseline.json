@@ -28,11 +28,11 @@
     "themeBlind": 0
   },
   "server/static/css/style.css": {
-    "hex": 73,
+    "hex": 65,
     "gridPx": 0,
-    "rgba": 291,
+    "rgba": 110,
     "offGrid": 0,
-    "themeBlind": 4
+    "themeBlind": 1
   },
   "server/static/css/viewer-base.css": {
     "hex": 7,

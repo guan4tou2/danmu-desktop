@@ -176,8 +176,8 @@ button:disabled,
   pointer-events: none;
   opacity: 0.25;
   background-image:
-    linear-gradient(rgba(56, 189, 248, 0.45) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56, 189, 248, 0.45) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--color-primary) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 45%, transparent) 1px, transparent 1px);
   background-size: 40px 40px;
   -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 70%);
           mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 70%);
@@ -246,7 +246,7 @@ button:disabled,
 
 .admin-login-input:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 .admin-login-submit {
@@ -322,9 +322,9 @@ button:disabled,
   text-align: center;
 }
 
-.admin-dash-msg-row .tag.is-cyan    { background: var(--hud-cyan-soft); color: var(--color-ink-accent); border: 1px solid rgba(56, 189, 248, 0.45); }
-.admin-dash-msg-row .tag.is-amber   { background: rgba(251, 191, 36, 0.12); color: var(--color-ink-warning); border: 1px solid rgba(251, 191, 36, 0.45); }
-.admin-dash-msg-row .tag.is-lime    { background: rgba(134, 239, 172, 0.12); color: var(--color-ink-success); border: 1px solid rgba(134, 239, 172, 0.45); }
+.admin-dash-msg-row .tag.is-cyan    { background: var(--hud-cyan-soft); color: var(--color-ink-accent); border: 1px solid color-mix(in srgb, var(--color-primary) 45%, transparent); }
+.admin-dash-msg-row .tag.is-amber   { background: color-mix(in srgb, var(--color-warning) 12%, transparent); color: var(--color-ink-warning); border: 1px solid color-mix(in srgb, var(--color-warning) 45%, transparent); }
+.admin-dash-msg-row .tag.is-lime    { background: color-mix(in srgb, var(--color-success-light) 12%, transparent); color: var(--color-ink-success); border: 1px solid color-mix(in srgb, var(--color-success-light) 45%, transparent); }
 .admin-dash-msg-row .tag.is-crimson { background: color-mix(in srgb, var(--color-error-light) 12%, transparent); color: var(--color-ink-error); border: 1px solid color-mix(in srgb, var(--color-error-light) 45%, transparent); }
 
 /* v4 single-line message: @user · fp · text, all baseline-aligned. */
@@ -1238,7 +1238,7 @@ button:disabled,
 .admin-ratelimit-field input:focus,
 .admin-ratelimit-field select:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 .admin-ratelimit-bar-field {
@@ -1589,7 +1589,7 @@ button:disabled,
 
 .admin-poll-qrow.is-running {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 
 .admin-poll-qrow.is-dragging { opacity: 0.35; }
@@ -1900,7 +1900,7 @@ button:disabled,
 .admin-poll-opt .opt-img-toggle.is-on {
   border-color: var(--color-primary);
   color: var(--color-ink-accent);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
 
 .admin-poll-opt input[type="text"] {
@@ -2826,12 +2826,12 @@ button:disabled,
   display: flex;
   gap: var(--space-2);
   align-items: flex-start;
-  background: rgba(134, 239, 172,0.10);
-  border: 1px solid rgba(134, 239, 172,0.45);
+  background: color-mix(in srgb, var(--color-success-light) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success-light) 45%, transparent);
 }
 .fx-warn-box.is-amber {
-  background: rgba(251,191,36,0.10);
-  border-color: rgba(251,191,36,0.45);
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
 }
 .fx-warn-box.is-crimson {
   background: color-mix(in srgb, var(--color-error-light) 10%, transparent);
@@ -2847,13 +2847,13 @@ button:disabled,
   letter-spacing: 1px;
   font-weight: 600;
   flex-shrink: 0;
-  background: rgba(134, 239, 172,0.12);
-  border: 1px solid rgba(134, 239, 172,0.45);
+  background: color-mix(in srgb, var(--color-success-light) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success-light) 45%, transparent);
   color: var(--color-ink-success);
 }
 .fx-warn-chip.is-amber {
-  background: rgba(251,191,36,0.12);
-  border-color: rgba(251,191,36,0.45);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
   color: var(--color-ink-warning);
 }
 .fx-warn-chip.is-crimson {
@@ -3762,7 +3762,7 @@ body.stream-mode #workspace-automation {
 .history-list-shell {
   border: 1px solid var(--hud-line);
   border-radius: var(--radius-xl);
-  background: light-dark(rgba(15, 23, 42, 0.04), rgba(2, 6, 23, 0.42));
+  background: light-dark(color-mix(in srgb, var(--color-panel) 4%, transparent), rgba(2, 6, 23, 0.42));
   padding: 0.85rem 0.9rem;
 }
 
@@ -3820,9 +3820,9 @@ body.stream-mode #workspace-automation {
 .admin-body .bg-red-900\/30,
 .admin-body .bg-rose-900 { background-color: color-mix(in srgb, var(--color-error-light) 12%, transparent); }
 .admin-body .bg-amber-900,
-.admin-body .bg-amber-900\/30 { background-color: rgba(251, 191, 36, 0.14); }
+.admin-body .bg-amber-900\/30 { background-color: color-mix(in srgb, var(--color-warning) 14%, transparent); }
 .admin-body .bg-emerald-900,
-.admin-body .bg-emerald-900\/30 { background-color: rgba(134, 239, 172, 0.16); }
+.admin-body .bg-emerald-900\/30 { background-color: color-mix(in srgb, var(--color-success-light) 16%, transparent); }
 
 /* 這四組原本寫死淺色臂 hex——深色主題下深字壓深底、整組反向壞掉。
  * 換 ink token 後兩臂都對：深色臂回到工具類原意的亮色（sky/amber-400 系），
@@ -3951,13 +3951,13 @@ body.stream-mode #workspace-automation {
 }
 .admin-ext-status-dot {
   width: 8px; height: 8px; border-radius: 50%;
-  background: rgba(148, 163, 184, 0.4);
+  background: color-mix(in srgb, var(--color-text-secondary) 40%, transparent);
   flex-shrink: 0;
   transition: background var(--motion-normal), box-shadow var(--motion-normal);
 }
 .admin-ext-status-dot.is-live {
-  background: #86efac;
-  box-shadow: 0 0 8px #86efac, 0 0 16px rgba(134, 239, 172,0.4);
+  background: var(--color-success-light);
+  box-shadow: 0 0 8px var(--color-success-light), 0 0 16px color-mix(in srgb, var(--color-success-light) 40%, transparent);
   animation: hud-pulse 2s ease-in-out infinite;
 }
 .admin-ext-icon {
@@ -3986,7 +3986,7 @@ body.stream-mode #workspace-automation {
   border: 1px solid var(--hud-cyan-line);
 }
 .admin-ext-flag.is-soon {
-  background: rgba(148,163,184,0.12);
+  background: color-mix(in srgb, var(--color-text-secondary) 12%, transparent);
   color: var(--color-text-muted);
   border: 1px solid var(--hud-line);
 }
@@ -4183,7 +4183,7 @@ body.stream-mode #workspace-automation {
 .admin-ft-chart-bars .bar {
   flex: 1;
   min-height: 2px;
-  background: linear-gradient(180deg, rgba(56, 189, 248, 0.55), rgba(56, 189, 248, 0.20));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 55%, transparent), color-mix(in srgb, var(--color-primary) 20%, transparent));
   border: 1px solid var(--hud-cyan-line);
   border-radius: var(--radius-2xs) var(--radius-2xs) 0 0;
 }
@@ -4724,7 +4724,7 @@ body.stream-mode #workspace-automation {
 }
 .admin-about-cl-row .tag-feat { color: var(--color-ink-success); background: color-mix(in srgb, var(--color-success-light) 10%, transparent); border: 1px solid color-mix(in srgb, var(--color-success-light) 35%, transparent); }
 .admin-about-cl-row .tag-fix  { color: var(--color-ink-accent); background: color-mix(in srgb, var(--color-primary) 10%, transparent); border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent); }
-.admin-about-cl-row .tag-perf { color: var(--color-ink-warning); background: rgba(251, 191, 36, 0.10); border: 1px solid rgba(251, 191, 36, 0.35); }
+.admin-about-cl-row .tag-perf { color: var(--color-ink-warning); background: color-mix(in srgb, var(--color-warning) 10%, transparent); border: 1px solid color-mix(in srgb, var(--color-warning) 35%, transparent); }
 .admin-about-cl-row .msg {
   font-size: var(--text-footnote); line-height: 1.5;
   color: var(--color-text-strong);
@@ -4872,12 +4872,12 @@ body.stream-mode #workspace-automation {
   transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .admin-setup-theme-card:hover {
-  border-color: rgba(56, 189, 248, 0.55);
-  background: rgba(56, 189, 248, 0.04);
+  border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 4%, transparent);
 }
 .admin-setup-theme-card.is-selected {
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
 .admin-setup-theme-check {
   position: absolute; top: 6px; right: 6px;
@@ -4921,7 +4921,7 @@ body.stream-mode #workspace-automation {
   width: 72px; height: 72px;
   margin: 0 auto var(--space-4);
   display: flex; align-items: center; justify-content: center;
-  background: rgba(56, 189, 248, 0.10);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   border: 1px solid var(--hud-cyan-line);
   color: var(--color-ink-accent);
   border-radius: 50%;
@@ -5019,12 +5019,12 @@ body.stream-mode #workspace-automation {
 
 .admin-setup-toggle-row:hover {
   border-color: var(--hud-cyan-line);
-  background: rgba(56, 189, 248, 0.04);
+  background: color-mix(in srgb, var(--color-primary) 4%, transparent);
   transform: translateY(-1px);
 }
 
 .admin-setup-toggle-row.is-on {
-  border-color: rgba(134, 239, 172, 0.35);
+  border-color: color-mix(in srgb, var(--color-success-light) 35%, transparent);
 }
 
 .admin-setup-toggle-body {
@@ -5070,8 +5070,8 @@ body.stream-mode #workspace-automation {
 
 .admin-setup-toggle-switch.is-on {
   justify-content: flex-end;
-  background: rgba(134, 239, 172, 0.9);
-  border-color: rgba(134, 239, 172, 0.9);
+  background: color-mix(in srgb, var(--color-success-light) 90%, transparent);
+  border-color: color-mix(in srgb, var(--color-success-light) 90%, transparent);
 }
 
 .admin-setup-done-cta {
@@ -5461,8 +5461,8 @@ body.is-help-open .admin-dash-grid {
   font-size: var(--text-footnote); letter-spacing: 0;
 }
 .admin-rcb--amber {
-  background: rgba(251, 191, 36, 0.08);
-  border-bottom: 1px solid rgba(251, 191, 36, 0.27);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-warning) 27%, transparent);
   color: var(--color-ink-warning);
 }
 .admin-rcb--crimson {
@@ -5743,13 +5743,13 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   border-style: dashed;
   border-width: 2px;
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.05);
-  box-shadow: 0 0 24px rgba(56, 189, 248, 0.13), inset 0 0 48px rgba(56, 189, 248, 0.03);
+  background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--color-primary) 13%, transparent), inset 0 0 48px color-mix(in srgb, var(--color-primary) 3%, transparent);
 }
 .admin-em-v4__upzone.is-dragover .admin-em-v4__upicon {
   color: var(--color-ink-accent);
-  border-color: rgba(56, 189, 248, 0.33);
-  background: rgba(56, 189, 248, 0.07);
+  border-color: color-mix(in srgb, var(--color-primary) 33%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 7%, transparent);
 }
 .admin-em-v4__upzone.is-dragover .admin-em-v4__uptitle::after {
   content: " · 放開以上傳";
@@ -5761,21 +5761,21 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   border-style: solid;
   border-width: 2px;
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.03);
-  box-shadow: 0 0 32px rgba(56, 189, 248, 0.19);
+  background: color-mix(in srgb, var(--color-primary) 3%, transparent);
+  box-shadow: 0 0 32px color-mix(in srgb, var(--color-primary) 19%, transparent);
   animation: dropzone-drop-pulse 1s ease-in-out infinite;
 }
 .admin-em-v4__upzone.is-dropping .admin-em-v4__upicon {
   position: relative;
   color: var(--color-ink-accent);
-  background: rgba(56, 189, 248, 0.05);
-  border-color: rgba(56, 189, 248, 0.33);
+  background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 33%, transparent);
 }
 .admin-em-v4__upzone.is-dropping .admin-em-v4__upicon::before {
   content: "";
   position: absolute; inset: -4px;
   border-radius: inherit;
-  border: 2px solid rgba(56, 189, 248, 0.20);
+  border: 2px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
   border-top-color: var(--color-primary);
   animation: dropzone-spin 0.8s linear infinite;
 }
@@ -5940,15 +5940,15 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   width: 100%; padding: var(--space-3) var(--space-4);
   display: flex; align-items: center; gap: var(--space-3);
   background: transparent; border: none; cursor: pointer;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text-secondary) 12%, transparent);
   text-align: left;
 }
 .admin-mobile-nav__o-row:last-child { border-bottom: none; }
-.admin-mobile-nav__o-row:active { background: rgba(56, 189, 248, 0.05); }
+.admin-mobile-nav__o-row:active { background: color-mix(in srgb, var(--color-primary) 5%, transparent); }
 
 .admin-mobile-nav__o-icon {
   width: 36px; height: 36px; border-radius: var(--radius-md);
-  background: rgba(56, 189, 248, 0.07);
+  background: color-mix(in srgb, var(--color-primary) 7%, transparent);
   display: flex; align-items: center; justify-content: center;
   font-size: var(--text-subhead); color: var(--color-ink-accent);
   flex-shrink: 0;
@@ -6056,7 +6056,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
     content: "";
     display: block;
     width: 36px; height: 4px; border-radius: var(--radius-2xs);
-    background: rgba(148, 163, 184, 0.30);
+    background: color-mix(in srgb, var(--color-text-secondary) 30%, transparent);
     margin: var(--space-2) auto 0;
   }
 
@@ -6076,7 +6076,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
     content: "";
     display: block;
     width: 36px; height: 4px; border-radius: var(--radius-2xs);
-    background: rgba(148, 163, 184, 0.30);
+    background: color-mix(in srgb, var(--color-text-secondary) 30%, transparent);
     margin: var(--space-2) auto var(--space-1);
   }
 }
@@ -6257,7 +6257,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   padding: var(--space-1) var(--space-2); border-radius: var(--radius-pill);
   border: 1px solid;
 }
-.admin-mq__col-head--pending  .admin-mq__col-count { color: var(--color-ink-warning); border-color: rgba(251, 191, 36, 0.33); background: rgba(251, 191, 36, 0.07); }
+.admin-mq__col-head--pending  .admin-mq__col-count { color: var(--color-ink-warning); border-color: color-mix(in srgb, var(--color-warning) 33%, transparent); background: color-mix(in srgb, var(--color-warning) 7%, transparent); }
 .admin-mq__col-head--approved .admin-mq__col-count { color: var(--color-ink-success); border-color: rgba(132, 225, 0, 0.33); background: rgba(132, 225, 0, 0.07); }
 .admin-mq__col-head--rejected .admin-mq__col-count { color: var(--color-danger); border-color: rgba(255, 77, 79, 0.33); background: rgba(255, 77, 79, 0.07); }
 .admin-mq__col-badge {
@@ -6429,7 +6429,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   background: var(--color-bg-base);
   color: var(--color-text-strong);
   border-radius: var(--radius-md); overflow: hidden;
-  border: 1px solid rgba(251, 191, 36, 0.33);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 33%, transparent);
   box-shadow: 0 16px 64px var(--color-overlay);
   animation: hud-modal-rise 200ms ease-out;
 }
@@ -6445,11 +6445,11 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 .admin-hud-modal__head {
   display: flex; align-items: center; gap: var(--space-2);
   padding: var(--space-4) var(--space-5);
-  background: rgba(251, 191, 36, 0.07);
-  border-bottom: 1px solid rgba(251, 191, 36, 0.21);
+  background: color-mix(in srgb, var(--color-warning) 7%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-warning) 21%, transparent);
 }
 .admin-hud-modal--danger  .admin-hud-modal__head { background: rgba(255, 77, 79, 0.07); border-bottom-color: rgba(255, 77, 79, 0.21); }
-.admin-hud-modal--info    .admin-hud-modal__head { background: rgba(56, 189, 248, 0.07); border-bottom-color: rgba(56, 189, 248, 0.21); }
+.admin-hud-modal--info    .admin-hud-modal__head { background: color-mix(in srgb, var(--color-primary) 7%, transparent); border-bottom-color: color-mix(in srgb, var(--color-primary) 21%, transparent); }
 .admin-hud-modal--success .admin-hud-modal__head { background: rgba(132, 225, 0, 0.07); border-bottom-color: rgba(132, 225, 0, 0.21); }
 
 .admin-hud-modal__icon {
@@ -6492,7 +6492,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 }
 .admin-hud-modal__btn--cancel {
   background: transparent;
-  border: 1px solid rgba(148, 163, 184, 0.30);
+  border: 1px solid color-mix(in srgb, var(--color-text-secondary) 30%, transparent);
   color: var(--color-text-muted);
 }
 .admin-hud-modal__btn--cancel:hover { color: var(--color-text-strong); }
@@ -6647,7 +6647,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 .admin-flt-v4__explain {
   display: flex; align-items: center; gap: var(--space-2);
   padding: var(--space-2) var(--space-4); border-radius: var(--radius-md-sm);
-  background: rgba(148, 163, 184, 0.04);
+  background: color-mix(in srgb, var(--color-text-secondary) 4%, transparent);
   border: 1px solid var(--color-border-soft);
   font-size: var(--text-caption); color: var(--color-text-muted);
   margin-bottom: var(--space-3);
@@ -6691,17 +6691,17 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   font-family: var(--font-sans);
 }
 .admin-flt-v4__qchip.is-active {
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
   border-color: var(--color-primary);
 }
 .admin-flt-v4__qchip-toggle {
   display: inline-flex; align-items: center;
   width: 32px; height: 18px; border-radius: var(--radius-pill); padding: 2px;
   background: transparent;
-  border: 1px solid rgba(148, 163, 184, 0.30);
+  border: 1px solid color-mix(in srgb, var(--color-text-secondary) 30%, transparent);
 }
 .admin-flt-v4__qchip.is-active .admin-flt-v4__qchip-toggle {
-  background: rgba(56, 189, 248, 0.33);
+  background: color-mix(in srgb, var(--color-primary) 33%, transparent);
   border-color: var(--color-primary);
 }
 .admin-flt-v4__qchip-knob {
@@ -6772,7 +6772,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   background: color-mix(in srgb, var(--color-text-secondary) 4%, transparent);
   padding: var(--space-2) var(--space-4);
 }
-.admin-ev-v4__row[data-sev="warn"]  { background: rgba(251, 191, 36, 0.04); }
+.admin-ev-v4__row[data-sev="warn"]  { background: color-mix(in srgb, var(--color-warning) 4%, transparent); }
 .admin-ev-v4__row[data-sev="error"] { background: rgba(255, 77, 79, 0.05); }
 
 .admin-ev-v4__time {
@@ -6788,7 +6788,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
    shapes, not text, and the severity signal should read identically light/dark.
    Their paired labels below DO follow the theme (contrast requirement). */
 .admin-ev-v4__sev-dot[data-sev="info"]  { background: var(--color-primary); }
-.admin-ev-v4__sev-dot[data-sev="warn"]  { background: #fbbf24; }
+.admin-ev-v4__sev-dot[data-sev="warn"]  { background: var(--color-warning); }
 .admin-ev-v4__sev-dot[data-sev="error"] { background: #ff4d4f; }
 .admin-ev-v4__type {
   font-family: var(--font-mono);
@@ -6935,8 +6935,8 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 }
 .admin-msgd-v4__modbtn {
   padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);
-  background: rgba(56, 189, 248, 0.07);
-  border: 1px solid rgba(56, 189, 248, 0.33);
+  background: color-mix(in srgb, var(--color-primary) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 33%, transparent);
   color: var(--color-ink-accent);
   font-family: var(--hud-font-mono);
   font-size: var(--text-caption); letter-spacing: 0.5px; font-weight: 600;
@@ -6944,8 +6944,8 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 }
 .admin-msgd-v4__modbtn:disabled { opacity: 0.4; cursor: default; }
 .admin-msgd-v4__modbtn.is-ban       { color: var(--color-ink-error); border-color: rgba(255, 77, 79, 0.33); background: rgba(255, 77, 79, 0.07); }
-.admin-msgd-v4__modbtn.is-mute      { color: var(--color-ink-warning);   border-color: rgba(251, 191, 36, 0.33); background: rgba(251, 191, 36, 0.07); }
-.admin-msgd-v4__modbtn.is-mask      { color: var(--hud-textDim); border-color: rgba(148, 163, 184, 0.33); background: transparent; }
+.admin-msgd-v4__modbtn.is-mute      { color: var(--color-ink-warning);   border-color: color-mix(in srgb, var(--color-warning) 33%, transparent); background: color-mix(in srgb, var(--color-warning) 7%, transparent); }
+.admin-msgd-v4__modbtn.is-mask      { color: var(--hud-textDim); border-color: color-mix(in srgb, var(--color-text-secondary) 33%, transparent); background: transparent; }
 .admin-msgd-v4__modbtn.is-blacklist { color: var(--color-ink-error); border-color: rgba(255, 77, 79, 0.33); background: rgba(255, 77, 79, 0.07); }
 
 .admin-msgd-v4__reply {
@@ -6962,7 +6962,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   align-self: flex-end; margin-top: var(--space-2);
   padding: var(--space-2) var(--space-4); border-radius: var(--radius-sm);
   border: 1px solid var(--hud-cyan);
-  background: rgba(56, 189, 248, 0.10);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   color: var(--color-ink-accent);
   font-family: var(--hud-font-mono);
   font-size: var(--text-caption); letter-spacing: 1px; font-weight: 600; cursor: pointer;
@@ -7047,8 +7047,8 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 
 .admin-bancfm-warn {
   margin-top: var(--space-3); padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);
-  background: rgba(251, 191, 36, 0.05);
-  border: 1px solid rgba(251, 191, 36, 0.19);
+  background: color-mix(in srgb, var(--color-warning) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 19%, transparent);
   font-family: var(--hud-font-mono);
   font-size: var(--text-caption); color: var(--color-ink-warning);
   letter-spacing: 0.3px; line-height: 1.5;
@@ -7071,7 +7071,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   height: 100vh;
   background: var(--color-surface);
   border-left: 1px solid var(--hud-cyan-line);
-  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(56, 189, 248, 0.15);
+  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.5), 0 0 0 1px color-mix(in srgb, var(--color-primary) 15%, transparent);
   padding: var(--space-4) var(--space-4) var(--space-6);
   overflow: auto;
   pointer-events: auto;
@@ -7169,7 +7169,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 
 /* Live feed row clickability */
 .admin-live-feed-row { cursor: pointer; }
-.admin-live-feed-row:hover { background: rgba(56, 189, 248, 0.04); }
+.admin-live-feed-row:hover { background: color-mix(in srgb, var(--color-primary) 4%, transparent); }
 
 body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 
@@ -7331,8 +7331,8 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 .admin-vc-field-badge--blocked {
   color: var(--color-ink-warning);
-  border-color: rgba(251,191,36,0.35);
-  background: rgba(251,191,36,0.1);
+  border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
 }
 .admin-vc-toggle {
   font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 1px;
@@ -7650,10 +7650,10 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   cursor: pointer;
 }
 .admin-aud-row[data-aud-row]:not(.admin-aud-row--head):hover {
-  background: rgba(56, 189, 248, 0.04);
+  background: color-mix(in srgb, var(--color-primary) 4%, transparent);
 }
 .admin-aud-row.is-selected {
-  background: rgba(56, 189, 248, 0.10) !important;
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent) !important;
   box-shadow: inset 3px 0 0 var(--color-primary);
 }
 
@@ -7683,8 +7683,8 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   flex-direction: column;
   gap: var(--space-2);
 }
-.admin-aud-detail[data-risk-level="normal"] { border-color: rgba(134, 239, 172, 0.30); }
-.admin-aud-detail[data-risk-level="mid"] { border-color: rgba(251, 191, 36, 0.45); }
+.admin-aud-detail[data-risk-level="normal"] { border-color: color-mix(in srgb, var(--color-success-light) 30%, transparent); }
+.admin-aud-detail[data-risk-level="mid"] { border-color: color-mix(in srgb, var(--color-warning) 45%, transparent); }
 .admin-aud-detail[data-risk-level="blocked"],
 .admin-aud-detail[data-risk-level="high"] { border-color: color-mix(in srgb, var(--color-error-light) 50%, transparent); }
 
@@ -7732,12 +7732,12 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   color: var(--color-text-strong);
 }
 .admin-aud-detail-flag[data-risk="normal"] {
-  background: rgba(134, 239, 172, 0.06);
-  border-color: rgba(134, 239, 172, 0.30);
+  background: color-mix(in srgb, var(--color-success-light) 6%, transparent);
+  border-color: color-mix(in srgb, var(--color-success-light) 30%, transparent);
 }
 .admin-aud-detail-flag[data-risk="mid"] {
-  background: rgba(251, 191, 36, 0.06);
-  border-color: rgba(251, 191, 36, 0.40);
+  background: color-mix(in srgb, var(--color-warning) 6%, transparent);
+  border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
 }
 .admin-aud-detail-flag .hd {
   font-family: var(--font-mono);
@@ -7899,9 +7899,9 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   cursor: pointer;
   transition: border-color var(--motion-fast), background var(--motion-fast);
 }
-.admin-wh-card:hover { background: rgba(56, 189, 248, 0.04); }
+.admin-wh-card:hover { background: color-mix(in srgb, var(--color-primary) 4%, transparent); }
 .admin-wh-card.is-selected {
-  background: rgba(56, 189, 248, 0.10);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   border-color: var(--hud-cyan-line);
 }
 .admin-wh-card-head {
@@ -7948,8 +7948,8 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   font-size: var(--text-caption);
   color: var(--color-ink-warning);
   padding: var(--space-1) var(--space-2);
-  background: rgba(251, 191, 36, 0.08);
-  border: 1px solid rgba(251, 191, 36, 0.40);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 40%, transparent);
   border-radius: var(--radius-xs);
   margin-bottom: var(--space-2);
   font-family: var(--font-mono);
@@ -8494,9 +8494,9 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-at-success-banner {
   margin-top: var(--space-3);
   padding: var(--space-3);
-  border: 1px solid rgba(134, 239, 172, 0.42);
+  border: 1px solid color-mix(in srgb, var(--color-success-light) 42%, transparent);
   border-radius: var(--radius-md-sm);
-  background: rgba(134, 239, 172, 0.10);
+  background: color-mix(in srgb, var(--color-success-light) 10%, transparent);
 }
 
 .admin-at-success-title {
@@ -8568,8 +8568,8 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md-sm);
-  background: rgba(134, 239, 172, 0.10);
-  border: 1px solid rgba(134, 239, 172, 0.45);
+  background: color-mix(in srgb, var(--color-success-light) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success-light) 45%, transparent);
   color: var(--color-ink-success);
   font-family: inherit;
   pointer-events: auto;
@@ -8595,7 +8595,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 
 .admin-quick-action-bar-undo {
   background: transparent;
-  border: 1px solid rgba(134, 239, 172, 0.45);
+  border: 1px solid color-mix(in srgb, var(--color-success-light) 45%, transparent);
   border-radius: var(--radius-sm);
   color: var(--color-ink-success);
   cursor: pointer;
@@ -8607,7 +8607,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 
 .admin-quick-action-bar-undo:hover {
-  background: rgba(134, 239, 172, 0.18);
+  background: color-mix(in srgb, var(--color-success-light) 18%, transparent);
   color: var(--color-text-bright);
 }
 
@@ -8787,7 +8787,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 .admin-widget-step:hover {
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -8823,7 +8823,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   transition: background var(--motion-fast) var(--ease-out, ease);
 }
 .admin-sd-ann-add:hover,
-.admin-sd-ann-card-add:hover { background: rgba(56, 189, 248, 0.18); }
+.admin-sd-ann-card-add:hover { background: color-mix(in srgb, var(--color-primary) 18%, transparent); }
 
 /* Timeline inner + hover layer */
 .admin-sd-timeline-inner {
@@ -9323,13 +9323,13 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 .admin-modbans-chip.is-active {
   color: var(--color-ink-warning);
-  border-color: rgba(251, 191, 36, 0.4);
-  background: rgba(251, 191, 36, 0.06);
+  border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 6%, transparent);
 }
 .admin-modbans-chip.is-expired {
   color: var(--color-text-muted);
-  border-color: rgba(148, 163, 184, 0.25);
-  background: rgba(148, 163, 184, 0.05);
+  border-color: color-mix(in srgb, var(--color-text-secondary) 25%, transparent);
+  background: color-mix(in srgb, var(--color-text-secondary) 5%, transparent);
 }
 .admin-modbans-chip-pulse {
   width: 4px;
@@ -9416,7 +9416,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 .admin-modbans-modal-preset.is-active {
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.10);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   color: var(--color-ink-accent);
   transform: scale(1.04);
 }
@@ -9451,8 +9451,8 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-modbans-modal-hint {
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
-  background: rgba(251, 191, 36, 0.05);
-  border: 1px solid rgba(251, 191, 36, 0.18);
+  background: color-mix(in srgb, var(--color-warning) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 18%, transparent);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   color: var(--color-ink-warning);
@@ -9484,12 +9484,12 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   font-size: var(--text-caption);
   color: var(--color-text-muted);
   border-style: dashed;
-  border-color: rgba(148, 163, 184, 0.33);
+  border-color: color-mix(in srgb, var(--color-text-secondary) 33%, transparent);
 }
 .admin-modbans-modal-preset.is-custom.is-active {
   border-style: solid;
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.10);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   color: var(--color-ink-accent);
 }
 
@@ -9497,7 +9497,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   margin-top: var(--space-2);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md-sm);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
   border: 1px solid var(--glow-primary);
   display: flex;
   align-items: center;
@@ -9559,7 +9559,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-modbans-modal-custom-unit.is-active {
   border-color: var(--color-primary);
   color: var(--color-ink-accent);
-  background: rgba(56, 189, 248, 0.10);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
 }
 .admin-modbans-modal-custom-spacer { flex: 1; }
 .admin-modbans-modal-custom-seconds {
@@ -9654,7 +9654,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 }
 .admin-font-subset-chip.is-active {
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.10);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
 }
 .admin-font-subset-chip-check {
   display: inline-flex;
@@ -9843,7 +9843,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 
 .admin-sch-timeline-hour.is-peak {
   color: var(--admin-text);
-  background: rgba(56, 189, 248, 0.05);
+  background: color-mix(in srgb, var(--color-primary) 5%, transparent);
 }
 
 .admin-sch-timeline-row {
@@ -9891,8 +9891,8 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   letter-spacing: 0.5px;
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-xs);
-  background: rgba(251, 191, 36, 0.18);
-  border: 1px solid rgba(251, 191, 36, 0.55);
+  background: color-mix(in srgb, var(--color-warning) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 55%, transparent);
   color: var(--color-ink-warning);
 }
 
@@ -9991,11 +9991,11 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
   white-space: nowrap;
 }
 
-.admin-sch-cal-chip.is-poll    { background: rgba(251, 191, 36, 0.18); border: 1px solid rgba(251, 191, 36, 0.35); color: var(--color-ink-warning); }
-.admin-sch-cal-chip.is-msg     { background: rgba(56, 189, 248, 0.18); border: 1px solid rgba(56, 189, 248, 0.35); color: var(--color-ink-accent); }
-.admin-sch-cal-chip.is-theme   { background: rgba(134, 239, 172, 0.18); border: 1px solid rgba(134, 239, 172, 0.35); color: var(--color-ink-success); }
-.admin-sch-cal-chip.is-mute    { background: rgba(148, 163, 184, 0.12); border: 1px solid var(--hud-line-strong); color: var(--admin-text-dim); }
-.admin-sch-cal-chip.is-webhook { background: rgba(56, 189, 248, 0.18); border: 1px solid rgba(56, 189, 248, 0.35); color: var(--color-ink-accent); }
+.admin-sch-cal-chip.is-poll    { background: color-mix(in srgb, var(--color-warning) 18%, transparent); border: 1px solid color-mix(in srgb, var(--color-warning) 35%, transparent); color: var(--color-ink-warning); }
+.admin-sch-cal-chip.is-msg     { background: color-mix(in srgb, var(--color-primary) 18%, transparent); border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent); color: var(--color-ink-accent); }
+.admin-sch-cal-chip.is-theme   { background: color-mix(in srgb, var(--color-success-light) 18%, transparent); border: 1px solid color-mix(in srgb, var(--color-success-light) 35%, transparent); color: var(--color-ink-success); }
+.admin-sch-cal-chip.is-mute    { background: color-mix(in srgb, var(--color-text-secondary) 12%, transparent); border: 1px solid var(--hud-line-strong); color: var(--admin-text-dim); }
+.admin-sch-cal-chip.is-webhook { background: color-mix(in srgb, var(--color-primary) 18%, transparent); border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent); color: var(--color-ink-accent); }
 
 /* ──────────────────────────────────────────────────────────────────────
  * Plugins page (v5 batch10-plugins.jsx, 2026-05-19) — full v4 chrome.
@@ -10060,7 +10060,7 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 
 .admin-plugins-dot.is-running {
   background: var(--hud-lime);
-  box-shadow: 0 0 6px var(--hud-lime), 0 0 12px rgba(134, 239, 172, 0.4);
+  box-shadow: 0 0 6px var(--hud-lime), 0 0 12px color-mix(in srgb, var(--color-success-light) 40%, transparent);
   animation: hud-pulse 2s ease-in-out infinite;
 }
 
@@ -10322,13 +10322,13 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-fp-state.is-cyan {
   border-color: var(--hud-cyan-line);
   color: var(--color-ink-accent);
-  background: rgba(56, 189, 248, 0.06);
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
 }
 
 .admin-fp-state.is-amber {
-  border-color: rgba(251, 191, 36, 0.45);
+  border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
   color: var(--color-ink-warning);
-  background: rgba(251, 191, 36, 0.06);
+  background: color-mix(in srgb, var(--color-warning) 6%, transparent);
 }
 
 .admin-fp-state.is-crimson {
@@ -10733,8 +10733,8 @@ body.admin-pu-open { overflow: hidden; }
 .admin-pu-no-manifest {
   padding: var(--space-4);
   border-radius: var(--radius-md-sm);
-  background: rgba(251, 191, 36, 0.06);
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: color-mix(in srgb, var(--color-warning) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, transparent);
   text-align: center;
 }
 
@@ -10789,8 +10789,8 @@ body.admin-pu-open { overflow: hidden; }
 .admin-pu-dup-banner {
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
-  background: rgba(251, 191, 36, 0.08);
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, transparent);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   color: var(--color-ink-warning);
@@ -10814,8 +10814,8 @@ body.admin-pu-open { overflow: hidden; }
   height: 44px;
   margin: 0 auto;
   border-radius: 50%;
-  background: rgba(251, 191, 36, 0.15);
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13026,8 +13026,8 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-ui-chip.is-warn,
 .admin-ui-chip[data-severity="warn"].is-active {
-  border-color: rgba(251, 191, 36, 0.45);
-  background: rgba(251, 191, 36, 0.08);
+  border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
   color: var(--color-ink-warning);
 }
 
@@ -13214,7 +13214,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-ui-dot.is-warn {
   background: var(--hud-amber);
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.45);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-warning) 45%, transparent);
 }
 
 
@@ -13266,16 +13266,16 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-ui-pill.is-admin,
 .admin-ui-pill.is-cyan {
-  border-color: rgba(56, 189, 248, 0.38);
-  background: rgba(56, 189, 248, 0.08);
+  border-color: color-mix(in srgb, var(--color-primary) 38%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
   color: var(--color-ink-accent);
 }
 
 
 .admin-ui-pill.is-generic,
 .admin-ui-pill.is-warn {
-  border-color: rgba(251, 191, 36, 0.35);
-  background: rgba(251, 191, 36, 0.07);
+  border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 7%, transparent);
   /* 不用 ink-warning：pill 的 7% 琥珀底會把 amber-700 拖到 4.43（9px 字）。
    * 淺色臂再深一階到 -800（6.6），深色臂與 ink 相同。 */
   color: var(--color-ink-warning-strong);
@@ -13285,8 +13285,8 @@ body.is-light .admin-login-wordmark.is-on-light,
 .admin-ui-pill.is-success,
 .admin-ui-pill.is-lime,
 .admin-ui-pill.is-green {
-  border-color: rgba(134, 239, 172, 0.38);
-  background: rgba(134, 239, 172, 0.10);
+  border-color: color-mix(in srgb, var(--color-success-light) 38%, transparent);
+  background: color-mix(in srgb, var(--color-success-light) 10%, transparent);
   /* 同 is-warn：10% 綠底 + lime-700 只剩 4.42，淺色臂下探 -800（6.4）。 */
   color: var(--color-ink-success-strong);
 }
@@ -13321,8 +13321,8 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 
 .admin-ui-option-row:hover {
-  border-color: rgba(56, 189, 248, 0.35);
-  background: rgba(56, 189, 248, 0.06);
+  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
 }
 
 
@@ -13335,7 +13335,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 
 .admin-ui-checkbox:checked + .admin-ui-pill {
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.10);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 10%, transparent);
 }
 
 
@@ -13366,7 +13366,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 .admin-ui-choice:hover > span,
 .admin-ui-choice.is-active > span,
 .admin-ui-choice:has(input:checked) > span {
-  border-color: rgba(56, 189, 248, 0.55);
+  border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
   background: var(--hud-cyan-soft);
   color: var(--color-ink-accent);
 }
@@ -13382,8 +13382,8 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 
 .admin-ui-notice.is-warn {
-  border: 1px solid rgba(251, 191, 36, 0.38);
-  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 38%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
   /* 同 pill.is-warn：10% 琥珀底把 amber-700 拖到邊緣，淺色臂下探 -800。 */
   color: var(--color-ink-warning-strong);
 }
@@ -13397,8 +13397,8 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 
 .admin-ui-notice.is-success {
-  border: 1px solid rgba(134, 239, 172, 0.42);
-  background: rgba(134, 239, 172, 0.10);
+  border: 1px solid color-mix(in srgb, var(--color-success-light) 42%, transparent);
+  background: color-mix(in srgb, var(--color-success-light) 10%, transparent);
   color: var(--color-ink-success);
 }
 
@@ -13500,7 +13500,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-em-v4__upzone.is-dragover {
   border-color: var(--hud-cyan);
-  background: rgba(56, 189, 248, 0.07);
+  background: color-mix(in srgb, var(--color-primary) 7%, transparent);
 }
 
 .admin-em-v4__upicon {
@@ -14078,8 +14078,8 @@ body.is-light .admin-login-wordmark.is-on-light,
   gap: var(--space-2);
   padding: var(--space-2) var(--space-5);
   border-radius: var(--radius-md);
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: color-mix(in srgb, var(--color-error) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error) 35%, transparent);
   color: var(--color-error);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -14217,7 +14217,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-stickers-pack.is-active {
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
 
 
@@ -14743,7 +14743,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-fonts-drop.is-drag {
   border-color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
 
 
@@ -14786,8 +14786,8 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 
 .admin-fonts-drop-status.is-good {
-  border-color: #86efac;
-  color: #86efac;
+  border-color: var(--color-success-light);
+  color: var(--color-success-light);
 }
 
 
@@ -14845,9 +14845,9 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-security-strength-bar > span.is-bad { background: var(--color-error-light); }
 
-.admin-security-strength-bar > span.is-warn { background: #fbbf24; }
+.admin-security-strength-bar > span.is-warn { background: var(--color-warning); }
 
-.admin-security-strength-bar > span.is-good { background: #86efac; }
+.admin-security-strength-bar > span.is-good { background: var(--color-success-light); }
 
 .admin-security-timestamp {
   font-family: var(--font-mono);
@@ -14914,7 +14914,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   border: 1px solid var(--admin-line);
   border-radius: 10px;
   box-shadow: 0 20px 60px -10px var(--color-overlay),
-              0 0 0 1px rgba(56, 189, 248, 0.18);
+              0 0 0 1px color-mix(in srgb, var(--color-primary) 18%, transparent);
   overflow: hidden;
   animation: admin-cmdk-slide 160ms ease-out;
 }
@@ -14973,7 +14973,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   border-left: 2px solid transparent;
 }
 
-.admin-cmdk-row:hover { background: rgba(56, 189, 248, 0.06); }
+.admin-cmdk-row:hover { background: color-mix(in srgb, var(--color-primary) 6%, transparent); }
 
 .admin-cmdk-row.is-active {
   background: var(--hud-cyan-soft);
@@ -15015,7 +15015,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   padding: 1px var(--space-1);
   border: 1px solid var(--admin-line);
   border-radius: var(--radius-xs);
-  background: rgba(56, 189, 248, 0.04);
+  background: color-mix(in srgb, var(--color-primary) 4%, transparent);
   color: var(--admin-text);
   font-family: inherit;
   font-size: var(--text-caption);
@@ -15091,7 +15091,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-dsp2-row.is-last { border-bottom: none; }
 
-.admin-dsp2-row.is-off { background: rgba(148, 163, 184, 0.03); }
+.admin-dsp2-row.is-off { background: color-mix(in srgb, var(--color-text-secondary) 3%, transparent); }
 
 
 @media (max-width: 720px) {
@@ -15275,7 +15275,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-dsp2-swatch.is-active {
   border: 2px solid var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 .admin-dsp2-swatch-custom {
@@ -15813,12 +15813,12 @@ body.is-light .admin-login-wordmark.is-on-light,
 .admin-polls-live-bar .fill {
   height: 100%;
   width: 0;
-  background: rgba(56, 189, 248, 0.35);
+  background: color-mix(in srgb, var(--color-primary) 35%, transparent);
   transition: width var(--motion-slow) ease-out;
 }
 
 .admin-polls-live-bar.is-leader .fill {
-  background: linear-gradient(90deg, var(--color-primary), rgba(56, 189, 248, 0.55));
+  background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 55%, transparent));
   box-shadow: 0 0 10px var(--color-primary);
 }
 
@@ -15957,8 +15957,8 @@ body.is-light .admin-login-wordmark.is-on-light,
 }
 
 .admin-polls-live-qmini.is-done .idx {
-  background: rgba(56, 189, 248, 0.35);
-  border-color: rgba(56, 189, 248, 0.45);
+  background: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
   color: var(--color-ink-accent);
 }
 
@@ -16149,7 +16149,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 
 .admin-polls-results-winner {
-  background: linear-gradient(135deg, rgba(56,189,248,0.14), rgba(56,189,248,0.03));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 14%, transparent), color-mix(in srgb, var(--color-primary) 3%, transparent));
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-md-sm);
   padding: var(--space-4) var(--space-5);
@@ -16299,11 +16299,11 @@ body.is-light .admin-login-wordmark.is-on-light,
 .admin-polls-results-bar .fill {
   height: 100%;
   width: 0;
-  background: rgba(56, 189, 248, 0.25);
+  background: color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 
 .admin-polls-results-bar.is-winner .fill {
-  background: linear-gradient(90deg, var(--color-primary), rgba(56, 189, 248, 0.45));
+  background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 45%, transparent));
   box-shadow: 0 0 8px var(--color-primary);
 }
 
@@ -16413,7 +16413,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-polls-results-spark .bar {
   flex: 1;
-  background: rgba(56, 189, 248, 0.35);
+  background: color-mix(in srgb, var(--color-primary) 35%, transparent);
   border-radius: 1px;
 }
 
@@ -16530,7 +16530,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-bc-v4__big.is-golive {
   background: var(--hud-cyan); color: #000;
-  box-shadow: 0 0 48px rgba(56, 189, 248, 0.33), 0 4px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 48px color-mix(in srgb, var(--color-primary) 33%, transparent), 0 4px 24px rgba(0, 0, 0, 0.4);
 }
 
 .admin-bc-v4__big.is-end {
@@ -16541,7 +16541,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-bc-v4__big.is-resume {
   background: var(--hud-amber); color: #000;
-  box-shadow: 0 0 48px rgba(251, 191, 36, 0.33), 0 4px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 48px color-mix(in srgb, var(--color-warning) 33%, transparent), 0 4px 24px rgba(0, 0, 0, 0.4);
   font-size: var(--text-title2);
 }
 
@@ -16574,7 +16574,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 .admin-bc-v4__sec:disabled { opacity: 0.4; cursor: default; }
 
 .admin-bc-v4__sec.is-pause.is-active {
-  background: rgba(251, 191, 36, 0.10); border-color: var(--hud-amber);
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent); border-color: var(--hud-amber);
   color: var(--color-ink-warning);
 }
 
@@ -16627,7 +16627,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   display: inline-flex; align-items: center; gap: var(--space-1);
   margin-top: var(--space-5); padding: var(--space-2) var(--space-5); border-radius: var(--radius-md-sm);
   border: 1px solid var(--hud-cyan);
-  background: rgba(56, 189, 248, 0.10);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   color: var(--color-ink-accent);
   font-family: var(--hud-font-mono);
   font-size: var(--text-footnote); letter-spacing: 1px; font-weight: 600;
@@ -16683,7 +16683,7 @@ body.is-light .admin-login-wordmark.is-on-light,
    amber when PAUSED (resume-highlight). */
 .admin-bc-v5__big.is-off {
   background: var(--hud-cyan); color: #000;
-  box-shadow: 0 0 32px rgba(56, 189, 248, 0.27);
+  box-shadow: 0 0 32px color-mix(in srgb, var(--color-primary) 27%, transparent);
   font-size: var(--text-title2); letter-spacing: 2px;
 }
 
@@ -16697,7 +16697,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-bc-v5__big.is-resume {
   background: var(--hud-amber); color: #000;
-  box-shadow: 0 0 32px rgba(251, 191, 36, 0.27);
+  box-shadow: 0 0 32px color-mix(in srgb, var(--color-warning) 27%, transparent);
   font-size: var(--text-title2); letter-spacing: 2px;
 }
 
@@ -16710,7 +16710,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   /* Same shape as v4 but neutral (not crimson) — pivot tones it down.
    * border keeps !important: it overrides a competing border-color rule
    * (verified — removing it flips the color). bg/color do not compete. */
-  background: rgba(148, 163, 184, 0.05);
+  background: color-mix(in srgb, var(--color-text-secondary) 5%, transparent);
   border: 1px solid var(--hud-line) !important;
   color: var(--hud-text-dim);
 }
@@ -17004,8 +17004,8 @@ body.is-light .admin-login-wordmark.is-on-light,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(56, 189, 248, 0.06);
-  border: 1px solid rgba(56, 189, 248, 0.18);
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
   border-radius: 5px;
   color: var(--admin-text-dim);
   font-size: var(--text-footnote);
@@ -17014,7 +17014,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 .admin-cmdk-row.is-active .admin-cmdk-icon {
   color: var(--color-ink-accent);
   background: var(--hud-cyan-soft);
-  border-color: rgba(56, 189, 248, 0.36);
+  border-color: color-mix(in srgb, var(--color-primary) 36%, transparent);
 }
 
 
@@ -17061,8 +17061,8 @@ body.is-light .admin-login-wordmark.is-on-light,
   gap: var(--space-2);
   margin-top: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  background: rgba(251, 191, 36, 0.06);
-  border: 1px solid rgba(251, 191, 36, 0.28);
+  background: color-mix(in srgb, var(--color-warning) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 28%, transparent);
   border-radius: var(--radius-md-sm);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
@@ -17088,7 +17088,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 }
 
 .admin-ratelimit-suggest-title {
-  color: #fbbf24;
+  color: var(--color-warning);
   font-weight: 500;
   letter-spacing: 0.5px;
 }
