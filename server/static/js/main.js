@@ -2490,9 +2490,19 @@ document.addEventListener("DOMContentLoaded", () => {
     // Poll state — feed straight into the existing renderer.
     if (pollState) {
       _applyPollState(pollState);
-    } else if (!_pollMaybeLive && _viewerPollState.state !== "idle") {
-      // 投票剛收掉：這一輪沒抓內容，但面板還停在上一場。清成 idle，
+    } else if (
+      sessionState &&
+      sessionState.poll_active === false &&
+      _viewerPollState.state !== "idle"
+    ) {
+      // 投票已經收掉，但面板還停在上一場：清成 idle，
       // `viewer-style-sheet.js` 的 observer 才會把分段控制收起來。
+      //
+      // 2026-09-17：判斷依據是**這一輪** server 回的 `poll_active === false`，
+      // 不是 `_pollMaybeLive`。後者是**上一輪**的旗標——投票剛開始的那一輪
+      // 它還是 false，於是任何已經由別的來源（`viewer-poll-state` 事件）
+      // 設成進行中的狀態都會被誤清掉。CI 上 test_viewer_poll_tab_hides_results
+      // 就是這樣時好時壞：點開分頁與讀內容之間剛好跨過那一輪。
       _applyPollState({ state: "idle" });
     }
 
