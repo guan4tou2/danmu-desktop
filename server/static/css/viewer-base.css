@@ -77,7 +77,7 @@ input[type="range"] {
   height: 6px;
   /* Theme-aware track — token resolves to light slate-darken in light
      mode. (2026-05-18 polestar light audit pass 2.) */
-  background: var(--color-border-strong, rgba(255, 255, 255, 0.2));
+  background: var(--color-border-strong);
   border-radius: var(--radius-pill);
   outline: none;
   transition: background-color var(--motion-normal) ease, box-shadow var(--motion-normal) ease;
@@ -367,7 +367,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   background: var(--hud-bg1);
   border: 1px solid rgba(255, 77, 79, 0.21);
   border-radius: var(--radius-lg);
-  box-shadow: 0 12px 48px var(--color-overlay, rgba(0, 0, 0, 0.6));
+  box-shadow: 0 12px 48px var(--color-overlay);
 }
 
 .admin-eoff__icon {
@@ -430,7 +430,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   padding: var(--space-2) var(--space-6); border-radius: var(--radius-md-sm); cursor: pointer;
   border: 1px solid var(--color-danger);
   background: var(--color-danger);
-  color: #fff;
+  color: var(--color-white);
   font-family: var(--font-mono);
   font-size: var(--text-caption); font-weight: 700; letter-spacing: 1.5px;
 }
@@ -491,7 +491,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 
 .admin-offline-banner__progress {
   height: 3px; border-radius: var(--radius-2xs);
-  background: var(--color-bg-elevated, #182239);
+  background: var(--color-bg-elevated);
   overflow: hidden;
 }
 

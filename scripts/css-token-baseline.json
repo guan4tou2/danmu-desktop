@@ -28,14 +28,14 @@
     "themeBlind": 0
   },
   "server/static/css/style.css": {
-    "hex": 198,
+    "hex": 75,
     "gridPx": 0,
-    "rgba": 410,
+    "rgba": 350,
     "offGrid": 0,
-    "themeBlind": 11
+    "themeBlind": 4
   },
   "server/static/css/viewer-base.css": {
-    "hex": 9,
+    "hex": 7,
     "gridPx": 0,
     "rgba": 10,
     "offGrid": 0,

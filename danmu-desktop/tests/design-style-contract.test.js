@@ -207,8 +207,11 @@ test("admin light inputs have a dark strong text token", () => {
   // on dark), slate-900 = #0f172a (dark ink on light).
   expect(tokens).toMatch(/--slate-100:\s*oklch\([^)]*\);\s*\/\*\s*#f1f5f9/);
   expect(tokens).toMatch(/--slate-900:\s*oklch\([^)]*\);\s*\/\*\s*#0f172a/);
+  // 2026-09-17（Issue 120 顏色收斂）：原本連後備值 `, #f1f5f9` 一起釘。token 在
+  // 載入 style.css 的每一頁都有定義，後備值永遠用不到，已移除；這條要守的是
+  // 「輸入框用 --admin-text-strong」，不是後備值。
   expect(adminCss).toMatch(
-    /\.admin-widget-input,\s*\.admin-widget-select,\s*\.admin-widget-textarea\s*\{[^}]*color:\s*var\(--admin-text-strong,\s*#f1f5f9\);/s,
+    /\.admin-widget-input,\s*\.admin-widget-select,\s*\.admin-widget-textarea\s*\{[^}]*color:\s*var\(--admin-text-strong\);/s,
   );
 });
 
