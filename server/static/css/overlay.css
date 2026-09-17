@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   background: radial-gradient(ellipse at 50% 40%, #0b1220 0%, #000 85%);
   color: var(--color-text-primary);
   font-family: var(--font-mono);
@@ -153,7 +153,7 @@ body {
   right: 60px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: var(--text-caption);
   letter-spacing: 1.5px;
@@ -164,7 +164,7 @@ body {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .overlay-idle-topbar-dot {
   display: inline-block;
@@ -200,7 +200,7 @@ body {
 }
 
 .overlay-idle-subtitle {
-  margin: 12px auto 0;
+  margin: var(--space-3) auto 0;
   max-width: 40rem;
   color: #cbd5e1; /* HERO_SLATE_300 */
   font-size: clamp(1rem, 2vw, 1.25rem);
@@ -211,11 +211,11 @@ body {
 
 /* State chip — colour switches with #overlay-idle[data-state]. */
 .overlay-idle-chip {
-  margin-top: 16px;
+  margin-top: var(--space-4);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 12px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-pill);
   border: 1px solid rgba(56, 189, 248, 0.45);
   background: rgba(56, 189, 248, 0.12);
@@ -299,7 +299,7 @@ body {
 /* QR — prototype size 180×180 white card, 29×29 cells. */
 .overlay-idle-qr-wrap {
   position: relative;
-  margin: 24px auto 0;
+  margin: var(--space-6) auto 0;
   width: 180px;
   height: 180px;
 }
@@ -307,7 +307,7 @@ body {
   width: 180px;
   height: 180px;
   background: #fff;
-  padding: 4px;
+  padding: var(--space-1);
   border-radius: var(--radius-md-sm);
   box-shadow: 0 0 40px rgba(125, 211, 252, 0.3);
   transition: opacity var(--motion-slow);
@@ -377,7 +377,7 @@ body {
 
 /* Note line — "或輸入 6 碼連線碼: 84-29-17" */
 .overlay-idle-note {
-  margin-top: 12px;
+  margin-top: var(--space-3);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: var(--text-footnote);
   letter-spacing: 1px;
@@ -392,21 +392,21 @@ body {
 
 /* Action row — state-conditional hint / paired button / failed retry buttons. */
 .overlay-idle-actions {
-  margin-top: 20px;
+  margin-top: var(--space-5);
   display: inline-flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   justify-content: center;
 }
 .overlay-idle-hint {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: var(--text-caption);
   letter-spacing: 1px;
   color: var(--color-text-secondary);
 }
 .overlay-idle-btn {
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-sm);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: var(--text-caption);
@@ -458,7 +458,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
  * 6.89:1 on white, light grey and dark alike. */
 .poll-overlay-topbar {
   position: absolute; top: 0; left: 0; right: 0;
-  padding: 12px 24px;
+  padding: var(--space-3) var(--space-6);
   display: flex; align-items: center;
 }
 .poll-overlay-topbar-pill {
@@ -492,7 +492,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   position: absolute; left: 50%; top: 50%;
   transform: translate(-50%, -50%);
   width: 76%; max-width: 880px;
-  padding: 32px;
+  padding: var(--space-8);
   background: rgba(8, 14, 26, 0.86);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(56, 189, 248, 0.40);
@@ -500,8 +500,8 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   box-shadow: 0 0 40px rgba(56, 189, 248, 0.15), inset 0 0 30px rgba(56, 189, 248, 0.06);
 }
 .poll-overlay-meta {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 12px;
+  display: flex; align-items: center; gap: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 .poll-overlay-meta .qq {
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
@@ -513,18 +513,18 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   letter-spacing: 1px; color: rgba(255, 255, 255, 0.55);
 }
 .poll-overlay-question {
-  margin: 0 0 24px;
+  margin: 0 0 var(--space-6);
   font-family: var(--font-display, sans-serif);
   font-size: 32px; font-weight: 600;
   letter-spacing: 0.5px; line-height: 1.25;
 }
 
 .poll-overlay-rows {
-  display: flex; flex-direction: column; gap: 12px;
+  display: flex; flex-direction: column; gap: var(--space-3);
 }
 .poll-overlay-row-head {
-  display: flex; align-items: baseline; gap: 12px;
-  margin-bottom: 4px;
+  display: flex; align-items: baseline; gap: var(--space-3);
+  margin-bottom: var(--space-1);
 }
 .poll-overlay-row-head .key {
   font-family: var(--font-display, sans-serif);
@@ -538,7 +538,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 .poll-overlay-row-head .lead {
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 1px;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border: 1px solid;
   border-radius: var(--radius-xs);
 }
@@ -566,10 +566,10 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 }
 
 .poll-overlay-foot {
-  margin-top: 24px;
-  padding-top: 16px;
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
   border-top: 1px dashed rgba(255, 255, 255, 0.12);
-  display: flex; align-items: center; gap: 16px;
+  display: flex; align-items: center; gap: var(--space-4);
 }
 .poll-overlay-foot .time {
   font-family: var(--font-display, sans-serif);
@@ -590,7 +590,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   transition: width 500ms linear;
 }
 .poll-overlay-foot .qr {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: var(--space-2);
 }
 .poll-overlay-foot .qr .badge {
   width: 32px; height: 32px;
@@ -604,7 +604,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   color: #22d3ee; letter-spacing: 0.5px;
 }
 .poll-overlay-empty {
-  padding: 16px;
+  padding: var(--space-4);
   text-align: center;
   color: rgba(255, 255, 255, 0.5);
   font-size: var(--text-footnote);
@@ -616,7 +616,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
  * change to the dark case (9.53 → 14.12 on a slate-950 stage). */
 .poll-overlay-ticker {
   position: absolute; bottom: 14px; left: 14px;
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   background: rgba(0, 0, 0, 0.78);
   border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: var(--radius-sm);
@@ -677,7 +677,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 .poll-overlay-celebration-top .kicker {
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 4px;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 .poll-overlay-celebration-top .question {
   font-size: var(--text-subhead);
@@ -694,7 +694,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 3px;
   color: #fbbf24;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 .poll-overlay-winner .winner-circle {
   width: 220px; height: 220px;
@@ -714,14 +714,14 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   letter-spacing: -2px; line-height: 1;
 }
 .poll-overlay-winner .winner-label {
-  margin-top: 16px;
+  margin-top: var(--space-4);
   font-family: var(--font-display, sans-serif);
   font-size: var(--text-title1); font-weight: 600;
   letter-spacing: 0.5px;
 }
 .poll-overlay-winner .winner-stats {
-  margin-top: 8px;
-  display: flex; align-items: baseline; justify-content: center; gap: 12px;
+  margin-top: var(--space-2);
+  display: flex; align-items: baseline; justify-content: center; gap: var(--space-3);
 }
 .poll-overlay-winner .winner-stats .pct {
   font-family: var(--font-display, sans-serif);

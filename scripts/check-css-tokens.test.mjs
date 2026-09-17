@@ -18,6 +18,7 @@ import {
   countThemeBlind,
   countBareRgba,
   countOffGridSpacing,
+  countGridPx,
 } from "./check-css-tokens.mjs";
 
 /** @type {[string, string, number][]} label, css, expected */
@@ -76,6 +77,17 @@ const OTHER_CASES = [
   ["offGrid: 13px gap counts", countOffGridSpacing, ".a { gap: 13px; }", 1],
   ["offGrid: 12px gap is on-grid", countOffGridSpacing, ".a { gap: 12px; }", 0],
   ["offGrid: 2px hairline exempt", countOffGridSpacing, ".a { margin: 2px; }", 0],
+  // gridPx（2026-09-17）：字級表要跟 tokens.css 的 SF 刻度同步。
+  ["gridPx: 16px padding is token-able", countGridPx, ".a { padding: 16px; }", 1],
+  ["gridPx: shorthand counts each term", countGridPx, ".a { margin: 8px 12px; }", 2],
+  ["gridPx: var(--space-*) is already done", countGridPx, ".a { gap: var(--space-4); }", 0],
+  ["gridPx: 13px font-size = --text-footnote", countGridPx, ".a { font-size: 13px; }", 1],
+  ["gridPx: 34px font-size = --text-large", countGridPx, ".a { font-size: 34px; }", 1],
+  // 舊刻度的值——換成同名 token 會變小，不能算「可換」
+  ["gridPx: 14px font-size is NOT --text-sm any more (13)", countGridPx, ".a { font-size: 14px; }", 0],
+  ["gridPx: 16px font-size is NOT --text-base any more (15)", countGridPx, ".a { font-size: 16px; }", 0],
+  // 手機版會被 media query 改掉的級距
+  ["gridPx: 15px font-size is responsive (16 on mobile)", countGridPx, ".a { font-size: 15px; }", 0],
 ];
 
 let failures = 0;

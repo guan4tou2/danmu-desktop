@@ -315,7 +315,7 @@ body[data-os="mac"] .client-titlebar{
 .client-titlebar-status{
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: var(--text-caption);
   letter-spacing: 1px;
   color: rgba(148, 163, 184, 0.9);
@@ -365,12 +365,12 @@ body[data-os="mac"] .client-titlebar{
 .client-main{
   flex: 1 1 0;
   min-width: 0;
-  padding: 20px;
+  padding: var(--space-5);
   overflow: auto;
 }
 
 .client-action-btn{
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md-sm);
   cursor: pointer;
   border: 1px solid rgba(148, 163, 184, 0.25);
@@ -392,7 +392,7 @@ body[data-os="mac"] .client-titlebar{
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: rgba(15, 23, 42, 0.4);
   border-radius: var(--radius-md-sm);
   border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.18));
@@ -429,7 +429,7 @@ body[data-os="mac"] .client-titlebar{
 
 .client-conn-preview{
   flex: 1;
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
   background: rgba(56, 189, 248, 0.06);
   border: 1px solid rgba(56, 189, 248, 0.18);
@@ -444,8 +444,8 @@ body[data-os="mac"] .client-titlebar{
   margin-top: 0;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: var(--text-caption);
@@ -475,7 +475,7 @@ body[data-os="mac"] .client-titlebar{
 
 .client-conn-test-btn{
   flex: none;
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-primary);
   background: var(--hud-cyan-soft, rgba(56, 189, 248, 0.12));
@@ -503,15 +503,15 @@ body[data-os="mac"] .client-titlebar{
 }
 
 .client-conn-edit-row{
-  margin-top: 4px;
+  margin-top: var(--space-1);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .client-conn-edit-row input{
   flex: 1;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-md-sm);
@@ -527,8 +527,8 @@ body[data-os="mac"] .client-titlebar{
 /* Connection edit form — expanded via ⚙ 更改 */
 
 .client-conn-edit{
-  margin-top: 12px;
-  padding: 12px;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid rgba(56, 189, 248, 0.35);
   background: rgba(15, 23, 42, 0.55);
@@ -539,7 +539,7 @@ body[data-os="mac"] .client-titlebar{
 
 .client-overlay-button{
   min-width: 132px;
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border-radius: 7px;
   border: 1px solid var(--color-primary);
   background: var(--color-primary);
@@ -573,13 +573,13 @@ body[data-os="mac"] .client-titlebar{
 
 .client-screen-row{
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
 .client-screen-chip{
   flex: 1 1 200px;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md-sm);
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: transparent;
@@ -644,11 +644,11 @@ body[data-os="mac"] .client-titlebar{
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .client-overlay-actions .client-action-btn{
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md-sm);
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: transparent;
@@ -659,7 +659,7 @@ body[data-os="mac"] .client-titlebar{
   transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, color var(--motion-fast) ease;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .client-overlay-actions .client-action-btn:hover{
@@ -709,7 +709,7 @@ body[data-os="mac"] .client-titlebar{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -763,14 +763,14 @@ body[data-os="mac"] .client-titlebar{
   padding: var(--space-3) var(--space-4);
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 8px;
+  gap: var(--space-2);
   align-content: start;
 }
 
 .wp-loading, .wp-empty{
   grid-column: 1 / -1;
   text-align: center;
-  padding: 40px 16px;
+  padding: 40px var(--space-4);
   color: var(--color-text-muted, #64748b);
   font-size: var(--text-footnote);
 }
@@ -808,8 +808,8 @@ body[data-os="mac"] .client-titlebar{
 .wp-card-label{
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   min-height: 30px;
 }
 
@@ -827,7 +827,7 @@ body[data-os="mac"] .client-titlebar{
 }
 
 .wp-footer{
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border-top: 1px solid var(--color-border);
   text-align: center;
 }

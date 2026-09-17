@@ -1,14 +1,14 @@
 {
   "danmu-desktop/child.css": {
     "hex": 10,
-    "gridPx": 4,
+    "gridPx": 0,
     "rgba": 3,
     "offGrid": 0,
     "themeBlind": 0
   },
   "danmu-desktop/styles.css": {
     "hex": 17,
-    "gridPx": 37,
+    "gridPx": 0,
     "rgba": 46,
     "offGrid": 0,
     "themeBlind": 0
@@ -22,28 +22,28 @@
   },
   "server/static/css/overlay.css": {
     "hex": 71,
-    "gridPx": 39,
+    "gridPx": 0,
     "rgba": 38,
     "offGrid": 0,
     "themeBlind": 12
   },
   "server/static/css/style.css": {
     "hex": 198,
-    "gridPx": 1358,
+    "gridPx": 0,
     "rgba": 410,
     "offGrid": 0,
     "themeBlind": 11
   },
   "server/static/css/viewer-base.css": {
     "hex": 9,
-    "gridPx": 22,
+    "gridPx": 0,
     "rgba": 10,
     "offGrid": 0,
     "themeBlind": 0
   },
   "server/static/css/viewer-v2.css": {
     "hex": 50,
-    "gridPx": 128,
+    "gridPx": 0,
     "rgba": 49,
     "offGrid": 0,
     "themeBlind": 7

@@ -358,12 +358,12 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   position: fixed; inset: 0; z-index: 9070;
   display: flex; align-items: center; justify-content: center;
   background: rgba(5, 9, 16, 0.65);
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 .admin-eoff__card {
   width: 300px; max-width: 100%;
-  padding: 32px 24px; text-align: center;
+  padding: var(--space-8) var(--space-6); text-align: center;
   background: var(--hud-bg1);
   border: 1px solid rgba(255, 77, 79, 0.21);
   border-radius: var(--radius-lg);
@@ -381,7 +381,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 }
 
 .admin-eoff__title {
-  font-size: var(--text-subhead); font-weight: 600; margin-top: 12px;
+  font-size: var(--text-subhead); font-weight: 600; margin-top: var(--space-3);
   color: var(--color-text-primary);
 }
 
@@ -389,17 +389,17 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   font-family: var(--font-mono);
   font-size: var(--text-caption); letter-spacing: 1px;
   color: var(--color-danger);
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .admin-eoff__desc {
   font-size: var(--text-caption); line-height: 1.6;
   color: var(--color-text-muted);
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 .admin-eoff__queue {
-  margin-top: 12px; padding: 8px 8px; border-radius: var(--radius-md-sm);
+  margin-top: var(--space-3); padding: var(--space-2) var(--space-2); border-radius: var(--radius-md-sm);
   background: rgba(251, 191, 36, 0.05);
   border: 1px solid rgba(251, 191, 36, 0.15);
   text-align: left;
@@ -409,7 +409,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   font-family: var(--font-mono);
   font-size: var(--text-caption); letter-spacing: 0.5px;
   color: var(--color-ink-warning);
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .admin-eoff__queue-text {
@@ -422,12 +422,12 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   font-family: var(--font-mono);
   font-size: var(--text-caption); letter-spacing: 0.3px;
   color: var(--color-text-muted);
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .admin-eoff__retry {
-  width: 100%; margin-top: 16px;
-  padding: 8px 24px; border-radius: var(--radius-md-sm); cursor: pointer;
+  width: 100%; margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-6); border-radius: var(--radius-md-sm); cursor: pointer;
   border: 1px solid var(--color-danger);
   background: var(--color-danger);
   color: #fff;
@@ -438,7 +438,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 .admin-eoff__retry:hover { filter: brightness(1.05); }
 
 .admin-eoff__home {
-  display: inline-block; margin-top: 8px;
+  display: inline-block; margin-top: var(--space-2);
   font-family: var(--font-mono);
   font-size: var(--text-caption); letter-spacing: 0.5px;
   color: var(--color-text-muted);
@@ -461,15 +461,15 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
    * （admin 沒人設這顆變數，fallback 0 = 原行為）。 */
   position: fixed; left: 0; right: 0; bottom: var(--viewer-kb-offset, 0);
   z-index: 9050;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   background: rgba(251, 191, 36, 0.08);
   border-top: 1px solid rgba(251, 191, 36, 0.33);
   font-family: var(--font-sans);
-  display: flex; flex-direction: column; gap: 8px;
+  display: flex; flex-direction: column; gap: var(--space-2);
 }
 
 .admin-offline-banner__head {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: var(--space-2);
 }
 
 .admin-offline-banner__dot {
@@ -561,13 +561,13 @@ body:has(input:focus, textarea:focus, [contenteditable=true]:focus) .admin-mobil
 }
 
 [data-quick-action-host] {
-  padding: 0 24px;
-  margin-top: 8px;
+  padding: 0 var(--space-6);
+  margin-top: var(--space-2);
   pointer-events: none;
 }
 
 @media (max-width: 640px) {
-[data-quick-action-host] { padding: 0 12px; }
+[data-quick-action-host] { padding: 0 var(--space-3); }
 }
 
 @keyframes admin-modbans-custom-in {

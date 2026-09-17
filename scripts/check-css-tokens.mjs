@@ -12,8 +12,8 @@
  *               should be var(--color-...).
  *   2. gridPx — font-size / spacing (gap · margin* · padding*) declarations
  *               written as a literal px that EXACTLY matches a design token
- *               (font-size 12/14/16/18/20/24/30px → var(--text-*);
- *                spacing 4/8/12/16/20/24/32px → var(--space-*)). These are
+ *               (font-size 12/13/17/34px → var(--text-caption/footnote/body/
+ *                large); spacing 4/8/12/16/20/24/32px → var(--space-*)). These are
  *               values that could be a token with zero visual change but
  *               are still hardcoded. Off-grid values (10/11/13px, 6/7px …)
  *               are NOT counted — they have no exact token, so flagging them
@@ -111,7 +111,16 @@ function countHexColors(content) {
 }
 
 // px values that map 1:1 onto a design token (zero visual change at 16px rem).
-const FONT_TOKEN_PX = new Set([12, 14, 16, 18, 20, 24, 30]); // --text-xs … --text-3xl
+//
+// 2026-09-17：字級這組原本是 12/14/16/18/20/24/30（舊的 --text-xs…3xl 刻度）。
+// 2026-08-19 字級改成 Apple SF 刻度後，舊名都改指新值（--text-sm 14→13、
+// --text-base 16→15…），這張表卻沒跟著改——於是 lint 把「換成 token 會變小」
+// 的值當成「零視覺變化、可以換」。照它換會真的改變字級。
+//
+// 現在只收**在所有寬度都等值**的：12 caption、13 footnote、17 body、34 large。
+// 15 subhead／22 title2／28 title1 在 ≤767px 會被 tokens.css 的 media query
+// 改成 16／19／26，寫死的 px 換成 token 會改變手機版，所以不算「零變化可換」。
+const FONT_TOKEN_PX = new Set([12, 13, 17, 34]);
 const SPACE_TOKEN_PX = new Set([4, 8, 12, 16, 20, 24, 32]); //  --space-1 … --space-8
 // Spacing props only — element sizing (width/height/inset/border*) is excluded
 // on purpose so a `width: 16px` dimension is never mistaken for spacing.
