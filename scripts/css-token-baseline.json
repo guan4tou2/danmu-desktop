@@ -1,15 +1,15 @@
 {
   "danmu-desktop/child.css": {
-    "hex": 10,
+    "hex": 5,
     "gridPx": 0,
-    "rgba": 3,
+    "rgba": 2,
     "offGrid": 0,
     "themeBlind": 0
   },
   "danmu-desktop/styles.css": {
-    "hex": 17,
+    "hex": 1,
     "gridPx": 0,
-    "rgba": 46,
+    "rgba": 2,
     "offGrid": 0,
     "themeBlind": 0
   },
