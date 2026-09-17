@@ -28,9 +28,9 @@
     "themeBlind": 0
   },
   "server/static/css/style.css": {
-    "hex": 64,
+    "hex": 63,
     "gridPx": 0,
-    "rgba": 109,
+    "rgba": 75,
     "offGrid": 0,
     "themeBlind": 1
   },

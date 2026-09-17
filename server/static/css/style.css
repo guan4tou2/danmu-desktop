@@ -5445,8 +5445,8 @@ body.is-help-open .admin-dash-grid {
   color: var(--color-ink-warning);
 }
 .admin-rcb--crimson {
-  background: rgba(255, 77, 79, 0.08);
-  border-bottom: 1px solid rgba(255, 77, 79, 0.27);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-danger) 27%, transparent);
   color: var(--color-danger);
 }
 .admin-rcb__dot {
@@ -6165,13 +6165,13 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   font-size: var(--text-caption); letter-spacing: 0.5px; font-weight: 600;
 }
 .admin-mq__bulk--ok {
-  background: rgba(132, 225, 0, 0.05);
-  border: 1px solid rgba(132, 225, 0, 0.33);
+  background: color-mix(in srgb, var(--color-success-bright) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success-bright) 33%, transparent);
   color: var(--color-ink-success);
 }
 .admin-mq__bulk--rej {
-  background: rgba(255, 77, 79, 0.05);
-  border: 1px solid rgba(255, 77, 79, 0.33);
+  background: color-mix(in srgb, var(--color-danger) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 33%, transparent);
   /* 淺色臂 --color-danger(red-600) 在粉紅淡底上 4.35，下探 red-700；
    * 深色臂經 --color-danger 解析仍是 #ff4d4f，不變。 */
   color: var(--color-ink-danger);
@@ -6237,8 +6237,8 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   border: 1px solid;
 }
 .admin-mq__col-head--pending  .admin-mq__col-count { color: var(--color-ink-warning); border-color: color-mix(in srgb, var(--color-warning) 33%, transparent); background: color-mix(in srgb, var(--color-warning) 7%, transparent); }
-.admin-mq__col-head--approved .admin-mq__col-count { color: var(--color-ink-success); border-color: rgba(132, 225, 0, 0.33); background: rgba(132, 225, 0, 0.07); }
-.admin-mq__col-head--rejected .admin-mq__col-count { color: var(--color-danger); border-color: rgba(255, 77, 79, 0.33); background: rgba(255, 77, 79, 0.07); }
+.admin-mq__col-head--approved .admin-mq__col-count { color: var(--color-ink-success); border-color: color-mix(in srgb, var(--color-success-bright) 33%, transparent); background: color-mix(in srgb, var(--color-success-bright) 7%, transparent); }
+.admin-mq__col-head--rejected .admin-mq__col-count { color: var(--color-danger); border-color: color-mix(in srgb, var(--color-danger) 33%, transparent); background: color-mix(in srgb, var(--color-danger) 7%, transparent); }
 .admin-mq__col-badge {
   margin-left: auto;
   font-family: var(--font-mono);
@@ -6337,13 +6337,13 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   font-size: var(--text-caption); letter-spacing: 0.5px; font-weight: 600;
 }
 .admin-mq-card__btn--approve {
-  border: 1px solid rgba(132, 225, 0, 0.33);
-  background: rgba(132, 225, 0, 0.07);
+  border: 1px solid color-mix(in srgb, var(--color-success-bright) 33%, transparent);
+  background: color-mix(in srgb, var(--color-success-bright) 7%, transparent);
   color: var(--color-ink-success);
 }
 .admin-mq-card__btn--reject {
-  border: 1px solid rgba(255, 77, 79, 0.33);
-  background: rgba(255, 77, 79, 0.07);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 33%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 7%, transparent);
   color: var(--color-danger);
 }
 .admin-mq-card__btn--more {
@@ -6417,9 +6417,9 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   to   { transform: translateY(0);   opacity: 1; }
 }
 
-.admin-hud-modal--danger  .admin-hud-modal__panel { border-color: rgba(255, 77, 79, 0.45); }
+.admin-hud-modal--danger  .admin-hud-modal__panel { border-color: color-mix(in srgb, var(--color-danger) 45%, transparent); }
 .admin-hud-modal--info    .admin-hud-modal__panel { border-color: var(--hud-cyan-line); }
-.admin-hud-modal--success .admin-hud-modal__panel { border-color: rgba(132, 225, 0, 0.45); }
+.admin-hud-modal--success .admin-hud-modal__panel { border-color: color-mix(in srgb, var(--color-success-bright) 45%, transparent); }
 
 .admin-hud-modal__head {
   display: flex; align-items: center; gap: var(--space-2);
@@ -6427,9 +6427,9 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   background: color-mix(in srgb, var(--color-warning) 7%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--color-warning) 21%, transparent);
 }
-.admin-hud-modal--danger  .admin-hud-modal__head { background: rgba(255, 77, 79, 0.07); border-bottom-color: rgba(255, 77, 79, 0.21); }
+.admin-hud-modal--danger  .admin-hud-modal__head { background: color-mix(in srgb, var(--color-danger) 7%, transparent); border-bottom-color: color-mix(in srgb, var(--color-danger) 21%, transparent); }
 .admin-hud-modal--info    .admin-hud-modal__head { background: color-mix(in srgb, var(--color-primary) 7%, transparent); border-bottom-color: color-mix(in srgb, var(--color-primary) 21%, transparent); }
-.admin-hud-modal--success .admin-hud-modal__head { background: rgba(132, 225, 0, 0.07); border-bottom-color: rgba(132, 225, 0, 0.21); }
+.admin-hud-modal--success .admin-hud-modal__head { background: color-mix(in srgb, var(--color-success-bright) 7%, transparent); border-bottom-color: color-mix(in srgb, var(--color-success-bright) 21%, transparent); }
 
 .admin-hud-modal__icon {
   font-size: var(--text-title2);
@@ -6752,7 +6752,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   padding: var(--space-2) var(--space-4);
 }
 .admin-ev-v4__row[data-sev="warn"]  { background: color-mix(in srgb, var(--color-warning) 4%, transparent); }
-.admin-ev-v4__row[data-sev="error"] { background: rgba(255, 77, 79, 0.05); }
+.admin-ev-v4__row[data-sev="error"] { background: color-mix(in srgb, var(--color-danger) 5%, transparent); }
 
 .admin-ev-v4__time {
   font-family: var(--font-mono);
@@ -6768,7 +6768,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
    Their paired labels below DO follow the theme (contrast requirement). */
 .admin-ev-v4__sev-dot[data-sev="info"]  { background: var(--color-primary); }
 .admin-ev-v4__sev-dot[data-sev="warn"]  { background: var(--color-warning); }
-.admin-ev-v4__sev-dot[data-sev="error"] { background: #ff4d4f; }
+.admin-ev-v4__sev-dot[data-sev="error"] { background: var(--color-danger); }
 .admin-ev-v4__type {
   font-family: var(--font-mono);
   font-size: var(--text-caption); letter-spacing: 0.5px;
@@ -6922,10 +6922,10 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   cursor: pointer;
 }
 .admin-msgd-v4__modbtn:disabled { opacity: 0.4; cursor: default; }
-.admin-msgd-v4__modbtn.is-ban       { color: var(--color-ink-error); border-color: rgba(255, 77, 79, 0.33); background: rgba(255, 77, 79, 0.07); }
+.admin-msgd-v4__modbtn.is-ban       { color: var(--color-ink-error); border-color: color-mix(in srgb, var(--color-danger) 33%, transparent); background: color-mix(in srgb, var(--color-danger) 7%, transparent); }
 .admin-msgd-v4__modbtn.is-mute      { color: var(--color-ink-warning);   border-color: color-mix(in srgb, var(--color-warning) 33%, transparent); background: color-mix(in srgb, var(--color-warning) 7%, transparent); }
 .admin-msgd-v4__modbtn.is-mask      { color: var(--hud-textDim); border-color: color-mix(in srgb, var(--color-text-secondary) 33%, transparent); background: transparent; }
-.admin-msgd-v4__modbtn.is-blacklist { color: var(--color-ink-error); border-color: rgba(255, 77, 79, 0.33); background: rgba(255, 77, 79, 0.07); }
+.admin-msgd-v4__modbtn.is-blacklist { color: var(--color-ink-error); border-color: color-mix(in srgb, var(--color-danger) 33%, transparent); background: color-mix(in srgb, var(--color-danger) 7%, transparent); }
 
 .admin-msgd-v4__reply {
   width: 100%; height: 60px; margin-top: var(--space-2);
@@ -7005,7 +7005,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   background: transparent; cursor: pointer;
 }
 .admin-bancfm-dchip.is-active {
-  background: rgba(255, 77, 79, 0.07);
+  background: color-mix(in srgb, var(--color-danger) 7%, transparent);
   border-color: var(--hud-crimson);
   color: var(--color-ink-error);
 }
@@ -9702,8 +9702,8 @@ body[data-message-drawer-open="1"] .admin-msgd-overlay { pointer-events: auto; }
 .admin-font-subset-warn {
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
-  background: rgba(255, 77, 79, 0.05);
-  border: 1px solid rgba(255, 77, 79, 0.18);
+  background: color-mix(in srgb, var(--color-danger) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 18%, transparent);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   color: var(--color-ink-error);
@@ -15196,7 +15196,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   width: 16px; height: 16px; border-radius: 50%;
   background: var(--color-primary);
   border: 2px solid var(--color-bg-deep);
-  box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.4);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary-light) 40%, transparent);
   pointer-events: none;
 }
 
@@ -16514,7 +16514,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-bc-v4__big.is-end {
   background: var(--hud-crimson); color: var(--color-white);
-  box-shadow: 0 0 48px rgba(255, 77, 79, 0.33), 0 4px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 48px color-mix(in srgb, var(--color-danger) 33%, transparent), 0 4px 24px rgba(0, 0, 0, 0.4);
   font-size: var(--text-title2); letter-spacing: 3px;
 }
 
@@ -16527,8 +16527,8 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-bc-v4__confirm-hint {
   padding: var(--space-2) var(--space-4); border-radius: var(--radius-md-sm);
-  background: rgba(255, 77, 79, 0.07);
-  border: 1px solid rgba(255, 77, 79, 0.21);
+  background: color-mix(in srgb, var(--color-danger) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 21%, transparent);
   font-family: var(--hud-font-mono);
   font-size: var(--text-caption); color: var(--color-ink-error);
   letter-spacing: 0.5px; max-width: 800px; width: 100%; text-align: center;
@@ -16931,8 +16931,8 @@ body.is-light .admin-login-wordmark.is-on-light,
 }
 
 .admin-viewer-theme-legend-row:hover {
-  background: rgba(125, 211, 252, 0.08);
-  border-color: rgba(125, 211, 252, 0.45);
+  background: color-mix(in srgb, var(--color-primary-light) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary-light) 45%, transparent);
 }
 
 .admin-viewer-theme-legend-row .k {
