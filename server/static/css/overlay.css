@@ -102,7 +102,7 @@ body {
   justify-content: center;
   flex-direction: column;
   padding: 40px;
-  color: #e2e8f0;
+  color: var(--color-text-bright);
   background: #000;
   background-image:
     radial-gradient(ellipse 80% 50% at 50% 40%, rgba(125, 211, 252, 0.08) 0%, transparent 70%),
@@ -134,10 +134,10 @@ body {
   opacity: 0.55;
   pointer-events: none;
 }
-.overlay-idle-corner.is-tl { top: 24px; left: 24px;  border-top: 1px solid #38bdf8;    border-left: 1px solid #38bdf8; }
-.overlay-idle-corner.is-tr { top: 24px; right: 24px; border-top: 1px solid #38bdf8;    border-right: 1px solid #38bdf8; }
-.overlay-idle-corner.is-bl { bottom: 24px; left: 24px;  border-bottom: 1px solid #38bdf8; border-left: 1px solid #38bdf8; }
-.overlay-idle-corner.is-br { bottom: 24px; right: 24px; border-bottom: 1px solid #38bdf8; border-right: 1px solid #38bdf8; }
+.overlay-idle-corner.is-tl { top: 24px; left: 24px;  border-top: 1px solid var(--color-primary);    border-left: 1px solid var(--color-primary); }
+.overlay-idle-corner.is-tr { top: 24px; right: 24px; border-top: 1px solid var(--color-primary);    border-right: 1px solid var(--color-primary); }
+.overlay-idle-corner.is-bl { bottom: 24px; left: 24px;  border-bottom: 1px solid var(--color-primary); border-left: 1px solid var(--color-primary); }
+.overlay-idle-corner.is-br { bottom: 24px; right: 24px; border-bottom: 1px solid var(--color-primary); border-right: 1px solid var(--color-primary); }
 
 /* Top bar — fixed at the top, mono 11px, cyan brand + dim version + state chip.
  * The three mono secondary-text rules on the idle screen (this one,
@@ -159,7 +159,7 @@ body {
   letter-spacing: 1.5px;
   color: var(--color-text-secondary);
 }
-.overlay-idle-topbar-brand { color: #38bdf8; }
+.overlay-idle-topbar-brand { color: var(--color-primary); }
 .overlay-idle-topbar-state {
   margin-left: auto;
   display: inline-flex;
@@ -171,11 +171,11 @@ body {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #38bdf8;
-  box-shadow: 0 0 6px #38bdf8;
+  background: var(--color-primary);
+  box-shadow: 0 0 6px var(--color-primary);
 }
 #overlay-idle[data-state="scanning"] .overlay-idle-topbar-dot { background: #f0abfc; box-shadow: 0 0 8px #f0abfc; animation: overlay-idle-pulse 1.2s infinite; }
-#overlay-idle[data-state="paired"]   .overlay-idle-topbar-dot { background: #86efac; box-shadow: 0 0 8px #86efac; }
+#overlay-idle[data-state="paired"]   .overlay-idle-topbar-dot { background: var(--color-success-light); box-shadow: 0 0 8px var(--color-success-light); }
 #overlay-idle[data-state="failed"]   .overlay-idle-topbar-dot { background: #fb7185; box-shadow: 0 0 8px #fb7185; }
 
 .overlay-idle-inner {
@@ -190,13 +190,13 @@ body {
   font-family: "Bebas Neue", "Noto Sans TC", "Noto Sans CJK TC", sans-serif;
   font-size: clamp(3.2rem, 8vw, 6rem);
   font-weight: 400;
-  color: #7dd3fc;
+  color: var(--hud-hero-ink);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   line-height: 1;
   filter:
     drop-shadow(0 10px 15px rgba(0, 0, 0, 0.45))
-    drop-shadow(0 4px 6px var(--shadow-base, rgba(0, 0, 0, 0.3)));
+    drop-shadow(0 4px 6px var(--shadow-base));
 }
 
 .overlay-idle-subtitle {
@@ -217,12 +217,12 @@ body {
   gap: var(--space-2);
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(56, 189, 248, 0.45);
-  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid var(--hud-cyan-line);
+  background: var(--hud-cyan-soft);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: var(--text-caption);
   letter-spacing: 1.5px;
-  color: #38bdf8;
+  color: var(--color-primary);
   transition: background var(--motion-normal), border-color var(--motion-normal), color var(--motion-normal);
 }
 .overlay-idle-chip-dot {
@@ -230,8 +230,8 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #38bdf8;
-  box-shadow: 0 0 6px #38bdf8;
+  background: var(--color-primary);
+  box-shadow: 0 0 6px var(--color-primary);
 }
 .overlay-idle-chip-spinner {
   display: none;
@@ -255,13 +255,13 @@ body {
 }
 
 #overlay-idle[data-state="paired"] .overlay-idle-chip {
-  border-color: #86efac;
+  border-color: var(--color-success-light);
   background: rgba(134, 239, 172, 0.12);
-  color: #86efac;
+  color: var(--color-success-light);
 }
 #overlay-idle[data-state="paired"] .overlay-idle-chip-dot {
-  background: #86efac;
-  box-shadow: 0 0 6px #86efac;
+  background: var(--color-success-light);
+  box-shadow: 0 0 6px var(--color-success-light);
 }
 
 #overlay-idle[data-state="failed"] .overlay-idle-chip {
@@ -306,7 +306,7 @@ body {
 .overlay-idle-qr {
   width: 180px;
   height: 180px;
-  background: #fff;
+  background: var(--color-white);
   padding: var(--space-1);
   border-radius: var(--radius-md-sm);
   box-shadow: 0 0 40px rgba(125, 211, 252, 0.3);
@@ -359,9 +359,9 @@ body {
 }
 #overlay-idle[data-state="paired"] .overlay-idle-qr-icon::before {
   content: "✓";
-  color: #86efac;
+  color: var(--color-success-light);
   font-size: 72px;
-  text-shadow: 0 0 20px #86efac;
+  text-shadow: 0 0 20px var(--color-success-light);
 }
 #overlay-idle[data-state="failed"] .overlay-idle-qr-icon::before {
   content: "⚠";
@@ -384,7 +384,7 @@ body {
   color: var(--color-text-secondary);
 }
 .overlay-idle-pair-code {
-  color: #38bdf8;
+  color: var(--color-primary);
   letter-spacing: 2px;
 }
 #overlay-idle[data-state="failed"] .overlay-idle-note,
@@ -415,15 +415,15 @@ body {
   pointer-events: auto;
 }
 .overlay-idle-btn-primary {
-  border: 1px solid #38bdf8;
-  background: #38bdf8;
-  color: #000;
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--btn-text-on-primary);
   font-weight: 700;
 }
 .overlay-idle-btn-secondary {
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid color-mix(in srgb, var(--color-white) 25%, transparent);
   background: transparent;
-  color: #e2e8f0;
+  color: var(--color-text-bright);
   letter-spacing: 1px;
 }
 
@@ -444,7 +444,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 .poll-overlay--active {
   position: absolute; inset: 0;
   font-family: var(--font-sans, sans-serif);
-  color: #fff;
+  color: var(--color-white);
 }
 /* The scrim moved off the bar and onto a pill around the content (2026-07-29).
  * The old full-width `linear-gradient(180deg, rgba(0,0,0,0.55), transparent)`
@@ -471,21 +471,21 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 .poll-overlay-topbar .dot {
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: #f87171;
+  background: var(--color-error-light);
   animation: pollovr-pulse 1.4s infinite;
 }
 @keyframes pollovr-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.55); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-error-light) 55%, transparent); }
   50%      { box-shadow: 0 0 0 6px transparent; }
 }
 .poll-overlay-topbar .kicker {
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
-  letter-spacing: 2px; color: #f87171; font-weight: 600;
+  letter-spacing: 2px; color: var(--color-error-light); font-weight: 600;
 }
 .poll-overlay-topbar .qnum {
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.6);
+  color: color-mix(in srgb, var(--color-white) 60%, transparent);
 }
 
 .poll-overlay-panel {
@@ -495,9 +495,9 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   padding: var(--space-8);
   background: rgba(8, 14, 26, 0.86);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(56, 189, 248, 0.40);
+  border: 1px solid var(--glow-primary);
   border-radius: var(--radius-lg);
-  box-shadow: 0 0 40px rgba(56, 189, 248, 0.15), inset 0 0 30px rgba(56, 189, 248, 0.06);
+  box-shadow: 0 0 40px color-mix(in srgb, var(--color-primary) 15%, transparent), inset 0 0 30px color-mix(in srgb, var(--color-primary) 6%, transparent);
 }
 .poll-overlay-meta {
   display: flex; align-items: center; gap: var(--space-2);
@@ -505,12 +505,12 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 }
 .poll-overlay-meta .qq {
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
-  letter-spacing: 2px; color: #22d3ee;
+  letter-spacing: 2px; color: var(--color-accent-light);
 }
 .poll-overlay-meta .counts {
   margin-left: auto;
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
-  letter-spacing: 1px; color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 1px; color: color-mix(in srgb, var(--color-white) 55%, transparent);
 }
 .poll-overlay-question {
   margin: 0 0 var(--space-6);
@@ -533,7 +533,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 }
 .poll-overlay-row-head .lbl {
   font-size: var(--text-subhead); flex: 1;
-  color: #fff;
+  color: var(--color-white);
 }
 .poll-overlay-row-head .lead {
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
@@ -550,12 +550,12 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 .poll-overlay-row-head .votes {
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 0.4px;
-  color: rgba(255, 255, 255, 0.45);
+  color: color-mix(in srgb, var(--color-white) 45%, transparent);
   min-width: 50px; text-align: right;
 }
 .poll-overlay-row-bar {
   height: 14px;
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--color-white) 6%, transparent);
   border-radius: 7px;
   overflow: hidden;
 }
@@ -568,13 +568,13 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 .poll-overlay-foot {
   margin-top: var(--space-6);
   padding-top: var(--space-4);
-  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+  border-top: 1px dashed color-mix(in srgb, var(--color-white) 12%, transparent);
   display: flex; align-items: center; gap: var(--space-4);
 }
 .poll-overlay-foot .time {
   font-family: var(--font-display, sans-serif);
   font-size: 32px; letter-spacing: 1px; font-weight: 600;
-  color: #fbbf24;
+  color: var(--color-warning);
 }
 .poll-overlay-foot .time-bar {
   flex: 1;
@@ -585,7 +585,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 }
 .poll-overlay-foot .time-bar .fill {
   height: 100%;
-  background: linear-gradient(90deg, #f87171, #fbbf24);
+  background: linear-gradient(90deg, var(--color-error-light), var(--color-warning));
   border-radius: var(--radius-xs);
   transition: width 500ms linear;
 }
@@ -594,19 +594,19 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 }
 .poll-overlay-foot .qr .badge {
   width: 32px; height: 32px;
-  background: #fff; color: #000;
+  background: var(--color-white); color: var(--qr-ink);
   border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-mono, monospace); font-size: var(--text-caption); font-weight: 700;
 }
 .poll-overlay-foot .qr .hint {
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
-  color: #22d3ee; letter-spacing: 0.5px;
+  color: var(--color-accent-light); letter-spacing: 0.5px;
 }
 .poll-overlay-empty {
   padding: var(--space-4);
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--color-white) 50%, transparent);
   font-size: var(--text-footnote);
 }
 
@@ -618,10 +618,10 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   position: absolute; bottom: 14px; left: 14px;
   padding: var(--space-1) var(--space-3);
   background: rgba(0, 0, 0, 0.78);
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
   border-radius: var(--radius-sm);
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
-  color: rgba(255, 255, 255, 0.85);
+  color: color-mix(in srgb, var(--color-white) 85%, transparent);
   letter-spacing: 0.5px;
 }
 
@@ -629,7 +629,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 .poll-overlay--celebration {
   position: absolute; inset: 0;
   font-family: var(--font-sans, sans-serif);
-  color: #fff;
+  color: var(--color-white);
   background: radial-gradient(ellipse at 50% 40%, #0a2748 0%, #050912 70%, #000 100%);
   overflow: hidden;
 }
@@ -681,7 +681,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 }
 .poll-overlay-celebration-top .question {
   font-size: var(--text-subhead);
-  color: rgba(255, 255, 255, 0.65);
+  color: color-mix(in srgb, var(--color-white) 65%, transparent);
   font-weight: 400;
 }
 
@@ -693,7 +693,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 .poll-overlay-winner .winner-kicker {
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 3px;
-  color: #fbbf24;
+  color: var(--color-warning);
   margin-bottom: var(--space-3);
 }
 .poll-overlay-winner .winner-circle {
@@ -730,7 +730,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
 .poll-overlay-winner .winner-stats .votes {
   font-family: var(--font-mono, monospace); font-size: var(--text-footnote);
   letter-spacing: 0.5px;
-  color: rgba(255, 255, 255, 0.55);
+  color: color-mix(in srgb, var(--color-white) 55%, transparent);
 }
 
 .poll-overlay-celebration-foot {
@@ -738,7 +738,7 @@ body[data-overlay-poll] .poll-overlay-root { pointer-events: none; }
   transform: translateX(-50%);
   font-family: var(--font-mono, monospace); font-size: var(--text-caption);
   letter-spacing: 0.5px;
-  color: rgba(255, 255, 255, 0.55);
+  color: color-mix(in srgb, var(--color-white) 55%, transparent);
 }
 
 /* ── 淺底描邊（設計稿 16 · OS2）───────────────────────────────────────

@@ -21,11 +21,11 @@
     "themeBlind": 0
   },
   "server/static/css/overlay.css": {
-    "hex": 71,
+    "hex": 28,
     "gridPx": 0,
-    "rgba": 38,
+    "rgba": 20,
     "offGrid": 0,
-    "themeBlind": 12
+    "themeBlind": 0
   },
   "server/static/css/style.css": {
     "hex": 198,
