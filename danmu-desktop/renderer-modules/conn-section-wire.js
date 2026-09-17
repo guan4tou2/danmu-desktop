@@ -10,12 +10,27 @@
 const { parseServerInput, buildCanonicalUrl, formatDisplayHost } = require("./conn-parser");
 const { createConnTest } = require("./conn-test");
 const { loadSettings, saveSettings } = require("./settings");
-const i18n = require("../i18n");
+const _bundledI18n = require("../i18n");
 
 // Translate at call time so values follow the current language even after a
 // live language switch (avoids caching stale strings).
+//
+// 2026-09-17：**要用頁面上的全域 `i18n`，不是 require 進來的這份。**
+// index.html 以 `<script src="i18n.js">` 載入一份全域 i18n，renderer.js 對
+// **它**呼叫 `loadLanguage()`；而這裡的 `require("../i18n")` 會被 webpack
+// 打包成**第二份獨立副本**，語言永遠停在預設的 `en`。結果這一區（連線測試
+// 按鈕、結果標籤、伺服器未設定提示）在中文介面上一直顯示英文——單元測試
+// 抓不到，因為測試裡只有一份，而且會手動設 `currentLang`。
+// 只有沒有頁面全域的環境（jest）才退回 require 的那份。
+function _i18n() {
+  // eslint-disable-next-line no-undef
+  if (typeof i18n !== "undefined" && i18n && typeof i18n.t === "function") return i18n;
+  return _bundledI18n;
+}
+
 function _t(key) {
-  return i18n && typeof i18n.t === "function" ? i18n.t(key) : key;
+  const inst = _i18n();
+  return inst && typeof inst.t === "function" ? inst.t(key) : key;
 }
 
 const _IDS = {
@@ -157,7 +172,10 @@ function initConnSection({ api } = {}) {
   _setServerFromHidden();
 
   // ── ⚐ 測試 button + 4-state TestChip ────────────────────────────────────
-  const connTest = createConnTest({ api: api || (typeof window !== "undefined" ? window.API : null) });
+  const connTest = createConnTest({
+    api: api || (typeof window !== "undefined" ? window.API : null),
+    t: _t,
+  });
 
   // The button's resting label is the connTestBtn i18n string — restore it by
   // re-reading i18n at settle time (NOT a value cached at init) so a live
