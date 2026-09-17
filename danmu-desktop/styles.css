@@ -455,6 +455,14 @@ body[data-os="mac"] .client-titlebar{
   color: color-mix(in srgb, var(--color-text-secondary) 80%, transparent);
 }
 
+/* 2026-09-17：還沒測過時 chip 沒有文字，但外框照畫，列尾多一個空膠囊。
+ * 設計稿 04「測試結果是列上的一小段狀態，還沒測過就什麼都不顯示」。
+ * 用 :empty 而不是 [data-state="idle"]：idle 以外的狀態理論上都有字，但萬一
+ * 標籤翻譯缺字回空字串，也不該畫出空框。 */
+.client-conn-test-chip:empty{
+  display: none;
+}
+
 .client-conn-test-chip[data-state="testing"]{
   border-color: var(--glow-primary);
   background: color-mix(in srgb, var(--color-primary) 6%, transparent);
