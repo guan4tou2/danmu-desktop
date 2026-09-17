@@ -199,6 +199,16 @@
   // 只收認得的欄位、形狀不對就丟，讓它退回預設值。
   const _HEX = /^#[0-9a-f]{6}$/i;
   const _LOGO = /^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i;
+  // 2026-09-17（CodeQL #81/#88）：上面那層只管「從 localStorage 讀回」；使用者
+  // 即時輸入（`<input type="color">` 的 value）是另一條路徑，一樣會被插進
+  // innerHTML。type=color 實務上只會給 #rrggbb，但那是瀏覽器的保證、不是這支
+  // 程式的——在插進 HTML 的那一刻跳脫，才不必逐條追來源。
+  function _escAttr(v) {
+    return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => (
+      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+    ));
+  }
+
   function _sanitizeStored(obj) {
     const out = {};
     if (!obj || typeof obj !== "object") return out;
@@ -283,17 +293,18 @@
       box.innerHTML = rows.map(r => {
         const ratio = contrast(state[r.key], r.vs);
         const g = cGrade(ratio);
+        const hex = _escAttr(state[r.key]);
         return `
           <div class="admin-vt-color-row">
-            <div class="swatch" style="background:${state[r.key]}"></div>
+            <div class="swatch" style="background:${hex}"></div>
             <div class="meta">
               <div class="top">
                 <span class="label">${r.label}</span>
                 <span class="grade ${g.cls}">${g.label} · ${ratio.toFixed(1)}</span>
               </div>
               <div class="bottom">
-                <input type="color" value="${state[r.key]}" data-vt-color="${r.key}" />
-                <input type="text" value="${state[r.key]}" data-vt-hex="${r.key}" spellcheck="false" />
+                <input type="color" value="${hex}" data-vt-color="${r.key}" />
+                <input type="text" value="${hex}" data-vt-hex="${r.key}" spellcheck="false" />
                 <span class="vs">vs ${r.vsLbl}</span>
               </div>
             </div>
@@ -349,7 +360,11 @@
       stage.style.fontFamily = state.font;
       const logoEl = root.querySelector("[data-vt-preview-logo]");
       if (state.logo) {
-        logoEl.innerHTML = `<img src="${state.logo}" style="max-height:40px" />`;
+        // 用 DOM 建而不是拼 HTML：src 走屬性設定，不經 HTML 解析。
+        const img = document.createElement("img");
+        img.src = state.logo;
+        img.style.maxHeight = "40px";
+        logoEl.replaceChildren(img);
       } else {
         logoEl.textContent = "Danmu Fire";
       }
@@ -413,9 +428,12 @@
     root.addEventListener("input", (e) => {
       if (e.target.matches("[data-vt-color]")) {
         const k = e.target.dataset.vtColor;
-        state[k] = e.target.value;
-        presetId = "custom";
-        persist(); render();
+        // 與下面文字框同一道驗證（原本只有文字框驗、色盤直接收）。
+        if (_HEX.test(e.target.value)) {
+          state[k] = e.target.value;
+          presetId = "custom";
+          persist(); render();
+        }
       } else if (e.target.matches("[data-vt-hex]")) {
         const k = e.target.dataset.vtHex;
         if (/^#[0-9a-f]{6}$/i.test(e.target.value)) {
