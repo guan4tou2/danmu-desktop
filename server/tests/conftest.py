@@ -52,8 +52,25 @@ def _isolate_webhook_store(tmp_path):
         webhook_mod._WEBHOOKS_FILE = original_file
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _isolate_audit_session_store(tmp_path_factory):
+    """Module-scoped browser logins also need an isolated audit destination."""
+    from server.services import audit_log
+
+    original = audit_log._LOG_FILE, audit_log._BACKUP_FILE
+    root = tmp_path_factory.mktemp("danmu_audit")
+    audit_log._LOG_FILE = root / "audit.log"
+    audit_log._BACKUP_FILE = root / "audit.log.1"
+    audit_log.reset_for_tests()
+    try:
+        yield
+    finally:
+        audit_log.reset_for_tests()
+        audit_log._LOG_FILE, audit_log._BACKUP_FILE = original
+
+
 @pytest.fixture(autouse=True)
-def _isolate_audit_store(tmp_path, monkeypatch):
+def _isolate_audit_store(tmp_path, monkeypatch, _isolate_audit_session_store):
     from server.services import audit_log
 
     monkeypatch.setattr(audit_log, "_LOG_FILE", tmp_path / "audit.log")
