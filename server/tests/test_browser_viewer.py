@@ -181,16 +181,35 @@ def _create_and_start_poll(admin_http, question: str, options: list):
 # ─── 1. sendbar 狀態列（離線 / 滿載）─────────────────────────────────────────
 
 
-def _go_offline(page):
-    """攔截 /overlay_status，回傳 overlay_count=0，模擬 overlay 離線"""
+def _mock_display(page, count):
+    """Keep both readiness polling endpoints consistent with the fake overlay."""
+    display = {
+        "mode": "live",
+        "overlay_count": count,
+        "queue_size": 0,
+        "session_status": "idle",
+        "session_name": None,
+    }
     page.route(
         "**/overlay_status",
         lambda route: route.fulfill(
             status=200,
             content_type="application/json",
-            body=json.dumps({"overlay_count": 0}),
+            body=json.dumps(display),
         ),
     )
+
+    def session_state(route):
+        response = route.fetch()
+        payload = response.json()
+        payload["display"] = display
+        route.fulfill(response=response, json=payload)
+
+    page.route("**/session/public-state", session_state)
+
+
+def _go_offline(page):
+    _mock_display(page, 0)
 
 
 def test_screen_off_shows_one_chip_one_card_one_hint(viewer_page):
@@ -205,7 +224,7 @@ def test_screen_off_shows_one_chip_one_card_one_hint(viewer_page):
     chip = page.locator("#overlayStatus")
     assert "大螢幕未開" in chip.text_content()
 
-    card = page.locator(".viewer-screenoff-card")
+    card = page.locator("[data-viewer-screenoff-card]")
     assert card.is_visible()
     assert "現場大螢幕還沒開啟" in card.text_content()
 
@@ -252,26 +271,19 @@ def test_screen_off_hint_does_not_disappear(viewer_page):
     page.fill("#danmuText", "test message while offline")
     page.wait_for_timeout(300)
     assert "大螢幕開啟後即可送出" in hint.text_content()
-    assert page.locator(".viewer-screenoff-card").is_visible()
+    assert page.locator("[data-viewer-screenoff-card]").is_visible()
 
 
 def test_screen_on_clears_the_offline_surfaces(viewer_page):
     """大螢幕上線時，chip 轉綠、說明卡收起、送出列下方換回「暱稱 · 改暱稱」
     （對照組，確保上面的測試真的在測離線分支）"""
     page, live_url = viewer_page
-    page.route(
-        "**/overlay_status",
-        lambda route: route.fulfill(
-            status=200,
-            content_type="application/json",
-            body=json.dumps({"overlay_count": 1}),
-        ),
-    )
+    _mock_display(page, 1)
     page.goto(f"{live_url}/")
     page.wait_for_timeout(1500)
 
     assert "大螢幕顯示中" in page.locator("#overlayStatus").text_content()
-    assert page.locator(".viewer-screenoff-card").get_attribute("hidden") is not None
+    assert page.locator("[data-viewer-screenoff-card]").get_attribute("hidden") is not None
     assert page.locator(".viewer-sendbar-meta__hint").text_content().strip() == ""
     assert page.locator(".viewer-sendbar-meta__who").is_visible()
 

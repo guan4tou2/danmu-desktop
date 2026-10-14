@@ -174,8 +174,15 @@ def test_notifications_is_a_topbar_popover(admin_page):
 
 
 def test_audit_page_renders(admin_page):
+    from server.services import audit_log
+
+    audit_log.append("settings", "updated", actor="admin", meta={"key": "Speed"})
+    # The page module fetches on boot, before the test seeds its isolated log.
+    admin_page.reload()
+    admin_page.wait_for_selector("#logoutButton", timeout=8000)
     _go_to_route(admin_page, "audit")
     admin_page.wait_for_selector("#sec-audit-overview", state="visible", timeout=5000)
+    admin_page.wait_for_selector(".admin-audit-timeline-row", timeout=5000)
     # v5 yellow: compact toolbar filters + timeline rows
     assert admin_page.locator("[data-audit-actor-filter]").count() == 3
     assert admin_page.locator("[data-audit-severity-filter]").count() == 3

@@ -325,12 +325,25 @@ def test_settings_speed_change_calls_api(admin_page):
 
 
 def test_settings_speed_reflects_new_value(admin_page):
-    """修改 Speed 預設值後，input 的值應即時反映"""
+    """失焦儲存 Speed 後，畫面與重新載入的值都應反映新設定。"""
     _open_section(admin_page, "sec-speed")
     speed = admin_page.locator('[data-num-key="Speed"][data-num-index="3"]')
-    speed.fill("3")
-    speed.dispatch_event("change")
+    with admin_page.expect_response(
+        lambda response: "/admin/update" in response.url
+        and response.request.method == "POST"
+        and response.request.post_data_json.get("type") == "Speed"
+        and str(response.request.post_data_json.get("value")) == "3"
+    ) as updated:
+        speed.fill("3")
+        # Exercise the browser's native change on blur, as in keyboard editing.
+        speed.press("Tab")
+    assert updated.value.status == 200
     expect(speed).to_have_value("3", timeout=5000)
+    admin_page.reload()
+    _open_section(admin_page, "sec-speed")
+    expect(admin_page.locator('[data-num-key="Speed"][data-num-index="3"]')).to_have_value(
+        "3", timeout=5000
+    )
 
 
 def test_settings_color_toggle_calls_api(admin_page):
