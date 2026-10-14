@@ -432,7 +432,7 @@ def search_history():
     fp_filter = (request.args.get("fp") or "").strip()
 
     # status=shown,pinned,... — empty set means no filter.
-    _VALID_STATUSES = {"shown", "pinned", "masked", "blocked"}
+    _VALID_STATUSES = {"shown", "pinned", "masked", "blocked", "accepted", "queued", "forwarded"}
     raw_status = (request.args.get("status") or "").strip()
     status_filter = (
         {s.strip() for s in raw_status.split(",") if s.strip() in _VALID_STATUSES}

@@ -1,5 +1,6 @@
 import html
 import re
+import uuid
 
 from flask import Blueprint, current_app, make_response, request, send_from_directory, session
 from werkzeug.exceptions import HTTPException
@@ -199,7 +200,7 @@ def _resolve_danmu_style(data):
     return data
 
 
-def _record_history_if_enabled(data, fingerprint, client_ip, *, blocked_by=None):
+def _record_history_if_enabled(data, fingerprint, client_ip, *, blocked_by=None, status=None):
     """Record one danmu into history.
 
     ``blocked_by`` 有值時代表這則**沒有上大螢幕**——擋它的規則名寫進紀錄。
@@ -212,10 +213,18 @@ def _record_history_if_enabled(data, fingerprint, client_ip, *, blocked_by=None)
     history_payload = dict(data)
     history_payload["clientIp"] = client_ip
     history_payload["fingerprint"] = fingerprint
+    if status:
+        history_payload["status"] = data.get("_delivery_status") or status
     if blocked_by:
         history_payload["status"] = "blocked"
         history_payload["blockedBy"] = blocked_by
     history_service.danmu_history.add(history_payload)
+    # A limiter callback or resume worker may forward between copying the
+    # payload and adding the record. Reconcile after add; later callbacks
+    # will find the record themselves.
+    delivered = data.get("_delivery_status")
+    if not blocked_by and delivered and delivered != history_payload.get("status"):
+        history_service.danmu_history.update_status(data["message_id"], delivered)
 
 
 # NOTE: /fire is a public endpoint (no session auth required) — CSRF protection
@@ -418,13 +427,19 @@ def fire():
             except Exception:  # 調暗失敗不該擋住彈幕
                 current_app.logger.warning("poll-vote dimming failed", exc_info=True)
 
+        data["message_id"] = uuid.uuid4().hex
         forward_result = messaging.forward_to_ws_server(data)
         status = forward_result.get("status")
         accepted = status in ("sent", "queued")
 
         if accepted:
             fingerprint_tracker.record(fingerprint, client_ip, user_agent, nickname=nickname)
-            _record_history_if_enabled(data, fingerprint, client_ip)
+            _record_history_if_enabled(
+                data,
+                fingerprint,
+                client_ip,
+                status="forwarded" if status == "sent" else "queued",
+            )
 
             # Webhook: emit on_danmu event (fire-and-forget)
             try:
@@ -608,6 +623,9 @@ def session_public_state():
 
     state = dict(session_service.get_state())
     state["poll_active"] = poll_service.state == "active"
+    from ..services import broadcast
+
+    state["display"] = broadcast.get_public_state()
     return _json_response(state, 200)
 
 
@@ -663,7 +681,9 @@ def list_emojis():
 @api_bp.route("/overlay_status", methods=["GET"])
 def overlay_status():
     """Return current Electron overlay connection count."""
-    return _json_response({"overlay_count": get_ws_client_count()})
+    from ..services import broadcast
+
+    return _json_response(broadcast.get_public_state())
 
 
 @api_bp.route("/stickers", methods=["GET"])

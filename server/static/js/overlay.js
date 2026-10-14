@@ -476,7 +476,7 @@
           }
         }
 
-        if (data.type === "heartbeat_ack") return;
+        if (data.type === "heartbeat_ack" || data.type === "broadcast_state") return;
 
         if (data.type === "ping") {
           if (ws.readyState === WebSocket.OPEN) {

@@ -12225,6 +12225,16 @@ body.is-light .admin-login-wordmark.is-on-light,
   color: var(--color-danger);
   white-space: nowrap;
 }
+.admin-sd-msg-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 12em;
+  overflow-wrap: anywhere;
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+.admin-sd-msg-status .admin-sd-msg-rule { white-space: normal; }
 /* 稿上是 rgba(220,38,38,.04)。用 color-mix 從語意 token 調出來，
    淺深兩色都跟著 --color-danger 走，不用寫死一個 rgba。 */
 .admin-sd-msg-row.is-blocked {

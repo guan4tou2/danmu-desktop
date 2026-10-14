@@ -919,7 +919,7 @@ def test_session_detail_matches_g2(zh):
     assert "blocked_by=blocked_keyword" in api
     assert 'blocked_by="ban"' in api
     history = _read("server/services/history.py")
-    assert '"status": danmu_data.get("status") or "shown"' in history
+    assert '"status": danmu_data.get("status") or "accepted"' in history
     assert '"blockedBy": danmu_data.get("blockedBy") or ""' in history
     # 「訊息」算真的播出去的，被擋的另外算一欄
     hist_routes = _read("server/routes/admin/history.py")

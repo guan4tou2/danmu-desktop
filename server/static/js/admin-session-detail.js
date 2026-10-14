@@ -469,9 +469,12 @@
           <span class="admin-sd-msg-time">${escapeHtml(clock)}</span>
           <span class="admin-sd-msg-dot" style="background:${color}" aria-hidden="true"></span>
           <span class="admin-sd-msg-text">${escapeHtml(r.text || "")}</span>
-          ${blocked && r.blockedBy
-            ? `<span class="admin-sd-msg-rule">${escapeHtml(ServerI18n.t("sessionDetailBlockedBy", { rule: r.blockedBy }))}</span>`
-            : ""}
+          <span class="admin-sd-msg-status">
+            ${escapeHtml(ServerI18n.t("deliveryStatus_" + (r.status || "shown")))}
+            ${blocked && r.blockedBy
+              ? `<span class="admin-sd-msg-rule">${escapeHtml(ServerI18n.t("sessionDetailBlockedBy", { rule: r.blockedBy }))}</span>`
+              : ""}
+          </span>
           <span class="admin-sd-msg-nick">${escapeHtml(nick || ServerI18n.t("audienceAnonymous"))}</span>
         </div>`;
     }).join("");

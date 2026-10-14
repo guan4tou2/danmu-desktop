@@ -359,7 +359,7 @@
   "onscreenFullQueued": "Screen is full — you're in the queue…",
   "onscreenFullDropped": "Screen is full — try again in a moment.",
   "queueFullTryLater": "Queue is full — please try again in a minute.",
-  "broadcastStandbyQueued": "The display paused receiving — your danmu is queued and will appear when it resumes.",
+  "broadcastStandbyQueued": "Message queued. It will be sent when the display resumes.",
   "settingsUpdated": "Settings Updated",
   "updateFailed": "Update Failed",
   "colorFormatError": "Color format error, please use #RRGGBB format",
@@ -2930,5 +2930,16 @@
   "dlDimPollVotes": "Dim vote danmu",
   "dlDimPollVotesHint": "Typed votes flood the display with A B C D — dimming keeps real messages readable",
   "dlPollVoteOpacity": "Dim to",
-  "dlPollVoteOpacityHint": "Lower is less distracting; never brighter than the global opacity"
+  "dlPollVoteOpacityHint": "Lower is less distracting; never brighter than the global opacity",
+  "viewerDisplayWaitBody": "You can still send a message. It will queue until the host starts the display.",
+  "viewerDisplayWaitHint": "Messages will queue until the host starts the display",
+  "viewerDisplayPaused": "Display paused",
+  "viewerDisplayNotStarted": "The host has not started the display",
+  "deliveryStatus_accepted": "Received",
+  "deliveryStatus_queued": "Waiting for display",
+  "deliveryStatus_forwarded": "Forwarded to display",
+  "deliveryStatus_shown": "Legacy record · display unconfirmed",
+  "deliveryStatus_blocked": "Blocked",
+  "deliveryStatus_pinned": "Pinned",
+  "deliveryStatus_masked": "Masked"
 }

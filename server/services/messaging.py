@@ -1,7 +1,35 @@
-from flask import current_app
+import logging
+import threading
+import time
+from contextlib import nullcontext
+
+from flask import current_app, has_app_context
 
 from ..utils import sanitize_log_string
 from . import broadcast, live_feed_buffer, onscreen_limiter, telemetry, ws_queue
+
+logger = logging.getLogger(__name__)
+
+
+def set_broadcast_mode(mode):
+    """Use the same paced queue release for starting a session and resuming display."""
+    state, items = broadcast.transition_and_drain(mode)
+    if items:
+        app = current_app._get_current_object() if has_app_context() else None
+
+        def drain():
+            with app.app_context() if app else nullcontext():
+                for index, data in enumerate(items):
+                    try:
+                        # A pause during release must park the remaining messages again.
+                        forward_to_ws_server(data)
+                    except Exception:
+                        logger.exception("broadcast drain item failed")
+                    if index < len(items) - 1:
+                        time.sleep(2.0 / len(items))
+
+        threading.Thread(target=drain, name="broadcast-drain", daemon=True).start()
+    return state
 
 
 def _broadcast_live_feed(data):
@@ -38,8 +66,17 @@ def _raw_forward(data) -> bool:
     """
     try:
         ws_queue.enqueue_message(data)
+        if isinstance(data, dict) and data.get("text") is not None and data.get("message_id"):
+            data["_delivery_status"] = "forwarded"
         telemetry.record_message()
         if isinstance(data, dict) and data.get("text") is not None:
+            from .history import danmu_history
+
+            if danmu_history and data.get("message_id"):
+                try:
+                    danmu_history.update_status(data["message_id"], "forwarded")
+                except Exception:
+                    logger.exception("Could not update danmu delivery history")
             try:
                 broadcast.increment_messages(1)
             except Exception:
@@ -47,7 +84,7 @@ def _raw_forward(data) -> bool:
         _broadcast_live_feed(data)
         return True
     except Exception as exc:
-        current_app.logger.error(
+        logger.error(
             "Error forwarding message to WS server: %s",
             sanitize_log_string(str(exc)),
         )
@@ -66,8 +103,8 @@ def forward_to_ws_server(data, bypass_broadcast_gate=False):
 
     v5.0.0: when ``broadcast.is_live()`` is False (admin in STANDBY mode), the
     payload is parked in broadcast's pending queue instead of pushed to overlay.
-    The drain worker calls back here with ``bypass_broadcast_gate=True`` so
-    re-emitting drained items doesn't re-park them.
+    The drain worker respects this gate so a pause during release parks
+    the remaining messages again.
 
     Non-danmu meta payloads (settings_changed) bypass BOTH gates so admin
     actions still propagate during standby and at limiter saturation.
@@ -80,18 +117,17 @@ def forward_to_ws_server(data, bypass_broadcast_gate=False):
     # Broadcast standby gate runs BEFORE the limiter so parked danmu don't
     # consume in-flight slots.
     is_danmu = isinstance(data, dict) and data.get("text") is not None
-    if is_danmu and not bypass_broadcast_gate and not broadcast.is_live():
+    if is_danmu and not bypass_broadcast_gate:
         queue_size = None
         try:
-            queue_size = broadcast.enqueue_pending(data)
+            queue_size = broadcast.enqueue_if_standby(data)
         except Exception as exc:
-            current_app.logger.warning(
+            logger.warning(
                 "broadcast standby enqueue failed: %s",
                 sanitize_log_string(str(exc)),
             )
-        result = {"status": "queued", "reason": "broadcast_standby"}
+            return {"status": "dropped", "reason": "queue_failed"}
         if queue_size is not None:
-            result["queue_size"] = queue_size
-        return result
+            return {"status": "queued", "reason": "broadcast_standby", "queue_size": queue_size}
 
     return onscreen_limiter.try_send(data, _raw_forward)

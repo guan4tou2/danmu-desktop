@@ -27,7 +27,7 @@ from simple_websocket.ws import CloseReason
 
 from ..config import Config
 from ..managers import connection_manager
-from ..services import display_layer, ws_auth, ws_queue
+from ..services import broadcast, display_layer, ws_auth, ws_queue
 from ..services.ws_state import update_ws_client_count
 from ..utils import sanitize_log_string
 
@@ -95,6 +95,7 @@ def _sender_loop(ws, outbox):
 
 def _forward_messages():
     last_ping_time = 0.0
+    last_display_state = None
     while True:
         try:
             messages = ws_queue.dequeue_all()
@@ -105,6 +106,13 @@ def _forward_messages():
             now = time.monotonic()
             with _outboxes_lock:
                 has_clients = bool(_outboxes)
+            if has_clients:
+                display_state = broadcast.get_public_state()
+                if display_state != last_display_state:
+                    _broadcast_to_outboxes(
+                        json.dumps({"type": "broadcast_state", "state": display_state})
+                    )
+                    last_display_state = display_state
             if has_clients and now - last_ping_time >= _PING_INTERVAL:
                 last_ping_time = now
                 _broadcast_to_outboxes(json.dumps({"type": "ping"}))
@@ -192,6 +200,9 @@ def init_ws(app):
         # child.html CSP 是 `connect-src ws: wss:`，那邊 fetch 不出去，而
         # 為了一個設定把 https: 整個開進 connect-src 不划算。
         try:
+            outbox.put_nowait(
+                json.dumps({"type": "broadcast_state", "state": broadcast.get_public_state()})
+            )
             outbox.put_nowait(
                 json.dumps({"type": "display_layer", "settings": display_layer.get_state()})
             )

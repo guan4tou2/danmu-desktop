@@ -76,45 +76,106 @@
   var statusText = $("[data-client-overlay-status]");
   var mainCard = $("[data-client-main-card]");
   var overlayBtn = $("[data-client-overlay-button]");
+  var diagnostics = null;
+  var displayBanner = $("#client-display-banner");
+
+  function connectionState() {
+    return $(".client-titlebar-status-dot")?.getAttribute("data-client-status") || "disconnected";
+  }
+
+  function savedServer() {
+    try { return JSON.parse(localStorage.getItem("danmu-settings") || "null") || {}; }
+    catch (_) { return {}; }
+  }
 
   function hasServer() {
     try {
-      var h = localStorage.getItem("host") || localStorage.getItem("serverUrl") || "";
+      var h = savedServer().host || localStorage.getItem("host") || localStorage.getItem("serverUrl") || "";
       return !!String(h).trim();
     } catch (e) { return true; }
   }
 
   function screenLabel() {
     var sel = $("#screen-select");
-    if (!sel || !sel.options || !sel.selectedIndex >= 0) return "";
+    if (!sel || !sel.options || sel.selectedIndex < 0) return "";
     var opt = sel.options[sel.selectedIndex];
     return opt ? opt.textContent.trim() : "";
+  }
+
+  function targetScreenLabel(state) {
+    return state?.displays?.map(function (id) {
+      var option = $(`#screen-select option[data-display-id="${Number(id)}"]`);
+      return option ? option.textContent.trim() : String(id);
+    }).join("、") || screenLabel();
   }
 
   function renderMainCard() {
     var control = window.OverlayControl || null;
     var running = !!(control && control.isRunning());
+    var connected = running && connectionState() === "connected";
+    var showing = connected && diagnostics?.mode === "live";
     if (mainCard) {
-      mainCard.classList.toggle("is-running", running);
+      mainCard.classList.toggle("is-running", !!showing);
       mainCard.dataset.state = running ? "running" : "off";
     }
-    if (dot) dot.dataset.state = running ? "on" : "off";
+    if (dot) dot.dataset.state = showing ? "on" : "off";
+    renderDiagnostics(connected);
     if (!statusText) return;
 
     if (running) {
-      var screen = screenLabel();
-      var count = window.__danmuShownCount || 0;
-      statusText.textContent = screen
-        ? t("clientOverlayCount", "顯示中 · {screen} · 已顯示 {n} 則")
-            .replace("{screen}", screen)
-            .replace("{n}", String(count))
-        : t("clientOverlayOn", "顯示中");
+      var screen = targetScreenLabel(diagnostics);
+      statusText.textContent = !connected ? t("clientDiagConnecting", "等待連線")
+        : !diagnostics ? t("clientDiagLoading", "已連線 · 等待伺服器顯示狀態")
+        : diagnostics.mode === "standby"
+          ? t("clientDisplayPausedCount", "已連線 · 顯示暫停 · {n} 則排隊").replace("{n}", diagnostics.queue_size)
+          : t("clientDisplayReady", "顯示已啟動 · {screen}").replace("{screen}", screen);
     } else if (!hasServer()) {
       statusText.textContent = t("clientOverlayNoServer", "尚未設定伺服器");
     } else {
       statusText.textContent = t("clientOverlayOff", "未開啟");
     }
   }
+
+  function renderDiagnostics(connected) {
+    var state = connected ? diagnostics : null;
+    var fields = {
+      connection: connected ? t("statusConnected", "已連線") : t("disconnected", "未連線"),
+      display: state ? t(state.mode === "live" ? "clientDiagOn" : "clientDiagPaused", state.mode === "live" ? "已啟動" : "已暫停") : t("clientDiagUnknown", "尚未確認"),
+      session: state ? (state.session_status === "live" ? state.session_name || t("clientSessionLive", "場次進行中") : t("clientSessionIdle", "未建立場次")) : "—",
+      queue: state ? String(state.queue_size) : "—",
+      screens: targetScreenLabel(state) || "—",
+      last: state?.lastMessageAt ? new Date(state.lastMessageAt).toLocaleTimeString() : t("clientDiagNoMessage", "尚未收到"),
+    };
+    Object.keys(fields).forEach(function (key) {
+      var node = $(`[data-diag="${key}"]`);
+      if (node) node.textContent = fields[key];
+    });
+    if (!displayBanner) return;
+    var paused = state?.mode === "standby";
+    var noSession = state?.session_status === "idle";
+    displayBanner.hidden = !connected || !state || (!paused && !noSession);
+    displayBanner.classList.toggle("is-warning", !!paused);
+    displayBanner.classList.toggle("is-info", !paused);
+    var title = $("[data-display-banner-title]");
+    var body = $("[data-display-banner-text]");
+    if (title) title.textContent = paused ? t("clientDisplayPausedTitle", "已連線，但尚未開始顯示") : t("clientSessionIdle", "未建立場次");
+    if (body) body.textContent = paused
+      ? t("clientDisplayPausedBody", "請在後台開始或繼續顯示。目前有 {n} 則訊息等待播出。").replace("{n}", state.queue_size)
+      : t("clientSessionIdleBody", "彈幕可正常顯示；可在後台建立場次，方便整理本場活動。");
+  }
+
+  window.API?.onOverlayDiagnostics?.(function (data) {
+    diagnostics = data;
+    renderMainCard();
+  });
+  var adminButton = $("[data-display-open-admin]");
+  if (adminButton) adminButton.addEventListener("click", function () {
+    var server = diagnostics || savedServer();
+    if (!server.host) return;
+    var port = Number(server.port) || 443;
+    var route = diagnostics?.mode === "standby" ? "overlay" : "dashboard";
+    window.API?.openExternal?.(`https://${server.host}:${port}/admin#/${route}`);
+  });
 
   if (window.OverlayControl && typeof window.OverlayControl.subscribe === "function") {
     window.OverlayControl.subscribe(renderMainCard);
@@ -176,6 +237,10 @@
       attributes: true, attributeFilter: ["data-client-status"],
     });
     renderConnBanner();
+    new MutationObserver(function () {
+      if (connectionState() !== "connected") diagnostics = null;
+      renderMainCard();
+    }).observe(legacyDot, { attributes: true, attributeFilter: ["data-client-status"] });
   }
 
   var retryBtn = $("[data-conn-banner-retry]");

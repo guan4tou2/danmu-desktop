@@ -202,9 +202,9 @@ def open_session(name: str) -> Dict[str, Any]:
 
     # Side-effect: set broadcast to live (outside lock to avoid deadlock with broadcast's own lock)
     try:
-        from . import broadcast as broadcast_svc
+        from . import messaging
 
-        broadcast_svc.set_mode("live")
+        messaging.set_broadcast_mode("live")
     except Exception as exc:
         logger.warning("Could not auto-set broadcast to live on session open: %s", exc)
 
@@ -267,9 +267,9 @@ def close_session() -> Dict[str, Any]:
 
     # Set broadcast to standby
     try:
-        from . import broadcast as broadcast_svc
+        from . import messaging
 
-        broadcast_svc.set_mode("standby")
+        messaging.set_broadcast_mode("standby")
     except Exception as exc:
         logger.warning("Could not auto-set broadcast to standby on session close: %s", exc)
 

@@ -288,7 +288,8 @@
   function applyOverlayState() {
     if (!overlayStatus) return;
     const dot = overlayStatus.querySelector("[class*='connection-dot--']");
-    const online = !!(dot && dot.classList.contains("connection-dot--connected"));
+    const online = overlayStatus.dataset.connected === "true"
+      || !!(dot && dot.classList.contains("connection-dot--connected"));
     overlayStatus.classList.toggle("is-online", online);
     overlayStatus.classList.toggle("is-offline", !online);
     if (offlineCard) offlineCard.hidden = online;
@@ -301,7 +302,7 @@
     new MutationObserver(applyOverlayState).observe(overlayStatus, {
       subtree: true,
       attributes: true,
-      attributeFilter: ["class"],
+      attributeFilter: ["class", "data-connected"],
     });
     applyOverlayState();
   }

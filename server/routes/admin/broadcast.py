@@ -10,44 +10,12 @@ over ~2 seconds via a background thread so a flood of stored danmu doesn't
 all fire at the same frame. Streamers asked for this — feels natural.
 """
 
-import threading
-import time
-
 from flask import current_app, request
 
 from ...services import broadcast as broadcast_svc
 from ...services import messaging
 from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login, sanitize_log_string
-
-# Spread the drain over this window. Picked so 50 stored messages = 40 ms apart.
-_DRAIN_WINDOW_SEC = 2.0
-
-
-def _drain_queue_async(items):
-    """Re-emit queued danmu to overlay in a background thread, paced over ~2s."""
-    n = len(items)
-    if n <= 0:
-        return
-    interval = _DRAIN_WINDOW_SEC / max(1, n)
-
-    def _worker():
-        for d in items:
-            try:
-                messaging.forward_to_ws_server(d, bypass_broadcast_gate=True)
-            except Exception as exc:
-                # Best-effort drain; log but keep going so one bad payload
-                # doesn't strand the rest of the queue.
-                try:
-                    current_app.logger.warning(
-                        "broadcast drain item failed: %s", sanitize_log_string(str(exc))
-                    )
-                except Exception:
-                    pass
-            time.sleep(interval)
-
-    t = threading.Thread(target=_worker, name="broadcast-drain", daemon=True)
-    t.start()
 
 
 @admin_bp.route("/broadcast/status", methods=["GET"])
@@ -85,7 +53,7 @@ def broadcast_toggle():
         )
 
     prev_state = broadcast_svc.get_state()
-    new_state = broadcast_svc.set_mode(mode)
+    new_state = messaging.set_broadcast_mode(mode)
     current_app.logger.info(
         "Broadcast mode: %s → %s",
         sanitize_log_string(prev_state.get("mode") or "?"),
@@ -102,13 +70,6 @@ def broadcast_toggle():
         )
     except Exception:
         pass
-
-    # Transition STANDBY → LIVE: drain queued messages over ~2s.
-    if prev_state.get("mode") == "standby" and mode == "live":
-        items = broadcast_svc.drain_pending()
-        if items:
-            _drain_queue_async(items)
-            current_app.logger.info("Broadcast drain scheduled: %d queued messages", len(items))
 
     return _json_response(new_state)
 

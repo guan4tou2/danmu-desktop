@@ -56,6 +56,13 @@ function initOverlayWs(config) {
   let isFirstConnectionAttempt = true;
   let lastSentStatus = null;
   let statusSendTimeout = null;
+  let displayState = null;
+
+  function reportDiagnostics(messageReceived = false) {
+    if (displayState && window.API?.sendOverlayDiagnostics) {
+      window.API.sendOverlayDiagnostics({ state: displayState, messageReceived });
+    }
+  }
 
   function getReconnectDelay(attempt) {
     const exponential = reconnectBaseDelay * Math.pow(2, attempt);
@@ -529,6 +536,12 @@ function initOverlayWs(config) {
             return;
           }
 
+          if (data.type === "broadcast_state") {
+            displayState = data.state;
+            reportDiagnostics();
+            return;
+          }
+
           // 顯示層設定（設計稿 16 · OS1／OS2）：投影安全區與淺底描邊。
           // admin 一改就推過來，不必重開顯示層。
           if (data.type === "display_layer") {
@@ -769,6 +782,7 @@ function initOverlayWs(config) {
             } catch (e) { /* ignore sound errors */ }
           }
 
+          if (data.text != null) reportDiagnostics(true);
           processDanmuWhenReady({
             text: data.text,
             opacity: data.opacity,

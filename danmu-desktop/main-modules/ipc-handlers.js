@@ -186,6 +186,33 @@ function setupIpcHandlers(getMainWindow, childWindows) {
   });
 
   // Forward connection status from child windows to main window
+  ipcMain.on("overlay-diagnostics", (event, data) => {
+    const win = childWindows.find((w) => w && !w.isDestroyed() && w.webContents === event.sender);
+    if (!win || !data || typeof data !== "object") return;
+    const state = data.state;
+    if (!state || !["live", "standby"].includes(state.mode)) return;
+    const count = Number(state.queue_size);
+    if (!Number.isInteger(count) || count < 0 || count > 500) return;
+    const previous = win.overlayDiagnostics;
+    win.overlayDiagnostics = {
+      mode: state.mode,
+      queue_size: count,
+      session_status: state.session_status === "live" ? "live" : "idle",
+      session_name: typeof state.session_name === "string" ? state.session_name.slice(0, 120) : "",
+      lastMessageAt: data.messageReceived === true ? Date.now() : (previous?.lastMessageAt || null),
+    };
+    const mainWindow = getMainWindow();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("overlay-diagnostics", {
+        ...win.overlayDiagnostics,
+        lastMessageAt: Math.max(0, ...childWindows.map((w) => w.overlayDiagnostics?.lastMessageAt || 0)) || null,
+        displays: childWindows.filter((w) => w && !w.isDestroyed()).map((w) => w.overlayDisplayId),
+        host: win.overlayConfig?.ip,
+        port: win.overlayConfig?.port,
+      });
+    }
+  });
+
   ipcMain.on("overlay-connection-status", (event, data) => {
     if (!isFromChildWindow(event, childWindows)) {
       console.warn("[Main] overlay-connection-status: rejected IPC from untrusted sender");

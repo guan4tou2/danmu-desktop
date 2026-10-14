@@ -954,6 +954,21 @@ body[data-os="mac"] .client-titlebar{
   color: var(--color-text-primary);
 }
 
+.client-banner.is-warning {
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  color: var(--color-text-primary);
+}
+
+.client-diagnostics { color: var(--color-text-secondary); font-size: var(--text-footnote); }
+.client-diagnostics summary { cursor: pointer; padding: var(--space-2) 0; }
+.client-diagnostics dl { margin: var(--space-2) 0; }
+.client-diagnostics dl > div { display: flex; gap: var(--space-3); padding: var(--space-1) 0; }
+.client-diagnostics dt { flex: 0 0 7em; }
+.client-diagnostics dd { margin: 0; min-width: 0; overflow-wrap: anywhere; color: var(--color-text-primary); }
+@media (max-width: 419px) {
+  #client-display-banner { flex-wrap: wrap; }
+}
+
 .client-banner-body { flex: 1 1 auto; min-width: 0; }
 .client-banner-title { font-weight: 600; }
 

@@ -181,6 +181,21 @@ def is_live() -> bool:
         return _state.get("mode") == "live"
 
 
+def get_public_state() -> Dict[str, Any]:
+    from . import session_service
+    from .ws_state import get_ws_client_count
+
+    state = get_state()
+    session = session_service.get_state()
+    return {
+        "mode": state["mode"],
+        "queue_size": state["queue_size"],
+        "overlay_count": get_ws_client_count(),
+        "session_status": session["status"],
+        "session_name": session["name"],
+    }
+
+
 # 2026-05-18 polestar aliases (P2-7) — preferred name for new callers.
 def is_overlay_on() -> bool:
     """Polestar-aligned alias for ``is_live()``."""
@@ -232,6 +247,22 @@ def increment_messages(n: int = 1) -> int:
         _state["total_messages"] = int(_state.get("total_messages") or 0) + int(n)
         _persist_state()
         return _state["total_messages"]
+
+
+def transition_and_drain(mode):
+    """Make the transition and pending-queue handoff atomic with audience sends."""
+    with _lock:
+        previous = get_state()["mode"]
+        state = set_mode(mode)
+        items = drain_pending() if previous == "standby" and state["mode"] == "live" else []
+        return state, items
+
+
+def enqueue_if_standby(data):
+    with _lock:
+        if is_live():
+            return None
+        return enqueue_pending(data)
 
 
 def enqueue_pending(data: Dict[str, Any]) -> int:

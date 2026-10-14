@@ -106,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // before script parsing reaches the cooldown/banner section) can read
   // them without hitting a TDZ ReferenceError.
   let _overlayOnline = true; // optimistic — flips false after first poll says 0
+  let _displayState = null;
   let _cooldownEnd = 0;
   let _cooldownTimer = null;
   // 冷卻總長，給送出鍵的環形進度換算比例用（設計稿 05 · V5）。
@@ -1701,7 +1702,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!onCooldown) {
       if (elements.btnSendText) elements.btnSendText.textContent = ServerI18n.t("fireDanmu");
       if (elements.btnSendIcon) elements.btnSendIcon.classList.remove("hidden");
-      _setSendbarHint(ServerI18n.t("sendbarHint"), "");
+      _setSendbarHint(
+        ServerI18n.t(_displayState?.mode === "standby" ? "viewerDisplayWaitHint" : "sendbarHint"),
+        _displayState?.mode === "standby" ? "queued" : ""
+      );
       _setSendbarStatusRow("");
     }
   }
@@ -1746,7 +1750,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function _clearBanner() {
     if (!elements.sendStatusBanner) return;
     elements.sendStatusBanner.hidden = true;
-    elements.sendStatusBanner.classList.remove("is-sent", "is-blocked");
+    elements.sendStatusBanner.classList.remove("is-sent", "is-blocked", "is-queued");
     elements.sendStatusBanner.textContent = "";
   }
 
@@ -1759,8 +1763,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (_bannerTimer) { clearTimeout(_bannerTimer); _bannerTimer = null; }
     elements.sendStatusBanner.hidden = false;
-    elements.sendStatusBanner.classList.remove("is-sent", "is-blocked");
-    elements.sendStatusBanner.classList.add(kind === "sent" ? "is-sent" : "is-blocked");
+    elements.sendStatusBanner.classList.remove("is-sent", "is-blocked", "is-queued");
+    elements.sendStatusBanner.classList.add(kind === "queued" ? "is-queued" : kind === "sent" ? "is-sent" : "is-blocked");
     elements.sendStatusBanner.textContent = msg;
     _bannerTimer = setTimeout(_clearBanner, kind === "sent" ? 1800 : 2400);
     if (kind === "sent") _flashSendBurst();
@@ -1916,8 +1920,11 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           // Design v3-r10: inline banner + admin-configurable cooldown
           // (ViewerFireCooldownSec, default 3s) after successful fire.
-          _showBanner("sent", ServerI18n.t("bannerSent"));
-          _setSendbarHint(ServerI18n.t("bannerSent"), "sent");
+          const feedbackKey = status === "queued"
+            ? (responseData?.reason === "broadcast_standby" ? "broadcastStandbyQueued" : "onscreenFullQueued")
+            : "bannerSent";
+          _showBanner(status === "queued" ? "queued" : "sent", ServerI18n.t(feedbackKey));
+          _setSendbarHint(ServerI18n.t(feedbackKey), status === "queued" ? "queued" : "sent");
           _startCooldown(_resolveCooldownMs());
           try {
             if (window.ViewerStates && document.body.dataset.viewerState === "ratelimit") {
@@ -1926,20 +1933,6 @@ document.addEventListener("DOMContentLoaded", () => {
           } catch (_) {}
         }
 
-        if (status === "queued") {
-          // queued can mean two distinct things:
-          //   (a) onscreen-limiter saturated → wait for slot
-          //   (b) broadcast.is_live() === false → main host paused
-          // Server tags case (b) with reason="broadcast_standby" so we
-          // can show a different message instead of the misleading
-          // "screen is full" copy.
-          const reason = (responseData && responseData.reason) || "";
-          if (reason === "broadcast_standby") {
-            showToast(ServerI18n.t("broadcastStandbyQueued"), true);
-          } else {
-            showToast(ServerI18n.t("onscreenFullQueued"), true);
-          }
-        }
         // 2026-05-17 design v3-r10: success path uses the inline banner
         // (_showBanner) instead of a corner toast — covers "sent" status.
 
@@ -2225,11 +2218,26 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Overlay Status Polling ---
+  function updateDisplayState(state) {
+    if (!state || !["live", "standby"].includes(state.mode)) return;
+    _displayState = state;
+    if (elements.overlayStatus) elements.overlayStatus.dataset.displayMode = state.mode;
+    const card = document.querySelector("[data-viewer-display-wait]");
+    const title = document.querySelector("[data-display-wait-title]");
+    if (card) card.hidden = !(state.mode === "standby" && state.overlay_count > 0);
+    if (title) title.textContent = ServerI18n.t(
+      state.session_status === "live" ? "viewerDisplayPaused" : "viewerDisplayNotStarted"
+    );
+    updateOverlayUI(state.overlay_count || 0);
+    _refreshSendButtonGate();
+  }
+
   function updateOverlayUI(count) {
     // Track online state for the FIRE button gate (design v3-r10:
     // 觀眾在 overlay 未連線時不能送出, 避免訊息石沉大海).
     const wasOnline = _overlayOnline;
     _overlayOnline = count > 0;
+    if (elements.overlayStatus) elements.overlayStatus.dataset.connected = String(_overlayOnline);
     if (wasOnline !== _overlayOnline) _refreshSendButtonGate();
 
     if (!elements.overlayStatus || !elements.overlayLabel) return;
@@ -2239,8 +2247,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!dot) return;
     _resetDotState(dot);
     if (_overlayOnline) {
-      dot.classList.add("connection-dot--connected");
-      elements.overlayLabel.textContent = ServerI18n.t("overlayConnected").replace("{n}", count);
+      const paused = _displayState?.mode === "standby";
+      dot.classList.add(paused ? "connection-dot--connecting" : "connection-dot--connected");
+      elements.overlayLabel.textContent = paused ? ServerI18n.t("viewerDisplayPaused")
+        : ServerI18n.t("overlayConnected").replace("{n}", count);
     } else {
       dot.classList.add("connection-dot--disconnected");
       elements.overlayLabel.textContent = ServerI18n.t("overlayNone");
@@ -2249,9 +2259,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function pollOverlayStatus() {
     fetch("/overlay_status")
-      .then((r) => r.json())
-      .then((data) => updateOverlayUI(data.overlay_count || 0))
-      .catch(() => updateOverlayUI(0));
+      .then((r) => { if (!r.ok) throw new Error("status unavailable"); return r.json(); })
+      .then((data) => {
+        updateOverlayUI(data.overlay_count || 0);
+        updateDisplayState(data);
+      })
+      .catch(() => {
+        _displayState = null;
+        const card = document.querySelector("[data-viewer-display-wait]");
+        if (card) card.hidden = true;
+        updateOverlayUI(0);
+      });
   }
 
   pollOverlayStatus();
@@ -2508,6 +2526,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Session — fire ended handler on live → ended transition.
     if (sessionState) {
+      updateDisplayState(sessionState.display);
       // 下一輪要不要抓投票內容看這裡（見上面 fetches 的註解）。
       _pollMaybeLive = sessionState.poll_active === true;
       const status = sessionState.status || sessionState.state || null;

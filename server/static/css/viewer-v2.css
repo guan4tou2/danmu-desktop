@@ -1093,6 +1093,21 @@ body.viewer-body-v2.is-dark{
   color: var(--color-white);
   box-shadow: 0 4px 20px rgba(255, 77, 79, 0.4);
 }
+.viewer-sendbar-banner.is-queued {
+  background: var(--color-bg-elevated);
+  color: var(--color-ink-warning);
+  border: 1px solid var(--color-warning);
+  box-shadow: none;
+  width: max-content;
+  max-width: calc(100% - var(--space-4));
+  white-space: normal;
+  text-align: center;
+}
+
+.viewer-screen-chip.is-online[data-display-mode="standby"] {
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  color: var(--viewer-ink-warning);
+}
 @keyframes viewer-banner-in {
   from{ opacity: 0; transform: translate(-50%, 8px); }
   to{ opacity: 1; transform: translate(-50%, 0); }}

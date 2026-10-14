@@ -207,7 +207,8 @@
         '<span class="admin-search-row__ts">' + _escHtml(_formatTs(r.timestamp)) + "</span>" +
         '<span class="admin-search-row__text">' + _highlight(r.text || "", _state.query) + "</span>" +
         '<span class="admin-search-row__nick">' +
-          _escHtml((r.nickname || "").trim() || ServerI18n.t("audienceAnonymous")) + "</span>";
+          _escHtml((r.nickname || "").trim() || ServerI18n.t("audienceAnonymous")) + "<br>" +
+          _escHtml(ServerI18n.t("deliveryStatus_" + (r.status || "shown"))) + "</span>";
       frag.appendChild(row);
     });
     listEl.appendChild(frag);

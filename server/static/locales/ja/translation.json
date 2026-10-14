@@ -672,7 +672,7 @@
   "lockoutRemaining": "残り時間",
   "lockoutReason": "ログイン失敗が多すぎます。",
   "lockoutContactAdmin": "管理者に連絡",
-  "broadcastStandbyQueued": "表示層 は受信を一時停止中 — 弾幕はキューに入り、再開後に表示されます。",
+  "broadcastStandbyQueued": "メッセージを保存しました。表示再開後に送信されます。",
   "navAccordionAbout": "About",
   "navAccordionApiTokens": "API トークン",
   "navAccordionBackup": "バックアップ",
@@ -2930,5 +2930,16 @@
   "dlDimPollVotes": "投票の弾幕を暗くする",
   "dlDimPollVotesHint": "打ち込みでの投票は画面が A B C D だらけになる。暗くしてメッセージを読めるように",
   "dlPollVoteOpacity": "暗くする度合い",
-  "dlPollVoteOpacityHint": "低いほど目立たない。全体設定より明るくはならない"
+  "dlPollVoteOpacityHint": "低いほど目立たない。全体設定より明るくはならない",
+  "viewerDisplayWaitBody": "メッセージは送信できます。主催者が表示を開始するまで待機します。",
+  "viewerDisplayWaitHint": "主催者が表示を開始するまでメッセージは待機します",
+  "viewerDisplayPaused": "表示は一時停止中",
+  "viewerDisplayNotStarted": "主催者はまだ表示を開始していません",
+  "deliveryStatus_accepted": "受信済み",
+  "deliveryStatus_queued": "表示待ち",
+  "deliveryStatus_forwarded": "表示側へ送信済み",
+  "deliveryStatus_shown": "旧記録・表示未確認",
+  "deliveryStatus_blocked": "ブロック済み",
+  "deliveryStatus_pinned": "固定済み",
+  "deliveryStatus_masked": "非表示"
 }

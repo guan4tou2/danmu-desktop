@@ -74,6 +74,7 @@
       "tokens.css",
       "i18n.js",
       "client-nav.js",
+      "client-shell.js",
       "assets/**/*",
       "package.json",
       "!main.js",

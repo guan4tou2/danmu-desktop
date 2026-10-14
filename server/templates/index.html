@@ -207,6 +207,12 @@
 
           <!-- 首次進入的暱稱提示（設計稿 16 · VN1）。內嵌卡片、不是 modal，
                可關；填過或關過就不再出現（localStorage）。 -->
+          <div class="viewer-screenoff-card viewer-display-wait" data-viewer-display-wait hidden role="status" aria-live="polite">
+            <div>
+              <div class="viewer-screenoff-card-title" data-display-wait-title></div>
+              <div class="viewer-screenoff-card-body" data-i18n="viewerDisplayWaitBody">你仍可送出留言；主辦方開始顯示後，排隊訊息才會播出。</div>
+            </div>
+          </div>
           <div class="viewer-nameask" id="viewerNameAsk" hidden>
             <div class="viewer-nameask-head">
               <span class="viewer-nameask-avatar" aria-hidden="true">匿</span>

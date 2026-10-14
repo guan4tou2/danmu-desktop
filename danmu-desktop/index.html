@@ -122,6 +122,16 @@
           </button>
         </section>
 
+        <div class="client-banner is-warning" id="client-display-banner" hidden role="status" aria-live="polite">
+          <div class="client-banner-body">
+            <div class="client-banner-title" data-display-banner-title></div>
+            <div class="client-banner-text" data-display-banner-text></div>
+          </div>
+          <div class="client-banner-actions">
+            <button type="button" class="client-action-btn" data-display-open-admin data-i18n="clientOpenAdmin">前往後台</button>
+          </div>
+        </div>
+
         <!-- ── 設定群組：顯示在 / 伺服器（設計稿 04 · S2）────────── -->
         <div class="client-group">
           <!-- S5 · 螢幕選擇 -->
@@ -189,6 +199,17 @@
         </div>
         <input type="text" id="host-input" hidden aria-hidden="true" tabindex="-1" />
         <input type="text" id="port-input" hidden aria-hidden="true" tabindex="-1" />
+        <details class="client-diagnostics">
+          <summary data-i18n="clientDiagnostics">運作診斷</summary>
+          <dl>
+            <div><dt data-i18n="clientDiagConnection">連線</dt><dd data-diag="connection">—</dd></div>
+            <div><dt data-i18n="clientDiagDisplay">伺服器顯示</dt><dd data-diag="display">—</dd></div>
+            <div><dt data-i18n="clientDiagSession">場次</dt><dd data-diag="session">—</dd></div>
+            <div><dt data-i18n="clientDiagQueue">等待顯示</dt><dd data-diag="queue">—</dd></div>
+            <div><dt data-i18n="clientDiagScreens">目標螢幕</dt><dd data-diag="screens">—</dd></div>
+            <div><dt data-i18n="clientDiagLastMessage">最近收到彈幕</dt><dd data-diag="last">—</dd></div>
+          </dl>
+        </details>
       </main>
     </div>
 

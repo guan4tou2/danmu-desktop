@@ -44,6 +44,7 @@ def _seed(history, **overrides):
         "isImage": False,
         "fingerprint": "fp_default",
         "clientIp": "127.0.0.1",
+        "status": "shown",  # Legacy records keep their search/filter compatibility.
     }
     payload.update(overrides)
     history.add(payload)

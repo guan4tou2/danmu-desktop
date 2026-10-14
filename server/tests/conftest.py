@@ -53,6 +53,25 @@ def _isolate_webhook_store(tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_audit_store(tmp_path, monkeypatch):
+    from server.services import audit_log
+
+    monkeypatch.setattr(audit_log, "_LOG_FILE", tmp_path / "audit.log")
+    monkeypatch.setattr(audit_log, "_BACKUP_FILE", tmp_path / "audit.log.1")
+    audit_log.reset_for_tests()
+    yield
+    audit_log.reset_for_tests()
+
+
+@pytest.fixture(autouse=True)
+def _isolate_filter_store(tmp_path, monkeypatch):
+    path = tmp_path / "filter_rules.json"
+    path.write_text("[]")
+    monkeypatch.setattr(Config, "FILTER_RULES_FILE", str(path))
+    monkeypatch.setattr(filter_engine, "_path", str(path))
+
+
+@pytest.fixture(autouse=True)
 def _isolate_session(tmp_path):
     """Per-test session state isolation; default IDLE."""
     from server.services import session_service as sess_mod

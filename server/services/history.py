@@ -80,6 +80,7 @@ class DanmuHistory:
         if not HISTORY_FILE.exists():
             return
         loaded = skipped = 0
+        records = {}
         try:
             with HISTORY_FILE.open("r", encoding="utf-8") as f:
                 for line in f:
@@ -94,11 +95,17 @@ class DanmuHistory:
                     if not self._is_readable_record(record):
                         skipped += 1
                         continue
-                    self._records.append(record)
+                    key = record.get("message_id") or f"legacy_{loaded}"
+                    previous = records.get(key)
+                    if previous is None or (record.get("delivery_updated_at") or "") >= (
+                        previous.get("delivery_updated_at") or ""
+                    ):
+                        records[key] = record
                     loaded += 1
         except OSError as exc:
             logger.warning("danmu history: cannot read %s: %s", HISTORY_FILE, exc)
             return
+        self._records.extend(records.values())
         logger.info(
             "danmu history: restored %d records from disk%s",
             loaded,
@@ -116,6 +123,12 @@ class DanmuHistory:
         下次重啟。
         """
         if not isinstance(record, dict):
+            return False
+        message_id = record.get("message_id")
+        if message_id is not None and not isinstance(message_id, str):
+            return False
+        updated_at = record.get("delivery_updated_at")
+        if updated_at is not None and not isinstance(updated_at, str):
             return False
         ts = record.get("timestamp")
         if not isinstance(ts, str) or not ts:
@@ -181,10 +194,10 @@ class DanmuHistory:
             # 在這之前 /admin/search 讀 r.get("nickname") 一直是空字串——欄位
             # 從來沒被寫進紀錄裡。
             "nickname": str(danmu_data.get("nickname") or "")[:40],
-            # "shown"（預設）或 "blocked"。被擋的那些也要留下來——設計稿
-            # 10 · G2 的場次詳情要能列出「被擋下 N」並標出是哪條規則擋的。
-            # /admin/search 一直讀 r.get("status")，但這個欄位從來沒被寫過。
-            "status": danmu_data.get("status") or "shown",
+            # Acceptance and forwarding cannot prove that a client rendered the message.
+            "status": danmu_data.get("status") or "accepted",
+            "message_id": danmu_data.get("message_id"),
+            "delivery_updated_at": current_time.isoformat(),
             "blockedBy": danmu_data.get("blockedBy") or "",
             "fontInfo": danmu_data.get("fontInfo"),
             "clientIp": danmu_data.get("clientIp"),
@@ -197,6 +210,19 @@ class DanmuHistory:
         self._append_to_disk(record)
         # 定期清理舊記錄（在鎖外呼叫，避免 deadlock）
         self._maybe_cleanup()
+
+    def update_status(self, message_id: str, status: str) -> None:
+        with self._lock:
+            for record in reversed(self._records):
+                if record.get("message_id") == message_id:
+                    record["status"] = status
+                    record["delivery_updated_at"] = datetime.now(timezone.utc).isoformat()
+                    updated = dict(record)
+                    break
+            else:
+                return
+        # Append a newer snapshot; loading merges by message_id without losing the original time.
+        self._append_to_disk(updated)
 
     def get_records(
         self,

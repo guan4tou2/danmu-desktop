@@ -916,7 +916,7 @@ def test_blocked_danmu_is_recorded_with_the_rule_that_caught_it(client):
 
     records = history_service.danmu_history.get_recent(hours=1, limit=100)
     by_text = {r["text"]: r for r in records}
-    assert by_text["今天好熱鬧"]["status"] == "shown"
+    assert by_text["今天好熱鬧"]["status"] == "forwarded"
     assert by_text["加line 給你折扣"]["status"] == "blocked"
     # 標出**是哪個字**擋的，不只是「有沒有被擋」
     assert by_text["加line 給你折扣"]["blockedBy"] == "加line"

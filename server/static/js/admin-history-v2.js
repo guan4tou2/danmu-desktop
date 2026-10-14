@@ -126,6 +126,7 @@
         ? '"' + s.replace(/"/g, '""') + '"' : s;
     };
     var status = function (r) {
+      if (r.status) return r.status;
       if (r.banned) return "banned"; if (r.muted) return "muted"; if (r.is_poll) return "poll"; return "ok";
     };
     var rows = records.map(function (r) {

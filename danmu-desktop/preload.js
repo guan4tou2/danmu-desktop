@@ -65,6 +65,14 @@ try {
       _handlers.connectionStatus = (event, data) => callback(data);
       ipcRenderer.on("overlay-connection-status", _handlers.connectionStatus);
     },
+    sendOverlayDiagnostics: (data) => ipcRenderer.send("overlay-diagnostics", data),
+    onOverlayDiagnostics: (callback) => {
+      if (_handlers.overlayDiagnostics) {
+        ipcRenderer.removeListener("overlay-diagnostics", _handlers.overlayDiagnostics);
+      }
+      _handlers.overlayDiagnostics = (_event, data) => callback(data);
+      ipcRenderer.on("overlay-diagnostics", _handlers.overlayDiagnostics);
+    },
     // Send test danmu to overlay
     sendTestDanmu: (text, opacity, color, size, speed, textStyles, displayArea) => {
       ipcRenderer.send("send-test-danmu", {
