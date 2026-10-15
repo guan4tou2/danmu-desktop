@@ -29,6 +29,7 @@ project's existing /admin/ratelimit deployment story.
 import errno
 import json
 import logging
+import math
 import os
 import threading
 import time
@@ -40,6 +41,8 @@ logger = logging.getLogger(__name__)
 _STATE_FILE = Path(__file__).parent.parent / "runtime" / "broadcast.json"
 _QUEUE_FILE = Path(__file__).parent.parent / "runtime" / "broadcast_queue.json"
 _QUEUE_MAX = 500
+QUEUE_TTL_SECONDS = 24 * 60 * 60
+_QUEUE_TIME_FIELD = "_broadcast_queued_at"
 
 _lock = threading.RLock()
 _state: Optional[Dict[str, Any]] = None
@@ -164,6 +167,65 @@ def _ensure_loaded() -> None:
         _state = _load_state()
     if _queue is None:
         _queue = _load_queue()
+        # Old queues had no per-message timestamp. Use their original file
+        # modification time once, then persist it so restart never renews TTL.
+        now = time.time()
+        try:
+            legacy_time = min(now, _QUEUE_FILE.stat().st_mtime)
+        except OSError:
+            legacy_time = now
+        migrated = False
+        for item in _queue:
+            if not _valid_queue_time(item.get(_QUEUE_TIME_FIELD), now):
+                item[_QUEUE_TIME_FIELD] = legacy_time
+                migrated = True
+        if migrated:
+            _persist_queue()
+    _prune_expired()
+
+
+def _valid_queue_time(value: Any, now: float) -> bool:
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+        and 0 <= value <= now
+    )
+
+
+def is_pending_expired(data: Dict[str, Any], now: Optional[float] = None) -> bool:
+    """A drained/re-parked message keeps its original 24-hour deadline."""
+    queued_at = data.get(_QUEUE_TIME_FIELD)
+    return (
+        isinstance(queued_at, (int, float))
+        and not isinstance(queued_at, bool)
+        and (time.time() if now is None else now) - queued_at >= QUEUE_TTL_SECONDS
+    )
+
+
+def mark_pending_expired(data: Dict[str, Any]) -> None:
+    data["_delivery_status"] = "expired"
+    if data.get("message_id"):
+        try:
+            from .history import danmu_history
+
+            if danmu_history:
+                danmu_history.update_status(data["message_id"], "expired")
+        except Exception:
+            logger.exception("Could not update expired message history")
+
+
+def _prune_expired() -> None:
+    """Called under _lock on reads, enqueue and drain; never replay stale data."""
+    now = time.time()
+    expired = [item for item in _queue if is_pending_expired(item, now)]
+    if not expired:
+        return
+    _queue[:] = [item for item in _queue if not is_pending_expired(item, now)]
+    _persist_queue()
+    for item in expired:
+        mark_pending_expired(item)
+    logger.info("Expired %d pending messages after 24 hours", len(expired))
 
 
 def get_state() -> Dict[str, Any]:
@@ -276,6 +338,8 @@ def enqueue_pending(data: Dict[str, Any]) -> int:
         raise ValueError("data must be a dict")
     with _lock:
         _ensure_loaded()
+        if not _valid_queue_time(data.get(_QUEUE_TIME_FIELD), time.time()):
+            data[_QUEUE_TIME_FIELD] = time.time()
         _queue.append(data)
         if len(_queue) > _QUEUE_MAX:
             _queue = _queue[-_QUEUE_MAX:]

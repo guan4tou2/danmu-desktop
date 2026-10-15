@@ -1711,60 +1711,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // label (if any) is read from the mounted tab strip. Display-only — no
     // clickable links in this first pass.
     function _renderBreadcrumb(rawName, route, activeTab) {
-      const host = shell.querySelector("[data-route-breadcrumb]");
-      if (!host) return;
-      // Prefer the alias/raw button (what the user clicked) so the crumb
-      // matches the highlighted sidebar item; fall back to resolved route.
-      const btns = Array.from(shell.querySelectorAll(".admin-dash-nav-row[data-route]"));
-      let btn = btns.find((b) => b.dataset.route === rawName);
-      if (!btn) btn = btns.find((b) => b.dataset.route === route);
-      if (!btn) { host.textContent = ""; host.hidden = true; return; }
-
-      // Section = nearest preceding `.admin-dash-nav-label` sibling.
-      let section = "";
-      let prev = btn.previousElementSibling;
-      while (prev) {
-        if (prev.classList && prev.classList.contains("admin-dash-nav-label")) {
-          // Group toggles carry a caret span — read the label span only.
-          const labelEl = prev.querySelector("[data-i18n]") || prev;
-          section = (labelEl.textContent || "").trim();
-          break;
-        }
-        prev = prev.previousElementSibling;
-      }
-      // Page = the button's label span text (drops badges/icons).
-      const labelEl = btn.querySelector("[data-i18n]") || btn.querySelector("span:nth-child(2)");
-      const page = (labelEl ? labelEl.textContent : btn.textContent || "").trim();
-
-      // Tab = active tab label from the mounted strip, if present.
-      let tab = "";
-      if (activeTab) {
-        const tabHost = shell.querySelector("[data-admin-tabs-host]");
-        const activeTabEl = tabHost
-          ? tabHost.querySelector(".is-active, [aria-selected='true']")
-          : null;
-        if (activeTabEl) {
-          // Tab buttons carry a zh label span + an EN sub-label span;
-          // textContent would glue them ("審核佇列QUEUE"), so prefer the label.
-          const labelChild = activeTabEl.querySelector(".admin-tabs-btn-label");
-          tab = ((labelChild || activeTabEl).textContent || "").trim();
-        }
-      }
-
-      const crumbs = [section, page].filter(Boolean);
-      if (tab) crumbs.push(tab);
-      host.hidden = crumbs.length === 0;
-      host.innerHTML = crumbs
-        .map((c, i) => {
-          const sep = i > 0
-            ? '<span class="admin-dash-breadcrumb-sep" aria-hidden="true">›</span>'
-            : "";
-          const cls = i === crumbs.length - 1
-            ? "admin-dash-breadcrumb-item is-current"
-            : "admin-dash-breadcrumb-item";
-          return sep + '<span class="' + cls + '">' + escapeHtml(c) + "</span>";
-        })
-        .join("");
+      window.AdminBreadcrumb?.render(shell, rawName, route, activeTab);
     }
 
     // Mounts (or removes) the tab strip / system accordion in the topbar host.

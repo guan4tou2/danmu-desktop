@@ -20,7 +20,7 @@
   "use strict";
 
   const ROOT_ID = "poll-overlay-root";
-  const COLORS = ["#38bdf8", "#fbbf24", "#86efac", "#f87171", "#94a3b8", "#f1f5f9"];
+  const COLORS = ["a", "b", "c", "d", "e", "f"].map(key => `var(--poll-option-${key})`);
 
   let _autoDismissTimer = 0;
   let _countdownTimer = 0;
@@ -80,12 +80,12 @@
           <div class="poll-overlay-row-head">
             <span class="key" style="color:${c}">${_esc(o.key)}</span>
             <span class="lbl">${_esc(o.text || o.label || "")}</span>
-            ${isLeading ? `<span class="lead" style="color:${c};border-color:${c}88;background:${c}33;">領先</span>` : ""}
+            ${isLeading ? `<span class="lead" style="color:${c};border-color:color-mix(in srgb, ${c} 53.333333%, transparent);background:color-mix(in srgb, ${c} 20%, transparent);">領先</span>` : ""}
             <span class="pct" style="color:${c}">${pct}%</span>
             <span class="votes">${count} 票</span>
           </div>
           <div class="poll-overlay-row-bar">
-            <div class="poll-overlay-row-fill" style="width:${pct}%;background:linear-gradient(90deg, ${c}88, ${c});box-shadow:0 0 12px ${c}66;"></div>
+            <div class="poll-overlay-row-fill" style="width:${pct}%;background:linear-gradient(90deg, color-mix(in srgb, ${c} 53.333333%, transparent), ${c});box-shadow:0 0 12px color-mix(in srgb, ${c} 40%, transparent);"></div>
           </div>
         </div>`;
     }).join("");
@@ -165,10 +165,10 @@
     });
     if (!winner) winner = { key: "—", label: "—", count: 0 };
     const winnerPct = total > 0 ? Math.round((winner.count / total) * 100) : 0;
-    const winnerColor = "#22d3ee";
+    const winnerColor = "var(--poll-winner)";
 
     const confettiHtml = (function () {
-      const palette = ["#38bdf8", "#fbbf24", "#86efac", "#f87171", "#94a3b8", "#f1f5f9"];
+      const palette = COLORS;
       let out = "";
       for (let i = 0; i < 24; i++) {
         const c = palette[i % palette.length];

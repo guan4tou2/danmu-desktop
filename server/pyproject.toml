@@ -17,7 +17,7 @@ dependencies = [
     "python-magic>=0.4.27",
     "setuptools",
     "websockets",
-    "werkzeug",
+    "werkzeug>=3.1.9",
     "wsproto",
     "zope-event",
     "zope-interface",
@@ -29,7 +29,7 @@ dependencies = [
     "psutil>=5.9.0",
     "qrcode>=8.0",
     "fonttools>=4.63.0",
-    "urllib3>=2.7.0",
+    "urllib3>=2.8.0",
     "flask-sock>=0.7.0",
 ]
 

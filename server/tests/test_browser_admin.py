@@ -757,6 +757,78 @@ def _open_backup_page(page):
     page.wait_for_selector("#bk2-clear-history", state="visible", timeout=8000)
 
 
+def test_confirm_keyboard_respects_cancel_and_restores_focus(admin_page):
+    """Enter on Cancel must not confirm a destructive action."""
+    calls = []
+    admin_page.on(
+        "request",
+        lambda r: calls.append(r.url) if "/admin/history/clear" in r.url else None,
+    )
+    _open_backup_page(admin_page)
+    opener = admin_page.locator("#bk2-clear-history")
+    opener.click()
+    cancel = admin_page.locator(".admin-hud-modal__btn--cancel")
+    cancel.wait_for(state="visible")
+    cancel.focus()
+    admin_page.keyboard.press("Enter")
+    expect(admin_page.locator("#admin-hud-modal-root")).to_have_count(0)
+    expect(opener).to_be_focused()
+    assert calls == []
+
+
+def test_firetoken_page_finishes_loading_token_state(admin_page):
+    """The visible-only poll must fetch the token as well as its statistics."""
+    with admin_page.expect_response(
+        lambda r: r.url.endswith("/admin/integrations/fire-token")
+    ) as response:
+        admin_page.evaluate('location.hash = "#/firetoken"')
+    assert response.value.ok
+    status = admin_page.locator("[data-ft-status]")
+    expect(status).not_to_have_text("載入中")
+    token = response.value.json()
+    key = (
+        ("firetokenStatusHealthy" if token["enabled"] else "firetokenStatusDisabled")
+        if token["has_token"]
+        else "firetokenStatusUnset"
+    )
+    expect(status).to_have_text(admin_page.evaluate("key => ServerI18n.t(key)", key))
+
+
+def test_backup_restore_controls_fit_mobile_without_squeezing_labels(admin_page):
+    admin_page.set_viewport_size({"width": 375, "height": 812})
+    _open_backup_page(admin_page)
+    row = admin_page.locator("#bk2-pack-upload").locator("..").locator("..")
+    label = row.locator(".lbl")
+    assert label.bounding_box()["width"] > 250
+    for selector in ("#bk2-pack-upload", "#bk2-pack-dryrun", "#bk2-pack-apply"):
+        box = admin_page.locator(selector).bounding_box()
+        assert box["x"] >= 0 and box["x"] + box["width"] <= 375
+
+
+def test_confirm_keyboard_keeps_textarea_newlines_and_traps_focus(admin_page):
+    admin_page.evaluate("""() => {
+          const body = document.createElement('textarea');
+          body.setAttribute('aria-label', 'Keyboard regression');
+          window._keyboardConfirm = null;
+          HudConfirm.open({body}).then(result => window._keyboardConfirm = result);
+        }""")
+    textarea = admin_page.get_by_role("textbox", name="Keyboard regression")
+    textarea.fill("first")
+    textarea.press("End")
+    textarea.press("Enter")
+    textarea.press("a")
+    expect(textarea).to_have_value("first\na")
+    assert admin_page.evaluate("window._keyboardConfirm") is None
+    confirm = admin_page.locator(".admin-hud-modal__btn--confirm")
+    confirm.focus()
+    admin_page.keyboard.press("Tab")
+    expect(textarea).to_be_focused()
+    admin_page.keyboard.press("Shift+Tab")
+    expect(confirm).to_be_focused()
+    admin_page.keyboard.press("Escape")
+    assert admin_page.evaluate("window._keyboardConfirm") is False
+
+
 def test_clear_history_shows_hud_panel_and_cancel_sends_nothing(admin_page):
     """清除彈幕歷史：出現 HUD 面板；取消不送請求；確認才送。"""
     dialogs = _dialog_recorder(admin_page)

@@ -12,7 +12,8 @@
     "build:i18n": "node scripts/build-i18n.js",
     "build": "npm run build:i18n && npm run build:css && npm run build:viewer-css && npm run build:admin-js",
     "build:viewer-css": "node scripts/build-viewer-css.mjs",
-    "build:admin-js": "node scripts/build-admin-bundle.mjs"
+    "build:admin-js": "node scripts/build-admin-bundle.mjs",
+    "test:js": "jest --config jest.config.cjs"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +22,19 @@
   "devDependencies": {
     "@tailwindcss/cli": "4.3.2",
     "esbuild": "^0.28.2",
-    "tailwindcss": "4.3.2"
+    "tailwindcss": "4.3.2",
+    "jest": "^30.5.1",
+    "jest-environment-jsdom": "^30.5.1"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "overrides": {
+    "@parcel/watcher": "^2.6.0",
+    "source-map-js": "^1.2.2",
+    "brace-expansion@1": "^1.1.21",
+    "brace-expansion@2": "^2.1.7",
+    "brace-expansion@5": "^5.0.12",
+    "js-yaml": "^4.3.2"
   }
 }

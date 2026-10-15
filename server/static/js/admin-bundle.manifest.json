@@ -9,6 +9,7 @@
   "files": [
     "toast.js",
     "admin-utils.js",
+    "admin-breadcrumb.js",
     "admin-tabs.js",
     "admin-quick-action.js",
     "admin-hud-modal.js",

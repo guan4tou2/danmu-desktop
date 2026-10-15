@@ -68,12 +68,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install dependencies
         run: |
           cd danmu-desktop
-          npm install
+          npm ci
 
       - name: Build Electron App
         shell: bash
@@ -83,14 +83,15 @@ jobs:
           APP_VERSION: ${{ needs.check_version_change.outputs.version }}
         run: |
           cd danmu-desktop
-          npm run build:webpack
+          npm run build
 
           if [ "$RUNNER_OS" == "Linux" ]; then
-            npx electron-builder --linux --config.extraMetadata.version=$APP_VERSION
+            npx electron-builder --linux --publish never --config.extraMetadata.version=$APP_VERSION
           elif [ "$RUNNER_OS" == "Windows" ]; then
-            npx electron-builder --win --config.extraMetadata.version=$APP_VERSION
+            npx electron-builder --win --publish never --config.extraMetadata.version=$APP_VERSION
           elif [ "$RUNNER_OS" == "macOS" ]; then
-            npx electron-builder --mac --arm64 --config.extraMetadata.version=$APP_VERSION
+            npx electron-builder --mac --arm64 --publish never --config.extraMetadata.version=$APP_VERSION
+            codesign --verify --deep --strict "pack/mac-arm64/Danmu Desktop.app"
           fi
 
           echo "Listing packaged files in danmu-desktop/pack:"
@@ -128,6 +129,11 @@ jobs:
             - Windows: portable x64 `.exe`
             - macOS: arm64 `.zip`
             - Linux: AppImage and `.deb`
+
+            macOS: download the arm64 ZIP, quit Danmu Desktop, extract the ZIP,
+            and replace the previous app. Settings remain in your user profile.
+            Ad-hoc Mac builds require this manual update; restarting the old
+            app does not reliably install a downloaded update.
 
             macOS builds are ad-hoc signed and not notarized. On first launch,
             if Gatekeeper blocks the app, remove quarantine after extracting:

@@ -527,7 +527,7 @@ def test_color_swatches_have_nonempty_aria_labels(viewer_page):
     """
     page, live_url = viewer_page
     page.goto(f"{live_url}/")
-    page.wait_for_selector(".viewer-swatch-preset", timeout=5000)
+    page.wait_for_selector(".viewer-swatch-preset", state="attached", timeout=5000)
     _open_style_sheet(page)
 
     swatches = page.locator(".viewer-swatch-preset")
@@ -551,7 +551,7 @@ def test_color_swatches_aria_labels_follow_language_switch(viewer_page):
     """切到英文語系後，色票 aria-label 應更新為英文人話色名"""
     page, live_url = viewer_page
     page.goto(f"{live_url}/")
-    page.wait_for_selector(".viewer-swatch-preset", timeout=5000)
+    page.wait_for_selector(".viewer-swatch-preset", state="attached", timeout=5000)
     _open_style_sheet(page)
 
     page.evaluate("() => window.ServerI18n && window.ServerI18n.setLanguage('en')")

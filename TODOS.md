@@ -2,19 +2,13 @@
 
 > 格式：依元件分組，每項標 `**Priority:**`（P0 最高 → P4），完成項移至底部 `## Completed` 並附版本。
 
-## Server — Admin 測試基建
-
-### server 端 JS 缺單元測試 harness（admin-hud-modal 等）
-**Priority:** P3
-`server/static/js/` 沒有 jest/jsdom 之類的單元測試環境，focus trap、breadcrumb
-等純前端邏輯只能靠 playwright browser test 間接覆蓋。評估是否為 server 靜態 JS
-建一個輕量 jest 環境（或決議維持 browser-test-only 並記錄為刻意取捨）。
-（出處：v5.4.0 /ship testing specialist。）
-（進度 2026-08-02：danmu-desktop/tests/admin-session-expiry.test.js 開了
-readFileSync+eval 載入 server 靜態 JS 的先例，含 jsdom location 鎖死的
-繞法——eval 前把 `location.reload()` 字串替換成測試樁並斷言命中。）
-
 ## Completed
+
+### Server JavaScript 單元測試環境 — done 2026-10-15（v5.4.1）
+獨立 Jest/jsdom harness、鎖定的 server/package-lock.json 與 CI test:js。
+13 案涵蓋 HudConfirm 取消／焦點循環／textarea Enter／堆疊與文字安全，
+以及 breadcrumb alias／分頁／翻譯。另以真實瀏覽器驗證鍵盤原生操作，
+修正 Enter 在「取消」或 textarea 上誤觸確認的缺陷。
 
 ### 磨光三項（P4）— done 2026-08-09
 ① F-108：效果庫 YAML 側欄 RELOAD/EDIT 初始 disabled、首次選卡解鎖

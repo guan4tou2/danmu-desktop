@@ -32,6 +32,8 @@
   "importSettings": "匯入設定",
   "updateAvailableShort": "可更新",
   "updateAvailableTitle": "有新版本可用",
+  "updateManualDownload": "下載新版",
+  "updateManualMac": "下載 Mac ZIP，結束程式後，以解壓縮的新版取代舊程式。原有設定會保留。",
   "updateReadyTitle": "Danmu Fire {v} 已準備好",
   "updateChecking": "正在檢查更新…",
   "updateCheckFailed": "檢查更新失敗",

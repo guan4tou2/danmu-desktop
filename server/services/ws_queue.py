@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # 2026-09-08：原本剝指紋的地方在 `api.py` 的 `data.pop("fingerprint")`，位置太早
 # ——admin 專用的 live_feed_buffer 吃的是同一個已經被 pop 過的 dict，於是訊息流
 # 每一列的「封鎖此人」按鈕（gate 在 `if (d.fingerprint)`）從來沒有渲染出來過。
-_OVERLAY_PRIVATE_FIELDS = ("fingerprint", "clientIp", "_delivery_status")
+_OVERLAY_PRIVATE_FIELDS = ("fingerprint", "clientIp", "_delivery_status", "_broadcast_queued_at")
 
 
 def enqueue_message(data: Dict[str, Any]) -> None:

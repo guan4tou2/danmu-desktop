@@ -96,7 +96,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
           cache-dependency-path: |
             danmu-desktop/package-lock.json
@@ -104,8 +104,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd danmu-desktop && npm install
-          cd ../server && npm install
+          cd danmu-desktop && npm ci
+          cd ../server && npm ci
 
       - name: Verify client i18n.js is up-to-date
         working-directory: danmu-desktop
@@ -171,6 +171,10 @@ jobs:
       - name: Check CSS token discipline (hex / px / rgba / spacing / theme-blind colour)
         run: node scripts/check-css-tokens.mjs
 
+      - name: Run server JavaScript unit tests
+        working-directory: server
+        run: npm run test:js -- --runInBand
+
       - name: Run Jest tests
         working-directory: danmu-desktop
         run: npx jest --testPathPatterns=tests/
@@ -183,7 +187,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
           cache-dependency-path: danmu-desktop/package-lock.json
 
@@ -212,7 +216,7 @@ jobs:
       - name: Install Node dependencies and build
         working-directory: danmu-desktop
         run: |
-          npm install
+          npm ci
           npm run build:webpack
 
       - name: Run Playwright e2e tests

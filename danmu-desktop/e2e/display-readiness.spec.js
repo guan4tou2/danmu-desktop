@@ -59,6 +59,10 @@ test("paused → queue → session start → render → reconnect, on desktop an
     const overlay = app.windows().find(p => p !== main);
     expect(overlay).toBeTruthy();
     overlay.on("pageerror", error => errors.push(error.message));
+    // The local paused banner can paint before the overlay's WS handshake.
+    // Viewer sending is gated until an actual display has registered.
+    await expect.poll(async () => (await (await fetch(`${SERVER}/overlay_status`)).json()).overlay_count,
+      { timeout: 15000 }).toBeGreaterThan(0);
 
     browser = await chromium.launch({ channel: "chrome" });
     const context = await browser.newContext({ viewport: { width: 375, height: 812 }, locale: "zh-TW" });

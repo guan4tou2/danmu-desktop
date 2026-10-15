@@ -672,7 +672,7 @@
   "lockoutRemaining": "残り時間",
   "lockoutReason": "ログイン失敗が多すぎます。",
   "lockoutContactAdmin": "管理者に連絡",
-  "broadcastStandbyQueued": "メッセージを保存しました。表示再開後に送信されます。",
+  "broadcastStandbyQueued": "メッセージは待機中です。表示再開時に送信され、24時間後に期限切れになります。",
   "navAccordionAbout": "About",
   "navAccordionApiTokens": "API トークン",
   "navAccordionBackup": "バックアップ",
@@ -2941,5 +2941,6 @@
   "deliveryStatus_shown": "旧記録・表示未確認",
   "deliveryStatus_blocked": "ブロック済み",
   "deliveryStatus_pinned": "固定済み",
-  "deliveryStatus_masked": "非表示"
+  "deliveryStatus_masked": "非表示",
+  "deliveryStatus_expired": "期限切れ（24時間経過）"
 }
