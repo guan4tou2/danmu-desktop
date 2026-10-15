@@ -13,6 +13,7 @@ from flask import current_app, session
 from flask.sessions import SecureCookieSessionInterface
 
 REMEMBER_SECONDS = 30 * 24 * 60 * 60
+_CREDENTIAL_CACHE_KEY = "danmu.admin_session.credential_version"
 
 
 def _credential_version():
@@ -22,9 +23,21 @@ def _credential_version():
     secret = current_app.secret_key
     if isinstance(secret, str):
         secret = secret.encode("utf-8")
-    return hmac.new(
-        secret, b"admin-session-v1:" + credential.encode("utf-8"), hashlib.sha256
-    ).hexdigest()
+    cache_key = (credential, secret)
+    cached = current_app.extensions.get(_CREDENTIAL_CACHE_KEY)
+    if cached is not None and cached[0] == cache_key:
+        return cached[1]
+
+    # Credential-derived cookie data must resist password guessing even for
+    # legacy plaintext environment credentials. Derive once per credential
+    # or secret change; authenticated requests reuse the app-local result.
+    # The domain and server secret make it deterministic across restarts
+    # without publishing a password-only digest in the signed session.
+    version = hashlib.pbkdf2_hmac(
+        "sha256", credential.encode("utf-8"), b"admin-session-v2:" + secret, 600_000
+    ).hex()
+    current_app.extensions[_CREDENTIAL_CACHE_KEY] = (cache_key, version)
+    return version
 
 
 def start_admin_session(*, remember=False):

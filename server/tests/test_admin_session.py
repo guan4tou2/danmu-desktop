@@ -175,3 +175,55 @@ def test_reauthentication_replaces_csrf_and_remember_setting(client):
     _login(client)
     with client.session_transaction() as stored:
         assert not stored.permanent
+
+
+def test_credential_derivation_is_cached_between_authenticated_requests(client, app, monkeypatch):
+    from unittest.mock import Mock
+
+    derive = Mock(wraps=admin_session.hashlib.pbkdf2_hmac)
+    monkeypatch.setattr(admin_session.hashlib, "pbkdf2_hmac", derive)
+    assert _login(client, remember=True).status_code == 200
+    assert client.get("/admin/ws-auth").status_code == 200
+    assert client.get("/admin/").status_code == 200
+    assert _login(client).status_code == 200
+    assert derive.call_count == 1
+    assert derive.call_args.args[0] == "sha256"
+    assert derive.call_args.args[3] == 600_000
+
+
+def test_credential_derivation_recomputes_when_password_or_server_secret_changes(app, monkeypatch):
+    from unittest.mock import Mock
+
+    derive = Mock(wraps=admin_session.hashlib.pbkdf2_hmac)
+    monkeypatch.setattr(admin_session.hashlib, "pbkdf2_hmac", derive)
+    original = admin_session._credential_version()
+    app.config["ADMIN_PASSWORD"] = "changed-isolated-password"
+    changed_password = admin_session._credential_version()
+    assert changed_password != original
+    assert admin_session._credential_version() == changed_password
+    app.secret_key = "changed-isolated-server-secret"
+    changed_secret = admin_session._credential_version()
+    assert changed_secret != changed_password
+    assert admin_session._credential_version() == changed_secret
+    assert derive.call_count == 3
+
+
+def test_same_credentials_and_secret_restore_remembered_cookie_after_app_recreation(client, app):
+    from server.app import create_app
+    from server.config import Config
+
+    assert _login(client, remember=True).status_code == 200
+    cookie = client.get_cookie(app.config["SESSION_COOKIE_NAME"])
+
+    class RecreatedConfig(Config):
+        TESTING = True
+        DANMU_HISTORY_PERSIST = False
+        SECRET_KEY = app.secret_key
+        ADMIN_PASSWORD = app.config["ADMIN_PASSWORD"]
+        ADMIN_PASSWORD_HASHED = app.config["ADMIN_PASSWORD_HASHED"]
+
+    recreated = create_app(RecreatedConfig)
+    restored = recreated.test_client()
+    restored.set_cookie(cookie.key, cookie.value)
+    assert restored.get("/admin/ws-auth").status_code == 200
+    assert b"logged_in: true" in restored.get("/admin/").data
