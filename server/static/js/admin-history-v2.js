@@ -119,7 +119,7 @@
   }
 
   function _csv(records) {
-    var headers = ["timestamp", "nickname", "text", "color", "size", "speed", "opacity", "isImage", "fontName", "clientIp", "fingerprint", "status"];
+    var headers = ["timestamp", "nickname", "text", "color", "size", "speed", "opacity", "isImage", "fontName", "clientIp", "fingerprint", "status", "delivery_reason"];
     var esc = function (v) {
       var s = v == null ? "" : String(v);
       return s.indexOf(",") >= 0 || s.indexOf('"') >= 0 || s.indexOf("\n") >= 0
@@ -143,6 +143,7 @@
         r.clientIp || "",
         r.fingerprint || "",
         status(r),
+        r.delivery_reason || "",
       ].map(esc).join(",");
     });
     return [headers.join(","), rows.join("\r\n")].filter(Boolean).join("\r\n");

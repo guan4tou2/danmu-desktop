@@ -703,6 +703,7 @@ function initOverlayWs(config) {
           // window.showdanmu synchronously before this module can receive
           // any WS message, but a broken bundle load shouldn't hard-drop
           // danmu without the diagnostic warnings below.
+          const messageSocket = ws;
           function processDanmuWhenReady(dataPayload, retries) {
             retries = retries || 0;
             if (retries > 30) {
@@ -711,7 +712,7 @@ function initOverlayWs(config) {
             }
             if (typeof window.showdanmu === "function") {
               console.log("[WebSocket] Calling window.showdanmu with:", dataPayload);
-              window.showdanmu(
+              const rendered = window.showdanmu(
                 dataPayload.text,
                 dataPayload.opacity,
                 "#" + dataPayload.color,
@@ -726,6 +727,12 @@ function initOverlayWs(config) {
                 dataPayload.nickname || null,
                 dataPayload.emojis || null
               );
+              Promise.resolve(rendered).then((confirmed) => {
+                if (confirmed === true && typeof dataPayload.message_id === "string" &&
+                    messageSocket === ws && messageSocket.readyState === WebSocket.OPEN) {
+                  messageSocket.send(JSON.stringify({ type: "render_ack", message_id: dataPayload.message_id }));
+                }
+              }).catch((error) => console.warn("[WebSocket] Render not confirmed:", error.message));
             } else {
               console.warn(
                 "[WebSocket] window.showdanmu not ready, retrying in 100ms... (attempt " + (retries + 1) + "/30)"
@@ -784,6 +791,7 @@ function initOverlayWs(config) {
 
           if (data.text != null) reportDiagnostics(true);
           processDanmuWhenReady({
+            message_id: data.message_id,
             text: data.text,
             opacity: data.opacity,
             color: data.color,

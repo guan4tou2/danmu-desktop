@@ -109,6 +109,20 @@ def test_set_state_persists_to_file():
     assert raw == {"require_token": True, "token": "abc12345xyz"}
 
 
+@pytest.mark.parametrize("require_token", [False, True])
+def test_saved_state_survives_restart_and_changed_env(monkeypatch, require_token):
+    """An upgrade/restart must not silently change an existing auth setting."""
+    saved = ws_auth.set_state(require_token=require_token, token="saved-desktop-token")
+    monkeypatch.setenv("WS_REQUIRE_TOKEN", str(not require_token).lower())
+    monkeypatch.setenv("WS_AUTH_TOKEN", "changed-env-token")
+    monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", not require_token)
+    monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "changed-env-token")
+
+    ws_auth._reset_for_tests()
+
+    assert ws_auth.get_state() == saved
+
+
 def test_set_state_rejects_require_without_token():
     with pytest.raises(ValueError):
         ws_auth.set_state(require_token=True, token="")

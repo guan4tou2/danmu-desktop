@@ -12017,6 +12017,11 @@ body.is-light .admin-login-wordmark.is-on-light,
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.admin-search-row__delivery {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .admin-search-hit {
   background: var(--glow-primary);
   color: inherit;
@@ -14726,6 +14731,43 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 
 .admin-security-page { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.admin-security-ws-migration {
+  color: var(--admin-text-dim);
+  font-size: var(--text-footnote);
+  line-height: 1.55;
+}
+
+.admin-security-ws-migration summary {
+  color: var(--admin-text);
+  cursor: pointer;
+}
+
+.admin-security-ws-migration ol {
+  list-style: decimal;
+  padding-left: var(--space-5);
+  margin-top: var(--space-2);
+}
+
+.admin-security-ws-migration li + li { margin-top: var(--space-1); }
+
+@media (max-width: 720px) {
+  .admin-security-page .admin-ui-group-row {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-2);
+  }
+  .admin-security-page .admin-ui-group-row .lbl { flex-basis: 100%; }
+  .admin-security-page .admin-ui-group-row .val {
+    flex-wrap: wrap;
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .admin-security-ws-token-row > input { flex-basis: 100%; min-width: 0; }
+}
 
 
 .admin-security-form {

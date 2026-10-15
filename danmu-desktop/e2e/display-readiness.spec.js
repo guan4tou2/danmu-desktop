@@ -93,9 +93,10 @@ test("paused → queue → session start → render → reconnect, on desktop an
     await expect(overlay.locator("h1.danmu").filter({ hasText: "readiness queued message" })).toBeVisible();
     await expect(viewer.locator("[data-viewer-display-wait]")).toBeHidden();
     await expect(main.locator('[data-diag="last"]')).not.toContainText(/尚未收到|No messages yet/);
-    const history = await (await fetch(`${SERVER}/admin/history?hours=24&limit=10`, { headers: { Cookie: cookie } })).json();
-    const record = history.records.find(r => r.text === "readiness queued message");
-    expect(record.status).toBe("forwarded");
+    await expect.poll(async () => {
+      const history = await (await fetch(`${SERVER}/admin/history?hours=24&limit=10`, { headers: { Cookie: cookie } })).json();
+      return history.records.find(r => r.text === "readiness queued message")?.status;
+    }, { timeout: 10000 }).toBe("rendered");
     const adminPage = await context.newPage();
     adminPage.setDefaultTimeout(10000);
     adminPage.on("pageerror", error => errors.push(error.message));
@@ -106,7 +107,7 @@ test("paused → queue → session start → render → reconnect, on desktop an
     await adminPage.goto(`${SERVER}/admin/#/search`);
     await adminPage.locator('[data-search-scope="all"]').click();
     await adminPage.locator("#admin-search-input").fill("readiness queued message");
-    await expect(adminPage.locator(".admin-search-row__nick").first()).toContainText(/已送往顯示端|Forwarded to display/);
+    await expect(adminPage.locator(".admin-search-row__nick").first()).toContainText(/顯示端已回報呈現|Display reported rendering/);
     expect(await adminPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
     await admin("/admin/broadcast/toggle", { mode: "standby" });

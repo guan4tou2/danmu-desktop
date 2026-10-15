@@ -6,7 +6,7 @@ from contextlib import nullcontext
 from flask import current_app, has_app_context
 
 from ..utils import sanitize_log_string
-from . import broadcast, live_feed_buffer, onscreen_limiter, telemetry, ws_queue
+from . import broadcast, delivery_tracking, live_feed_buffer, onscreen_limiter, telemetry, ws_queue
 
 logger = logging.getLogger(__name__)
 
@@ -68,16 +68,20 @@ def _raw_forward(data) -> bool:
         broadcast.mark_pending_expired(data)
         return False
     try:
+        delivery_tracking.begin(data)
         ws_queue.enqueue_message(data)
-        if isinstance(data, dict) and data.get("text") is not None and data.get("message_id"):
-            data["_delivery_status"] = "forwarded"
         telemetry.record_message()
         if isinstance(data, dict) and data.get("text") is not None:
             from .history import danmu_history
 
             if danmu_history and data.get("message_id"):
                 try:
-                    danmu_history.update_status(data["message_id"], "forwarded")
+                    state = delivery_tracking.snapshot(data["message_id"])
+                    danmu_history.update_status(
+                        data["message_id"],
+                        state["status"] if state else "forwarded",
+                        reason=state["reason"] if state else "",
+                    )
                 except Exception:
                     logger.exception("Could not update danmu delivery history")
             try:
@@ -87,6 +91,8 @@ def _raw_forward(data) -> bool:
         _broadcast_live_feed(data)
         return True
     except Exception as exc:
+        if isinstance(data, dict):
+            delivery_tracking.cancel(data.get("message_id"))
         logger.error(
             "Error forwarding message to WS server: %s",
             sanitize_log_string(str(exc)),

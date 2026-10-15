@@ -189,17 +189,32 @@ custom self-signed HTTPS port.
 
    - **Preferred: Admin UI.** Log in at `https://<host>/admin` or
      `https://<host>:<HTTPS_PORT>/admin` when using a custom self-signed port
-     → **WebSocket token auth** section → flip the toggle on, click
-     **Regenerate**, click **Copy**. State persists to
+     → **Security → Connection password**. For an existing deployment with
+     authentication off, keep it off while preparing clients. If no password
+     is configured, click **Regenerate**; this persists a token without
+     enabling authentication. Click **Copy**, paste it into every desktop
+     app's **WS Token** field and save the desktop settings. Only then enable
+     **Require a password to connect a display** and click **Save**. State persists to
      `server/runtime/ws_auth.json` (bind-mounted, survives image upgrade).
      Changes apply to the next WS connection — no container restart, and
-     existing overlay connections stay up.
+     existing overlay connections stay up. At a suitable time, reconnect each
+     desktop and verify a test danmu. If it cannot authenticate, first check
+     that the desktop password matches the saved server password. Rotating a
+     token also preserves the authentication toggle and requires updating
+     each desktop for its next connection. Keep tokens out of public URLs,
+     screenshots, logs, and shared configuration exports.
    - **Fresh installs** boot with `require_token=true` + a random token
      already generated, so `/ws` is not publicly open-access by
      default. Go to the admin UI to copy it into the Electron client.
-   - **Opting out** (token required only via env): set `WS_REQUIRE_TOKEN=false`
+   - **Opting out on first boot:** set `WS_REQUIRE_TOKEN=false`
      in `.env` before first boot. Explicit env values are respected and
      never silently flipped on by the secure-by-default seeding.
+   - **Existing deployments:** once `server/runtime/ws_auth.json` exists,
+     that saved state is authoritative. Updates and restarts do not enable
+     authentication automatically; changing the environment variables does
+     not override it. Manage the setting in Admin → Security. If authentication
+     remains off, anyone who can reach `/ws` can connect a display and receive
+     danmu; this does not grant admin access.
 
 4. In the Danmu Fire app, enter the server host, then paste the admin-issued
    token into the **WS Token** field. The first connection registers the host
@@ -357,10 +372,12 @@ Before exposing to the internet:
 - [ ] `SESSION_COOKIE_SECURE=true` — required when serving over HTTPS
 - [ ] `TRUSTED_HOSTS` — set to your domain/IP, not just `localhost`
 - [ ] `REDIS_PASSWORD` — change from default if using Redis
-- [ ] **WS token auth on `/ws`** — admin UI → **WebSocket token auth**
-  → toggle on + copy the generated token into the Electron client.
-  Fresh installs are secure-by-default since v4.8.0; only worry about this
-  if you're upgrading from ≤v4.7 with `WS_REQUIRE_TOKEN=false`.
+- [ ] **WS token auth on `/ws`** — Admin → **Security → Connection password**.
+  For a disabled existing deployment, copy the token into every desktop's
+  **WS Token** setting first, then enable authentication and save in Admin.
+  Reconnect each desktop and verify a test danmu. Fresh installs without
+  explicit WS environment settings are secure by default since v4.8.0;
+  verify the persisted runtime setting on every existing deployment.
 
 Run `./setup.sh check` to validate your `.env` against these rules.
 

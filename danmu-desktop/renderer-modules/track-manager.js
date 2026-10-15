@@ -2,6 +2,7 @@
 const { sanitizeLog } = require("../shared/utils");
 const DanmuEffects = require("./danmu-effects");
 const store = require("./store");
+const { confirmRendered, waitForFont } = require("./render-confirmation");
 
 let _resizeHandler = null;
 
@@ -191,7 +192,7 @@ function initTrackManager() {
       danmu.style.color = "red";
       wrapper.appendChild(danmu);
       if (parentElement) parentElement.appendChild(wrapper);
-      return;
+      return Promise.resolve(false);
     } else {
       danmu = document.createElement("h1");
       danmu.className = "danmu";
@@ -318,7 +319,7 @@ function initTrackManager() {
             styleSheet.type = "text/css";
             styleSheet.innerText = `@font-face { font-family: "${safeFontName}"; src: url(${JSON.stringify(fontInfo.url)}); }`;
             document.head.appendChild(styleSheet);
-            await document.fonts.load(`1em "${effectiveFontName}"`);
+            await waitForFont(document.fonts.load(`1em "${effectiveFontName}"`));
             console.log(`[showdanmu] Font loaded: ${effectiveFontName}`);
           } catch (e) {
             console.error(
@@ -374,6 +375,7 @@ function initTrackManager() {
       }
 
       // ── 各佈局獨立處理定位與動畫 ──
+      let animation;
       try {
         if (layout === "top_fixed" || layout === "bottom_fixed") {
           // 固定彈幕：置中，從上/下堆疊，獨立碰撞檢測（基於實際顯示時間）
@@ -429,14 +431,14 @@ function initTrackManager() {
             wrapper.style.bottom = `${distFromViewportBottom}px`;
           }
 
-          wrapper.animate(
+          animation = wrapper.animate(
             [
               { opacity: String(userOpacity) },
               { opacity: String(userOpacity), offset: 0.8 },
               { opacity: "0" },
             ],
             { duration: fixedDuration, easing: "ease-out" }
-          ).onfinish = () => { wrapper.remove(); };
+          );
 
         } else if (layout === "float") {
           // 浮動彈幕：隨機位置（顯示區域內），漸入漸出 + 縮放
@@ -445,7 +447,7 @@ function initTrackManager() {
           wrapper.style.left = `${Math.random() * 60 + 20}%`;
           wrapper.style.top = `${areaTopPx + Math.random() * Math.max(0, areaHeightPx - danmuTotalHeight)}px`;
           const floatDuration = (layoutConfig && layoutConfig.duration) || 4000;
-          wrapper.animate(
+          animation = wrapper.animate(
             [
               { opacity: "0", transform: "scale(0.8)" },
               { opacity: String(userOpacity), transform: "scale(1)", offset: 0.15 },
@@ -453,19 +455,19 @@ function initTrackManager() {
               { opacity: "0", transform: "scale(0.8)" },
             ],
             { duration: floatDuration, easing: "ease-in-out" }
-          ).onfinish = () => { wrapper.remove(); };
+          );
 
         } else if (layout === "rise") {
           // 上升彈幕：隨機水平位置，從底部升到頂部
           wrapper.style.left = `${Math.random() * 60 + 20}%`;
           wrapper.style.top = "0px";
-          wrapper.animate(
+          animation = wrapper.animate(
             [
               { transform: "translateY(100vh)", opacity: String(userOpacity) },
               { transform: "translateY(-100%)", opacity: String(userOpacity) },
             ],
             { duration, easing: "linear" }
-          ).onfinish = () => { wrapper.remove(); };
+          );
 
         } else {
           // 預設 scroll（右至左滾動）
@@ -473,21 +475,24 @@ function initTrackManager() {
             displayArea, danmuTotalHeight, Width, speed
           );
           wrapper.style.top = `${trackPosition.top}px`;
-          wrapper.animate(
+          animation = wrapper.animate(
             [
               { transform: "translateX(100vw)" },
               { transform: `translateX(-${Width}px)` },
             ],
             { duration, easing: "linear" }
-          ).onfinish = () => { wrapper.remove(); };
+          );
         }
       } catch (e) {
         console.error("[showdanmu] Animation error:", sanitizeLog(e.message));
         if (wrapper.parentElement) wrapper.remove();
+        return false;
       }
+      animation.onfinish = () => { wrapper.remove(); };
+      return confirmRendered(wrapper, animation);
     };
 
-    applyFontAndAnimate().catch((e) => {
+    return applyFontAndAnimate().catch((e) => {
       console.error(
         "[showdanmu] Error in applyFontAndAnimate:",
         sanitizeLog(e.message)
@@ -496,6 +501,7 @@ function initTrackManager() {
         danmu.style.fontFamily = "NotoSansTC";
         parentElement.appendChild(wrapper);
       }
+      return false;
     });
   };
 
