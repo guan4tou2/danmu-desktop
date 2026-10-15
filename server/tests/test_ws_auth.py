@@ -198,8 +198,8 @@ def test_missing_keys_recovers_by_reseeding(monkeypatch):
 
 @pytest.fixture()
 def logged_client(client):
+    client.post("/login", data={"password": "test"})
     with client.session_transaction() as sess:
-        sess["logged_in"] = True
         sess["csrf_token"] = "test-csrf"
     return client
 

@@ -280,6 +280,7 @@
         window.showToast && showToast(ServerI18n.t("security2ToastPasswordChanged"), true);
         document.getElementById("sec2-pw-form").reset();
         renderStrength("");
+        if (data.reauthenticate) window.AdminSessionExpired?.open();
       } else {
         window.showToast && showToast(data.error || ServerI18n.t("security2ToastChangeFailed"), false);
       }

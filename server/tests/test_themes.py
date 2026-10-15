@@ -241,8 +241,7 @@ class TestThemesAdminRoutes:
         assert rv.status_code == 401
 
     def test_get_themes_authorized(self, client):
-        with client.session_transaction() as sess:
-            sess["logged_in"] = True
+        client.post("/login", data={"password": "test"})
         rv = client.get("/admin/themes")
         assert rv.status_code == 200
         data = rv.get_json()
@@ -258,8 +257,8 @@ class TestThemesAdminRoutes:
         assert rv.status_code == 403
 
     def test_set_active_theme_authorized(self, client):
+        client.post("/login", data={"password": "test"})
         with client.session_transaction() as sess:
-            sess["logged_in"] = True
             sess["csrf_token"] = "test-csrf"
         rv = client.post(
             "/admin/themes/active",
@@ -271,8 +270,8 @@ class TestThemesAdminRoutes:
         assert data["active"] == "neon"
 
     def test_set_active_theme_missing_name(self, client):
+        client.post("/login", data={"password": "test"})
         with client.session_transaction() as sess:
-            sess["logged_in"] = True
             sess["csrf_token"] = "test-csrf"
         rv = client.post(
             "/admin/themes/active",
@@ -282,8 +281,8 @@ class TestThemesAdminRoutes:
         assert rv.status_code == 400
 
     def test_set_active_theme_not_found(self, client):
+        client.post("/login", data={"password": "test"})
         with client.session_transaction() as sess:
-            sess["logged_in"] = True
             sess["csrf_token"] = "test-csrf"
         rv = client.post(
             "/admin/themes/active",
@@ -293,8 +292,8 @@ class TestThemesAdminRoutes:
         assert rv.status_code == 404
 
     def test_reload_themes(self, client):
+        client.post("/login", data={"password": "test"})
         with client.session_transaction() as sess:
-            sess["logged_in"] = True
             sess["csrf_token"] = "test-csrf"
         rv = client.post(
             "/admin/themes/reload",
@@ -321,8 +320,8 @@ class TestThemeOverrides:
 
     @staticmethod
     def _auth(client):
+        client.post("/login", data={"password": "test"})
         with client.session_transaction() as sess:
-            sess["logged_in"] = True
             sess["csrf_token"] = "test-csrf"
         return {"X-CSRF-Token": "test-csrf"}
 
@@ -382,8 +381,8 @@ class TestUserThemes:
 
     @staticmethod
     def _auth(client):
+        client.post("/login", data={"password": "test"})
         with client.session_transaction() as sess:
-            sess["logged_in"] = True
             sess["csrf_token"] = "test-csrf"
         return {"X-CSRF-Token": "test-csrf"}
 

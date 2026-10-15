@@ -399,7 +399,7 @@ def test_session_expired_is_a_dialog_not_a_redirect(zh):
     寫的：台上看到「登入過期」的第一個念頭是「大螢幕是不是掛了」。
     """
     assert zh["sxTitle"] == "登入已過期"
-    assert "8 小時" in zh["sxBody"]
+    assert "8 小時" not in zh["sxBody"], "不得宣稱後端沒有實作的閒置期限"
     assert "大螢幕與觀眾不受影響" in zh["sxBody"]
     assert zh["sxSubmit"] == "重新登入"
 

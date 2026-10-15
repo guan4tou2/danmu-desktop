@@ -191,8 +191,8 @@ Designers should show these controls on the admin UI but **never invent new ones
 
 | Feature | Route / module | Config |
 |---|---|---|
-| Login | `POST /login`, rate-limited 5/5min | `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASHED` or `.admin_password.hash` |
-| Change password | `POST /admin/change_password` | Writes bcrypt to `.admin_password.hash` |
+| Login | `POST /login`, rate-limited 5/5min | Runtime password hash takes priority over `ADMIN_PASSWORD_HASHED` / `ADMIN_PASSWORD`; optional 30-day remembered session |
+| Change password | `POST /admin/change_password` | Atomically writes bcrypt to `runtime/admin_password.hash` and revokes existing logins |
 | CSRF | Token in session, `<meta name="csrf-token">`, `X-CSRF-Token` header | `SESSION_COOKIE_SAMESITE=Strict` |
 | Rate-limit toggles (UI) | `#/moderation/ratelimit`, `POST /admin/ratelimit/apply` | Three tiers: fire / admin / api; in-memory or Redis; live-apply without restart |
 | WebSocket auth | `#/security`, `/admin/ws-auth[/rotate]` | Bearer token stored in `runtime/ws_auth.json` |
@@ -391,7 +391,7 @@ Where state lives. Useful when designing sections that imply "save" / "restore" 
 | Uploaded fonts | `server/runtime/fonts/*.ttf\|otf\|woff2` | Persistent |
 | Sound rules | `server/static/sounds/sound_rules.json` | Persistent |
 | Plugin state | `server/plugins_state.json` | Persistent |
-| Admin password hash | `server/.admin_password.hash` (chmod 0o600) | Persistent |
+| Admin password hash | `server/runtime/admin_password.hash` (chmod 0o600; migrates legacy `server/.admin_password.hash`) | Persistent |
 | Themes | `server/themes/*.yaml` | Read-only + hot-reload |
 | Effects | `server/effects/*.dme` | Read-write + hot-reload |
 | History | in-memory, 10K cap, 24h cleanup | Volatile |

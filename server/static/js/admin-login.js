@@ -65,6 +65,11 @@
                         data-i18n="adminLoginReveal">${ServerI18n.t("adminLoginReveal")}</button>
               </div>
             </div>
+            <label class="admin-login-remember" for="admin-login-remember">
+              <input type="checkbox" id="admin-login-remember" name="remember" value="1" />
+              <span data-i18n="adminLoginRemember">${ServerI18n.t("adminLoginRemember")}</span>
+            </label>
+            <p class="admin-login-remember-note" data-i18n="adminLoginRememberNote">${ServerI18n.t("adminLoginRememberNote")}</p>
             <div class="admin-login-attempts" id="loginAttemptsHint" hidden></div>
             <button class="admin-login-submit" type="submit" data-i18n="adminLoginSignIn">${ServerI18n.t("adminLoginSignIn")}</button>
           </form>
@@ -120,6 +125,7 @@
       if (!pwInput) return;
       const body = new URLSearchParams();
       body.set("password", pwInput.value);
+      if (document.getElementById("admin-login-remember")?.checked) body.set("remember", "1");
       try {
         // Probe /login first so we can trap 429 before the browser navigates.
         // On success/failure the server 302s — fetch with redirect:"manual"

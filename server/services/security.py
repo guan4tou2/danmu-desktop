@@ -608,6 +608,9 @@ def verify_password(password: str, hashed: str) -> bool:
 
 
 def init_security(app):
+    from .admin_session import init_admin_sessions
+
+    init_admin_sessions(app)
     backend = app.config.get("RATE_LIMIT_BACKEND", "memory").lower()
     if backend == "redis":
         url = app.config.get("REDIS_URL")

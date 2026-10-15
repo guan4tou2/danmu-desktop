@@ -11650,6 +11650,28 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-login-chiprow { margin-top: 0; }
 
+.admin-login-remember {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  font-size: var(--text-footnote);
+  color: var(--admin-text);
+  cursor: pointer;
+}
+.admin-login-remember input {
+  flex-shrink: 0;
+  width: var(--space-4);
+  height: var(--space-4);
+  accent-color: var(--color-accent);
+}
+.admin-login-remember-note {
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: 1.6;
+  color: var(--admin-text-dim);
+}
+
 /* 密碼錯誤時欄位轉紅框（設計稿 06 · L2）—— 錯誤要指向出錯的地方，
    不能只在下面丟一行紅字。 */
 .admin-login-input.is-error {
@@ -11813,7 +11835,7 @@ body.is-light .admin-login-wordmark.is-on-light,
    「大螢幕與觀眾不受影響」——主持人在台上看到「登入過期」的第一個念頭
    是「大螢幕是不是掛了」，這句話直接把恐慌擋掉。 */
 .admin-sx {
-  position: fixed; inset: 0; z-index: 9400;
+  position: fixed; inset: 0; z-index: 10000;
   display: flex; align-items: center; justify-content: center;
   padding: var(--space-4);
   font-family: var(--font-sans);

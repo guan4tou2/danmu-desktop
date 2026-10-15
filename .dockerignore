@@ -25,6 +25,9 @@ wiki/
 .env
 .env.*
 !.env.example
+# Admin credentials are runtime state, never image build input.
+server/.admin_password.hash
+server/runtime/admin_password.hash
 .DS_Store
 .vscode/
 .idea/

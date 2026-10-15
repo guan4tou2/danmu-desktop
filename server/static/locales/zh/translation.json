@@ -2670,7 +2670,7 @@
   "helpDrawerModerationTip3": "發送上限：預設每人每分鐘 6 則。大型活動（>200 人）建議 3；小班可放到 10。",
   "helpDrawerModerationFieldTip": "控制台訊息流裡按 ⋯ → 封鎖，比來這頁快。⌘K 輸入「封鎖」也可以。",
   "sxTitle": "登入已過期",
-  "sxBody": "閒置超過 8 小時。大螢幕與觀眾不受影響，重新輸入密碼即可回到剛才的頁面。",
+  "sxBody": "請重新登入。大螢幕與觀眾不受影響，重新輸入密碼即可回到剛才的頁面。",
   "sxPasswordLabel": "管理密碼",
   "sxSubmit": "重新登入",
   "sxToastBack": "已重新登入",
@@ -2960,5 +2960,7 @@
   "deliveryStatus_blocked": "已阻擋",
   "deliveryStatus_pinned": "已置頂",
   "deliveryStatus_masked": "已遮蔽",
-  "deliveryStatus_expired": "已過期（超過 24 小時）"
+  "deliveryStatus_expired": "已過期（超過 24 小時）",
+  "adminLoginRemember": "在這台裝置保持登入 30 天",
+  "adminLoginRememberNote": "只在自己的裝置勾選；共用裝置請保持未勾選。"
 }
