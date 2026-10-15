@@ -208,14 +208,44 @@ class DanmuHistory:
             self._records.append(record)
         # 落地在鎖外做：磁碟 I/O 不該擋住其他送出中的彈幕。
         self._append_to_disk(record)
+        # A very fast render receipt may precede /fire's initial add().
+        # Reconcile only after publishing the record, so a concurrent receipt
+        # either finds it itself or is included by this snapshot.
+        from . import delivery_tracking
+
+        delivery = delivery_tracking.snapshot(record.get("message_id"))
+        if delivery:
+            self.update_status(record["message_id"], delivery["status"], reason=delivery["reason"])
+            delivery_tracking.detach_payload(record["message_id"])
         # 定期清理舊記錄（在鎖外呼叫，避免 deadlock）
         self._maybe_cleanup()
 
-    def update_status(self, message_id: str, status: str) -> None:
+    def update_status(self, message_id: str, status: str, *, reason: Optional[str] = None) -> None:
         with self._lock:
             for record in reversed(self._records):
                 if record.get("message_id") == message_id:
+                    # Rendered/unknown are terminal for one transmission.
+                    if (
+                        record.get("status") in ("rendered", "unconfirmed")
+                        and status != record["status"]
+                    ):
+                        return
+                    reason = (
+                        reason
+                        if reason is not None
+                        else (
+                            record.get("delivery_reason", "")
+                            if record.get("status") == status
+                            else ""
+                        )
+                    )
+                    if (
+                        record.get("status") == status
+                        and record.get("delivery_reason", "") == reason
+                    ):
+                        return
                     record["status"] = status
+                    record["delivery_reason"] = reason
                     record["delivery_updated_at"] = datetime.now(timezone.utc).isoformat()
                     updated = dict(record)
                     break
@@ -446,3 +476,9 @@ def init_history(config=None):
         persist_ip=_get("DANMU_HISTORY_PERSIST_IP"),
         max_file_bytes=_get("DANMU_HISTORY_MAX_FILE_BYTES"),
     )
+    from . import delivery_tracking
+
+    delivery_tracking.reset()
+    for record in danmu_history.get_records(limit=_get("DANMU_HISTORY_MAX_RECORDS")):
+        if record.get("status") == "forwarded":
+            danmu_history.update_status(record.get("message_id"), "unconfirmed", reason="restart")

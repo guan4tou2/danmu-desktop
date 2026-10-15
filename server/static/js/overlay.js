@@ -637,6 +637,7 @@
           } catch (e) { /* ignore sound errors */ }
         }
 
+        var messageSocket = ws;
         showdanmu(
           data.text,
           data.opacity,
@@ -651,7 +652,12 @@
           data.layoutConfig || null,
           data.nickname || null,
           data.emojis || null
-        );
+        ).then(function (confirmed) {
+          if (confirmed === true && typeof data.message_id === "string" &&
+              ws === messageSocket && messageSocket.readyState === WebSocket.OPEN) {
+            messageSocket.send(JSON.stringify({ type: "render_ack", message_id: data.message_id }));
+          }
+        }).catch(function (error) { console.warn("[overlay] Render not confirmed:", error.message); });
       } catch (e) {
         console.error("[overlay] Error processing message:", e.message);
       }
@@ -728,6 +734,7 @@
 
   // ── showdanmu ──────────────────────────────────────────────────────────────
   function showdanmu(text, opacity, color, size, speed, fontInfo, textStyles, displayArea, effectCss, layout, layoutConfig, nickname, emojis) {
+    return new Promise(function (resolve) {
     layout = layout || "scroll";
     layoutConfig = layoutConfig || null;
     if (defaultOpacity) opacity = defaultOpacity;
@@ -742,7 +749,7 @@
     displayArea = displayArea || { top: 0, height: 100 };
 
     var parentElement = document.getElementById("danmubody");
-    if (!parentElement) return;
+    if (!parentElement) { resolve(false); return; }
 
     markActivity();
 
@@ -892,6 +899,7 @@
         }
 
         // Layout-dependent animation
+        var animation;
         try {
           if (layout === "top_fixed" || layout === "bottom_fixed") {
             var fixedDuration = (layoutConfig && layoutConfig.duration) || 3000;
@@ -931,14 +939,14 @@
               wrapper.style.bottom = distFromBottom + "px";
             }
 
-            wrapper.animate(
+            animation = wrapper.animate(
               [
                 { opacity: String(userOpacity) },
                 { opacity: String(userOpacity), offset: 0.8 },
                 { opacity: "0" }
               ],
               { duration: fixedDuration, easing: "ease-out" }
-            ).onfinish = function () { wrapper.remove(); };
+            );
 
           } else if (layout === "float") {
             var fAreaTopPx = (displayArea.top / 100) * cachedHeight;
@@ -946,7 +954,7 @@
             wrapper.style.left = (Math.random() * 60 + 20) + "%";
             wrapper.style.top = (fAreaTopPx + Math.random() * Math.max(0, fAreaHeightPx - danmuTotalHeight)) + "px";
             var floatDuration = (layoutConfig && layoutConfig.duration) || 4000;
-            wrapper.animate(
+            animation = wrapper.animate(
               [
                 { opacity: "0", transform: "scale(0.8)" },
                 { opacity: String(userOpacity), transform: "scale(1)", offset: 0.15 },
@@ -954,35 +962,41 @@
                 { opacity: "0", transform: "scale(0.8)" }
               ],
               { duration: floatDuration, easing: "ease-in-out" }
-            ).onfinish = function () { wrapper.remove(); };
+            );
 
           } else if (layout === "rise") {
             wrapper.style.left = (Math.random() * 60 + 20) + "%";
             wrapper.style.top = "0px";
-            wrapper.animate(
+            animation = wrapper.animate(
               [
                 { transform: "translateY(100vh)", opacity: String(userOpacity) },
                 { transform: "translateY(-100%)", opacity: String(userOpacity) }
               ],
               { duration: duration, easing: "linear" }
-            ).onfinish = function () { wrapper.remove(); };
+            );
 
           } else {
             // Default scroll (right to left)
             var trackPos = findAvailableTrack(displayArea, danmuTotalHeight, Width, speed);
             wrapper.style.top = trackPos.top + "px";
-            wrapper.animate(
+            animation = wrapper.animate(
               [
                 { transform: "translateX(100vw)" },
                 { transform: "translateX(-" + Width + "px)" }
               ],
               { duration: duration, easing: "linear" }
-            ).onfinish = function () { wrapper.remove(); };
+            );
           }
         } catch (e) {
           console.error("[overlay] Animation error:", e.message);
           if (wrapper.parentElement) wrapper.remove();
+          resolve(false);
+          return;
         }
+        animation.onfinish = function () { wrapper.remove(); };
+        if (window.OverlayRenderConfirmation) {
+          window.OverlayRenderConfirmation.confirmRendered(wrapper, animation).then(resolve);
+        } else resolve(false);
       }
 
       // Load custom font if needed
@@ -1000,7 +1014,7 @@
           styleSheet.id = fontStyleId;
           styleSheet.textContent = '@font-face { font-family: "' + safeName + '"; src: url(' + JSON.stringify(fontInfo.url) + "); }";
           document.head.appendChild(styleSheet);
-          document.fonts.load('1em "' + effectiveFontName + '"').then(afterFont).catch(function (e) {
+          window.OverlayRenderConfirmation.waitForFont(document.fonts.load('1em "' + effectiveFontName + '"')).then(afterFont).catch(function (e) {
             console.error("[overlay] Font load error:", e.message);
             effectiveFontName = "NotoSansTC";
             afterFont();
@@ -1012,6 +1026,7 @@
         afterFont();
       }
     })();
+    });
   }
 
   // ── Widget Rendering ──────────────────────────────────────────────────────

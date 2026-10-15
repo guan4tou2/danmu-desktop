@@ -23,6 +23,10 @@
 
   const PAGE_ID = "admin-security-v2-page";
   var _escHtml = window.AdminUtils.escapeHtml;
+  let _wsAuthState = null;
+  let _wsAuthBusy = false;
+  let _wsAuthLoading = false;
+  let _wsAuthRequestId = 0;
 
   function pageTemplate() {
     // v8（2026-08-19 設計稿 07）：從「2 欄彩邊 SecCard 網格」改成統一的
@@ -76,32 +80,46 @@
         </div>
 
         <div class="admin-ui-group-label">${t("security2CardWsTokenTitle")}</div>
-        <div class="admin-ui-group">
+        <div class="admin-ui-group admin-security-ws">
           <div class="admin-ui-group-row is-tall">
             <span class="lbl">${t("security2WsTokenToggleLabel")}
-              <span class="sub">${t("security2WsTokenToggleHint")}</span>
+              <span class="sub" id="sec2-wsa-toggle-hint">${t("security2WsTokenToggleHint")}</span>
             </span>
             <span class="val">
-              <span id="sec2-wsa-status" class="admin-ui-chip admin-sec-status-chip">${t("security2Loading")}</span>
-              <input id="sec2-wsa-toggle" type="checkbox" class="admin-ui-checkbox" />
+              <span id="sec2-wsa-status" class="admin-ui-chip admin-sec-status-chip" role="status">${t("security2Loading")}</span>
+              <input id="sec2-wsa-toggle" type="checkbox" class="admin-ui-checkbox" aria-label="${t("security2WsTokenToggleLabel")}" aria-describedby="sec2-wsa-toggle-hint sec2-wsa-connection-hint" disabled />
             </span>
           </div>
-          <div class="admin-ui-group-row is-tall">
-            <input id="sec2-wsa-token" type="password" class="admin-ui-input admin-ui-grow" placeholder="${t("security2NotConfigured")}" autocomplete="off" spellcheck="false" />
+          <div class="admin-ui-group-row is-tall admin-security-ws-token-row">
+            <input id="sec2-wsa-token" type="password" class="admin-ui-input admin-ui-grow" aria-label="${t("security2CardWsTokenTitle")}" placeholder="${t("security2NotConfigured")}" autocomplete="off" spellcheck="false" disabled />
             <span class="val">
-              <button type="button" id="sec2-wsa-reveal" class="admin-ui-action admin-sec-token-action">👁</button>
-              <button type="button" id="sec2-wsa-copy" class="admin-ui-action admin-sec-token-action">${t("security2CopyButton")}</button>
-              <button type="button" id="sec2-wsa-rotate" class="admin-ui-danger-btn">${t("security2RegenerateButton")}…</button>
+              <button type="button" id="sec2-wsa-reveal" class="admin-ui-action admin-sec-token-action" aria-label="${t("security2WsAuthRevealLabel")}" aria-pressed="false" disabled>${t("security2WsAuthRevealLabel")}</button>
+              <button type="button" id="sec2-wsa-copy" class="admin-ui-action admin-sec-token-action" disabled>${t("security2CopyButton")}</button>
+              <button type="button" id="sec2-wsa-rotate" class="admin-ui-danger-btn" disabled>${t("security2RegenerateButton")}…</button>
             </span>
           </div>
           <div class="admin-ui-group-row">
             <span class="lbl">${t("security2LastRotationLabel")}</span>
             <span class="val">
               <span id="sec2-wsa-lastrot" class="admin-security-timestamp">—</span>
-              <button type="button" id="sec2-wsa-save" class="admin-ui-action is-primary">${t("security2SaveButton")}</button>
+              <button type="button" id="sec2-wsa-save" class="admin-ui-action is-primary" disabled>${t("security2SaveButton")}</button>
             </span>
           </div>
         </div>
+        <p id="sec2-wsa-disabled-warning" class="admin-ui-notice is-warn" role="status" hidden>${t("security2WsAuthDisabledWarning")}</p>
+        <p id="sec2-wsa-draft-hint" class="admin-ui-notice is-warn" role="status" hidden>${t("security2WsAuthDraftHint")}</p>
+        <p id="sec2-wsa-saving-hint" class="admin-ui-notice" role="status" hidden>${t("security2WsAuthSavingHint")}</p>
+        <p id="sec2-wsa-load-error" class="admin-ui-notice is-danger" role="alert" hidden>${t("security2WsAuthLoadFailed")}</p>
+        <p id="sec2-wsa-connection-hint" class="admin-ui-page-note">${t("security2WsAuthConnectionHint")}</p>
+        <details class="admin-security-ws-migration">
+          <summary>${t("security2WsAuthMigrationTitle")}</summary>
+          <ol>
+            <li>${t("security2WsAuthMigrationPrepare")}</li>
+            <li>${t("security2WsAuthMigrationDesktop")}</li>
+            <li>${t("security2WsAuthMigrationEnable")}</li>
+            <li>${t("security2WsAuthMigrationVerify")}</li>
+          </ol>
+        </details>
 
         <div class="admin-ui-group-label">${t("security2CardIpTitle")}</div>
         <div class="admin-ui-group">
@@ -272,24 +290,89 @@
   }
 
   async function loadWsAuth() {
+    const requestId = ++_wsAuthRequestId;
     const statusEl = document.getElementById("sec2-wsa-status");
+    _wsAuthLoading = true;
+    setWsAuthControlsDisabled(true);
+    statusEl.textContent = ServerI18n.t("security2Loading");
+    document.getElementById("sec2-wsa-disabled-warning").hidden = true;
+    document.getElementById("sec2-wsa-draft-hint").hidden = true;
     try {
       const res = await fetch("/admin/ws-auth", { credentials: "same-origin" });
       if (!res.ok) throw new Error(res.status);
       const data = await res.json();
+      if (requestId !== _wsAuthRequestId) return false;
+      _wsAuthState = { require_token: !!data.require_token, token: data.token || "" };
       document.getElementById("sec2-wsa-toggle").checked = !!data.require_token;
       document.getElementById("sec2-wsa-token").value = data.token || "";
       statusEl.textContent = data.require_token ? ServerI18n.t("security2StatusEnabled") : ServerI18n.t("security2StatusDisabled");
       statusEl.className = "admin-ui-chip admin-sec-status-chip " + (data.require_token ? "is-active" : "");
+      document.getElementById("sec2-wsa-load-error").hidden = true;
+      refreshWsAuthHints();
       // Last-rotation persisted client-side (no backend field yet)
       const lr = localStorage.getItem("ws-auth-last-rotation");
       document.getElementById("sec2-wsa-lastrot").textContent = lr
         ? new Date(parseInt(lr, 10)).toLocaleString()
         : "—";
+      return true;
     } catch (e) {
+      if (requestId !== _wsAuthRequestId) return false;
+      _wsAuthState = null;
+      setWsAuthControlsDisabled(true);
+      document.getElementById("sec2-wsa-disabled-warning").hidden = true;
+      document.getElementById("sec2-wsa-draft-hint").hidden = true;
+      document.getElementById("sec2-wsa-load-error").hidden = false;
       statusEl.textContent = ServerI18n.t("security2LoadFailed");
       statusEl.className = "admin-ui-chip is-danger admin-sec-status-chip";
+      return false;
+    } finally {
+      if (requestId === _wsAuthRequestId) {
+        _wsAuthLoading = false;
+        setWsAuthControlsDisabled(_wsAuthBusy || !_wsAuthState);
+        if (!_wsAuthBusy) refreshWsAuthHints();
+      }
     }
+  }
+
+  function setWsAuthControlsDisabled(disabled) {
+    ["toggle", "token", "save", "rotate", "copy", "reveal"].forEach((id) => {
+      document.getElementById("sec2-wsa-" + id).disabled = disabled;
+    });
+    document.querySelector('[data-sec-danger="reset-ws"]')?.toggleAttribute("disabled", disabled);
+  }
+
+  function beginWsAuthWrite() {
+    if (_wsAuthBusy || _wsAuthLoading || !_wsAuthState) return false;
+    _wsAuthBusy = true;
+    // Invalidate any earlier read before the write starts, not after it ends.
+    ++_wsAuthRequestId;
+    setWsAuthControlsDisabled(true);
+    document.getElementById("sec2-wsa-status").textContent = ServerI18n.t("security2Loading");
+    document.getElementById("sec2-wsa-disabled-warning").hidden = true;
+    document.getElementById("sec2-wsa-draft-hint").hidden = true;
+    document.getElementById("sec2-wsa-saving-hint").hidden = false;
+    return true;
+  }
+
+  function finishWsAuthWrite() {
+    _wsAuthBusy = false;
+    document.getElementById("sec2-wsa-saving-hint").hidden = true;
+    setWsAuthControlsDisabled(_wsAuthLoading || !_wsAuthState);
+    if (_wsAuthState && !_wsAuthLoading) {
+      const status = document.getElementById("sec2-wsa-status");
+      status.textContent = ServerI18n.t(_wsAuthState.require_token ? "security2StatusEnabled" : "security2StatusDisabled");
+      status.className = "admin-ui-chip admin-sec-status-chip " + (_wsAuthState.require_token ? "is-active" : "");
+      refreshWsAuthHints();
+    }
+  }
+
+  function refreshWsAuthHints() {
+    if (_wsAuthBusy || _wsAuthLoading || !_wsAuthState) return;
+    // The warning describes the persisted server setting, not the unsaved toggle.
+    document.getElementById("sec2-wsa-disabled-warning").hidden = _wsAuthState.require_token;
+    const changed = document.getElementById("sec2-wsa-toggle").checked !== _wsAuthState.require_token
+      || document.getElementById("sec2-wsa-token").value.trim() !== _wsAuthState.token;
+    document.getElementById("sec2-wsa-draft-hint").hidden = !changed;
   }
 
   function _listFromLines(value) {
@@ -412,12 +495,14 @@
   }
 
   async function saveWsAuth() {
+    if (_wsAuthBusy || _wsAuthLoading || !_wsAuthState) return;
     const require_token = document.getElementById("sec2-wsa-toggle").checked;
     const token = document.getElementById("sec2-wsa-token").value.trim();
     if (require_token && !token) {
       window.showToast && showToast(ServerI18n.t("security2ToastTokenRequiredWhenEnabled"), false);
       return;
     }
+    if (!beginWsAuthWrite()) return;
     try {
       const res = await window.csrfFetch("/admin/ws-auth", {
         method: "POST",
@@ -426,17 +511,21 @@
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        window.showToast && showToast(ServerI18n.t("security2ToastWsAuthSaved"), true);
-        await loadWsAuth();
+        if (await loadWsAuth()) {
+          window.showToast && showToast(ServerI18n.t("security2ToastWsAuthSaved"), true);
+        }
       } else {
         window.showToast && showToast(data.error || ServerI18n.t("security2ToastSaveFailed"), false);
       }
     } catch (e) {
       window.showToast && showToast(ServerI18n.t("security2ToastNetworkError"), false);
+    } finally {
+      finishWsAuthWrite();
     }
   }
 
   async function rotateWsAuth() {
+    if (_wsAuthBusy || _wsAuthLoading || !_wsAuthState) return;
     const ok = await window.HudConfirm?.open({
       icon: "⟳",
       title: ServerI18n.t("security2ResetWsTokenTitle"),
@@ -446,18 +535,22 @@
       confirmLabel: ServerI18n.t("security2GenerateNewTokenLabel"),
     });
     if (!ok) return;
+    if (!beginWsAuthWrite()) return;
     try {
       const res = await window.csrfFetch("/admin/ws-auth/rotate", { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        window.showToast && showToast(ServerI18n.t("security2ToastNewTokenGenerated"), true);
         try { localStorage.setItem("ws-auth-last-rotation", String(Date.now())); } catch (_) {}
-        await loadWsAuth();
+        if (await loadWsAuth()) {
+          window.showToast && showToast(ServerI18n.t("security2ToastNewTokenGenerated"), true);
+        }
       } else {
         window.showToast && showToast(data.error || ServerI18n.t("security2ToastRegenerateFailed"), false);
       }
     } catch (e) {
       window.showToast && showToast(ServerI18n.t("security2ToastNetworkError"), false);
+    } finally {
+      finishWsAuthWrite();
     }
   }
 
@@ -480,9 +573,15 @@
   function revealToken() {
     const input = document.getElementById("sec2-wsa-token");
     input.type = input.type === "password" ? "text" : "password";
+    const revealed = input.type === "text";
+    const button = document.getElementById("sec2-wsa-reveal");
+    button.setAttribute("aria-pressed", String(revealed));
+    button.textContent = ServerI18n.t(revealed ? "security2WsAuthHideLabel" : "security2WsAuthRevealLabel");
+    button.setAttribute("aria-label", button.textContent);
   }
 
   async function runDangerAction(action) {
+    if (action === "reset-ws" && (_wsAuthBusy || _wsAuthLoading || !_wsAuthState)) return;
     const config = {
       "revoke-tokens": {
         confirm: ServerI18n.t("security2ConfirmRevokeApiTokens"),
@@ -510,6 +609,7 @@
       confirmLabel: config.confirmLabel || ServerI18n.t("security2ConfirmDefaultLabel"),
     });
     if (!ok) return;
+    if (action === "reset-ws" && !beginWsAuthWrite()) return;
     try {
       const res = await window.csrfFetch(config.url, { method: "POST" });
       const data = await res.json().catch(() => ({}));
@@ -517,14 +617,16 @@
         window.showToast && showToast(data.error || ServerI18n.t("security2ToastActionFailed"), false);
         return;
       }
-      window.showToast && showToast(config.ok(data), true);
       if (action === "reset-ws") {
         try { localStorage.setItem("ws-auth-last-rotation", String(Date.now())); } catch (_) {}
-        await loadWsAuth();
+        if (!(await loadWsAuth())) return;
       }
+      window.showToast && showToast(config.ok(data), true);
     } catch (err) {
       console.error("Security danger action error:", err);
       window.showToast && showToast(ServerI18n.t("security2ToastNetworkError"), false);
+    } finally {
+      if (action === "reset-ws") finishWsAuthWrite();
     }
   }
 
@@ -560,6 +662,8 @@
     document.getElementById("sec2-wsa-rotate")?.addEventListener("click", rotateWsAuth);
     document.getElementById("sec2-wsa-copy")?.addEventListener("click", copyToken);
     document.getElementById("sec2-wsa-reveal")?.addEventListener("click", revealToken);
+    document.getElementById("sec2-wsa-toggle")?.addEventListener("change", refreshWsAuthHints);
+    document.getElementById("sec2-wsa-token")?.addEventListener("input", refreshWsAuthHints);
     document.getElementById("sec2-ip-save")?.addEventListener("click", () => saveSecuritySettings("ip"));
     document.getElementById("sec2-cors-save")?.addEventListener("click", () => saveSecuritySettings("cors"));
     // 密碼表單預設收合——三個輸入框攤在列表裡會把「一列一設定」的節奏

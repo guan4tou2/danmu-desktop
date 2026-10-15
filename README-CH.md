@@ -95,6 +95,10 @@ Mac 更新：下載新版 arm64 ZIP，結束程式，再以解壓縮的新版取
 原有設定會保留。此版本採用臨時簽章，更新按鈕會提供下載入口，需手動替換。
 
 待送彈幕從第一次排隊起保留 24 小時，到期後自動失效；重啟伺服器或再次暫停不會延長期限。
+伺服器會在啟動時及每 60 秒清理待送佇列；磁碟正常時，即使閒置也會在下一個週期移除到期資料，等候清理期間不會再送出。清理範圍只有待送佇列，歷史紀錄與封存備份另行保留。
+
+歷史紀錄會區分等待顯示、已送往顯示端與顯示端已回報呈現。「顯示端已回報呈現」代表至少一個桌面或瀏覽器顯示端回報可見的動畫畫面，不代表觀眾一定看見或 OBS 已擷取。
+30 秒內沒有有效回報會標示「未確認」並提供原因；舊版顯示端仍可播放，但不會回報。未確認的訊息不會自動重播。
 
 ### 伺服器設置
 
@@ -173,7 +177,7 @@ Desktop 與 viewer 都應只使用這個 HTTPS origin。
 | `HTTPS_PORT` | 自簽 HTTPS profile 的覆寫值；預設 `443`，desktop 仍走同一個 port 的 `/ws` |
 | `TRUSTED_HOSTS` | Host header 白名單（逗號分隔） |
 | `SESSION_COOKIE_SECURE` | production 走 HTTPS 時設 `true` |
-| `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` | 選配：`/ws` 的共用 token 驗證 |
+| `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` | `/ws` 共用 token 驗證的首次啟動種子值；之後由後台「安全」管理 |
 | `RATE_LIMIT_BACKEND` | `memory` 或 `redis`（透過 `--profile redis` 啟） |
 
 其他設定都有安全預設；`.env.example` 列齊了所有項目。
@@ -183,7 +187,8 @@ Desktop 與 viewer 都應只使用這個 HTTPS origin。
 - 此 repo 已啟用 GitHub Advanced Security 與 Dependabot。
 - OSV 掃描會在 `push`、`pull_request` 與排程任務執行（見 `.github/workflows/osv-scanner.yml`）。
 - 前端 lockfile 透過 npm overrides 強制 `serialize-javascript@7.0.3`，對應 `GHSA-5c6j-r48x-rmvq`。
-- WebSocket 預設為 `WS_REQUIRE_TOKEN=false`。若 web port 對 localhost 或受信任 LAN 以外的網路可達，任何可到達該入口的客戶端都能連到 `/ws`；請改為啟用 token 驗證，或用反向代理 / 防火牆限制路徑。
+- 新安裝且未設定兩個 WS 驗證環境變數時，預設啟用驗證並產生隨機密碼；明確設定的 `WS_REQUIRE_TOKEN=false` 會保留。`server/runtime/ws_auth.json` 建立後，以檔案內儲存狀態為準；更新、重啟及更改環境變數不會自動改變既有部署的設定。
+- 驗證關閉且 web port 對 localhost 或受信任 LAN 以外可達時，任何能連到 `/ws` 的人都可連接顯示層並接收彈幕；這不會開放後台管理權限。安全啟用順序：到「後台 → 安全 → 顯示層連線密碼」，保持驗證關閉，必要時先產生密碼；將密碼貼到每台桌面程式的「WS Token」設定並儲存，再回後台開啟驗證並儲存。於合適時機讓各桌面端重連，確認測試彈幕可顯示。儲存後只影響新連線與重連，現有連線會保留。密碼不要放進公開網址或截圖；詳見[部署指南](./DEPLOYMENT.md)的 Desktop Client 章節。
 - production 啟動現在會拒絕以下不安全設定：未明確設定 `SECRET_KEY`、`SESSION_COOKIE_SECURE=false`、或未設定 `TRUSTED_HOSTS`。部署前請先補齊。
 - 目前 app 會送出 nonce-based `Content-Security-Policy` header。之後若新增 inline script，請使用模板提供的 nonce，不要退回 `unsafe-inline`。
 - `Strict-Transport-Security` 目前是 opt-in，需明確設定 `HSTS_ENABLED=true`，且只會在 HTTPS 回應上送出。

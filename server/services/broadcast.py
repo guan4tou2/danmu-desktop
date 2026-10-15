@@ -47,6 +47,7 @@ _QUEUE_TIME_FIELD = "_broadcast_queued_at"
 _lock = threading.RLock()
 _state: Optional[Dict[str, Any]] = None
 _queue: Optional[List[Dict[str, Any]]] = None
+_queue_needs_persist: bool = False
 _write_failure_logged: bool = False
 
 VALID_MODES = ("live", "standby")
@@ -131,14 +132,19 @@ def _load_state() -> Dict[str, Any]:
 
 
 def _load_queue() -> List[Dict[str, Any]]:
-    if _QUEUE_FILE.exists():
-        try:
-            with open(_QUEUE_FILE, encoding="utf-8") as f:
-                data = json.load(f)
-            if isinstance(data, list):
-                return [d for d in data if isinstance(d, dict)][-_QUEUE_MAX:]
-        except Exception as exc:
-            logger.warning("broadcast_queue.json malformed (%s); resetting.", exc)
+    try:
+        with open(_QUEUE_FILE, encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            return [d for d in data if isinstance(d, dict)][-_QUEUE_MAX:]
+    except FileNotFoundError:
+        return []
+    except OSError:
+        # A temporary read failure must not seed an empty cache and later
+        # overwrite the pending queue. The cleanup worker retries next tick.
+        raise
+    except Exception as exc:
+        logger.warning("broadcast_queue.json malformed (%s); resetting.", exc)
     return []
 
 
@@ -152,15 +158,18 @@ def _persist_state() -> None:
 
 
 def _persist_queue() -> None:
+    global _queue_needs_persist
     if _queue is None:
         return
+    _queue_needs_persist = True
     try:
         _atomic_write_json(_QUEUE_FILE, _queue)
+        _queue_needs_persist = False
     except OSError as exc:
         _log_write_failure_once(exc)
 
 
-def _ensure_loaded() -> None:
+def _ensure_loaded() -> int:
     """Lazy-load state + queue on first access. Caller must hold _lock."""
     global _state, _queue
     if _state is None:
@@ -181,7 +190,7 @@ def _ensure_loaded() -> None:
                 migrated = True
         if migrated:
             _persist_queue()
-    _prune_expired()
+    return _prune_expired()
 
 
 def _valid_queue_time(value: Any, now: float) -> bool:
@@ -215,17 +224,32 @@ def mark_pending_expired(data: Dict[str, Any]) -> None:
             logger.exception("Could not update expired message history")
 
 
-def _prune_expired() -> None:
+def _prune_expired() -> int:
     """Called under _lock on reads, enqueue and drain; never replay stale data."""
     now = time.time()
     expired = [item for item in _queue if is_pending_expired(item, now)]
     if not expired:
-        return
+        return 0
     _queue[:] = [item for item in _queue if not is_pending_expired(item, now)]
     _persist_queue()
     for item in expired:
         mark_pending_expired(item)
     logger.info("Expired %d pending messages after 24 hours", len(expired))
+    return len(expired)
+
+
+def cleanup_expired_pending() -> int:
+    """Remove expired pending data and retry failed queue writes under one lock.
+
+    The periodic worker uses this same operation as request-time pruning, so
+    enqueue/drain cannot race the disk snapshot. History remains searchable
+    with status ``expired``; its existing retention policy is unchanged.
+    """
+    with _lock:
+        removed = _ensure_loaded()
+        if not removed and _queue_needs_persist:
+            _persist_queue()
+        return removed
 
 
 def get_state() -> Dict[str, Any]:
@@ -365,8 +389,9 @@ def queue_size() -> int:
 
 def reset_for_tests() -> None:
     """Drop in-memory cache. Tests should monkeypatch _STATE_FILE/_QUEUE_FILE first."""
-    global _state, _queue, _write_failure_logged
+    global _state, _queue, _write_failure_logged, _queue_needs_persist
     with _lock:
         _state = None
         _queue = None
+        _queue_needs_persist = False
         _write_failure_logged = False

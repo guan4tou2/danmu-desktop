@@ -471,6 +471,7 @@
           <span class="admin-sd-msg-text">${escapeHtml(r.text || "")}</span>
           <span class="admin-sd-msg-status">
             ${escapeHtml(ServerI18n.t("deliveryStatus_" + (r.status || "shown")))}
+            ${r.delivery_reason ? `<span class="admin-sd-msg-rule">${escapeHtml(ServerI18n.t("deliveryReason_" + r.delivery_reason))}</span>` : ""}
             ${blocked && r.blockedBy
               ? `<span class="admin-sd-msg-rule">${escapeHtml(ServerI18n.t("sessionDetailBlockedBy", { rule: r.blockedBy }))}</span>`
               : ""}

@@ -338,12 +338,24 @@ app = create_app()
 def main():
     http_port = app.config["PORT"]
 
-    from .services import telemetry
+    import signal
+
+    import gevent
+
+    from .services import pending_cleanup, telemetry
 
     telemetry.start_sampler()
     start_ws_broadcast()
 
-    WSGIServer(("0.0.0.0", http_port), app).serve_forever()
+    server = WSGIServer(("0.0.0.0", http_port), app)
+    shutdown = gevent.signal_handler(signal.SIGTERM, server.stop)
+    try:
+        pending_cleanup.start()
+        server.serve_forever()
+    finally:
+        shutdown.cancel()
+        pending_cleanup.stop()
+        server.stop()
 
 
 if __name__ == "__main__":

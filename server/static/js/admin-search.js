@@ -207,8 +207,10 @@
         '<span class="admin-search-row__ts">' + _escHtml(_formatTs(r.timestamp)) + "</span>" +
         '<span class="admin-search-row__text">' + _highlight(r.text || "", _state.query) + "</span>" +
         '<span class="admin-search-row__nick">' +
-          _escHtml((r.nickname || "").trim() || ServerI18n.t("audienceAnonymous")) + "<br>" +
-          _escHtml(ServerI18n.t("deliveryStatus_" + (r.status || "shown"))) + "</span>";
+          _escHtml((r.nickname || "").trim() || ServerI18n.t("audienceAnonymous")) +
+          '<span class="admin-search-row__delivery">' +
+          _escHtml(ServerI18n.t("deliveryStatus_" + (r.status || "shown"))) +
+          (r.delivery_reason ? "<br>" + _escHtml(ServerI18n.t("deliveryReason_" + r.delivery_reason)) : "") + "</span></span>";
       frag.appendChild(row);
     });
     listEl.appendChild(frag);
@@ -300,7 +302,7 @@
 
   function _exportCsv() {
     if (!_state.results.length) return;
-    var lines = [["nickname", "fingerprint", "timestamp", "status", "text"].join(",")];
+    var lines = [["nickname", "fingerprint", "timestamp", "status", "text", "delivery_reason"].join(",")];
     _state.results.forEach(function (r) {
       var row = [
         r.nickname || "",
@@ -308,6 +310,7 @@
         r.timestamp || "",
         r.status || "",
         r.text || "",
+        r.delivery_reason || "",
       ].map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; });
       lines.push(row.join(","));
     });

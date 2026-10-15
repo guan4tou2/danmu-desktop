@@ -349,7 +349,22 @@ def _to_iso(value):
         return None
 
 
-_EXPORT_FIELDS = ["timestamp", "text", "color", "size", "speed", "opacity", "isImage"]
+_EXPORT_BASE_FIELDS = [
+    "timestamp",
+    "text",
+    "color",
+    "size",
+    "speed",
+    "opacity",
+    "isImage",
+]
+_EXPORT_DELIVERY_FIELDS = [
+    "message_id",
+    "status",
+    "delivery_updated_at",
+    "delivery_reason",
+]
+_EXPORT_FIELDS = _EXPORT_BASE_FIELDS + _EXPORT_DELIVERY_FIELDS
 _EXPORT_PII_FIELDS = ["clientIp", "fingerprint"]
 
 
@@ -363,7 +378,9 @@ def _export_row(record, include_pii):
 
 def _rows_to_csv(rows, include_pii):
     out = io.StringIO()
-    fields = _EXPORT_FIELDS + (_EXPORT_PII_FIELDS if include_pii else [])
+    fields = (
+        _EXPORT_BASE_FIELDS + (_EXPORT_PII_FIELDS if include_pii else []) + _EXPORT_DELIVERY_FIELDS
+    )
     writer = csv.DictWriter(out, fieldnames=fields, extrasaction="ignore")
     writer.writeheader()
     writer.writerows(rows)
@@ -385,7 +402,7 @@ def search_history():
       type      – "text" or "image" — filter by isImage flag.
       fp        – exact fingerprint match (substring elsewhere → use this
                   for "show me everything from this client").
-      status    – comma-list of: shown, pinned, masked, blocked.
+      status    – comma-list of delivery statuses (including rendered/unconfirmed).
                   Records carry an optional `status` field (default "shown");
                   unknown statuses are dropped from the filter set.
       limit     – max results (1-500, default 200)
@@ -440,6 +457,8 @@ def search_history():
         "accepted",
         "queued",
         "forwarded",
+        "rendered",
+        "unconfirmed",
         "expired",
     }
     raw_status = (request.args.get("status") or "").strip()

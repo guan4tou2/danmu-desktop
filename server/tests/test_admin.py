@@ -297,12 +297,18 @@ def test_export_session_omits_pii_by_default(client):
     plain = client.get(f"/admin/sessions/{sid}/export?format=csv")
     assert plain.status_code == 200
     body = plain.data.decode("utf-8")
+    original_fields = ["timestamp", "text", "color", "size", "speed", "opacity", "isImage"]
+    delivery_fields = ["message_id", "status", "delivery_updated_at", "delivery_reason"]
+    assert body.splitlines()[0].split(",") == original_fields + delivery_fields
     assert "10.1.2.3" not in body and "fp_abc" not in body
     assert "clientIp" not in body
 
     with_pii = client.get(f"/admin/sessions/{sid}/export?format=csv&include_pii=1")
     assert with_pii.status_code == 200
     pii_body = with_pii.data.decode("utf-8")
+    assert pii_body.splitlines()[0].split(",") == (
+        original_fields + ["clientIp", "fingerprint"] + delivery_fields
+    )
     assert "10.1.2.3" in pii_body and "fp_abc" in pii_body
 
 

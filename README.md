@@ -105,7 +105,18 @@ app with the extracted copy. Settings stay in your user profile. These ad-hoc
 signed packages provide a download action rather than automatic installation.
 
 Pending messages expire 24 hours after they first enter the standby queue.
+The server sweeps only the pending queue at startup and every 60 seconds,
+so with normal disk I/O, expired entries are removed by the next sweep even
+while idle. Expired messages are never forwarded while waiting for cleanup;
+history and archived backups are retained separately.
 Restarting the server or pausing again does not renew their deadline.
+
+Delivery history distinguishes queued, forwarded, and rendered messages.
+Rendered means at least one desktop or browser overlay reported a visible
+animated frame; it does not prove that a person saw it or OBS captured it.
+Without a valid receipt within 30 seconds, the result is unconfirmed, with a
+reason shown in history. Older clients can still display messages without
+reporting receipts. Unconfirmed messages are not automatically replayed.
 
 ### Server Setup
 
@@ -190,7 +201,7 @@ for you:
 | `HTTPS_PORT` | Self-signed HTTPS profile override; default is `443`, desktop still uses the same port with `/ws` |
 | `TRUSTED_HOSTS` | Comma-separated allowlist for Host header |
 | `SESSION_COOKIE_SECURE` | `true` in production over HTTPS |
-| `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` | Optional shared-token auth for `/ws` |
+| `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` | First-boot seed for `/ws` shared-token auth; later managed in Admin → Security |
 | `RATE_LIMIT_BACKEND` | `memory` or `redis` (set up via `--profile redis`) |
 
 Every other setting ships a safe default; `.env.example` shows them all.
@@ -200,7 +211,8 @@ Every other setting ships a safe default; `.env.example` shows them all.
 - GitHub Advanced Security and Dependabot are enabled for this repository.
 - OSV scanning runs on `push`, `pull_request`, and scheduled jobs via `.github/workflows/osv-scanner.yml`.
 - Frontend lockfile enforces `serialize-javascript@7.0.3` through npm overrides to address advisory `GHSA-5c6j-r48x-rmvq`.
-- WS auth is disabled by default (`WS_REQUIRE_TOKEN=false`). If the web port is reachable beyond localhost or a trusted LAN, any reachable client can connect to `/ws` unless you enable token auth or restrict the network path.
+- Fresh installs with neither WS auth environment variable set start with token auth enabled and a generated token. An explicit `WS_REQUIRE_TOKEN=false` is respected. After `server/runtime/ws_auth.json` exists, its saved state is authoritative; upgrades, restarts, and changing the environment variables do not automatically change an existing deployment's setting.
+- If WS auth is off and the web port is reachable beyond localhost or a trusted LAN, anyone who can reach `/ws` can connect a display and receive danmu; this does not grant admin access. To enable it safely, open **Admin → Security → Connection password**, generate a token if needed while auth remains off, copy it into every desktop app's **WS Token** setting and save there, then enable authentication and save in Admin. Reconnect each desktop at a suitable time and verify a test danmu. Saved changes apply only to new/reconnecting clients; existing connections stay up. Keep tokens out of public URLs and screenshots. See the **Desktop Client** section in [deployment instructions](./DEPLOYMENT.md) for details.
 - Production startup now refuses an ephemeral `SECRET_KEY`, `SESSION_COOKIE_SECURE=false`, or missing `TRUSTED_HOSTS`. Set those explicitly before deploying.
 - The app now emits a nonce-based `Content-Security-Policy` header. If you add new inline scripts, use the template nonce instead of falling back to `unsafe-inline`.
 - `Strict-Transport-Security` stays opt-in via `HSTS_ENABLED=true` and is only sent on HTTPS responses.

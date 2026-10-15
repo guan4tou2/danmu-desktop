@@ -97,6 +97,45 @@ afterEach(() => {
   delete window.__konamiTrigger;
 });
 
+describe("render receipts", () => {
+  test("waits for a successful renderer result before acknowledging", async () => {
+    const ws = startClient();
+    openAndSettle(ws);
+    let resolveRender;
+    window.showdanmu = jest.fn(() => new Promise(resolve => { resolveRender = resolve; }));
+    ws.simulateMessage({ text: "render me", message_id: "message-1", color: "fff" });
+    expect(ws.sentMessages.some(m => JSON.parse(m).type === "render_ack")).toBe(false);
+    resolveRender(true);
+    await Promise.resolve();
+    expect(ws.sentMessages.map(m => JSON.parse(m))).toContainEqual({ type: "render_ack", message_id: "message-1" });
+  });
+
+  test.each([false, undefined])("does not acknowledge an unconfirmed renderer result: %s", async result => {
+    const ws = startClient();
+    openAndSettle(ws);
+    window.showdanmu = jest.fn(() => Promise.resolve(result));
+    ws.simulateMessage({ text: "unconfirmed", message_id: "message-2" });
+    await Promise.resolve();
+    expect(ws.sentMessages.some(m => JSON.parse(m).type === "render_ack")).toBe(false);
+  });
+
+  test("does not send a delayed receipt on a replacement connection", async () => {
+    const ws = startClient();
+    openAndSettle(ws);
+    let resolveRender;
+    window.showdanmu = jest.fn(() => new Promise(resolve => { resolveRender = resolve; }));
+    ws.simulateMessage({ text: "delayed", message_id: "old-connection" });
+    ws.simulateClose();
+    jest.advanceTimersByTime(4000);
+    const replacement = MockWebSocket.instances.at(-1);
+    openAndSettle(replacement);
+    resolveRender(true);
+    await Promise.resolve();
+    expect(replacement.sentMessages.some(m => JSON.parse(m).type === "render_ack")).toBe(false);
+    expect(ws.sentMessages.some(m => JSON.parse(m).type === "render_ack")).toBe(false);
+  });
+});
+
 // ===========================================================================
 // buildWsUrl — pure URL shape
 // ===========================================================================
