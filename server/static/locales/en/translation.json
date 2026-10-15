@@ -359,7 +359,7 @@
   "onscreenFullQueued": "Screen is full — you're in the queue…",
   "onscreenFullDropped": "Screen is full — try again in a moment.",
   "queueFullTryLater": "Queue is full — please try again in a minute.",
-  "broadcastStandbyQueued": "Message queued. It will be sent when the display resumes.",
+  "broadcastStandbyQueued": "Message queued. It will be sent when the display resumes and expires after 24 hours.",
   "settingsUpdated": "Settings Updated",
   "updateFailed": "Update Failed",
   "colorFormatError": "Color format error, please use #RRGGBB format",
@@ -2941,5 +2941,6 @@
   "deliveryStatus_shown": "Legacy record · display unconfirmed",
   "deliveryStatus_blocked": "Blocked",
   "deliveryStatus_pinned": "Pinned",
-  "deliveryStatus_masked": "Masked"
+  "deliveryStatus_masked": "Masked",
+  "deliveryStatus_expired": "Expired (over 24 hours)"
 }

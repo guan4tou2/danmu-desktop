@@ -71,6 +71,7 @@ function renderAboutCard(t) {
 
   const phase = _state.phase || "idle";
   const version = _state.version;
+  const manual = !!_state.manualInstall;
 
   // 2026-05-16: idle / not-available states keep the card hidden — the
   // hero's UP TO DATE pill already conveys "you're current", a second
@@ -98,7 +99,10 @@ function renderAboutCard(t) {
       versionEl.textContent = version ? "v" + version : "";
     }
     if (notesEl) {
-      const notes = _state.releaseNotes || "";
+      const instructions = manual
+        ? tt(t, "updateManualMac", "Download the Mac ZIP, quit the app, then replace it with the extracted app. Your settings are retained.")
+        : "";
+      const notes = [instructions, _state.releaseNotes].filter(Boolean).join("\n\n");
       notesEl.textContent = notes;
       notesEl.hidden = !notes;
     }
@@ -114,8 +118,12 @@ function renderAboutCard(t) {
       }
     }
     if (installBtn) {
-      installBtn.hidden = phase !== "downloaded";
-      installBtn.disabled = phase !== "downloaded";
+      const ready = phase === "downloaded" || (manual && phase === "available");
+      installBtn.hidden = !ready;
+      installBtn.disabled = !ready;
+      installBtn.textContent = manual
+        ? tt(t, "updateManualDownload", "Download update")
+        : tt(t, "updateReadyRestart", "Restart and update");
     }
     if (laterBtn) laterBtn.hidden = phase === "idle";
     if (skipBtn) skipBtn.hidden = phase === "idle";

@@ -19,13 +19,16 @@
  *     action ∈ "install" | "later" | "skip" | "check-now" | "request-state"
  */
 const { autoUpdater } = require("electron-updater");
-const { ipcMain, app } = require("electron");
+const { ipcMain, app, shell } = require("electron");
 const fs = require("fs");
 const path = require("path");
 
 const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 hours
 const REMIND_LATER_MS = 24 * 60 * 60 * 1000; // 24 hours
 const STARTUP_DELAY_MS = 10 * 1000; // 10 seconds
+// Published Mac ZIPs use ad-hoc signatures. Their changing cdhash cannot
+// satisfy Squirrel's installed-app signature requirement across releases.
+const MANUAL_MAC_UPDATES = process.platform === "darwin";
 
 // ── Persistent state (skipped versions + remind-later) ────────────────────────
 function getStatePath() {
@@ -78,6 +81,7 @@ const _state = {
   percent: 0,
   message: null,
   downloadedVersion: null, // set after `update-downloaded`
+  manualInstall: MANUAL_MAC_UPDATES,
 };
 
 let _persistent = loadState();
@@ -173,6 +177,8 @@ function setupAutoUpdater(mainWindowGetter, onStateChange) {
       mainWindowGetter
     );
 
+    if (MANUAL_MAC_UPDATES) return;
+
     // Auto-download in background — user can still skip / later when prompted.
     // Even if the user picks "later", the file will be on disk for next launch.
     autoUpdater.downloadUpdate().catch((err) => {
@@ -197,6 +203,7 @@ function setupAutoUpdater(mainWindowGetter, onStateChange) {
   });
 
   autoUpdater.on("update-downloaded", (info) => {
+    if (MANUAL_MAC_UPDATES) return;
     const version = info && info.version;
     _state.downloadedVersion = version;
 
@@ -243,6 +250,16 @@ function setupAutoUpdater(mainWindowGetter, onStateChange) {
       const version = (payload && payload.version) || _state.version;
 
       if (action === "install") {
+        if (MANUAL_MAC_UPDATES) {
+          if (_state.phase === "available" && _state.version) {
+            const url = "https://github.com/guan4tou2/danmu-desktop/releases/tag/v"
+              + encodeURIComponent(_state.version);
+            shell.openExternal(url).catch((err) => {
+              setPhase("error", { message: err.message || String(err) }, mainWindowGetter);
+            });
+          }
+          return;
+        }
         // quitAndInstall is only valid after `update-downloaded`
         if (_state.phase === "downloaded") {
           // Clear remind-later/skip so we don't suppress this exact version next time

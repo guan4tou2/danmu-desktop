@@ -32,6 +32,8 @@
   "importSettings": "설정 가져오기",
   "updateAvailableShort": "업데이트",
   "updateAvailableTitle": "새 버전이 있습니다",
+  "updateManualDownload": "업데이트 다운로드",
+  "updateManualMac": "Mac ZIP을 다운로드하고 앱을 종료한 뒤, 압축을 푼 새 앱으로 기존 앱을 교체하세요. 설정은 유지됩니다.",
   "updateReadyTitle": "Danmu Fire {v} 준비 완료",
   "updateChecking": "업데이트 확인 중…",
   "updateCheckFailed": "업데이트 확인 실패",

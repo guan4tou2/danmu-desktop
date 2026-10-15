@@ -119,3 +119,22 @@ test("同一次下載只跳一次", () => {
   onStatus({ phase: "downloaded", version: "5.4.1" });
   expect(document.querySelector(DIALOG)).toBeNull();
 });
+
+test("Mac 手動更新提供下載入口與替換說明，不顯示重啟安裝", () => {
+  document.body.insertAdjacentHTML("beforeend", `
+    <div id="update-card" hidden>
+      <h2 id="update-card-title"></h2><span id="update-card-version"></span>
+      <p id="update-card-notes"></p><button id="update-card-install" hidden></button>
+    </div>`);
+  window.OverlayControl = fakeOverlay(false);
+  freshModule().initUpdateStatus({ t: (k) => k });
+  onStatus({ phase: "available", version: "5.4.2", manualInstall: true });
+  const button = document.querySelector("#update-card-install");
+  expect(button.hidden).toBe(false);
+  expect(button.disabled).toBe(false);
+  expect(button.textContent).toBe("Download update");
+  expect(document.querySelector("#update-card-notes").textContent).toContain("replace");
+  expect(document.querySelector(DIALOG)).toBeNull();
+  button.click();
+  expect(sendUpdateAction).toHaveBeenCalledWith("install", "5.4.2");
+});

@@ -44,7 +44,7 @@ body {
    * 設在 body 而非 html——tokens 是 rem，要讓它們續以 16px 為基準換算。 */
   font-size: var(--text-subhead);
   background-color: var(--color-bg-deep);
-  color: white;
+  color: var(--color-text-primary);
 }
 
 /* Per-language font priority. i18n.js updates <html lang=""> so these apply.
@@ -3237,35 +3237,6 @@ summary:focus-visible {
   width: 100%;
 }
 
-/* ─── Stream mode hiding ───────────────────────────────────────────────────
- * When body.stream-mode is set, low-frequency sections collapse so the
- * streamer only sees the controls they touch mid-broadcast (live feed,
- * blacklist, core controls, effects, history). Selector list intentionally
- * narrow — new sections default to visible unless added here.
- * The .stream-mode-toggle/.stream-mode-track switch that used to set this
- * body class is gone: nothing renders it any more, so only the body-class
- * consequence below is kept. */
-
-/* Hide low-frequency sections when stream mode is on.
- * Keep high-freq visible: live-feed, blacklist, effects, history,
- * moderation core controls (sec-moderation), and the chip quick-nav. */
-body.stream-mode #sec-themes,
-body.stream-mode #sec-emojis,
-body.stream-mode #sec-stickers,
-body.stream-mode #sec-sounds,
-body.stream-mode #sec-polls,
-body.stream-mode #sec-plugins,
-body.stream-mode #sec-webhooks,
-body.stream-mode #sec-scheduler,
-body.stream-mode #sec-security,
-body.stream-mode #sec-filters,
-body.stream-mode #sec-advanced,
-body.stream-mode #workspace-library,
-body.stream-mode #workspace-automation {
-  display: none;
-}
-
-
 /* Blacklist Warning Modal Styles */
 #blacklistWarningModal {
   position: fixed;
@@ -3319,7 +3290,7 @@ body.stream-mode #workspace-automation {
 
 #blacklistWarningModal .ok-button {
   background-color: var(--color-error);
-  color: white;
+  color: light-dark(var(--color-white), var(--btn-text-on-primary));
   font-weight: bold;
   padding: 0.75rem 1.5rem;
   border: none;
@@ -4056,6 +4027,8 @@ body.stream-mode #workspace-automation {
 .admin-ft-status.is-muted { color: var(--color-text-muted); }
 
 .admin-ft-token-display {
+  /* The token strip stays black in both themes; resolve its ink locally. */
+  color-scheme: dark;
   padding: var(--space-3);
   background: #000;
   border: 1px solid var(--hud-cyan-line);
@@ -5471,15 +5444,15 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   width: 300px; max-width: 100%;
   padding: var(--space-8) var(--space-6); text-align: center;
   background: var(--hud-bg1);
-  border: 1px solid rgba(255, 77, 79, 0.21);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 21%, transparent);
   border-radius: var(--radius-lg);
   box-shadow: 0 12px 48px var(--color-overlay);
 }
 .admin-eoff__icon {
   width: 56px; height: 56px; margin: 0 auto;
   border-radius: var(--radius-lg);
-  background: rgba(255, 77, 79, 0.05);
-  border: 1px solid rgba(255, 77, 79, 0.15);
+  background: color-mix(in srgb, var(--color-danger) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 15%, transparent);
   display: flex; align-items: center; justify-content: center;
   font-size: var(--text-title1);
   color: var(--color-danger);
@@ -5501,8 +5474,8 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 }
 .admin-eoff__queue {
   margin-top: var(--space-3); padding: var(--space-2) var(--space-2); border-radius: var(--radius-md-sm);
-  background: rgba(251, 191, 36, 0.05);
-  border: 1px solid rgba(251, 191, 36, 0.15);
+  background: color-mix(in srgb, var(--color-warning) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 15%, transparent);
   text-align: left;
 }
 .admin-eoff__queue-label {
@@ -5527,7 +5500,7 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   padding: var(--space-2) var(--space-6); border-radius: var(--radius-md-sm); cursor: pointer;
   border: 1px solid var(--color-danger);
   background: var(--color-danger);
-  color: var(--color-white);
+  color: light-dark(var(--color-white), var(--btn-text-on-primary));
   font-family: var(--font-mono);
   font-size: var(--text-caption); font-weight: 700; letter-spacing: 1.5px;
 }
@@ -5774,8 +5747,8 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   position: fixed; left: 0; right: 0; bottom: var(--viewer-kb-offset, 0);
   z-index: 9050;
   padding: var(--space-3) var(--space-4);
-  background: rgba(251, 191, 36, 0.08);
-  border-top: 1px solid rgba(251, 191, 36, 0.33);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--color-warning) 33%, transparent);
   font-family: var(--font-sans);
   display: flex; flex-direction: column; gap: var(--space-2);
 }
@@ -13036,8 +13009,8 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 
 .admin-ui-action.is-warn {
-  border-color: rgba(251, 191, 36, 0.45);
-  background: rgba(251, 191, 36, 0.08);
+  border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
   color: var(--color-ink-warning);
 }
 
@@ -13071,8 +13044,8 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 
 .admin-ui-action.is-warn:hover {
-  border-color: rgba(251, 191, 36, 0.60);
-  background: rgba(251, 191, 36, 0.12);
+  border-color: color-mix(in srgb, var(--color-warning) 60%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
   color: var(--color-ink-warning);
 }
 
@@ -14809,7 +14782,24 @@ body.is-light .admin-login-wordmark.is-on-light,
  * ────────────────────────────────────────────────────────────────────────── */
 .admin-backup-page { display: flex; flex-direction: column; gap: var(--space-3); }
 
-@media (max-width: 720px) { .admin-backup-row { grid-template-columns: 1fr; } }
+@media (max-width: 720px) {
+  .admin-backup-page .admin-ui-group-row {
+    flex-direction: column;
+    align-items: stretch;
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
+  }
+  .admin-backup-page .admin-ui-group-row .val {
+    flex-wrap: wrap;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  .admin-backup-page input[type="file"] {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
 
 
 .admin-backup-diff {

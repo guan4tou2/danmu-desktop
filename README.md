@@ -100,6 +100,13 @@ Record live danmu sessions as JSON timelines for offline replay or analysis. Ava
 3. Launch the app
 4. Enter the server host + HTTPS/web port printed by the setup wizard
 
+Mac updates: download the new arm64 ZIP, quit the app, and replace the previous
+app with the extracted copy. Settings stay in your user profile. These ad-hoc
+signed packages provide a download action rather than automatic installation.
+
+Pending messages expire 24 hours after they first enter the standby queue.
+Restarting the server or pausing again does not renew their deadline.
+
 ### Server Setup
 
 The canonical path is `./setup.sh init` — an interactive wizard that
@@ -211,6 +218,10 @@ Every other setting ships a safe default; `.env.example` shows them all.
 - `docs/archive/` – historical improvement notes kept for reference / 歷史紀錄。
 
 ## CI/CD & Docker Hub
+
+Frontend development uses Node.js 24 (minimum 22.12) and the committed lockfiles.
+Run `npm ci` in `server/` and `danmu-desktop/`; run `npm run test:js -- --runInBand`
+in `server/` for focused DOM tests and `npm test -- --runInBand` in `danmu-desktop/`.
 
 - Workflow `.github/workflows/docker-build.yml` builds and tests the server image on each PR/push.
 - Workflow `.github/workflows/test.yml` runs Python tests with coverage reporting, `pip-audit` for CVE scanning, and a CSS token-discipline lint (`scripts/check-css-tokens.mjs`) that fails on new hardcoded hex colors.

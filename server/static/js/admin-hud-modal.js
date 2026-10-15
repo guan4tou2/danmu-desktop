@@ -58,7 +58,7 @@
 
   function _onKey(e) {
     if (e.key === "Escape") { e.preventDefault(); _close(false); return; }
-    if (e.key === "Enter")  { e.preventDefault(); _close(true);  return; }
+    // Native button activation preserves Enter on Cancel and textarea newlines.
     if (e.key === "Tab") {
       // Trap focus inside the modal so keyboard nav can't escape behind it.
       const items = _focusable();

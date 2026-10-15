@@ -430,7 +430,7 @@
       _state.stopPoll = window.AdminUtils.pollWhileVisible({
         el: () => document.getElementById(PAGE_ID),
         intervalMs: REFRESH_MS,
-        tick: () => { _fetchUsage(); _fetchAudit(); },
+        tick: _fetchAll,
       });
     }
   }

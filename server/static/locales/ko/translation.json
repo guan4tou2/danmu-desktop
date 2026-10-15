@@ -672,7 +672,7 @@
   "lockoutRemaining": "남은 시간",
   "lockoutReason": "로그인 실패 횟수가 많습니다.",
   "lockoutContactAdmin": "관리자에게 문의",
-  "broadcastStandbyQueued": "메시지가 대기 중입니다. 표시가 재개되면 전송됩니다.",
+  "broadcastStandbyQueued": "메시지가 대기 중입니다. 화면이 재개되면 전송되며 24시간 후 만료됩니다.",
   "navAccordionAbout": "정보",
   "navAccordionApiTokens": "API 토큰",
   "navAccordionBackup": "백업",
@@ -2941,5 +2941,6 @@
   "deliveryStatus_shown": "이전 기록 · 표시 미확인",
   "deliveryStatus_blocked": "차단됨",
   "deliveryStatus_pinned": "고정됨",
-  "deliveryStatus_masked": "숨김 처리됨"
+  "deliveryStatus_masked": "숨김 처리됨",
+  "deliveryStatus_expired": "만료됨 (24시간 경과)"
 }

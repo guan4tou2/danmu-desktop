@@ -56,7 +56,6 @@ yarn-error.log*
 # Project specific paths
 danmu-desktop/node_modules/
 server/node_modules/
-server/package-lock.json
 danmu-desktop/dist/
 danmu-desktop/out/
 danmu-desktop/build/
@@ -183,3 +182,5 @@ server/webhooks.json
 /.bvout.txt
 /.pyout.txt
 /.pwinstall.txt
+/.playwright-cli/
+/output/playwright/

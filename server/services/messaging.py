@@ -64,6 +64,9 @@ def _raw_forward(data) -> bool:
     The onscreen_limiter callback. Standby gating happens BEFORE this so a parked
     danmu does not consume an in-flight slot.
     """
+    if isinstance(data, dict) and broadcast.is_pending_expired(data):
+        broadcast.mark_pending_expired(data)
+        return False
     try:
         ws_queue.enqueue_message(data)
         if isinstance(data, dict) and data.get("text") is not None and data.get("message_id"):
@@ -117,6 +120,9 @@ def forward_to_ws_server(data, bypass_broadcast_gate=False):
     # Broadcast standby gate runs BEFORE the limiter so parked danmu don't
     # consume in-flight slots.
     is_danmu = isinstance(data, dict) and data.get("text") is not None
+    if is_danmu and broadcast.is_pending_expired(data):
+        broadcast.mark_pending_expired(data)
+        return {"status": "dropped", "reason": "expired"}
     if is_danmu and not bypass_broadcast_gate:
         queue_size = None
         try:

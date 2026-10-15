@@ -26,7 +26,7 @@ body {
    * 設在 body 而非 html——tokens 是 rem，要讓它們續以 16px 為基準換算。 */
   font-size: var(--text-subhead);
   background-color: var(--color-bg-deep);
-  color: white;
+  color: var(--color-text-primary);
 }
 
 :lang(zh) {
@@ -168,7 +168,7 @@ summary:focus-visible {
 
 #blacklistWarningModal .ok-button {
   background-color: var(--color-error);
-  color: white;
+  color: light-dark(var(--color-white), var(--btn-text-on-primary));
   font-weight: bold;
   padding: 0.75rem 1.5rem;
   border: none;
@@ -365,7 +365,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   width: 300px; max-width: 100%;
   padding: var(--space-8) var(--space-6); text-align: center;
   background: var(--hud-bg1);
-  border: 1px solid rgba(255, 77, 79, 0.21);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 21%, transparent);
   border-radius: var(--radius-lg);
   box-shadow: 0 12px 48px var(--color-overlay);
 }
@@ -373,8 +373,8 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 .admin-eoff__icon {
   width: 56px; height: 56px; margin: 0 auto;
   border-radius: var(--radius-lg);
-  background: rgba(255, 77, 79, 0.05);
-  border: 1px solid rgba(255, 77, 79, 0.15);
+  background: color-mix(in srgb, var(--color-danger) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 15%, transparent);
   display: flex; align-items: center; justify-content: center;
   font-size: var(--text-title1);
   color: var(--color-danger);
@@ -400,8 +400,8 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
 
 .admin-eoff__queue {
   margin-top: var(--space-3); padding: var(--space-2) var(--space-2); border-radius: var(--radius-md-sm);
-  background: rgba(251, 191, 36, 0.05);
-  border: 1px solid rgba(251, 191, 36, 0.15);
+  background: color-mix(in srgb, var(--color-warning) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 15%, transparent);
   text-align: left;
 }
 
@@ -430,7 +430,7 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   padding: var(--space-2) var(--space-6); border-radius: var(--radius-md-sm); cursor: pointer;
   border: 1px solid var(--color-danger);
   background: var(--color-danger);
-  color: var(--color-white);
+  color: light-dark(var(--color-white), var(--btn-text-on-primary));
   font-family: var(--font-mono);
   font-size: var(--text-caption); font-weight: 700; letter-spacing: 1.5px;
 }
@@ -462,8 +462,8 @@ body[data-setup-wizard-open="1"] { overflow: hidden; }
   position: fixed; left: 0; right: 0; bottom: var(--viewer-kb-offset, 0);
   z-index: 9050;
   padding: var(--space-3) var(--space-4);
-  background: rgba(251, 191, 36, 0.08);
-  border-top: 1px solid rgba(251, 191, 36, 0.33);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--color-warning) 33%, transparent);
   font-family: var(--font-sans);
   display: flex; flex-direction: column; gap: var(--space-2);
 }

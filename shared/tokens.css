@@ -7,6 +7,16 @@
    * with higher-specificity selectors when their light theme is active. */
   color-scheme: dark;
 
+  /* Projection option colors stay constant across page themes; theme packs
+   * can override each option without replacing renderer code. */
+  --poll-option-a: var(--sky-400);
+  --poll-option-b: var(--amber-400);
+  --poll-option-c: var(--green-300);
+  --poll-option-d: var(--red-400);
+  --poll-option-e: var(--slate-400);
+  --poll-option-f: var(--slate-100);
+  --poll-winner: var(--color-accent-light);
+
   /* ══════════════════════════════════════════════════════════════════
    * Layer 0 — Primitive palette (色彩系統 v2 · Issue #120 · Phase 1)
    *
