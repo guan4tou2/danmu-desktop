@@ -27,7 +27,7 @@ from simple_websocket.ws import CloseReason
 
 from ..config import Config
 from ..managers import connection_manager
-from ..services import broadcast, display_layer, ws_auth, ws_queue
+from ..services import broadcast, delivery_tracking, display_layer, ws_auth, ws_queue
 from ..services.ws_state import update_ws_client_count
 from ..utils import sanitize_log_string
 
@@ -40,6 +40,8 @@ _STOP = object()
 
 _connections_by_ip: dict = {}
 _msg_counts: dict = {}
+_ack_counts: dict = {}
+_unassigned_ack_counts: dict = {}
 _outboxes: dict = {}
 _outboxes_lock = threading.Lock()
 
@@ -66,13 +68,17 @@ def _broadcast_to_outboxes(payload):
             pass
 
 
-def _check_msg_rate(ws) -> bool:
+def _check_msg_rate(ws, *, receipt=False, assigned=True) -> bool:
     now = time.monotonic()
-    entry = _msg_counts.get(ws)
+    counts = (_ack_counts if assigned else _unassigned_ack_counts) if receipt else _msg_counts
+    # At most 500 queued messages per 0.5s broadcast tick. Genuine receipts
+    # must survive that burst; unassigned/forged receipts keep the normal cap.
+    limit = 10000 if receipt and assigned else _WS_MSG_RATE
+    entry = counts.get(ws)
     if entry is None or now - entry[1] >= _WS_MSG_WINDOW:
-        _msg_counts[ws] = [1, now]
+        counts[ws] = [1, now]
         return True
-    if entry[0] >= _WS_MSG_RATE:
+    if entry[0] >= limit:
         return False
     entry[0] += 1
     return True
@@ -84,7 +90,19 @@ def _sender_loop(ws, outbox):
             msg = outbox.get()
             if msg is _STOP:
                 break
-            ws.send(msg)
+            data = json.loads(msg)
+            message_id = (
+                data.get("message_id")
+                if isinstance(data, dict) and data.get("text") is not None
+                else None
+            )
+            if isinstance(message_id, str):
+                delivery_tracking.sent_to(message_id, ws)
+            try:
+                ws.send(msg)
+            except Exception:
+                delivery_tracking.revoke(message_id, ws)
+                raise
     except Exception:
         pass
     try:
@@ -102,6 +120,8 @@ def _forward_messages():
             if messages:
                 for data in messages:
                     _broadcast_to_outboxes(json.dumps(data))
+
+            delivery_tracking.sweep()
 
             now = time.monotonic()
             with _outboxes_lock:
@@ -223,15 +243,28 @@ def init_ws(app):
                     logger.warning("WS message exceeded max size for %s", client_ip)
                     ws.close(reason=CloseReason.MESSAGE_TOO_BIG)
                     break
-                if not _check_msg_rate(ws):
+                try:
+                    msg = json.loads(data)
+                except (json.JSONDecodeError, ValueError):
+                    _check_msg_rate(ws)
+                    continue
+                if not isinstance(msg, dict):
+                    _check_msg_rate(ws)
+                    continue
+                is_receipt = msg.get("type") == "render_ack"
+                eligible_receipt = is_receipt and delivery_tracking.is_eligible(
+                    msg.get("message_id"), ws
+                )
+                if not _check_msg_rate(ws, receipt=is_receipt, assigned=eligible_receipt):
                     logger.warning(
                         "WS per-connection message rate limit exceeded for %s",
                         client_ip,
                     )
                     continue
                 try:
-                    msg = json.loads(data)
-                    if msg.get("type") == "heartbeat":
+                    if is_receipt:
+                        delivery_tracking.acknowledge(msg.get("message_id"), ws)
+                    elif msg.get("type") == "heartbeat":
                         outbox.put_nowait(
                             json.dumps(
                                 {
@@ -251,6 +284,9 @@ def init_ws(app):
             sender_gl.join(timeout=2)
             _unregister_outbox(ws)
             _msg_counts.pop(ws, None)
+            _ack_counts.pop(ws, None)
+            _unassigned_ack_counts.pop(ws, None)
+            delivery_tracking.disconnected(ws)
             if client_ip in _connections_by_ip:
                 _connections_by_ip[client_ip].discard(ws)
                 if not _connections_by_ip[client_ip]:
