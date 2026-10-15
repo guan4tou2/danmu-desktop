@@ -292,6 +292,7 @@ to the host by the default `docker-compose.yml`:
 | `./server/runtime/webhooks.json` | `/app/server/runtime/webhooks.json` | Registered webhooks |
 | `./server/runtime/plugins_state.json` | `/app/server/runtime/plugins_state.json` | Enabled/disabled plugins |
 | `./server/runtime/ws_auth.json` | `/app/server/runtime/ws_auth.json` | WS token auth state (chmod 0o600, v4.8.0+) |
+| `./server/runtime/admin_password.hash` | `/app/server/runtime/admin_password.hash` | Changed admin password, bcrypt hash (chmod 0o600) |
 | `./server/user_plugins/` | `/app/server/user_plugins/` | Custom user plugins (drop `.py` files here) |
 | `./server/user_fonts/` | `/app/server/user_fonts/` | Uploaded user fonts |
 | `./server/static/` | `/app/server/static/` | Uploaded stickers / emojis (plus bundled assets) |
@@ -308,6 +309,23 @@ manager detects `server/plugins/plugins_state.json` and copies it to the new
 The paths for filter / settings / webhooks are redirected into `./server/runtime/`
 via `FILTER_RULES_FILE`, `SETTINGS_FILE`, `WEBHOOKS_PATH` env vars in compose.
 This keeps all new state in one dir for easy backup.
+
+Admin password changes take priority over `ADMIN_PASSWORD_HASHED` and
+`ADMIN_PASSWORD` and are saved atomically in `runtime/admin_password.hash`.
+Standalone deployments can override its path with `ADMIN_PASSWORD_HASH_FILE`;
+keep that path on persistent storage. Remembered admin logins last 30 days
+from sign-in and are revoked when the password changes. Leave the sign-in
+checkbox unchecked on shared devices to use a browser-session cookie.
+
+**Password migration:** if `server/.admin_password.hash` from an older install
+still exists when the server starts, it is copied into the new runtime
+location automatically. Before replacing an older Docker container, copy
+its `/app/server/.admin_password.hash`, if present, into the host's
+`server/runtime/admin_password.hash` with mode `0600` and ownership matching
+UID `1000`; preserve any existing runtime hash instead of overwriting it.
+The old file belongs to the container layer and cannot be recovered by the
+new container after replacement. Include the runtime hash in host backups;
+the admin UI's settings export does not include password credentials.
 
 ## Backup & restore
 

@@ -1,5 +1,6 @@
 import os
 import secrets
+import tempfile
 from pathlib import Path
 
 from dotenv import find_dotenv, load_dotenv
@@ -9,23 +10,56 @@ from dotenv import find_dotenv, load_dotenv
 # `ADMIN_PASSWORD=test uv run ...` behave as expected.
 load_dotenv(find_dotenv(), override=False)
 
-# Runtime-writable password hash file (takes priority over env vars)
-_HASH_FILE = Path(__file__).parent / ".admin_password.hash"
+# Keep changed passwords in the same persistent volume as other runtime
+# state. The old source-directory file disappeared on container recreate.
+_HASH_FILE = Path(
+    os.getenv("ADMIN_PASSWORD_HASH_FILE")
+    or Path(__file__).parent / "runtime" / "admin_password.hash"
+)
+_LEGACY_HASH_FILE = Path(__file__).parent / ".admin_password.hash"
 _SECRET_KEY_ENV = (os.getenv("SECRET_KEY") or "").strip()
 
 
 def load_runtime_hash() -> str:
-    """Return bcrypt hash from .admin_password.hash, or '' if not present."""
+    """Read persisted credentials, migrating the old location if necessary.
+
+    An existing but empty runtime file is an error: falling back to an old
+    environment password would also revive its remembered admin sessions.
+    """
     try:
-        return _HASH_FILE.read_text().strip()
+        hashed = _HASH_FILE.read_text().strip()
     except FileNotFoundError:
-        return ""
+        try:
+            hashed = _LEGACY_HASH_FILE.read_text().strip()
+        except FileNotFoundError:
+            return ""
+        if hashed:
+            save_runtime_hash(hashed)
+        return hashed
+    if not hashed:
+        raise ValueError("Persisted admin password hash is empty")
+    return hashed
 
 
 def save_runtime_hash(hashed: str) -> None:
-    """Persist a new bcrypt hash to .admin_password.hash."""
-    _HASH_FILE.write_text(hashed)
-    os.chmod(_HASH_FILE, 0o600)
+    """Atomically persist credentials with owner-only permissions.
+
+    Never truncate the live file: a failed write must leave the previous
+    password intact, and callers only update their live config on success.
+    """
+    if not hashed.strip():
+        raise ValueError("Admin password hash must not be empty")
+    _HASH_FILE.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=".admin-password-", dir=_HASH_FILE.parent)
+    try:
+        with os.fdopen(fd, "w") as stream:
+            os.chmod(temporary, 0o600)
+            stream.write(hashed.strip())
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, _HASH_FILE)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
 
 
 class Config:
@@ -39,7 +73,7 @@ class Config:
     # Priority: runtime hash file > ADMIN_PASSWORD_HASHED env var > plaintext ADMIN_PASSWORD
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
     APP_NAME = "Danmu Fire"
-    APP_VERSION = "5.4.1"
+    APP_VERSION = "5.4.2"
     PORT = int(os.getenv("PORT", "8080"))
     ENV = os.getenv("ENV", "development").lower()
     MAX_CONTENT_LENGTH = 15 * 1024 * 1024  # 15 MB uploads

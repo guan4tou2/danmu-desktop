@@ -2670,7 +2670,7 @@
   "helpDrawerModerationTip3": "送信上限：既定は 1 人あたり毎分 6 件。大規模（200 人超）は 3、小人数なら 10 まで上げられます。",
   "helpDrawerModerationFieldTip": "このページより速い方法：コントロール画面のメッセージ一覧で ⋯ → ブロック。⌘K で「封鎖」と入力しても開けます。",
   "sxTitle": "ログインの有効期限が切れました",
-  "sxBody": "8 時間以上操作がありませんでした。大画面と観客には影響ありません。パスワードを入力すると元のページに戻れます。",
+  "sxBody": "もう一度ログインしてください。大画面と観客への影響はありません。パスワードを入力すると元の画面に戻ります。",
   "sxPasswordLabel": "管理パスワード",
   "sxSubmit": "再ログイン",
   "sxToastBack": "再ログインしました",
@@ -2960,5 +2960,7 @@
   "deliveryStatus_blocked": "ブロック済み",
   "deliveryStatus_pinned": "固定済み",
   "deliveryStatus_masked": "非表示",
-  "deliveryStatus_expired": "期限切れ（24時間経過）"
+  "deliveryStatus_expired": "期限切れ（24時間経過）",
+  "adminLoginRemember": "この端末でログインを30日間保持する",
+  "adminLoginRememberNote": "自分専用の端末でのみ選択してください。共有端末では選択しないでください。"
 }

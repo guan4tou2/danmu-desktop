@@ -9,8 +9,8 @@ from server.services import onscreen_config
 
 @pytest.fixture()
 def logged_client(client):
+    client.post("/login", data={"password": "test"})
     with client.session_transaction() as sess:
-        sess["logged_in"] = True
         sess["csrf_token"] = "test-csrf"
     return client
 

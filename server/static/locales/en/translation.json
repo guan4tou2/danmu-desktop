@@ -2670,7 +2670,7 @@
   "helpDrawerModerationTip3": "Send limit: 6 per person per minute by default. For large events (>200 people) try 3; for a small class you can go to 10.",
   "helpDrawerModerationFieldTip": "Faster than this page: hit ⋯ → Block right in the dashboard message list. ⌘K and type “block” works too.",
   "sxTitle": "Session expired",
-  "sxBody": "Idle for over 8 hours. The big screen and your audience are unaffected — enter your password to return to what you were doing.",
+  "sxBody": "Please sign in again. The display and audience are unaffected; enter your password to return to where you left off.",
   "sxPasswordLabel": "Admin password",
   "sxSubmit": "Sign in again",
   "sxToastBack": "Signed in",
@@ -2960,5 +2960,7 @@
   "deliveryStatus_blocked": "Blocked",
   "deliveryStatus_pinned": "Pinned",
   "deliveryStatus_masked": "Masked",
-  "deliveryStatus_expired": "Expired (over 24 hours)"
+  "deliveryStatus_expired": "Expired (over 24 hours)",
+  "adminLoginRemember": "Stay signed in on this device for 30 days",
+  "adminLoginRememberNote": "Select only on your own device. Leave unchecked on shared devices."
 }

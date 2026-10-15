@@ -13,6 +13,7 @@ from flask import (
 )
 
 from ..config import save_runtime_hash
+from ..services.admin_session import start_admin_session
 from ..services.security import (
     hash_password,
     issue_csrf_token,
@@ -94,8 +95,7 @@ def login():
         password_valid = hmac.compare_digest(password, admin_password)
 
     if password_valid:
-        session.clear()
-        session["logged_in"] = True
+        start_admin_session(remember=request.form.get("remember") == "1")
         session["csrf_token"] = issue_csrf_token()
         try:
             from ..services import audit_log
@@ -175,6 +175,9 @@ def change_password():
         save_runtime_hash(new_hash)
         # Update the live config so subsequent logins use the new hash immediately
         current_app.config["ADMIN_PASSWORD_HASHED"] = new_hash
+        # The credential version invalidates other devices on their next
+        # request. Clear this device immediately as well.
+        session.clear()
         current_app.logger.info("Admin password changed successfully")
         try:
             from ..services import audit_log
@@ -184,7 +187,7 @@ def change_password():
             )
         except Exception:
             pass
-        return _json_response({"message": "Password changed successfully"})
+        return _json_response({"message": "Password changed successfully", "reauthenticate": True})
     except Exception as exc:
         current_app.logger.error("Failed to save password hash: %s", sanitize_log_string(str(exc)))
         return _json_response({"error": "Failed to save new password"}, 500)

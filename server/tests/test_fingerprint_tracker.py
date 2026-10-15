@@ -147,8 +147,7 @@ class TestFingerprintAdminRoutes:
 
     def test_list_fingerprints_authorized(self, client):
         fingerprint_tracker.record("fp-a", "1.1.1.1", "UA")
-        with client.session_transaction() as sess:
-            sess["logged_in"] = True
+        client.post("/login", data={"password": "test"})
         rv = client.get("/admin/fingerprints")
         assert rv.status_code == 200
         data = rv.get_json()
@@ -159,8 +158,7 @@ class TestFingerprintAdminRoutes:
     def test_list_fingerprints_limit_param(self, client):
         for i in range(10):
             fingerprint_tracker.record(f"fp-{i}", "1.1.1.1", "UA")
-        with client.session_transaction() as sess:
-            sess["logged_in"] = True
+        client.post("/login", data={"password": "test"})
         rv = client.get("/admin/fingerprints?limit=3")
         assert rv.status_code == 200
         data = rv.get_json()
@@ -168,21 +166,19 @@ class TestFingerprintAdminRoutes:
 
     def test_list_fingerprints_bad_limit_falls_back(self, client):
         fingerprint_tracker.record("fp-a", "1.1.1.1", "UA")
-        with client.session_transaction() as sess:
-            sess["logged_in"] = True
+        client.post("/login", data={"password": "test"})
         rv = client.get("/admin/fingerprints?limit=not-a-number")
         assert rv.status_code == 200
 
     def test_reset_requires_csrf(self, client):
-        with client.session_transaction() as sess:
-            sess["logged_in"] = True
+        client.post("/login", data={"password": "test"})
         rv = client.post("/admin/fingerprints/reset")
         assert rv.status_code == 403
 
     def test_reset_fingerprints_authorized(self, client):
         fingerprint_tracker.record("fp-a", "1.1.1.1", "UA")
+        client.post("/login", data={"password": "test"})
         with client.session_transaction() as sess:
-            sess["logged_in"] = True
             sess["csrf_token"] = "test-csrf"
         rv = client.post(
             "/admin/fingerprints/reset",

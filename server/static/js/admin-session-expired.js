@@ -6,7 +6,7 @@
  * 是跳回登入頁，保留當前路由**：
  *
  *   登入已過期
- *   閒置超過 8 小時。大螢幕與觀眾不受影響，重新輸入密碼即可回到剛才的頁面。
+ *   請重新登入。大螢幕與觀眾不受影響，重新輸入密碼即可回到剛才的頁面。
  *   [密碼]  [重新登入]
  *
  * 「大螢幕與觀眾不受影響」是刻意寫的——主持人在台上看到「登入過期」的第一個
@@ -82,7 +82,7 @@
       t("sxTitle", "登入已過期") +
       "</h2>" +
       '<p class="admin-sx__body" id="admin-sx-body" data-i18n="sxBody">' +
-      t("sxBody", "閒置超過 8 小時。大螢幕與觀眾不受影響，重新輸入密碼即可回到剛才的頁面。") +
+      t("sxBody", "請重新登入。大螢幕與觀眾不受影響，重新輸入密碼即可回到剛才的頁面。") +
       "</p>" +
       '<form class="admin-sx__form" data-sx-form>' +
       '<label class="admin-sx__label" for="admin-sx-password" data-i18n="sxPasswordLabel">' +
@@ -90,6 +90,14 @@
       "</label>" +
       '<input class="admin-sx__input" type="password" id="admin-sx-password" ' +
       'name="password" autocomplete="current-password" required />' +
+      '<label class="admin-login-remember" for="admin-sx-remember">' +
+      '<input type="checkbox" id="admin-sx-remember" name="remember" value="1" />' +
+      '<span data-i18n="adminLoginRemember">' +
+      t("adminLoginRemember", "在這台裝置保持登入 30 天") +
+      '</span></label>' +
+      '<p class="admin-login-remember-note" data-i18n="adminLoginRememberNote">' +
+      t("adminLoginRememberNote", "只在自己的裝置勾選；共用裝置請保持未勾選。") +
+      '</p>' +
       '<p class="admin-sx__error" data-sx-error role="alert" hidden></p>' +
       '<button type="submit" class="admin-sx__submit" data-i18n="sxSubmit">' +
       t("sxSubmit", "重新登入") +
@@ -118,6 +126,7 @@
 
     var body = new URLSearchParams();
     body.set("password", input.value);
+    if (root.querySelector("#admin-sx-remember").checked) body.set("remember", "1");
 
     // 用原始 fetch，不要走 window.fetch——admin-reconnect-banner 把它包過，
     // 這裡的 401 是「密碼錯」而不是「session 過期」，讓它去觸發對話框會遞迴。
