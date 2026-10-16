@@ -15,14 +15,14 @@
 #   --branch <name>    — branch to pull (default: current local branch)
 #   --no-build         — skip image rebuild (assets-only update; faster)
 #   --no-restart       — pull only, don't touch the container
-#   --verify           — run healthcheck after deploy (auto-detects HTTP/HTTPS)
+#   --verify           — check health and public assets after deploy
 #   --dry-run          — print the SSH command instead of running it
 #
 # Usage examples:
 #   ./scripts/deploy-vps.sh
 #   ./scripts/deploy-vps.sh --branch main
 #   ./scripts/deploy-vps.sh --no-build      # static/runtime changes only
-#   ./scripts/deploy-vps.sh --verify        # deploy + auto healthcheck
+#   ./scripts/deploy-vps.sh --verify        # deploy + health / public asset checks
 #   ./scripts/deploy-vps.sh --dry-run
 #
 # Preset shortcuts (export in your shell profile):
@@ -76,7 +76,10 @@ if [[ -z "$HOST" ]]; then
 fi
 
 # Build the remote command pipeline.
-remote_cmd="cd ${PROJECT}"
+# Git-created public bind-mounted files must remain readable by the
+# container's UID even when the remote login shell inherits umask 077.
+# This only affects new files; existing .env/runtime permissions stay intact.
+remote_cmd="umask 022 && cd ${PROJECT}"
 
 # Warn if .env has local changes not tracked by git
 remote_cmd="${remote_cmd} && if git diff --name-only HEAD 2>/dev/null | grep -q '^\.env$'; then echo '[WARN] .env has uncommitted changes — verify env vars are correct'; fi"
@@ -114,9 +117,6 @@ fi
 
 ssh "${ssh_args[@]}"
 
-echo
-echo "✓ Deploy finished."
-
 # ── Verify (optional) ───────────────────────────────────────────────────────
 if [[ "$DO_VERIFY" -eq 1 ]]; then
   echo "→ Running healthcheck..."
@@ -138,8 +138,8 @@ if [[ "$DO_VERIFY" -eq 1 ]]; then
   if [[ -n "$KEY" ]]; then
     verify_cmd+=(-i "$KEY")
   fi
-  verify_cmd+=("$HOST" "$remote_health_cmd")
-  HEALTH=$("${verify_cmd[@]}")
+  verify_cmd+=("$HOST")
+  HEALTH=$("${verify_cmd[@]}" "$remote_health_cmd")
   if [[ "$HEALTH" == "FAIL" ]]; then
     echo "✗ Healthcheck failed — server may still be starting. Check with:"
     echo "  ssh${KEY:+ -i ${KEY}} ${HOST} 'docker compose -f ${PROJECT}/docker-compose.yml logs --tail 20 server'"
@@ -147,7 +147,24 @@ if [[ "$DO_VERIFY" -eq 1 ]]; then
   else
     echo "✓ Healthcheck passed: ${HEALTH:0:120}"
   fi
+
+  # Run as the container's configured user: a host/root read can hide
+  # permission failures in the bind-mounted public assets.
+  remote_assets_cmd="cd ${PROJECT} && docker exec danmu-fire python -c 'import urllib.request
+paths = [\"/static/js/admin.bundle.js\", \"/static/css/style.css\", \"/static/css/tokens.css\", \"/static/css/viewer-base.css\", \"/static/js/overlay-render-confirmation.js\"]
+for path in paths:
+    with urllib.request.urlopen(\"http://127.0.0.1:8080\" + path, timeout=5) as response:
+        if response.status != 200 or not response.read().strip():
+            raise RuntimeError(\"Unreadable or empty public asset: \" + path)
+print(\"Public asset verification passed: 5 assets\")'"
+  if ! "${verify_cmd[@]}" "$remote_assets_cmd"; then
+    echo "✗ Public asset verification failed — check container access to server/static."
+    exit 1
+  fi
 else
   echo "  Verify manually:"
   echo "  ssh${KEY:+ -i ${KEY}} ${HOST} 'curl -sf http://127.0.0.1:4000/health || curl -skf https://127.0.0.1:4000/health'"
 fi
+
+echo
+echo "✓ Deploy finished."

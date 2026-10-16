@@ -11537,6 +11537,20 @@ body.admin-pu-open { overflow: hidden; }
 /* grid 背景是裝飾（設計稿 03）：移除。 */
 .admin-login-shell::before { display: none; }
 
+/* 登入區域使用較沉穩的底色與控制項；只影響登入及重新登入，
+   主題偏好與其他後台頁面仍使用既有色階。 */
+body.admin-body:has(.admin-login-shell) {
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 65%),
+    color-mix(in srgb, var(--admin-bg) 94%, var(--admin-text));
+}
+
+.admin-login-shell,
+.admin-sx {
+  --admin-auth-secondary: color-mix(in srgb, var(--admin-text) 82%, var(--color-bg-base));
+  --admin-auth-border: color-mix(in srgb, var(--admin-text) 60%, var(--color-bg-base));
+}
+
 .admin-login-card {
   max-width: 360px;
   background: transparent;
@@ -11582,7 +11596,7 @@ body.is-light .admin-login-wordmark.is-on-light,
 .admin-login-subtitle {
   margin-top: var(--space-2);
   font-size: var(--text-subhead);
-  color: var(--admin-text-dim);
+  color: var(--admin-auth-secondary);
 }
 
 .admin-login-form {
@@ -11597,6 +11611,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   font-size: var(--text-footnote);
   letter-spacing: 0;
   text-transform: none;
+  color: var(--admin-text);
 }
 
 .admin-login-inputwrap {
@@ -11605,12 +11620,18 @@ body.is-light .admin-login-wordmark.is-on-light,
   align-items: center;
 }
 
-.admin-login-input {
+.admin-body input.admin-login-input {
   min-height: 44px;
   padding: 0 72px 0 var(--space-4);
   border-radius: var(--radius-lg);
   font-family: var(--font-ui);
   font-size: var(--text-body);
+  background: var(--color-bg-base);
+  border-color: var(--admin-auth-border);
+}
+
+.admin-body input.admin-login-input:focus {
+  border-color: var(--color-primary-hover);
 }
 
 /* 「顯示 / 隱藏」壓在欄位右側，命中區靠 padding 撐到 44（設計稿 17） */
@@ -11619,7 +11640,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   right: var(--space-1);
   border: 0;
   background: transparent;
-  color: var(--admin-text-dim);
+  color: var(--admin-auth-secondary);
   font: inherit;
   font-size: var(--text-footnote);
   padding: var(--space-3);
@@ -11635,6 +11656,13 @@ body.is-light .admin-login-wordmark.is-on-light,
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
+  background: var(--color-primary-hover);
+  color: var(--color-ink-on-accent);
+}
+
+.admin-login-submit:hover,
+.admin-sx__submit:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary-hover) 88%, var(--admin-text));
 }
 
 /* 錯誤訊息：內嵌一行，說明剩餘次數與鎖定時間（設計稿 06 · L2） */
@@ -11650,6 +11678,11 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-login-chiprow { margin-top: 0; }
 
+.admin-login-chiprow .ui-status.is-success {
+  background: color-mix(in srgb, var(--color-success) 8%, var(--color-bg-base));
+  color: var(--color-ink-success-strong);
+}
+
 .admin-login-remember {
   display: flex;
   align-items: center;
@@ -11663,22 +11696,23 @@ body.is-light .admin-login-wordmark.is-on-light,
   flex-shrink: 0;
   width: var(--space-4);
   height: var(--space-4);
-  accent-color: var(--color-accent);
+  accent-color: var(--color-primary-hover);
 }
 .admin-login-remember-note {
   margin: 0;
   font-size: var(--text-caption);
   line-height: 1.6;
-  color: var(--admin-text-dim);
+  color: var(--admin-auth-secondary);
 }
 
 /* 密碼錯誤時欄位轉紅框（設計稿 06 · L2）—— 錯誤要指向出錯的地方，
    不能只在下面丟一行紅字。 */
-.admin-login-input.is-error {
-  border-color: var(--color-danger);
+.admin-body input.admin-login-input.is-error {
+  border-color: var(--color-ink-danger);
 }
 
-.admin-login-input.is-error:focus {
+.admin-body input.admin-login-input.is-error:focus {
+  border-color: var(--color-ink-danger);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 22%, transparent);
 }
 
@@ -11850,7 +11884,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   width: 100%; max-width: 26rem;
   padding: var(--space-6);
   background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--admin-auth-border);
   border-radius: var(--radius-lg);
   box-shadow: 0 var(--space-4) var(--space-8) var(--shadow-base);
 }
@@ -11864,30 +11898,33 @@ body.is-light .admin-login-wordmark.is-on-light,
   margin: 0 0 var(--space-5);
   font-size: var(--text-footnote);
   line-height: 1.6;
-  color: var(--color-text-secondary);
+  color: var(--admin-auth-secondary);
 }
 .admin-sx__form { display: flex; flex-direction: column; gap: var(--space-2); }
 .admin-sx__label {
   font-size: var(--text-caption);
-  color: var(--color-text-secondary);
+  color: var(--admin-text);
 }
-.admin-sx__input {
+.admin-body input.admin-sx__input {
   width: 100%;
   padding: var(--space-3);
   font-size: var(--text-footnote);
   color: var(--color-text-primary);
   background: var(--color-bg-base);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--admin-auth-border);
   border-radius: var(--radius-md);
 }
-.admin-sx__input:focus-visible {
+.admin-body input.admin-sx__input:focus {
+  border-color: var(--color-primary-hover);
+}
+.admin-body input.admin-sx__input:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 .admin-sx__error {
   margin: 0;
   font-size: var(--text-caption);
-  color: var(--color-danger);
+  color: var(--color-ink-danger);
 }
 .admin-sx__submit {
   margin-top: var(--space-2);
@@ -11895,7 +11932,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   font-size: var(--text-footnote);
   font-weight: 600;
   color: var(--color-ink-on-accent);
-  background: var(--color-accent);
+  background: var(--color-primary-hover);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
