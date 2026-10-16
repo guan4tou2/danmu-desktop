@@ -19,6 +19,33 @@ REAL_CURL="$(command -v curl)"
 REMOTE_REPO="$TMP_DIR/remote"
 mkdir "$TMP_DIR/bin"
 
+# Resolve the wrapper's actual targets against the repository before making
+# fixtures, so an invented fixture cannot hide a stale production asset path.
+"$TEST_PYTHON" - "$ROOT_DIR" "$TMP_DIR/probe-paths.json" <<'PY'
+import ast
+import json
+import pathlib
+import subprocess
+import sys
+
+root, paths_file = map(pathlib.Path, sys.argv[1:])
+source = (root / "scripts/deploy-vps.sh").read_text()
+assignment = next(line.removeprefix("paths = ") for line in source.splitlines() if line.startswith("paths = "))
+paths = ast.literal_eval(assignment.replace(chr(92), ""))
+assert len(paths) == 5
+for url_path in paths:
+    assert url_path.startswith("/static/"), url_path
+    asset = root / "server" / url_path.lstrip("/")
+    for tracked in {asset, asset.resolve(strict=True)}:
+        subprocess.run(
+            ["git", "-C", str(root), "ls-files", "--error-unmatch", "--", str(tracked.relative_to(root))],
+            check=True, stdout=subprocess.DEVNULL,
+        )
+    assert asset.is_file() and asset.read_bytes().strip(), url_path
+paths_file.write_text(json.dumps(paths))
+PY
+echo 'PASS: all five wrapper probes resolve to tracked, readable repository public assets'
+
 # Use a real pull/checkout, rather than asserting that a command contains
 # "umask 022". Newly tracked files start out absent from the remote repo.
 git init -q -b main "$TMP_DIR/origin"
@@ -32,9 +59,8 @@ mkdir -p "$TMP_DIR/origin/server/static/js" "$TMP_DIR/origin/server/static/css" 
 printf 'window.adminLoaded = true;\n' > "$TMP_DIR/origin/server/static/js/admin.bundle.js"
 printf 'body { display: block; }\n' > "$TMP_DIR/origin/server/static/css/style.css"
 printf ':root { --test-token: 1; }\n' > "$TMP_DIR/origin/shared/tokens.css"
-printf '.hud { display: block; }\n' > "$TMP_DIR/origin/shared/hud.css"
+printf '.viewer { display: block; }\n' > "$TMP_DIR/origin/server/static/css/viewer-base.css"
 ln -s ../../../shared/tokens.css "$TMP_DIR/origin/server/static/css/tokens.css"
-ln -s ../../../shared/hud.css "$TMP_DIR/origin/server/static/css/hud.css"
 printf 'window.renderConfirmation = true;\n' > "$TMP_DIR/origin/server/static/js/overlay-render-confirmation.js"
 git -C "$TMP_DIR/origin" add server shared
 git -C "$TMP_DIR/origin" -c commit.gpgsign=false -c core.hooksPath=/dev/null commit -qm public-assets
@@ -174,19 +200,20 @@ run_verify() {
 export TEST_HEALTH_SOURCE=public DANMU_PUBLIC_URL=https://health.example.test
 run_verify success
 grep -q 'source=public' <<< "$output"
-"$TEST_PYTHON" - "$REMOTE_REPO" "$TMP_DIR/requests" <<'PY'
+"$TEST_PYTHON" - "$REMOTE_REPO" "$TMP_DIR/requests" "$TMP_DIR/probe-paths.json" <<'PY'
+import json
 import pathlib
 import stat
 import sys
 
-root, request_log = map(pathlib.Path, sys.argv[1:])
-paths = ["js/admin.bundle.js", "css/style.css", "css/tokens.css", "css/hud.css", "js/overlay-render-confirmation.js"]
+root, request_log, paths_file = map(pathlib.Path, sys.argv[1:])
+paths = json.loads(paths_file.read_text())
 requests = request_log.read_text().splitlines()
-for path in paths:
-    asset = root / "server/static" / path
-    assert stat.S_IMODE(asset.stat().st_mode) == 0o644, path
-    assert asset.read_bytes(), path
-    assert "/static/" + path in requests, path
+for url_path in paths:
+    asset = root / "server" / url_path.lstrip("/")
+    assert stat.S_IMODE(asset.stat().st_mode) == 0o644, url_path
+    assert asset.read_bytes(), url_path
+    assert url_path in requests, url_path
 for path in ["server/static", "server/static/css", "server/static/js", "shared"]:
     assert stat.S_IMODE((root / path).stat().st_mode) == 0o755, path
 for path, mode in [(".env", 0o600), ("server/runtime/secret", 0o600), ("server/runtime", 0o700)]:

@@ -151,7 +151,7 @@ if [[ "$DO_VERIFY" -eq 1 ]]; then
   # Run as the container's configured user: a host/root read can hide
   # permission failures in the bind-mounted public assets.
   remote_assets_cmd="cd ${PROJECT} && docker exec danmu-fire python -c 'import urllib.request
-paths = [\"/static/js/admin.bundle.js\", \"/static/css/style.css\", \"/static/css/tokens.css\", \"/static/css/hud.css\", \"/static/js/overlay-render-confirmation.js\"]
+paths = [\"/static/js/admin.bundle.js\", \"/static/css/style.css\", \"/static/css/tokens.css\", \"/static/css/viewer-base.css\", \"/static/js/overlay-render-confirmation.js\"]
 for path in paths:
     with urllib.request.urlopen(\"http://127.0.0.1:8080\" + path, timeout=5) as response:
         if response.status != 200 or not response.read().strip():

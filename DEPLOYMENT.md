@@ -377,7 +377,7 @@ The remote checkout explicitly uses `umask 022` so newly checked-out public
 assets remain readable by the container user, even when the SSH shell starts
 with `umask 077`. It does not change existing `.env` or runtime file permissions.
 Verification requires both a healthy server and nonempty HTTP 200 responses
-for `admin.bundle.js`, `style.css`, `tokens.css`, `hud.css`, and
+for `admin.bundle.js`, `style.css`, `tokens.css`, `viewer-base.css`, and
 `overlay-render-confirmation.js` through the server inside the container,
 using its configured user. A health response alone does not confirm that
 bind-mounted public assets can be served; a failed asset check exits nonzero.
