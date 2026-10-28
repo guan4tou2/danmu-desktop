@@ -56,9 +56,9 @@
 
   function _template() {
     return `
-      <div id="${NAV_ID}" class="admin-mobile-nav" data-overflow="closed" aria-label="Mobile navigation">
+      <nav id="${NAV_ID}" class="admin-mobile-nav" data-overflow="closed" aria-label="Mobile navigation">
         <div class="admin-mobile-nav__backdrop" data-mn-backdrop hidden></div>
-        <div class="admin-mobile-nav__overflow" data-mn-overflow hidden>
+        <div class="admin-mobile-nav__overflow" data-mn-overflow id="admin-mobile-more-menu" hidden>
           ${OVERFLOW.map((it) => `
             <button type="button" class="admin-mobile-nav__o-row" data-mn-route="${it.route}">
               <span class="admin-mobile-nav__o-icon">${it.icon}</span>
@@ -80,14 +80,14 @@
         </div>
         <div class="admin-mobile-nav__bar">
           ${TABS.map((t) => `
-            <button type="button" class="admin-mobile-nav__tab" data-mn-tab="${t.id}" data-mn-route="${t.route || ""}">
+            <button type="button" class="admin-mobile-nav__tab" data-mn-tab="${t.id}" data-mn-route="${t.route || ""}" ${t.id === "more" ? 'aria-expanded="false" aria-controls="admin-mobile-more-menu"' : 'aria-current="false"'}>
               <span class="admin-mobile-nav__icon">${t.icon}</span>
               <span class="admin-mobile-nav__label">${t.labelKey ? ServerI18n.t(t.labelKey) : t.label}</span>
               ${t.badgeKey ? `<span class="admin-mobile-nav__badge" data-mn-badge="${t.badgeKey}" hidden>0</span>` : ""}
               <span class="admin-mobile-nav__active-line"></span>
             </button>`).join("")}
         </div>
-      </div>`;
+      </nav>`;
   }
 
   function _activeFromHash() {
@@ -105,6 +105,7 @@
     const active = _activeFromHash();
     root.querySelectorAll("[data-mn-tab]").forEach((b) => {
       b.classList.toggle("is-active", b.dataset.mnTab === active);
+      if (b.dataset.mnTab !== "more") b.setAttribute("aria-current", b.dataset.mnTab === active ? "page" : "false");
     });
   }
 
@@ -115,7 +116,9 @@
     root.dataset.overflow = open ? "open" : "closed";
     root.querySelector("[data-mn-overflow]").hidden = !open;
     root.querySelector("[data-mn-backdrop]").hidden = !open;
-    root.querySelector("[data-mn-tab='more']")?.classList.toggle("is-active", open);
+    const more = root.querySelector("[data-mn-tab='more']");
+    more?.classList.toggle("is-active", open);
+    more?.setAttribute("aria-expanded", open ? "true" : "false");
   }
 
   function _onClick(e) {
