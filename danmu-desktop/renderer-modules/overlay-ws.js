@@ -717,7 +717,9 @@ function initOverlayWs(config) {
                 dataPayload.opacity,
                 "#" + dataPayload.color,
                 dataPayload.size,
-                parseInt(dataPayload.speed),
+                // Server/viewer uses 0.5–3.0; the local desktop renderer uses
+                // 1–10. Preserve fractional steps and map the full range.
+                1 + ((Math.max(0.5, Math.min(3, Number(dataPayload.speed) || 1)) - 0.5) * 9) / 2.5,
                 dataPayload.fontInfo,
                 dataPayload.textStyles || { textStroke: true, strokeWidth: 2, strokeColor: "#000000", textShadow: false, shadowBlur: 4 },
                 _insetArea(dataPayload.displayArea || { top: 0, height: 100 }),

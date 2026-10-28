@@ -485,3 +485,21 @@ def test_typed_vote_is_dimmed_on_the_overlay(client, monkeypatch):
     finally:
         display_layer._reset_for_tests()
         svc.reset()
+
+
+@pytest.mark.parametrize(
+    "picker,color,expected",
+    [
+        (False, "#123abc", "123ABC"),
+        (False, "#ABCDEF", "123ABC"),
+        (True, "#ABCDEF", "ABCDEF"),
+    ],
+)
+def test_fire_enforces_viewer_palette_policy_in_overlay_payload(client, picker, color, expected):
+    settings_store.set_allowlist("Color", ["#123ABC", "#456DEF"])
+    settings_store.set_toggle("ViewerColorPicker", picker)
+    response = client.post("/fire", json={"text": "palette policy", "color": color})
+    assert response.status_code == 200
+    messages = ws_queue.dequeue_all()
+    assert len(messages) == 1
+    assert messages[0]["color"] == expected

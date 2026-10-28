@@ -408,94 +408,33 @@
               </div>
             </div>
 
-            <!-- 顏色 · 40px 色點（設計稿 05）；每顆帶名稱做 aria（設計稿 17 · CB1） -->
-            {% if options.Color[0] %}
-            <div id="colorControl" class="viewer-sheet-group">
+            <div id="colorControl" class="viewer-sheet-group" data-default-color-presets='{{ color_presets|tojson }}'{% if not options.Color[0] %} hidden{% endif %}>
               <div class="viewer-sheet-group-label" data-i18n="color">顏色</div>
-              <!-- 「色點＋名稱」磚（設計稿 17 · 色盲替代）。原本是六顆 28px 純
-                   色圓點：對色覺不同的人來說那是六個一樣的灰點，而且 28px 也
-                   達不到手機 44 的命中區。順序照稿：白／黃／天藍／綠／紅／紫。 -->
               <div class="viewer-color-row">
-                <button
-                  type="button"
-                  class="viewer-swatch-preset is-active"
-                  data-color="#ffffff"
-                  data-i18n-aria="swatchAriaWhite"
-                  aria-label="顏色：白"
-                  data-i18n-title="swatchWhite"
-                  title="白"
-                >
-                  <span class="viewer-swatch-dot" style="background:#ffffff" aria-hidden="true"></span>
-                  <span class="viewer-swatch-name" data-i18n="swatchWhite">白</span>
-                </button>
-                <button
-                  type="button"
-                  class="viewer-swatch-preset"
-                  data-color="#fbbf24"
-                  data-i18n-aria="swatchAriaAmber"
-                  aria-label="顏色：琥珀"
-                  data-i18n-title="swatchAmber"
-                  title="琥珀"
-                >
-                  <span class="viewer-swatch-dot" style="background:#fbbf24" aria-hidden="true"></span>
-                  <span class="viewer-swatch-name" data-i18n="swatchAmber">琥珀</span>
-                </button>
-                <button
-                  type="button"
-                  class="viewer-swatch-preset"
-                  data-color="#38bdf8"
-                  data-i18n-aria="swatchAriaSky"
-                  aria-label="顏色：天藍"
-                  data-i18n-title="swatchSky"
-                  title="天藍"
-                >
-                  <span class="viewer-swatch-dot" style="background:#38bdf8" aria-hidden="true"></span>
-                  <span class="viewer-swatch-name" data-i18n="swatchSky">天藍</span>
-                </button>
-                <button
-                  type="button"
-                  class="viewer-swatch-preset"
-                  data-color="#86efac"
-                  data-i18n-aria="swatchAriaGreen"
-                  aria-label="顏色：綠"
-                  data-i18n-title="swatchGreen"
-                  title="綠"
-                >
-                  <span class="viewer-swatch-dot" style="background:#86efac" aria-hidden="true"></span>
-                  <span class="viewer-swatch-name" data-i18n="swatchGreen">綠</span>
-                </button>
-                <button
-                  type="button"
-                  class="viewer-swatch-preset"
-                  data-color="#f87171"
-                  data-i18n-aria="swatchAriaRed"
-                  aria-label="顏色：紅"
-                  data-i18n-title="swatchRed"
-                  title="紅"
-                >
-                  <span class="viewer-swatch-dot" style="background:#f87171" aria-hidden="true"></span>
-                  <span class="viewer-swatch-name" data-i18n="swatchRed">紅</span>
-                </button>
-                <button
-                  type="button"
-                  class="viewer-swatch-preset"
-                  data-color="#c084fc"
-                  data-i18n-aria="swatchAriaPurple"
-                  aria-label="顏色：紫"
-                  data-i18n-title="swatchPurple"
-                  title="紫"
-                >
-                  <span class="viewer-swatch-dot" style="background:#c084fc" aria-hidden="true"></span>
-                  <span class="viewer-swatch-name" data-i18n="swatchPurple">紫</span>
-                </button>
-                <label class="viewer-swatch viewer-swatch--custom" aria-label="Choose custom color">
-                  +<input type="color" id="colorInput" value="#ffffff" aria-label="Choose danmu color" />
+                <div class="viewer-color-presets" data-viewer-color-presets>
+                  {% for color in color_palette %}
+                  {% set preset = color_presets|selectattr('color', 'equalto', color)|first %}
+                  <button type="button" class="viewer-swatch-preset{% if color == selected_color %} is-active{% endif %}"
+                    data-color="{{ color }}" aria-pressed="{{ 'true' if color == selected_color else 'false' }}"
+                    {% if preset %}data-i18n-aria="{{ preset.aria_key }}" data-i18n-title="{{ preset.name_key }}"{% endif %}
+                    aria-label="{{ color|upper }}" title="{{ color|upper }}">
+                    <span class="viewer-swatch-dot" style="background:{{ color }}" aria-hidden="true"></span>
+                    <span class="viewer-swatch-name"{% if preset %} data-i18n="{{ preset.name_key }}"{% endif %}>{{ color|upper }}</span>
+                  </button>
+                  {% endfor %}
+                </div>
+                <label class="viewer-swatch viewer-swatch--custom"{% if not color_picker_allowed %} hidden{% endif %}>
+                  <span data-i18n="viewerCustomColor">自訂顏色</span>
+                  <input type="color" id="colorInput" value="{{ selected_color }}" data-i18n-aria="viewerCustomColor" aria-label="自訂顏色" />
+                </label>
+                <label class="viewer-color-code"{% if not color_picker_allowed %} hidden{% endif %}>
+                  <span data-i18n="viewerColorCode">色碼</span>
+                  <input type="text" id="colorHexInput" value="{{ selected_color|upper }}" maxlength="7" pattern="#?[0-9a-fA-F]{6}" placeholder="#RRGGBB" spellcheck="false" autocomplete="off" />
                 </label>
                 <div id="colorGradientPreview" hidden aria-hidden="true"></div>
-                <span id="colorValue" class="viewer-color-hex" hidden>#FFFFFF</span>
+                <span id="colorValue" class="viewer-color-hex" hidden>{{ selected_color|upper }}</span>
               </div>
             </div>
-            {% endif %}
 
             <!-- 大小 · 小／中／大三段（設計稿 05）。#sizeInput 保留成隱藏 range，
                  仍是送出流程唯一的真值來源，由三段控制寫入。 -->

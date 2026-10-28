@@ -272,12 +272,23 @@ describe("danmu dispatch and admin messages", () => {
     window.showdanmu = jest.fn();
     const ws = startClient();
     openAndSettle(ws);
-    ws.simulateMessage({ text: "hello", color: "ffffff", opacity: 100, size: 50, speed: "5" });
+    ws.simulateMessage({ text: "hello", color: "ffffff", opacity: 100, size: 50, speed: "1.5" });
     expect(window.showdanmu).toHaveBeenCalledTimes(1);
     const args = window.showdanmu.mock.calls[0];
     expect(args[0]).toBe("hello");
     expect(args[2]).toBe("#ffffff");
-    expect(args[4]).toBe(5); // parseInt'd speed
+    expect(args[4]).toBeCloseTo(4.6);
+  });
+
+  test.each([0.5, 0.6, 1, 1.1, 1.2, 2.3, 3])("network speed %s keeps browser/desktop animation timing in sync", (speed) => {
+    window.showdanmu = jest.fn();
+    const ws = startClient();
+    openAndSettle(ws);
+    ws.simulateMessage({ text: "speed check", speed });
+    const localSpeed = window.showdanmu.mock.calls[0][4];
+    const desktopDuration = 20000 - (localSpeed - 1) * 18000 / 9;
+    const browserDuration = 20000 - (speed - 0.5) * 18000 / 2.5;
+    expect(desktopDuration).toBeCloseTo(browserDuration);
   });
 
   test("retries until window.showdanmu appears (bundle-load safety net)", () => {

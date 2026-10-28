@@ -69,6 +69,7 @@
       window.DANMU_CONFIG = {
         session: { logged_in: {{ session.get('logged_in') | tojson }} },
         settingRanges: {{ ranges | tojson }},
+        defaultColorPalette: {{ default_color_palette | tojson }},
         appVersion: {{ app_version | tojson }},
         // WebSocket is served by Flask on the same web origin at /ws.
         // Admin itself still polls /admin/live-feed/recent.

@@ -42,9 +42,20 @@
   // 未分層的 important。所以桌面直接拿掉 hidden 屬性。
   const DESKTOP = window.matchMedia("(min-width: 768px)");
 
+  function setBackgroundInert(inert) {
+    const shell = document.querySelector(".viewer-shell");
+    if (!shell) return;
+    Array.from(shell.children).forEach(element => {
+      if (element !== sheet && !element.contains(sheet)) element.inert = inert;
+    });
+  }
+
   function syncSheetMode() {
     if (!sheet) return;
     if (DESKTOP.matches) {
+      setBackgroundInert(false);
+      document.body.classList.remove("is-style-sheet-open");
+      if (styleRow) styleRow.setAttribute("aria-expanded", "false");
       sheet.hidden = false;
       sheet.removeAttribute("aria-modal");
       showView("root");
@@ -69,6 +80,7 @@
     _lastFocus = document.activeElement;
     showView(view || "root");
     sheet.hidden = false;
+    setBackgroundInert(true);
     document.body.classList.add("is-style-sheet-open");
     if (styleRow) styleRow.setAttribute("aria-expanded", "true");
     // focus trap 起點（設計稿 17）
@@ -82,6 +94,7 @@
     if (!sheet) return;
     if (DESKTOP.matches) { showView("root"); return; }
     sheet.hidden = true;
+    setBackgroundInert(false);
     document.body.classList.remove("is-style-sheet-open");
     if (styleRow) styleRow.setAttribute("aria-expanded", "false");
     if (_lastFocus) { try { _lastFocus.focus(); } catch (_) {} }
@@ -96,6 +109,15 @@
     el.addEventListener("click", () => showView("root")),
   );
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Tab" && !DESKTOP.matches && sheet && !sheet.hidden) {
+      const controls = $$("button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex='0'], summary", sheet)
+        .filter(el => el.getClientRects().length > 0 && !el.hidden);
+      const first = controls[0], last = controls[controls.length - 1];
+      if (controls.length && (e.shiftKey ? document.activeElement === first : document.activeElement === last)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      }
+    }
     if (e.key === "Escape" && sheet && !sheet.hidden) { e.preventDefault(); closeSheet(); }
   });
 

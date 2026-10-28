@@ -33,6 +33,7 @@
     if (!settings) return;
     lastFocus = document.activeElement;
     settings.hidden = false;
+    $$(".client-shell, .client-titlebar").forEach(function (el) { el.inert = true; });
     document.body.classList.add("is-settings-open");
     if (gear) gear.setAttribute("aria-expanded", "true");
     var first = settings.querySelector("input, button, select");
@@ -42,6 +43,7 @@
   function closeSettings() {
     if (!settings) return;
     settings.hidden = true;
+    $$(".client-shell, .client-titlebar").forEach(function (el) { el.inert = false; });
     document.body.classList.remove("is-settings-open");
     if (gear) gear.setAttribute("aria-expanded", "false");
     if (lastFocus) { try { lastFocus.focus(); } catch (e) {} }
@@ -52,6 +54,16 @@
     el.addEventListener("click", closeSettings);
   });
   document.addEventListener("keydown", function (e) {
+    var dialog = $(".client-onboarding:not([hidden]), .client-settings:not([hidden])");
+    if (e.key === "Tab" && dialog) {
+      var controls = $$("button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], [tabindex='0']", dialog)
+        .filter(function (el) { return el.getClientRects().length > 0 && !el.hidden; });
+      var first = controls[0], last = controls[controls.length - 1];
+      if (controls.length && (e.shiftKey ? document.activeElement === first : document.activeElement === last)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      }
+    }
     if (e.key !== "Escape") return;
     if (settings && !settings.hidden) { e.preventDefault(); closeSettings(); }
   });

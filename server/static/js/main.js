@@ -963,9 +963,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  const colorHexInput = document.getElementById("colorHexInput");
   if (elements.colorInput) {
     elements.colorInput.addEventListener("input", (e) => {
       const color = e.target.value;
+      if (colorHexInput) {
+        colorHexInput.value = color.toUpperCase();
+        colorHexInput.removeAttribute("aria-invalid");
+      }
       if (elements.colorValue) {
         elements.colorValue.textContent = color.toUpperCase();
       }
@@ -979,11 +984,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const c = (sw.getAttribute("data-color") || "").toLowerCase();
         if (c === color.toLowerCase()) {
           sw.classList.add("is-active");
+          sw.setAttribute("aria-pressed", "true");
           matched = true;
         } else {
           sw.classList.remove("is-active");
+          sw.setAttribute("aria-pressed", "false");
         }
       });
+      const customSwatch = document.querySelector(".viewer-swatch--custom");
+      if (customSwatch) customSwatch.classList.toggle("is-active", !matched);
       // 2026-07-29：**不要**把彈幕色套到輸入框文字上。
       // 彈幕色是為「深色投影幕」調的（白／天藍／琥珀／綠／黃…），而輸入框
       // 坐在頁面表面（--color-bg-elevated）上：淺色主題選白色 → 1.10:1，
@@ -995,16 +1004,80 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       updatePreview();
     });
+    if (colorHexInput) {
+      colorHexInput.addEventListener("input", () => {
+        const hex = colorHexInput.value.trim().replace(/^#/, "");
+        const valid = /^[0-9a-fA-F]{6}$/.test(hex);
+        colorHexInput.setAttribute("aria-invalid", String(!valid));
+        if (!valid) return;
+        elements.colorInput.value = "#" + hex.toLowerCase();
+        elements.colorInput.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    }
+    elements.colorInput.dispatchEvent(new Event("input", { bubbles: true }));
   }
 
-  document.querySelectorAll(".viewer-swatch-preset").forEach((btn) => {
-    btn.addEventListener("click", () => {
+  if (elements.colorControl) {
+    elements.colorControl.addEventListener("click", (event) => {
+      const btn = event.target.closest(".viewer-swatch-preset");
+      if (!btn) return;
       const color = btn.getAttribute("data-color");
       if (!color || !elements.colorInput) return;
       elements.colorInput.value = color;
       elements.colorInput.dispatchEvent(new Event("input", { bubbles: true }));
     });
-  });
+  }
+
+  function applyColorSettings(settings) {
+    if (!elements.colorControl || !elements.colorInput || !settings.Color) return;
+    const row = settings.Color;
+    const defaults = JSON.parse(elements.colorControl.dataset.defaultColorPresets || "[]");
+    const normalize = value => {
+      const hex = String(value || "").replace(/^#/, "").toLowerCase();
+      return /^[0-9a-f]{6}$/.test(hex) ? "#" + hex : null;
+    };
+    const configured = Array.isArray(row[1]) ? row[1].map(normalize).filter(Boolean) : [];
+    const palette = [...new Set(configured.length ? configured : defaults.map(preset => preset.color))];
+    const allowCustom = (settings.ViewerColorPicker || [true])[0] !== false;
+    const defaultColor = normalize(row[3]) || "#ffffff";
+    let chosen = elements.colorInput.value;
+    if (!row[0]) chosen = defaultColor;
+    else if (!allowCustom && !palette.includes(chosen)) chosen = palette.includes(defaultColor) ? defaultColor : palette[0];
+    elements.colorControl.hidden = !row[0];
+    const presets = elements.colorControl.querySelector("[data-viewer-color-presets]");
+    if (presets) {
+      presets.replaceChildren(...palette.map(color => {
+        const preset = defaults.find(item => item.color === color);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "viewer-swatch-preset";
+        button.dataset.color = color;
+        const name = preset ? ServerI18n.t(preset.name_key) : color.toUpperCase();
+        button.setAttribute("aria-label", preset ? ServerI18n.t(preset.aria_key) : name);
+        button.title = name;
+        if (preset) {
+          button.dataset.i18nAria = preset.aria_key;
+          button.dataset.i18nTitle = preset.name_key;
+        }
+        const dot = document.createElement("span");
+        dot.className = "viewer-swatch-dot";
+        dot.style.background = color;
+        dot.setAttribute("aria-hidden", "true");
+        const label = document.createElement("span");
+        label.className = "viewer-swatch-name";
+        label.textContent = name;
+        if (preset) label.dataset.i18n = preset.name_key;
+        button.append(dot, label);
+        return button;
+      }));
+    }
+    elements.colorControl.querySelectorAll(".viewer-swatch--custom, .viewer-color-code").forEach(control => {
+      control.hidden = !allowCustom;
+    });
+    elements.colorInput.value = chosen;
+    elements.colorInput.dispatchEvent(new Event("input", { bubbles: true }));
+    document.dispatchEvent(new Event("viewer:style-changed"));
+  }
 
   // Update --progress CSS var so the cyan track fill in viewer-v2.css matches
   // the slider's value (Safari ignores accent-color on the track).
@@ -1030,16 +1103,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ── Preview marquee speed (design v3-r8) ──────────────────────────────────
-  // Slider value drives `--viewer-preview-duration` on .viewer-preview-row,
-  // which the CSS keyframe `dm-preview-scroll` reads. Formula matches the
-  // design prototype: max(2, 8 / speed) seconds. 1x → 8s, 2x → 4s, 3x → 2.7s.
-  // Faster speed = shorter cycle = visibly faster scroll.
+  // Use the same traversal duration as the browser/desktop overlays.
+  // Fractional 0.1 steps must change both preview and final animation.
   const _previewRow = document.querySelector(".viewer-preview-row");
   const _previewSpeedBadge = document.getElementById("previewSpeedBadge");
   function _applyPreviewSpeed(speed) {
     const v = Number(speed);
     if (!Number.isFinite(v) || v <= 0) return;
-    const duration = Math.max(2, 8 / v);
+    const duration = 20 - ((Math.max(0.5, Math.min(3, v)) - 0.5) * 18) / 2.5;
     if (_previewRow) _previewRow.style.setProperty("--viewer-preview-duration", duration.toFixed(2) + "s");
     if (_previewSpeedBadge) _previewSpeedBadge.textContent = v.toFixed(1) + "x";
   }
@@ -2491,6 +2562,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const hash = JSON.stringify(settings);
       if (_settingsHash !== null && hash !== _settingsHash) {
         currentSettings = settings;
+        applyColorSettings(settings);
         if (currentSettings.FontFamily && currentSettings.FontFamily[0]) {
           if (elements.userFontSelectControl) {
             elements.userFontSelectControl.style.display = "block";
@@ -2641,6 +2713,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((res) => res.json())
     .then((settings) => {
       currentSettings = settings;
+      applyColorSettings(settings);
 
       // Handle Font Selection UI
       if (settings.FontFamily && settings.FontFamily[0]) {

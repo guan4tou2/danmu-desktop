@@ -46,11 +46,11 @@
   const DEFAULT_RANGES = {
     Opacity:  { min: 0,  max: 100, step: 1, unit: "%" },
     FontSize: { min: 12, max: 100, step: 2, unit: "px" },
-    Speed:    { min: 1,  max: 10,  step: 1, unit: "" },
+    Speed:    { min: 0.5, max: 3, step: 0.1, unit: "×" },
   };
 
   const FONT_SIZE_PRESETS = [14, 20, 32, 44, 64];
-  const COLOR_PRESETS = ["#F1F5F9", "#94A3B8", "#38BDF8", "#FBBF24", "#86EFAC", "#F87171", "#64748B", "#334155"];
+  const COLOR_PRESETS = window.DANMU_CONFIG?.defaultColorPalette || [];
   // v8（2026-08-19 設計稿 07）：排版預設的標籤改吃 i18n。原本是大寫英文
   // 字面量（SCROLL / TOP / …），對中文使用者而言是要猜的。與 ROWS 同慣例：
   // 頂層常數 parse 時 ServerI18n 尚未 init，所以存 key、渲染時才 t()。
@@ -92,6 +92,10 @@
     // key → Set<string> of admin-toggled allowlist entries (mirrors options[key][1]).
     // null = not in edit mode for this row.
     allowlistEdit: {},
+    paletteBusy: false,
+    paletteDraft: "#38BDF8",
+    palettePreview: null,
+    paletteNotice: null,
   };
 
   const PICK_SET_KEYS = ["Color", "FontFamily", "Layout"];
@@ -227,6 +231,8 @@
             </div>
           </div>
         </div>
+
+        <div class="admin-color-palette" data-dsp-only="audience" data-admin-color-palette></div>
 
         <div class="admin-dsp2-grid">
           <!-- Left · row list -->
@@ -381,37 +387,20 @@
 
     if (row.key === "Color") {
       const cur = "#" + String(def || "FFFFFF").replace(/^#/, "").toUpperCase();
-      const editing = !!_state.allowlistEdit.Color;
-      const allowSet = editing
-        ? _state.allowlistEdit.Color
-        : new Set(readAllowlist("Color").map((v) => normalizeAllowValue("Color", v)));
-      const allowAll = !editing && allowSet.size === 0;
       return `
         <div class="admin-dsp2-swatches">
-          ${COLOR_PRESETS.map((c) => {
-            const code = c.replace(/^#/, "").toUpperCase();
+          ${paletteColors().map((c) => {
+            const code = c.slice(1);
             const on = c.toUpperCase() === cur;
-            const inAllow = editing ? allowSet.has(code) : (allowAll || allowSet.has(code));
-            const cls = [
-              "admin-dsp2-swatch",
-              on ? "is-active" : "",
-              editing ? "is-editing" : "",
-              !inAllow ? "is-blocked" : "",
-            ].filter(Boolean).join(" ");
-            const dataAttrs = editing
-              ? `data-allow-key="Color" data-allow-value="${code}"`
-              : `data-chip-key="Color" data-chip-value="${code}"`;
-            return `<button type="button" class="${cls}" ${dataAttrs}
-              style="background:${c}" aria-label="${c}" aria-pressed="${inAllow ? "true" : "false"}">
-              ${editing ? `<span class="admin-dsp2-allow-mark">${inAllow ? "✓" : ""}</span>` : ""}
-            </button>`;
+            return `<button type="button" class="admin-dsp2-swatch ${on ? "is-active" : ""}"
+              data-chip-key="Color" data-chip-value="${code}"
+              style="background:${c}" aria-label="${c}" aria-pressed="${on}"></button>`;
           }).join("")}
           <label class="admin-dsp2-swatch-custom" title="${escapeHtml(t("specificColor"))}">
             <input type="color" data-num-key="Color" data-num-index="3"
               value="${escapeHtml(cur)}" />
           </label>
         </div>
-        ${allowlistControlsHtml(row)}
       `;
     }
 
@@ -605,8 +594,142 @@
     host.innerHTML = ROWS
       .map((row) => rowHtml(row, _state.options[row.key] || [false, "", "", ""]))
       .join("");
+    renderColorPalette();
     renderPreview();
     renderSummary();
+  }
+
+  function paletteColors() {
+    const configured = readAllowlist("Color");
+    return [...new Set((configured.length ? configured : COLOR_PRESETS)
+      .map(value => "#" + String(value).replace(/^#/, "").toUpperCase())
+      .filter(value => /^#[0-9A-F]{6}$/.test(value)))];
+  }
+
+  function paletteInk(color) {
+    const rgb = color.slice(1).match(/.{2}/g).map(value => {
+      const channel = parseInt(value, 16) / 255;
+      return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    });
+    return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722 > 0.179
+      ? "var(--slate-950)" : "var(--color-white)";
+  }
+
+  function paletteFeedback(message, type = "error") {
+    _state.paletteNotice = { message, type };
+    const feedback = document.querySelector("[data-palette-feedback]");
+    if (feedback) {
+      feedback.textContent = message;
+      feedback.classList.toggle("is-error", type === "error");
+    }
+  }
+
+  function previewPaletteColor(color, animate = true) {
+    const host = document.querySelector("[data-admin-color-palette]");
+    const sample = host?.querySelector("[data-palette-preview-text]");
+    if (!sample || !/^#[0-9A-F]{6}$/i.test(color)) return;
+    _state.palettePreview = color.toUpperCase();
+    sample.style.color = color;
+    host.querySelector("[data-palette-preview-code]").textContent = color.toUpperCase();
+    host.querySelectorAll("[data-palette-preview]").forEach(button => {
+      const active = button.dataset.palettePreview === color.toUpperCase();
+      button.setAttribute("aria-pressed", String(active));
+      button.closest(".admin-color-palette-chip").classList.toggle("is-previewing", active);
+    });
+    if (animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      sample.getAnimations().forEach(animation => animation.cancel());
+      sample.animate([{ opacity: 0, transform: "translateX(12px)" }, { opacity: 1, transform: "translateX(0)" }],
+        { duration: 260, easing: "cubic-bezier(.2,.7,.2,1)" });
+    }
+  }
+
+  function renderColorPalette() {
+    const host = document.querySelector("[data-admin-color-palette]");
+    if (!host || !_state.options) return;
+    const colors = paletteColors();
+    const allowPicker = (_state.options.ViewerColorPicker || [true])[0] !== false;
+    const disabled = _state.paletteBusy ? "disabled" : "";
+    const selected = _state.palettePreview || colors[0];
+    const draft = escapeHtml(_state.paletteDraft);
+    const notice = _state.paletteNotice;
+    host.setAttribute("aria-busy", String(_state.paletteBusy));
+    host.innerHTML = `
+      <div class="admin-color-palette-head">
+        <div>
+          <span class="admin-color-palette-eyebrow">${escapeHtml(t("viewerPaletteEyebrow"))}</span>
+          <h3 class="admin-color-palette-title">${escapeHtml(t("viewerPaletteTitle"))}</h3>
+          <p class="admin-color-palette-note">${escapeHtml(t("viewerPaletteHint"))}</p>
+        </div>
+        <span class="admin-color-palette-count"><strong data-palette-count>${colors.length}</strong><span>${escapeHtml(t("viewerPaletteCountUnit"))}</span></span>
+      </div>
+      <div class="admin-color-palette-body">
+        <div class="admin-color-palette-editor">
+          <div class="admin-color-palette-list">
+            ${colors.map((color, index) => `<div class="admin-color-palette-chip" style="--palette-color:${color};--palette-ink:${paletteInk(color)}">
+              <button type="button" class="admin-color-palette-sample" data-palette-preview="${color}"
+                aria-label="${escapeHtml(t("viewerPalettePreviewColor", { color }))}" aria-pressed="${color === selected}" ${disabled}>
+                <span class="admin-color-palette-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
+                <span class="admin-color-palette-tick" aria-hidden="true">✓</span>
+              </button>
+              <code>${color}</code>
+              <button type="button" class="admin-color-palette-remove" data-palette-remove="${color}" ${colors.length <= 1 ? "disabled" : disabled}
+                aria-label="${escapeHtml(t("viewerPaletteRemove", { color }))}"><span aria-hidden="true">×</span></button>
+            </div>`).join("")}
+          </div>
+          <div class="admin-color-palette-compose">
+            <label class="admin-color-palette-compose-label" for="adminPaletteHex">${escapeHtml(t("viewerPaletteAdd"))}</label>
+            <div class="admin-color-palette-add">
+              <label class="admin-color-palette-picker">
+                <span class="sr-only">${escapeHtml(t("viewerCustomColor"))}</span>
+                <input type="color" value="${/^#[0-9A-F]{6}$/i.test(_state.paletteDraft) ? draft : "#38bdf8"}" data-palette-picker ${disabled} />
+              </label>
+              <input id="adminPaletteHex" class="admin-color-palette-code" type="text" data-palette-hex value="${draft}"
+                placeholder="#RRGGBB" maxlength="7" spellcheck="false" autocomplete="off" ${disabled} />
+              <button type="button" class="admin-color-palette-add-btn" data-palette-add ${colors.length >= 64 ? "disabled" : disabled}>
+                <span aria-hidden="true">＋</span> ${escapeHtml(t("viewerPaletteAdd"))}
+              </button>
+            </div>
+            <p class="admin-color-palette-note">${escapeHtml(t(colors.length >= 64 ? "viewerPaletteLimit" : "viewerPaletteMinimum"))}</p>
+            <p class="admin-color-palette-feedback ${notice?.type === "error" ? "is-error" : ""}" data-palette-feedback role="status" aria-live="polite">${notice ? escapeHtml(notice.message) : ""}</p>
+          </div>
+        </div>
+        <aside class="admin-color-palette-aside">
+          <div class="admin-color-palette-stage">
+            <div class="admin-color-palette-stage-head"><span>${escapeHtml(t("viewerPalettePreview"))}</span><span class="admin-color-palette-stage-dot" aria-hidden="true"></span></div>
+            <div class="admin-color-palette-stage-content"><span data-palette-preview-text>${escapeHtml(t("viewerPreviewSample"))}</span></div>
+            <div class="admin-color-palette-stage-foot"><span data-palette-preview-code>${selected}</span><span aria-hidden="true">→</span></div>
+          </div>
+          <p class="admin-color-palette-note admin-color-palette-preview-hint">${escapeHtml(t("viewerPalettePreviewHint"))}</p>
+          <label class="admin-color-palette-policy">
+            <span><strong>${escapeHtml(t("viewerPaletteAllowPicker"))}</strong>
+              <span class="admin-color-palette-note">${escapeHtml(t("viewerPaletteAllowPickerHint"))}</span></span>
+            <span class="admin-color-palette-switch">
+              <input type="checkbox" data-viewer-color-picker ${allowPicker ? "checked" : ""} ${disabled} />
+              <span class="admin-color-palette-switch-track" aria-hidden="true"></span>
+            </span>
+          </label>
+          <div class="admin-color-palette-sync" role="status"><span aria-hidden="true"></span><span data-palette-sync-status>${escapeHtml(t("viewerPaletteSync"))}</span></div>
+        </aside>
+      </div>`;
+    previewPaletteColor(selected, false);
+  }
+
+  async function savePalette(colors, focusColor) {
+    if (_state.paletteBusy) return;
+    const host = document.querySelector("[data-admin-color-palette]");
+    _state.paletteBusy = true;
+    host.setAttribute("aria-busy", "true");
+    host.querySelector("[data-palette-sync-status]").textContent = t("viewerPaletteSaving");
+    host.querySelectorAll("input, button").forEach(el => { el.disabled = true; });
+    const saved = await postAllowlist("Color", colors);
+    _state.paletteBusy = false;
+    _state.paletteNotice = { type: saved ? "success" : "error", message: t(saved ? "viewerPaletteSaved" : "updateFailed") };
+    if (saved && focusColor) _state.palettePreview = focusColor;
+    renderColorPalette();
+    const focus = focusColor && saved
+      ? host.querySelector(`[data-palette-preview="${focusColor}"]`)
+      : host.querySelector("[data-palette-hex]");
+    focus?.focus({ preventScroll: true });
   }
 
   // ─── Preview / Summary ──────────────────────────────────────────────
@@ -681,7 +804,9 @@
       if (!Array.isArray(_state.options[key])) _state.options[key] = [false, "", "", ""];
       _state.options[key][0] = !!enabled;
       renderRows();
-      window.showToast && window.showToast(`${key} ${t("settingsUpdated")}`, true);
+      if (key === "ViewerColorPicker") document.querySelector("[data-viewer-color-picker]")?.focus({ preventScroll: true });
+      const label = key === "ViewerColorPicker" ? t("viewerPaletteAllowPicker") : key;
+      window.showToast && window.showToast(`${label} ${t("settingsUpdated")}`, true);
     } catch (e) {
       console.warn("[admin-display] toggle failed:", e);
       window.showToast && window.showToast(t("updateFailed"), false);
@@ -701,7 +826,7 @@
         }
         v = hex.toUpperCase();
       } else if (key === "Opacity" || key === "FontSize" || key === "Speed") {
-        v = parseInt(v, 10);
+        v = key === "Speed" ? parseFloat(v) : parseInt(v, 10);
         const r = DEFAULT_RANGES[key];
         if (Number.isNaN(v) || (r && (v < r.min || v > r.max))) {
           window.showToast && window.showToast(`${key} ${r.min}–${r.max}`, false);
@@ -745,13 +870,15 @@
       renderPreview();
       renderSummary();
       const total = presetValuesFor(key).length || 0;
-      const msg = list.length > 0
+      const msg = key === "Color" ? t("settingsUpdated") : list.length > 0
         ? t("displayAllowlistToastPartial", { key: key, n: list.length, total: total })
         : t("displayAllowlistToastAll", { key: key });
-      window.showToast && window.showToast(msg, true);
+      if (key !== "Color") window.showToast && window.showToast(msg, true);
+      return true;
     } catch (e) {
       console.warn("[admin-display] allowlist failed:", e);
-      window.showToast && window.showToast(t("updateFailed"), false);
+      if (key !== "Color") window.showToast && window.showToast(t("updateFailed"), false);
+      return false;
     }
   }
 
@@ -903,7 +1030,7 @@
     const presets = {
       Opacity:    [true, 0,  100, 70],
       FontSize:   [true, 20, 100, 50],
-      Speed:      [true, 1,  10,  8],
+      Speed:      [true, 0.5, 3, 1],
       Color:      [true, 0,  0,   "FFFFFF"],
       FontFamily: [false, "", "", "NotoSansTC"],
       Layout:     [true, "", "", "scroll"],
@@ -952,6 +1079,30 @@
 
     // Pill toggle (audience on/off)
     page.addEventListener("click", (e) => {
+      const previewColor = e.target.closest("[data-palette-preview]");
+      if (previewColor) { previewPaletteColor(previewColor.dataset.palettePreview); return; }
+      const removeColor = e.target.closest("[data-palette-remove]");
+      if (removeColor) {
+        const colors = paletteColors();
+        if (colors.length > 1) {
+          const remaining = colors.filter(color => color !== removeColor.dataset.paletteRemove);
+          savePalette(remaining, remaining.includes(_state.palettePreview) ? _state.palettePreview : remaining[0]);
+        }
+        return;
+      }
+      if (e.target.closest("[data-palette-add]")) {
+        const input = page.querySelector("[data-palette-hex]");
+        const hex = String(input.value).trim().replace(/^#/, "").toUpperCase();
+        if (!/^[0-9A-F]{6}$/.test(hex)) {
+          input.setAttribute("aria-invalid", "true");
+          paletteFeedback(t("colorFormatError"));
+          return;
+        }
+        const colors = paletteColors();
+        if (colors.includes("#" + hex)) { paletteFeedback(t("viewerPaletteDuplicate")); return; }
+        if (colors.length < 64) savePalette([...colors, "#" + hex], "#" + hex);
+        return;
+      }
       const pill = e.target.closest("[data-toggle-key]");
       if (pill) {
         const key = pill.getAttribute("data-toggle-key");
@@ -1031,10 +1182,22 @@
       if (e.target && e.target.id === "dsp2-export") { exportSettingsJson(); return; }
     });
 
+    page.addEventListener("keydown", event => {
+      if (event.key === "Enter" && event.target.matches("[data-palette-hex]") && !event.isComposing) {
+        event.preventDefault();
+        page.querySelector("[data-palette-add]")?.click();
+      }
+    });
+
     // Number / range / color inputs
     page.addEventListener("change", (e) => {
       const t1 = e.target;
       if (!t1) return;
+      if (t1.matches("[data-viewer-color-picker]")) {
+        t1.disabled = true;
+        postToggle("ViewerColorPicker", t1.checked);
+        return;
+      }
       const key = t1.getAttribute("data-num-key");
       if (!key) return;
       const idxAttr = t1.getAttribute("data-num-index");
@@ -1055,6 +1218,24 @@
     page.addEventListener("input", (e) => {
       const t1 = e.target;
       if (!t1) return;
+      if (t1.matches("[data-palette-picker]")) {
+        _state.paletteDraft = t1.value.toUpperCase();
+        page.querySelector("[data-palette-hex]").value = _state.paletteDraft;
+        paletteFeedback("", "success");
+        previewPaletteColor(_state.paletteDraft);
+        return;
+      }
+      if (t1.matches("[data-palette-hex]")) {
+        _state.paletteDraft = t1.value;
+        const hex = t1.value.replace(/^#/, "");
+        t1.removeAttribute("aria-invalid");
+        paletteFeedback("", "success");
+        if (/^[0-9a-fA-F]{6}$/.test(hex)) {
+          page.querySelector("[data-palette-picker]").value = "#" + hex;
+          previewPaletteColor("#" + hex);
+        }
+        return;
+      }
       // Slider drag
       if (t1.classList && t1.classList.contains("admin-dsp2-range")) {
         const key = t1.getAttribute("data-range-key");

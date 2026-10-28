@@ -12,6 +12,7 @@ any) is released.
 
 import atexit
 import logging
+import math
 import threading
 import time
 import uuid
@@ -22,7 +23,8 @@ from . import onscreen_config
 
 logger = logging.getLogger(__name__)
 
-# Duration formula — MUST match danmu-desktop/renderer-modules/track-manager.js:320-323
+# Network speeds are 0.5–3.0, matching overlay.js. Desktop converts this
+# range to its local 1–10 scale at the WebSocket boundary.
 _SCROLL_MIN_MS = 2000
 _SCROLL_MAX_MS = 20000
 
@@ -55,11 +57,13 @@ def estimate_duration_ms(data: dict) -> int:
         cfg = data.get("layoutConfig") or {}
         return int(cfg.get("duration", 4000))
     try:
-        speed = int(data.get("speed", 5))
+        speed = float(data.get("speed", 1.0))
     except (TypeError, ValueError):
-        speed = 5
-    speed = max(1, min(10, speed))
-    return int(_SCROLL_MAX_MS - (speed - 1) * (_SCROLL_MAX_MS - _SCROLL_MIN_MS) / 9)
+        speed = 1.0
+    if not math.isfinite(speed):
+        speed = 1.0
+    speed = max(0.5, min(3.0, speed))
+    return int(_SCROLL_MAX_MS - (speed - 0.5) * (_SCROLL_MAX_MS - _SCROLL_MIN_MS) / 2.5)
 
 
 def _schedule_release(msg_id: str, duration_ms: int) -> None:

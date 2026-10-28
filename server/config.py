@@ -244,4 +244,5 @@ class Config:
         "ViewerThemeMode",
         "ViewerLangMode",
         "ViewerFireCooldownSec",
+        "ViewerColorPicker",
     }

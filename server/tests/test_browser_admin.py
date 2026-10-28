@@ -7,7 +7,9 @@
 - admin_page (function)：從 logged_context 建立新 page，每個測試獨立
 """
 
+import os
 import threading
+from pathlib import Path
 
 import pytest
 from playwright.sync_api import expect, sync_playwright
@@ -293,6 +295,9 @@ def test_admin_panel_has_speed_input(admin_page):
     _open_section(admin_page, "sec-speed")
     speed = admin_page.locator('[data-num-key="Speed"][data-num-index="3"]')
     assert speed.is_visible()
+    assert speed.get_attribute("min") == "0.5"
+    assert speed.get_attribute("max") == "3"
+    assert speed.get_attribute("step") == "0.1"
 
 
 def test_admin_panel_speed_initial_value(admin_page):
@@ -332,17 +337,17 @@ def test_settings_speed_reflects_new_value(admin_page):
         lambda response: "/admin/update" in response.url
         and response.request.method == "POST"
         and response.request.post_data_json.get("type") == "Speed"
-        and str(response.request.post_data_json.get("value")) == "3"
+        and str(response.request.post_data_json.get("value")) == "1.5"
     ) as updated:
-        speed.fill("3")
+        speed.fill("1.5")
         # Exercise the browser's native change on blur, as in keyboard editing.
         speed.press("Tab")
     assert updated.value.status == 200
-    expect(speed).to_have_value("3", timeout=5000)
+    expect(speed).to_have_value("1.5", timeout=5000)
     admin_page.reload()
     _open_section(admin_page, "sec-speed")
     expect(admin_page.locator('[data-num-key="Speed"][data-num-index="3"]')).to_have_value(
-        "3", timeout=5000
+        "1.5", timeout=5000
     )
 
 
@@ -1105,3 +1110,205 @@ def test_metrics_endpoint(admin_page, live_url):
     assert "queue_capacity" in data
     assert "server_time" in data
     assert data["queue_capacity"] == 500
+
+
+@pytest.mark.parametrize("width", [375, 782, 1280])
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_live_feed_columns_do_not_overlap(admin_page, width, theme):
+    """Optional layout tags must not shift timestamp/text/identity columns."""
+    page = admin_page
+    page.set_viewport_size({"width": width, "height": 900})
+    page.evaluate("theme => localStorage.setItem('theme-mode', theme)", theme)
+    messages = [
+        {"text": "怎麼入沒…", "nickname": "", "layout": "scroll"},
+        {"text": "hi hi", "nickname": "Claude", "layout": "top_fixed"},
+        {
+            "text": "很長的彈幕內容" * 15,
+            "nickname": "超長暱稱測試使用者",
+            "fingerprint": "qa-fingerprint",
+        },
+    ]
+    page.route(
+        "**/admin/session/current",
+        lambda route: route.fulfill(json={"status": "live", "name": "版面驗證", "started_at": 1}),
+    )
+    page.route(
+        "**/admin/live-feed/recent?*",
+        lambda route: route.fulfill(
+            json={
+                "entries": (
+                    [{"data": data} for data in messages]
+                    if route.request.url.endswith("since=0")
+                    else []
+                ),
+                "next_since": 1,
+            }
+        ),
+    )
+    page.reload()
+    page.wait_for_selector("#logoutButton", state="attached")
+    page.evaluate("location.hash = '#/live'")
+    rows = page.locator(".admin-live-feed-row")
+    expect(rows).to_have_count(3)
+    expect(rows.first).to_be_visible()
+    for row in rows.all():
+        row.focus()
+        boxes = row.evaluate("""row => {
+          const box = el => {
+            const r = el.getBoundingClientRect();
+            return {x:r.x,y:r.y,w:r.width,h:r.height};
+          };
+          const cells = [...row.children].filter(el =>
+            !el.classList.contains('admin-live-feed-row__swipe-actions'));
+          return {row:box(row), cells:cells.map(box)};
+        }""")
+        outer = boxes["row"]
+        for i, a in enumerate(boxes["cells"]):
+            assert a["w"] > 0
+            assert a["x"] >= outer["x"] - 1
+            assert a["x"] + a["w"] <= outer["x"] + outer["w"] + 1
+            for b in boxes["cells"][i + 1 :]:
+                overlap = (
+                    a["x"] < b["x"] + b["w"] - 1
+                    and b["x"] < a["x"] + a["w"] - 1
+                    and a["y"] < b["y"] + b["h"] - 1
+                    and b["y"] < a["y"] + a["h"] - 1
+                )
+                assert not overlap, boxes
+    if os.environ.get("DANMU_QA_SCREENSHOTS"):
+        target = Path(os.environ["DANMU_QA_SCREENSHOTS"])
+        target.mkdir(parents=True, exist_ok=True)
+        page.locator("#sec-live-feed").screenshot(
+            path=str(target / f"live-feed-{width}-{theme}.png")
+        )
+
+
+@pytest.mark.parametrize("width", [375, 1280])
+def test_admin_palette_edits_and_picker_policy_sync_to_open_viewer(admin_page, live_url, width):
+    """Add/remove real colors, persist policy, and update an already-open viewer."""
+    from server.managers import settings_store
+
+    original_settings = settings_store.get_options()
+    settings_store.reset()
+    page = admin_page
+    page.set_viewport_size({"width": width, "height": 900})
+    page.reload()
+    page.evaluate("location.hash = '#/viewer'")
+    editor = page.locator("[data-admin-color-palette]")
+    expect(editor).to_be_visible()
+    viewer = page.context.new_page()
+    viewer.set_viewport_size({"width": width, "height": 900})
+    try:
+        viewer.goto(live_url)
+        if width < 768:
+            dismiss = viewer.locator("[data-nameask-dismiss]")
+            if dismiss.is_visible():
+                dismiss.click()
+            viewer.locator("#viewerStyleRow").click()
+        expect(viewer.locator(".viewer-swatch-preset")).to_have_count(6)
+        for color in ["#123ABC", "#456DEF"]:
+            editor.locator("[data-palette-hex]").fill(color)
+            with page.expect_response(lambda r: "/options/Color/allowlist" in r.url) as saved:
+                editor.locator("[data-palette-add]").click()
+            assert saved.value.status == 200
+            expect(editor.locator(f'[data-palette-remove="{color}"]')).to_be_visible()
+            expect(viewer.locator(f'[data-color="{color.lower()}"]')).to_be_visible(timeout=8000)
+        # Duplicate input leaves the number of colors unchanged.
+        editor.locator("[data-palette-hex]").fill("123abc")
+        editor.locator("[data-palette-add]").click()
+        expect(editor.locator("[data-palette-count]")).to_have_text("8")
+        with page.expect_response(lambda r: "/options/Color/allowlist" in r.url) as saved:
+            editor.locator('[data-palette-remove="#FFFFFF"]').click()
+        assert saved.value.status == 200
+        expect(viewer.locator('[data-color="#ffffff"]')).to_have_count(0, timeout=8000)
+        viewer.locator("#colorHexInput").fill("#ABCDEF")
+        # Closing custom selection also corrects an out-of-palette current value.
+        with page.expect_response(lambda r: r.url.endswith("/admin/Set")) as saved:
+            editor.locator("[data-viewer-color-picker]").uncheck()
+        assert saved.value.status == 200
+        expect(viewer.locator(".viewer-swatch--custom")).to_be_hidden(timeout=8000)
+        expect(viewer.locator(".viewer-color-code")).to_be_hidden()
+        assert viewer.locator("#colorInput").input_value() == "#fbbf24"
+        viewer.locator('[data-color="#123abc"]').click()
+        assert viewer.locator("#colorInput").input_value() == "#123abc"
+        viewer.reload()
+        if width < 768:
+            viewer.locator("#viewerStyleRow").click()
+        expect(viewer.locator(".viewer-swatch-preset")).to_have_count(7)
+        expect(viewer.locator(".viewer-swatch--custom")).to_be_hidden()
+        # One palette color is allowed; the last remove action is disabled.
+        colors = editor.locator("[data-palette-remove]").evaluate_all(
+            "buttons => buttons.map(button => button.dataset.paletteRemove)"
+        )
+        if os.environ.get("DANMU_QA_SCREENSHOTS"):
+            target = Path(os.environ["DANMU_QA_SCREENSHOTS"])
+            target.mkdir(parents=True, exist_ok=True)
+            editor.screenshot(path=str(target / f"palette-{width}.png"))
+        for color in colors[:-1]:
+            with page.expect_response(lambda r: "/options/Color/allowlist" in r.url):
+                editor.locator(f'[data-palette-remove="{color}"]').click()
+            expect(editor.locator(f'[data-palette-remove="{color}"]')).to_have_count(0)
+        expect(editor.locator("[data-palette-remove]")).to_have_count(1)
+        expect(editor.locator("[data-palette-remove]")).to_be_disabled()
+        # Reopening the picker restores custom input without requiring a viewer reload.
+        editor.locator("[data-viewer-color-picker]").check()
+        expect(viewer.locator(".viewer-swatch--custom")).to_be_visible(timeout=8000)
+        expect(viewer.locator("#colorHexInput")).to_be_visible()
+        assert editor.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
+        page.reload()
+        page.wait_for_selector("[data-admin-color-palette]")
+        expect(page.locator("[data-palette-count]")).to_have_text("1")
+        expect(page.locator("[data-viewer-color-picker]")).to_be_checked()
+    finally:
+        viewer.close()
+        settings_store.restore_options(original_settings)
+
+
+@pytest.mark.parametrize("width", [320, 782, 1440])
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_palette_visual_layout_preview_and_reduced_motion(admin_page, width, theme):
+    page = admin_page
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.emulate_media(reduced_motion="reduce")
+    page.evaluate("theme => localStorage.setItem('theme-mode', theme)", theme)
+    page.reload()
+    page.evaluate("location.hash = '#/viewer'")
+    editor = page.locator("[data-admin-color-palette]")
+    expect(editor).to_be_visible()
+    button = editor.locator("[data-palette-preview]").nth(1)
+    color = button.get_attribute("data-palette-preview")
+    button.click()
+    expect(button).to_have_attribute("aria-pressed", "true")
+    expect(editor.locator("[data-palette-preview-code]")).to_have_text(color)
+    assert (
+        editor.locator("[data-palette-preview-text]").evaluate("el => el.getAnimations().length")
+        == 0
+    )
+    assert editor.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
+    assert editor.locator("[data-palette-remove]").first.bounding_box()["height"] >= 44
+    assert editor.locator("[data-palette-add]").bounding_box()["height"] >= 44
+    editor.locator("[data-palette-hex]").fill("invalid")
+    editor.locator("[data-palette-hex]").press("Enter")
+    expect(editor.locator("[data-palette-hex]")).to_have_attribute("aria-invalid", "true")
+    expect(editor.locator("[data-palette-feedback]")).not_to_be_empty()
+    # A failed save preserves the entered code and leaves the controls usable.
+    page.route(
+        "**/admin/options/Color/allowlist",
+        lambda route: route.fulfill(status=500, json={"error": "test failure"}),
+        times=1,
+    )
+    count = editor.locator("[data-palette-count]").inner_text()
+    editor.locator("[data-palette-hex]").fill("#123456")
+    editor.locator("[data-palette-add]").click()
+    expect(editor.locator("[data-palette-feedback]")).to_have_class(
+        "admin-color-palette-feedback is-error"
+    )
+    expect(editor.locator("[data-palette-add]")).to_be_enabled()
+    expect(editor.locator("[data-palette-hex]")).to_have_value("#123456")
+    expect(editor.locator("[data-palette-count]")).to_have_text(count)
+    if os.environ.get("DANMU_QA_SCREENSHOTS"):
+        target = Path(os.environ["DANMU_QA_SCREENSHOTS"])
+        target.mkdir(parents=True, exist_ok=True)
+        editor.locator("[data-palette-preview]").first.click()
+        editor.locator("[data-palette-hex]").fill("#38BDF8")
+        editor.screenshot(path=str(target / f"palette-{width}-{theme}.png"))

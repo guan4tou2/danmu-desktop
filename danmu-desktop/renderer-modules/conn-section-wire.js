@@ -11,6 +11,8 @@ const { parseServerInput, buildCanonicalUrl, formatDisplayHost } = require("./co
 const { createConnTest } = require("./conn-test");
 const { loadSettings, saveSettings } = require("./settings");
 const _bundledI18n = require("../i18n");
+const { validateIP } = require("../shared/utils");
+const { showToast } = require("./toast");
 
 // Translate at call time so values follow the current language even after a
 // live language switch (avoids caching stale strings).
@@ -49,7 +51,8 @@ function _hostEmptyHint() {
 
 function _safeParse(raw) {
   try {
-    return parseServerInput(raw);
+    const parsed = parseServerInput(raw);
+    return validateIP(parsed.host) ? parsed : null;
   } catch (_) {
     return null;
   }
@@ -135,12 +138,14 @@ function initConnSection({ api } = {}) {
   function _applyServerValidity() {
     if (!serverInput) return;
     serverInput.classList.remove("input-valid", "input-invalid");
+    serverInput.removeAttribute("aria-invalid");
     const raw = serverInput.value ? serverInput.value.trim() : "";
     if (!raw) return;
     if (_safeParse(raw)) {
       serverInput.classList.add("input-valid");
     } else {
       serverInput.classList.add("input-invalid");
+      serverInput.setAttribute("aria-invalid", "true");
     }
   }
 
@@ -255,6 +260,16 @@ function initConnSection({ api } = {}) {
   if (editSaveBtn) {
     editSaveBtn.addEventListener("click", () => {
       const parsed = _safeParse(serverInput && serverInput.value);
+      if (!parsed) {
+        _applyServerValidity();
+        if (serverInput) {
+          serverInput.classList.add("input-invalid");
+          serverInput.setAttribute("aria-invalid", "true");
+          serverInput.focus();
+        }
+        showToast(_t("connErrInvalidInput"), "error");
+        return;
+      }
       if (parsed) _setHidden(parsed);
       const persisted = _persistServerSelection(parsed);
       _renderPreview();

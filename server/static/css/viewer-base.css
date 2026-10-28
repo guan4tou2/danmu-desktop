@@ -680,3 +680,7 @@ body:has(input:focus, textarea:focus, [contenteditable=true]:focus) .admin-mobil
     forced-color-adjust: none;
   }
 }
+
+.admin-color-palette :is(button, input):focus-visible, .admin-color-palette-picker:focus-within, .admin-color-palette-switch:focus-within .admin-color-palette-switch-track { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+
+@keyframes palette-saving { from { opacity: .3; } to { opacity: 1; } }

@@ -203,3 +203,22 @@ describe("initConnSection", () => {
     });
   });
 });
+
+describe('invalid connection edits', () => {
+  test.each(['invalid host!!!', 'example.com:999999', ''])('keeps %s editable without saving or connecting', (value) => {
+    jest.resetModules();
+    buildDOM();
+    mockLoadSettings.mockReturnValue({ host: 'old.example.com', port: '443' });
+    mockSaveSettings.mockClear();
+    mockConnTestStart.mockClear();
+    require('../renderer-modules/conn-section-wire').initConnSection();
+    document.querySelector('[data-client-action="edit-conn"]').click();
+    const input = document.querySelector('#conn-server-input');
+    input.value = value;
+    document.querySelector('[data-conn-edit-save]').click();
+    expect(document.querySelector('[data-conn-edit]').hidden).toBe(false);
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(mockSaveSettings).not.toHaveBeenCalled();
+    expect(mockConnTestStart).not.toHaveBeenCalled();
+  });
+});

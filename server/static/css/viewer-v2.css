@@ -840,6 +840,8 @@ body.viewer-body-v2.is-dark{
   align-items: center;
 }
 
+.viewer-color-presets { display: contents; }
+
 .viewer-swatch{
   width: 28px;
   height: 28px;
@@ -857,6 +859,11 @@ body.viewer-body-v2.is-dark{
 }
 
 .viewer-swatch--custom{
+  width: auto;
+  min-height: 44px;
+  height: auto;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
   position: relative;
   border-style: dashed;
   color: var(--color-text-secondary);
@@ -871,9 +878,43 @@ body.viewer-body-v2.is-dark{
 .viewer-swatch--custom input[type="color"]{
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
   opacity: 0;
   cursor: pointer;
 }
+
+.viewer-swatch--custom:focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.viewer-color-code {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-footnote);
+  color: var(--color-text-secondary);
+}
+
+.viewer-color-code input {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--hud-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-family: var(--font-mono);
+}
+
+.viewer-color-code > span { flex: 0 0 auto; white-space: nowrap; }
+
+.viewer-color-code input[aria-invalid="true"] { border-color: var(--color-error); }
 
 .viewer-color-hex{
   margin-left: auto;
@@ -2769,3 +2810,44 @@ input[type="range"]:focus-visible {
     padding-bottom: var(--space-3);
   }
 }
+
+/* Color selection mirrors the editor's swatch cards at viewer scale. */
+.viewer-color-row { gap: var(--space-2); }
+.viewer-swatch-preset {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+  min-height: 82px;
+  overflow: hidden;
+  padding: 0;
+  border-radius: 12px;
+  text-align: left;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+.viewer-swatch-dot { width: 100%; height: 44px; border-radius: 0; box-shadow: inset 0 -1px 0 var(--hud-line); }
+.viewer-swatch-name { display: block; padding: var(--space-2); font-size: var(--text-caption); line-height: 1.3; font-variant-numeric: tabular-nums; }
+.viewer-swatch-preset.is-active { padding: 0; border-width: 1px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 24%, transparent); }
+.viewer-swatch-preset.is-active::after { position: absolute; top: 7px; right: 7px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--viewer-stage-ink); color: var(--color-bg-deep); font-size: var(--text-caption); box-shadow: 0 0 0 1px var(--color-border-strong); }
+.viewer-swatch-preset:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+.viewer-swatch--custom { min-height: 82px; height: 100%; flex-direction: column; gap: var(--space-2); border-radius: 12px; font-family: var(--font-ui); font-size: var(--text-caption); transition: background 160ms ease, border-color 160ms ease; }
+.viewer-swatch--custom::before { content: "+"; font-size: 24px; font-weight: 300; line-height: 1; color: var(--color-ink-accent); }
+.viewer-color-code { margin-top: var(--space-1); font-size: var(--text-footnote); }
+.viewer-color-code input { border-radius: 10px; font-size: var(--text-footnote); transition: border-color 120ms ease, box-shadow 120ms ease; }
+.viewer-color-code input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+@media (hover: hover) {
+  .viewer-swatch-preset:hover { transform: translateY(-2px); }
+  .viewer-swatch--custom:hover { background: var(--color-bg-elevated); border-color: var(--color-primary); }
+}
+.viewer-swatch-preset:active { transform: scale(.97); }
+@media (prefers-reduced-motion: reduce) {
+  .viewer-swatch-preset, .viewer-swatch--custom, .viewer-color-code input { transition: none; }
+  .viewer-swatch-preset:hover, .viewer-swatch-preset:active { transform: none; }
+}
+/* Keep the style inspector's sample visible while choosing colors. The main
+   viewer marquee continues to demonstrate the actual scrolling speed. */
+.viewer-sheet-preview-track { position: relative; inset: auto; display: flex; align-items: center; justify-content: center; gap: var(--space-2); height: 100%; padding: 0 var(--space-4); animation: none; }
+.viewer-sheet-preview-nick { max-width: 35%; margin-right: 0; overflow: hidden; text-overflow: ellipsis; }
+.viewer-sheet-preview-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }

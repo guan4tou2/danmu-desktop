@@ -289,3 +289,39 @@ def test_already_image_danmu_skips_sticker_resolution():
     )
     mock_resolve.assert_not_called()
     assert result["text"] == "http://example.com/img.png"
+
+
+def _palette_options(picker, enabled=True, default="#FFFFFF"):
+    return {
+        "Color": [enabled, ["#123ABC", "#456DEF"], 0, default],
+        "ViewerColorPicker": [picker],
+    }
+
+
+def test_closed_picker_accepts_palette_color_case_insensitively():
+    result, _, _ = _resolve({"text": "hello", "color": "123abc"}, _palette_options(False))
+    assert result["color"] == "123ABC"
+
+
+def test_closed_picker_replaces_outside_color_with_valid_default():
+    result, _, _ = _resolve(
+        {"text": "hello", "color": "#FF0000"}, _palette_options(False, default="#456DEF")
+    )
+    assert result["color"] == "456DEF"
+
+
+def test_closed_picker_uses_first_color_when_default_was_removed():
+    result, _, _ = _resolve({"text": "hello", "color": "#FF0000"}, _palette_options(False))
+    assert result["color"] == "123ABC"
+
+
+def test_open_picker_accepts_color_outside_palette():
+    result, _, _ = _resolve({"text": "hello", "color": "#FF0000"}, _palette_options(True))
+    assert result["color"] == "FF0000"
+
+
+def test_locked_color_forces_admin_default_regardless_of_palette():
+    result, _, _ = _resolve(
+        {"text": "hello", "color": "#123ABC"}, _palette_options(False, enabled=False)
+    )
+    assert result["color"] == "FFFFFF"

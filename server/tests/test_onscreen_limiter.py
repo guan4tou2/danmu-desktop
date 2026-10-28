@@ -19,15 +19,21 @@ def _isolate_config(tmp_path, monkeypatch):
     onscreen_config._reset_for_tests()
 
 
-# ── duration estimator parity with overlay (track-manager.js:320-323) ──
+# ── duration estimator parity with network overlay speeds ──
 
 
 @pytest.mark.parametrize(
     "speed,expected",
     [
-        (1, 20000),
-        (5, 12000),
+        (0.5, 20000),
+        (0.6, 19280),
+        (1, 16400),
+        (1.1, 15680),
+        (1.2, 14960),
+        (3, 2000),
         (10, 2000),
+        (None, 16400),
+        (float("nan"), 16400),
     ],
 )
 def test_duration_scroll_matches_overlay_formula(speed, expected):

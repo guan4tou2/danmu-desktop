@@ -32,6 +32,7 @@ from ..services.settings import get_options
 from ..services.sound import sound_service
 from ..services.stickers import sticker_service
 from ..services.validation import BlacklistCheckSchema, FireRequestSchema, validate_request
+from ..services.viewer_colors import resolve_viewer_color
 from ..services.webhook import webhook_service
 from ..services.ws_state import get_ws_client_count
 from ..utils import is_valid_image_url
@@ -114,8 +115,7 @@ def _resolve_danmu_style(data):
     data["fontInfo"] = build_font_payload(chosen_font_name)
 
     # color：管理員設定存 "#FFFFFF"，overlay 期望不含 # 的 hex
-    raw_color = _pick(data.pop("color", None), options.get("Color", [True, 0, 0, "#FFFFFF"]))
-    data["color"] = str(raw_color).lstrip("#")
+    data["color"] = resolve_viewer_color(data.pop("color", None), options).lstrip("#").upper()
 
     data["opacity"] = _pick(data.pop("opacity", None), options.get("Opacity", [True, 20, 100, 100]))
     data["size"] = _pick(data.pop("size", None), options.get("FontSize", [True, 16, 64, 32]))

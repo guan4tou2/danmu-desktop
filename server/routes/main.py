@@ -22,6 +22,12 @@ from ..services.security import (
     verify_password,
 )
 from ..services.settings import get_options
+from ..services.viewer_colors import (
+    DEFAULT_COLOR_PRESETS,
+    allows_color_picker,
+    get_color_palette,
+    resolve_viewer_color,
+)
 from ..utils import json_response as _json_response
 from ..utils import sanitize_log_string
 
@@ -43,7 +49,15 @@ def poll_media(rel_path: str):
 
 @main_bp.route("/")
 def index():
-    return render_template("index.html", options=get_options())
+    options = get_options()
+    return render_template(
+        "index.html",
+        options=options,
+        color_presets=DEFAULT_COLOR_PRESETS,
+        color_palette=get_color_palette(options),
+        color_picker_allowed=allows_color_picker(options),
+        selected_color=resolve_viewer_color(None, options),
+    )
 
 
 @main_bp.route("/overlay")

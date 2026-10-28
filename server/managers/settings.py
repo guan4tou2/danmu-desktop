@@ -1,6 +1,7 @@
 import copy
 import json
 import os
+import re
 import threading
 from pathlib import Path
 
@@ -15,6 +16,7 @@ _PICK_SET_KEYS = ("Color", "FontFamily", "Layout")
 _DEFAULT_OPTIONS = {
     # slot 1 is now an allowlist (List[str]); empty means "all presets allowed".
     "Color": [True, [], 0, "#FFFFFF"],
+    "ViewerColorPicker": [True],
     "Opacity": [True, 20, 100, 100],
     "FontSize": [True, 16, 64, 32],
     "Speed": [True, 0.5, 3.0, 1.0],
@@ -69,6 +71,20 @@ def _coerce_allowlist(value) -> list:
         seen.add(s)
         out.append(s)
     return out
+
+
+def _color_allowlist(value):
+    colors = _coerce_allowlist(value)
+    if any(not re.fullmatch(r"#?[0-9a-fA-F]{6}", color) for color in colors):
+        raise ValueError("Color palette entries must be six-digit hex colors")
+    seen = set()
+    result = []
+    for color in colors:
+        normalized = color.lstrip("#").upper()
+        if normalized not in seen:
+            seen.add(normalized)
+            result.append(color)
+    return result
 
 
 class SettingsStore:
@@ -128,7 +144,7 @@ class SettingsStore:
         value[0] = bool(value[0])
 
         if key in _PICK_SET_KEYS:
-            value[1] = _coerce_allowlist(value[1])
+            value[1] = _color_allowlist(value[1]) if key == "Color" else _coerce_allowlist(value[1])
             if len(value) > 3 and value[3] is not None:
                 value[3] = str(value[3])
             return value
@@ -181,7 +197,9 @@ class SettingsStore:
             if key in _PICK_SET_KEYS and index == 1:
                 if not isinstance(value, list):
                     raise ValueError(f"{key}[1] must be a list (allowlist)")
-                self._options[key][1] = _coerce_allowlist(value)
+                self._options[key][1] = (
+                    _color_allowlist(value) if key == "Color" else _coerce_allowlist(value)
+                )
                 self._persist()
                 return copy.deepcopy(self._options[key])
 
@@ -237,7 +255,9 @@ class SettingsStore:
         with self._lock:
             if key not in self._options:
                 raise ValueError(f"Unknown setting key: {key}")
-            self._options[key][1] = _coerce_allowlist(allowlist)
+            self._options[key][1] = (
+                _color_allowlist(allowlist) if key == "Color" else _coerce_allowlist(allowlist)
+            )
             self._persist()
             return copy.deepcopy(self._options[key])
 

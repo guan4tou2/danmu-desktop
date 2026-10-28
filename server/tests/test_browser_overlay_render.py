@@ -729,3 +729,91 @@ def test_overlay_idle_api_is_callable_and_toggles_visibility(browser_session, se
     finally:
         page.close()
         context.close()
+
+
+@pytest.mark.parametrize("width", [375, 1280])
+def test_viewer_custom_color_and_fractional_speed_reach_animation(
+    browser_session, server_ports, width
+):
+    """Real viewer controls → /fire → WS → rendered color and animation timing."""
+    from pathlib import Path
+
+    http_port, ws_port = server_ports
+    context, overlay = _open_overlay(browser_session, http_port, ws_port)
+    page = context.new_page()
+    page.set_viewport_size({"width": width, "height": 900})
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    try:
+        page.goto(f"http://127.0.0.1:{http_port}/")
+        page.wait_for_function(
+            "document.querySelector('#overlayStatus').dataset.connected === 'true'"
+        )
+        dismiss = page.locator("[data-nameask-dismiss]")
+        if dismiss.is_visible():
+            dismiss.click()
+        if width < 768:
+            page.locator("#viewerStyleRow").click()
+        custom = page.locator(".viewer-swatch--custom")
+        assert custom.is_visible()
+        assert custom.bounding_box()["height"] >= 44
+        # Invalid partial codes don't overwrite the last valid color.
+        page.locator("#colorHexInput").fill("zzzzzz")
+        assert page.locator("#colorHexInput").get_attribute("aria-invalid") == "true"
+        assert page.locator("#colorInput").input_value() == "#ffffff"
+        page.locator("#colorHexInput").fill("#123abc")
+        assert page.locator("#colorInput").input_value() == "#123abc"
+        page.wait_for_function(
+            "getComputedStyle(document.querySelector('#previewText')).color === 'rgb(18, 58, 188)'"
+        )
+        # Presets and custom picker use the same value and keep the hex input synced.
+        page.locator('[data-color="#38bdf8"]').click()
+        assert page.locator("#colorHexInput").input_value() == "#38BDF8"
+        page.locator("#colorHexInput").fill("#123abc")
+        if os.environ.get("DANMU_QA_SCREENSHOTS"):
+            target = Path(os.environ["DANMU_QA_SCREENSHOTS"])
+            target.mkdir(parents=True, exist_ok=True)
+            page.locator(".viewer-style-sheet-scroll").first.evaluate("el => el.scrollTop = 0")
+            page.screenshot(path=str(target / f"viewer-colors-{width}.png"))
+        page.locator(".viewer-sheet-more-summary").click()
+        for speed, arrow_count in [(1.1, 6), (1.2, 7)]:
+            if width < 768 and page.locator("#viewerStyleSheet").is_hidden():
+                page.locator("#viewerStyleRow").click()
+            slider = page.locator("#speedRange")
+            slider.focus()
+            slider.press("Home")
+            for _ in range(arrow_count):
+                slider.press("ArrowRight")
+            assert float(slider.input_value()) == speed
+            assert page.locator("#speedValue").inner_text() == f"{speed:.1f}"
+            expected_duration = 20000 - (speed - 0.5) * 18000 / 2.5
+            preview_duration = page.locator(".viewer-preview-row").evaluate(
+                "el => parseFloat(el.style.getPropertyValue('--viewer-preview-duration')) * 1000"
+            )
+            assert preview_duration == pytest.approx(expected_duration)
+            if os.environ.get("DANMU_QA_SCREENSHOTS"):
+                target = Path(os.environ["DANMU_QA_SCREENSHOTS"])
+                target.mkdir(parents=True, exist_ok=True)
+                page.screenshot(path=str(target / f"viewer-{width}.png"))
+            if width < 768:
+                page.locator(".viewer-style-sheet-done").first.click()
+            text = f"custom-style-{width}-{speed}"
+            page.locator("#danmuText").fill(text)
+            with page.expect_response(lambda response: response.url.endswith("/fire")) as sent:
+                page.locator("#btnSend").click()
+            assert sent.value.status == 200, sent.value.text()
+            payload = sent.value.request.post_data_json
+            assert payload["color"] == "#123abc"
+            assert payload["speed"] == speed
+            danmu = overlay.locator("h1.danmu", has_text=text)
+            danmu.wait_for(timeout=8000)
+            assert danmu.evaluate("el => getComputedStyle(el).color") == "rgb(18, 58, 188)"
+            duration = danmu.evaluate(
+                "el => el.parentElement.getAnimations()[0].effect.getTiming().duration"
+            )
+            assert duration == pytest.approx(expected_duration)
+        assert not errors, errors
+    finally:
+        page.close()
+        overlay.close()
+        context.close()

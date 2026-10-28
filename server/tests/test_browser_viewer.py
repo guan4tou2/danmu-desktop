@@ -600,3 +600,42 @@ def test_mobile_viewport_sendbar_no_overlap_with_status_row(viewer_page):
         f"sendbar hint overlaps sendbar pill on mobile viewport: "
         f"status={status_box} pill={pill_box}"
     )
+
+
+def test_mobile_style_sheet_traps_focus_and_releases_background_on_resize(viewer_page):
+    page, live_url = viewer_page
+    page.set_viewport_size({"width": 375, "height": 900})
+    page.goto(live_url)
+    dismiss = page.locator("[data-nameask-dismiss]")
+    if dismiss.is_visible():
+        dismiss.click()
+    page.locator("#viewerStyleRow").click()
+    sheet = page.locator("#viewerStyleSheet")
+    assert sheet.is_visible()
+    assert sheet.evaluate("el => !el.closest('[inert]')")
+    page.locator('[data-color="#38bdf8"]').click()
+    assert page.locator("#colorInput").input_value() == "#38bdf8"
+    stage = sheet.locator(".viewer-sheet-preview").first.bounding_box()
+    sample = sheet.locator("[data-sheet-preview-text]").first.bounding_box()
+    assert sample["x"] >= stage["x"]
+    assert sample["x"] + sample["width"] <= stage["x"] + stage["width"]
+    page.evaluate("""() => {
+        const selector = '#viewerStyleSheet button, #viewerStyleSheet input, '
+          + '#viewerStyleSheet select, #viewerStyleSheet summary';
+        const controls = [...document.querySelectorAll(selector)]
+          .filter(el => !el.disabled && el.getClientRects().length > 0);
+        controls.at(-1).focus();
+    }""")
+    page.keyboard.press("Tab")
+    assert sheet.evaluate("el => el.contains(document.activeElement)")
+    page.keyboard.press("Escape")
+    assert sheet.is_hidden()
+    assert page.locator("#viewerStyleRow").evaluate("el => el === document.activeElement")
+    page.locator("#viewerStyleRow").click()
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.wait_for_function("!document.querySelector('.viewer-shell [inert]')")
+    assert sheet.is_visible()
+    assert sheet.get_attribute("aria-modal") is None
+    page.set_viewport_size({"width": 375, "height": 900})
+    page.wait_for_function("document.querySelector('#viewerStyleSheet').hidden")
+    assert not page.locator("[inert]").count()

@@ -301,3 +301,39 @@ def test_settings_restore_endpoint_rejects_invalid_snapshot_without_partial_appl
     assert res.status_code == 400
     assert get_options()["FontSize"] == original["FontSize"]
     assert get_options()["ViewerThemeMode"] == original["ViewerThemeMode"]
+
+
+def test_color_palette_rejects_invalid_codes_without_changing_settings(client):
+    token = _login_csrf(client)
+    original = get_options()["Color"]
+    res = client.post(
+        "/admin/options/Color/allowlist",
+        json={"allowlist": ["#123ABC", "not-a-color"]},
+        headers={"X-CSRF-Token": token},
+    )
+    assert res.status_code == 400
+    assert get_options()["Color"] == original
+
+
+def test_color_palette_deduplicates_case_and_hash(app):
+    set_allowlist("Color", ["#123abc", "123ABC", "#FF0000"])
+    assert get_options()["Color"][1] == ["#123abc", "#FF0000"]
+
+
+def test_color_picker_setting_and_palette_survive_reload(tmp_path, monkeypatch):
+    monkeypatch.setenv("SETTINGS_FILE", str(tmp_path / "colors.json"))
+    store = SettingsStore()
+    store.set_allowlist("Color", ["#123ABC", "#456DEF"])
+    store.set_toggle("ViewerColorPicker", False)
+    reloaded = SettingsStore().get_options()
+    assert reloaded["Color"][1] == ["#123ABC", "#456DEF"]
+    assert reloaded["ViewerColorPicker"] == [False]
+
+
+def test_existing_settings_keep_palette_and_default_picker_enabled(tmp_path, monkeypatch):
+    path = tmp_path / "legacy-colors.json"
+    path.write_text(json.dumps({"Color": [True, ["#123ABC"], 0, "#123ABC"]}))
+    monkeypatch.setenv("SETTINGS_FILE", str(path))
+    options = SettingsStore().get_options()
+    assert options["Color"][1] == ["#123ABC"]
+    assert options["ViewerColorPicker"] == [True]
