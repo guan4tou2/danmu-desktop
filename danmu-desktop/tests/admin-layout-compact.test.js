@@ -24,9 +24,10 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   // #/messages bare-redirects to live.
   expect(adminSrc).not.toContain('data-route="messages"');
   expect(adminSrc).toMatch(/messages:\s*"live"/);
-  // 2026-08-19 v8 IA（設計稿 03）：側欄收成 3 區。system 降級進「擴充」
-  // ——仍是 first-class route（深連結與 ⌘K 照常），只是不佔側欄一列。
-  expect(adminSrc).not.toContain('data-route="system"');
+  // 2026-08-19 v8 IA（設計稿 03）曾把 system 降級進「擴充」，結果「系統」群組
+  // 底下沒有任何系統頁，系統總覽／WCAG／關於／Fire Token 只剩 ⌘K 與直鏈可達。
+  // 2026-10-29 補回側欄一列（它同時是那四個分頁的家）——這裡釘住它不能再消失。
+  expect(adminSrc).toContain('data-route="system"');
   // 2026-09-06 設計稿 08/14：widgets 回到「外觀與素材」，側欄變 13 列。
   // 小工具是主持人活動前擺一次的東西，跟主題、素材同類；「擴充」是給
   // IT 人員的區域（Webhook／插件／API 金鑰／定時發送）。
@@ -86,9 +87,11 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(viewerThemeSrc).toContain('admin-ui-page-note');
   // D-4：note 文案走 viewerThemePageNote key，原文改釘 zh locale
   expect(viewerThemeSrc).toContain('t("viewerThemePageNote")');
-  // 2026-09-08 詞彙表（設計稿 14）：Desktop / Overlay → 顯示層。這句原本是
-  // 「Desktop 排版與連線在「Desktop 控制」」。
-  expect(zhLocaleSrc).toContain("顯示層排版與連線在「顯示層控制」");
+  // 2026-09-08 詞彙表（設計稿 14）：Desktop / Overlay → 顯示層，舊詞「Desktop 控制」不能回來。
+  // 2026-10-29：這段 note 改寫成誠實標示「預覽尚未寫入伺服器」，原本錢的
+  // 「顯示層排版與連線在…」句已不存在；改釘住新的語意（管理端預覽、非觀眾端套用）。
+  expect(zhLocaleSrc).toContain("管理端預覽");
+  expect(zhLocaleSrc).toContain("尚未寫入伺服器");
   expect(zhLocaleSrc).not.toContain("Desktop 控制");
   // 2026-07-29：淺色主題修到可用後重新開啟切換鈕（產品決策：深淺兩個都要）。
   // 這條契約現在釘的是「開著」+ 關掉時的清理路徑仍在（旗標是唯一開關）。

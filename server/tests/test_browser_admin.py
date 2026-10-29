@@ -1363,27 +1363,21 @@ def test_friction_feed_scroll_anchor_survives_new_message(admin_page):
     )
     page.reload()
     expect(page.locator(".admin-live-feed-row")).to_have_count(80)
-    page.evaluate(
-        """async () => {
+    page.evaluate("""async () => {
       await document.fonts.ready;
       await Promise.all(document.getAnimations()
         .filter(a => a.effect.getTiming().iterations !== Infinity)
         .map(a => a.finished.catch(() => {})));
-    }"""
-    )
+    }""")
     page.locator("#liveFeedList").evaluate("el => el.scrollTop = 300")
     anchor_id = page.locator(".admin-live-feed-row").nth(10).get_attribute("data-id")
     anchor = page.locator(f'.admin-live-feed-row[data-id="{anchor_id}"]')
-    before = anchor.evaluate(
-        """el => el.getBoundingClientRect().top
-        - document.getElementById('liveFeedList').getBoundingClientRect().top"""
-    )
+    before = anchor.evaluate("""el => el.getBoundingClientRect().top
+        - document.getElementById('liveFeedList').getBoundingClientRect().top""")
     batch = [{"data": {"text": "new arrival", "message_id": "arrival"}}]
     expect(page.locator(".admin-live-feed-row")).to_have_count(81)
-    after = anchor.evaluate(
-        """el => el.getBoundingClientRect().top
-        - document.getElementById('liveFeedList').getBoundingClientRect().top"""
-    )
+    after = anchor.evaluate("""el => el.getBoundingClientRect().top
+        - document.getElementById('liveFeedList').getBoundingClientRect().top""")
     assert abs(after - before) <= 2
     page.locator("[data-lf-jump-btn]").click()
     assert page.locator("#liveFeedList").evaluate("el => el.scrollTop") == 0
@@ -1413,10 +1407,8 @@ def test_friction_rules_reflow_at_375(admin_page):
     _open_section(page, "sec-filters")
     row = page.locator(".hud-rule-row[data-rule-id='qa']")
     expect(row).to_be_visible()
-    boxes = row.evaluate(
-        """el => [...el.children].map(c => {
+    boxes = row.evaluate("""el => [...el.children].map(c => {
           const b=c.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right};
-        })"""
-    )
+        })""")
     assert boxes[0]["y"] < boxes[1]["y"]
     assert all(b["x"] >= 0 and b["right"] <= 376 for b in boxes)

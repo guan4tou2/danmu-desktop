@@ -4815,7 +4815,7 @@ summary:focus-visible {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   color: var(--color-ink-accent);
@@ -4831,7 +4831,7 @@ summary:focus-visible {
 .admin-setup-done-link {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--admin-line);
   border-radius: var(--radius-md-sm);
@@ -4917,7 +4917,7 @@ summary:focus-visible {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   color: var(--color-ink-accent);
