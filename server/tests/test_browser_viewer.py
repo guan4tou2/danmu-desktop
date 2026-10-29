@@ -633,9 +633,9 @@ def test_mobile_style_sheet_traps_focus_and_releases_background_on_resize(viewer
     assert page.locator("#viewerStyleRow").evaluate("el => el === document.activeElement")
     page.locator("#viewerStyleRow").click()
     page.set_viewport_size({"width": 1280, "height": 900})
-    page.wait_for_function("!document.querySelector('.viewer-shell [inert]')")
+    page.wait_for_function("() => !document.querySelector('.viewer-shell [inert]')")
     assert sheet.is_visible()
     assert sheet.get_attribute("aria-modal") is None
     page.set_viewport_size({"width": 375, "height": 900})
-    page.wait_for_function("document.querySelector('#viewerStyleSheet').hidden")
+    page.wait_for_function("() => document.querySelector('#viewerStyleSheet').hidden")
     assert not page.locator("[inert]").count()
