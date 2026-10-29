@@ -360,6 +360,7 @@
   "onscreenFullDropped": "畫面已滿，請稍後再試。",
   "queueFullTryLater": "排隊已滿，請稍後再試。",
   "broadcastStandbyQueued": "訊息已排隊，顯示層恢復後會送出；超過 24 小時自動過期。",
+  "viewerQueuedForReview": "訊息已送出，等待主辦方審核。",
   "settingsUpdated": "設定已更新",
   "updateFailed": "更新失敗",
   "colorFormatError": "顏色格式錯誤，請使用 #RRGGBB 格式",

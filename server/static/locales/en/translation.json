@@ -360,6 +360,7 @@
   "onscreenFullDropped": "Screen is full — try again in a moment.",
   "queueFullTryLater": "Queue is full — please try again in a minute.",
   "broadcastStandbyQueued": "Message queued. It will be sent when the display resumes and expires after 24 hours.",
+  "viewerQueuedForReview": "Message sent. Waiting for the host to review it.",
   "settingsUpdated": "Settings Updated",
   "updateFailed": "Update Failed",
   "colorFormatError": "Color format error, please use #RRGGBB format",

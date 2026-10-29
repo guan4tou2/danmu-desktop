@@ -14341,6 +14341,12 @@ body.is-light .admin-login-wordmark.is-on-light,
   display: inline-flex; align-items: center; gap: var(--space-1);
 }
 
+.admin-lf-v4__chip--link { text-decoration: none; }
+.admin-lf-v4__chip--link.has-pending {
+  border-color: var(--hud-amber);
+  color: var(--color-ink-warning);
+}
+
 .admin-lf-v4__chip.is-active {
   border-color: var(--hud-cyan);
   color: var(--color-ink-accent);

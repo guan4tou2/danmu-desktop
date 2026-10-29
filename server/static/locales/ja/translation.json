@@ -673,6 +673,7 @@
   "lockoutReason": "ログイン失敗が多すぎます。",
   "lockoutContactAdmin": "管理者に連絡",
   "broadcastStandbyQueued": "メッセージは待機中です。表示再開時に送信され、24時間後に期限切れになります。",
+  "viewerQueuedForReview": "メッセージを送信しました。主催者の確認をお待ちください。",
   "navAccordionAbout": "About",
   "navAccordionApiTokens": "API トークン",
   "navAccordionBackup": "バックアップ",

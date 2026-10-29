@@ -2002,6 +2002,20 @@ document.addEventListener("DOMContentLoaded", () => {
               window.ViewerStates.hide();
             }
           } catch (_) {}
+        } else if (status === "queued_for_review") {
+          // /fire 命中「人工審核」規則時回 202 + queued_for_review。訊息已被接收、
+          // 但還沒上畫面——以前這條路徑完全沒有回饋：輸入框不清、沒有提示，
+          // 觀眾會以為沒送成功而重送。辦法和「已送出」一樣清掉輸入，但提示
+          // 明說是「等待審核」，不用「已送上螢幕」的綠色。
+          elements.danmuText.value = "";
+          updateCharCount();
+          updatePreview();
+          if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
+            elements.danmuText.blur();
+          }
+          // 回饋走 banner（role=status）：提示行會被冷卻倒數立刻覆蓋。
+          _showBanner("queued", ServerI18n.t("viewerQueuedForReview"));
+          _startCooldown(_resolveCooldownMs());
         }
 
         // 2026-05-17 design v3-r10: success path uses the inline banner

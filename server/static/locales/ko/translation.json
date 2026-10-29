@@ -673,6 +673,7 @@
   "lockoutReason": "로그인 실패 횟수가 많습니다.",
   "lockoutContactAdmin": "관리자에게 문의",
   "broadcastStandbyQueued": "메시지가 대기 중입니다. 화면이 재개되면 전송되며 24시간 후 만료됩니다.",
+  "viewerQueuedForReview": "메시지를 보냈습니다. 주최자의 검토를 기다리는 중입니다.",
   "navAccordionAbout": "정보",
   "navAccordionApiTokens": "API 토큰",
   "navAccordionBackup": "백업",

@@ -212,6 +212,44 @@ def _go_offline(page):
     _mock_display(page, 0)
 
 
+def test_queued_for_review_gives_feedback_and_clears_input(viewer_page):
+    """/fire 命中人工審核規則時回 202 + queued_for_review。
+
+    以前 viewer 只認 sent / queued，這條路徑沒有任何回饋：輸入框不清、沒有提示，
+    觀眾會以為沒送成功而重送。現在要清掉輸入，且提示明說「等待審核」。
+    """
+    page, live_url = viewer_page
+    _mock_display(page, 1)
+    fires = []
+
+    def fire(route):
+        fires.append(route.request.post_data)
+        route.fulfill(
+            status=202,
+            content_type="application/json",
+            body=json.dumps({"status": "queued_for_review", "queue_id": "q1"}),
+        )
+
+    page.route("**/fire", fire)
+    page.goto(f"{live_url}/")
+    dismiss = page.locator("[data-nameask-dismiss]")
+    if dismiss.is_visible():
+        dismiss.click()
+
+    page.locator("#danmuText").fill("這句會進審核")
+    page.locator("#btnSend").click()
+
+    page.wait_for_function("() => document.querySelector('#danmuText').value === ''")
+    assert len(fires) == 1
+    # 回饋走 banner（role=status）：提示行會立刻被冷卻倒數覆蓋。
+    banner = page.locator("#sendStatusBanner")
+    assert "等待主辦方審核" in banner.text_content()
+    assert "is-queued" in banner.get_attribute("class")
+    # 不能誤報成「已送上螢幕」，也不能用綠色的 is-sent
+    assert "已送上螢幕" not in banner.text_content()
+    assert "is-sent" not in banner.get_attribute("class")
+
+
 def test_screen_off_shows_one_chip_one_card_one_hint(viewer_page):
     """設計稿 05 · V4：大螢幕未開時，畫面上只有三處說明，而且是同一件事的
     三個層級——頂欄灰 chip、一張說明卡、送出列下方一行。**沒有**紅色警語

@@ -157,6 +157,32 @@ describe("live feed incremental rendering", () => {
     delete window.AdminMessageDrawer;
   });
 
+  test("filter tabs only offer ones that can have data (no dead sensitive/queued tabs)", async () => {
+    const tabs = Array.from(document.querySelectorAll(".admin-live-feed-tab")).map(b => b.dataset.tab);
+    expect(tabs).toEqual(["all", "muted"]);
+    // 待審不是篩選，是通往審核佇列的連結
+    const link = document.querySelector("[data-lf-pending-link]");
+    expect(link.tagName).toBe("A");
+    expect(link.getAttribute("href")).toBe("#/moderation/queue");
+    expect(link.closest('[role="tablist"]')).toBeNull();
+  });
+
+  test("pending link shows the real review-queue count, not a feed-derived one", async () => {
+    const base = fetchMock.getMockImplementation();
+    fetchMock.mockImplementation(async url => {
+      if (String(url).startsWith("/admin/modqueue/list")) {
+        return { ok: true, json: async () => ({ pending: [{ id: "a" }, { id: "b" }, { id: "c" }] }) };
+      }
+      return base(url);
+    });
+
+    await jest.advanceTimersByTimeAsync(5000);
+
+    const link = document.querySelector("[data-lf-pending-link]");
+    expect(link.querySelector("[data-cnt-q]").textContent).toBe("3");
+    expect(link.classList.contains("has-pending")).toBe(true);
+  });
+
   test("a slow poll does not overlap with the next tick (no duplicate rows)", async () => {
     queue.push(entry(1, "慢回應", "id1"));
     let release;

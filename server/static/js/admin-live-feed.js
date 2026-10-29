@@ -70,9 +70,11 @@
   }
 
   function matchesFilter(entry) {
+    // 只留「已封鎖」：它由本機封鎖動作標記（blockAction），是真的有資料來源。
+    // 「含敏感字」「待審」兩個篩選曾經存在，但訊息快照（messaging.
+    // _broadcast_live_feed）從來沒有 sensitive／status 欄位，待審訊息也不會進
+    // 這條串流（它們在 mod_queue，/fire 回 202），所以兩個分頁永遠是 0。
     if (filterTab === "muted")   return !!entry.muted;
-    if (filterTab === "sensitive") return !!entry.sensitive;
-    if (filterTab === "queued")  return entry.data && entry.data.status === "queued";
     return true;
   }
 
@@ -405,9 +407,7 @@
       // 沒有它（舊資料／測試資料）才退回本機流水號。
       id: (data && data.message_id) ? "m" + data.message_id : "e" + (++_entryCounter),
     };
-    // 2026-05-17 v4: tag entries with status flags for filter chips.
     if (data && data.status === "blocked") entry.muted = true;
-    if (data && (data.sensitive || data.flagged)) entry.sensitive = true;
     if (paused) {
       pauseBuffer.push(entry);
       _updateChipCounts();
@@ -463,9 +463,8 @@
     const root = document.getElementById(SECTION_ID) || document;
     const setCnt = (sel, n) => { const el = root.querySelector(sel); if (el) el.textContent = String(n); };
     setCnt("[data-cnt-all]",  entries.length);
-    setCnt("[data-cnt-sens]", entries.filter((e) => e.sensitive).length);
     setCnt("[data-cnt-mut]",  entries.filter((e) => e.muted).length);
-    setCnt("[data-cnt-q]",    entries.filter((e) => e.data && e.data.status === "queued").length);
+    // [data-cnt-q]（待審）的數字來自審核佇列本身，見 _pollPending。
   }
 
   // ── Pause / Resume ──────────────────────────────────────
@@ -516,16 +515,15 @@
               <button type="button" class="admin-lf-v4__chip is-active admin-live-feed-tab" data-tab="all" role="tab">
                 ${ServerI18n.t("lfChipAll")} <span class="admin-lf-v4__count" data-cnt-all>0</span>
               </button>
-              <button type="button" class="admin-lf-v4__chip admin-live-feed-tab" data-tab="sensitive" role="tab">
-                ${ServerI18n.t("lfChipSensitive")} <span class="admin-lf-v4__count" data-cnt-sens>0</span>
-              </button>
               <button type="button" class="admin-lf-v4__chip admin-live-feed-tab" data-tab="muted" role="tab">
                 ${ServerI18n.t("lfChipBlocked")} <span class="admin-lf-v4__count" data-cnt-mut>0</span>
               </button>
-              <button type="button" class="admin-lf-v4__chip admin-live-feed-tab" data-tab="queued" role="tab">
-                ${ServerI18n.t("lfChipPending")} <span class="admin-lf-v4__count" data-cnt-q>0</span>
-              </button>
             </div>
+            <!-- 待審不是這串訊息的篩選條件（待審訊息尚未顯示），是通往審核佇列的入口。
+                 放在 tablist 外面，因為它是連結不是分頁。 -->
+            <a class="admin-lf-v4__chip admin-lf-v4__chip--link" href="#/moderation/queue" data-lf-pending-link>
+              ${ServerI18n.t("lfChipPending")} <span class="admin-lf-v4__count" data-cnt-q>0</span>
+            </a>
             <span class="admin-lf-v4__spacer"></span>
             <input id="liveFeedSearch" type="search"
               placeholder="${escapeAttr(ServerI18n.t("liveFeedSearchPlaceholder"))}"
@@ -617,13 +615,46 @@
     }
   }
 
+  // 待審數量：審核佇列有自己的資料來源（/admin/modqueue/list），訊息流不會有。
+  // 頻率比訊息流低——數字只是提醒，真正處理在審核頁；頁面隱藏時不打。
+  const _PENDING_INTERVAL_MS = 5000;
+  let _pendingTimer = null;
+  let _pendingInFlight = false;
+
+  async function _pollPending() {
+    if (_pendingInFlight || document.hidden) return;
+    _pendingInFlight = true;
+    try {
+      const r = await fetch("/admin/modqueue/list", { credentials: "same-origin" });
+      if (!r.ok) return;
+      const j = await r.json();
+      const n = Array.isArray(j.pending) ? j.pending.length : 0;
+      const root = document.getElementById(SECTION_ID);
+      if (!root) return;
+      const cnt = root.querySelector("[data-cnt-q]");
+      if (cnt) cnt.textContent = String(n);
+      const link = root.querySelector("[data-lf-pending-link]");
+      if (link) link.classList.toggle("has-pending", n > 0);
+    } catch (_) {
+      // 下一輪再試
+    } finally {
+      _pendingInFlight = false;
+    }
+  }
+
   function _bindPoller() {
     if (_pollerBound) return;
     _pollerBound = true;
     // Initial fetch surfaces the current buffer head before polling kicks in
     _pollOnce();
     _pollerTimer = setInterval(_pollOnce, _POLL_INTERVAL_MS);
+    _pollPending();
+    _pendingTimer = setInterval(_pollPending, _PENDING_INTERVAL_MS);
     window.addEventListener("beforeunload", () => {
+      if (_pendingTimer) {
+        clearInterval(_pendingTimer);
+        _pendingTimer = null;
+      }
       if (_pollerTimer) {
         clearInterval(_pollerTimer);
         _pollerTimer = null;
