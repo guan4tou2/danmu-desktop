@@ -1115,7 +1115,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Moderation Overview (AdminModerationPage layout): stats strip + banned/blacklist panel
     settingsGrid.insertAdjacentHTML("beforeend", `
-      <div id="sec-blacklist" class="hud-page-stack lg:col-span-2">
+      <div id="sec-blacklist" class="hud-page-stack lg:col-span-2" data-tpl="B">
         <!-- v8（2026-08-19 設計稿 07 · R3）：五格 KPI 條撤掉。稿上這頁只有
              「輸入列 → 命中時怎麼處理 → 封鎖字清單」三件事；RULES/BANNED/
              MASKED/BLOCKED/REVIEW 五個數字是儀表板語言，不是這頁的工作。

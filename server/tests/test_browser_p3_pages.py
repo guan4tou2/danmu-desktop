@@ -255,8 +255,8 @@ def test_setup_wizard_overlay_renders(admin_page):
     labels = admin_page.locator(".admin-setup-step .lbl").all_text_contents()
     assert labels == ["伺服器網址", "主題", "審核基本防線", "完成"]
     assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "伺服器網址"
-    assert admin_page.is_visible("[data-setup-field='server-name']")
-    assert admin_page.is_visible("[data-setup-field='public-url']")
+    assert admin_page.locator(".admin-setup-ready-row").count() == 4
+    assert admin_page.locator(".admin-setup-ready-value").first.text_content().startswith("http")
     assert admin_page.locator("[data-setup-field='http-port']").count() == 0
     assert admin_page.locator("[data-setup-field='ws-path']").count() == 0
     # Footer action buttons (close / prev / next)
@@ -280,7 +280,8 @@ def test_setup_wizard_step_flow_matches_f1(admin_page):
     assert admin_page.locator("[data-setup-theme]").count() == 4
     admin_page.locator("[data-setup-action='next']").click()
     assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "審核基本防線"
-    assert admin_page.locator("[data-setup-moderation-toggle]").count() >= 3
+    assert admin_page.locator(".admin-setup-mod-row[href]").count() == 3
+    assert admin_page.locator("[data-setup-moderation-toggle]").count() == 0
     admin_page.locator("[data-setup-action='next']").click()
     assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "完成"
     assert admin_page.is_visible("[data-setup-complete-cta]")
@@ -421,9 +422,9 @@ def test_ia_tab_strip_renders_for_moderation(admin_page):
     # （審核佇列 / 封鎖字＝blacklist+filters / 被封鎖的觀眾＝bans+fingerprints
     # / 發送上限＝ratelimit）。被併掉的 slug 由 _tabAliases 落到正確分頁。
     assert admin_page.locator(".admin-tabs-btn").count() == 4
-    # Default tab = queue (locked decision in admin-tabs.js TabConfig.moderation)
+    # Default tab = blacklist; the review queue remains explicitly reachable.
     active = admin_page.locator(".admin-tabs-btn.is-active").get_attribute("data-tab")
-    assert active == "queue"
+    assert active == "blacklist"
 
 
 def test_ia_system_tab_strip_renders(admin_page):

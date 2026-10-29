@@ -616,21 +616,11 @@
 
   function init() {
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
-    // 2026-10-29：掛上之後就斷開。原本這個 observer 整場都活著，admin 每一次
-    // DOM 變動（訊息流每則訊息、每次 toast）都會觸發一次 getElementById，
-    // 只為了確認一件早就成立的事。掛載是一次性的，觀察也該是一次性的。
-    const observer = new MutationObserver(() => {
-      if (document.getElementById("settings-grid") && !document.getElementById(SECTION_ID)) {
-        if (injectSection()) {
-          bindUI();
-          observer.disconnect();
-        }
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    if (injectSection()) {
+    // The shell may replace settings-grid after DOMContentLoaded. Mount on
+    // its explicit lifecycle event as well, without a permanent DOM observer.
+    if (!document.getElementById(SECTION_ID) && injectSection()) {
       bindUI();
-      observer.disconnect();
+      renderList();
     }
   }
 
@@ -827,6 +817,8 @@
     blockFocused: blockFocused,
     togglePause: function () { togglePause(); },
   };
+
+  document.addEventListener("admin-panel-rendered", init);
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);

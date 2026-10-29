@@ -54,6 +54,18 @@ describe("live feed incremental rendering", () => {
     delete window.AdminLiveFeed;
   });
 
+  test("restores the feed after the admin shell replaces its container", async () => {
+    queue.push(entry(1, "retained", "message-1"));
+    await jest.advanceTimersByTimeAsync(1500);
+    document.getElementById("settings-grid").innerHTML = "";
+    document.dispatchEvent(new CustomEvent("admin-panel-rendered"));
+    expect(document.querySelectorAll("#sec-live-feed")).toHaveLength(1);
+    expect(document.querySelector("#liveFeedList").textContent).toContain("retained");
+    queue.push(entry(2, "after remount", "message-2"));
+    await jest.advanceTimersByTimeAsync(1500);
+    expect(document.querySelectorAll(".admin-live-feed-row")).toHaveLength(2);
+  });
+
   const rows = () => Array.from(document.querySelectorAll("#liveFeedList .admin-live-feed-row"));
 
   async function poll() {

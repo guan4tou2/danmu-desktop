@@ -6994,6 +6994,8 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
   justify-content: center;
 }
 .admin-live-feed-list {
+  /* _insertRow owns scroll compensation; native anchoring would apply it twice. */
+  overflow-anchor: none;
   min-height: 300px;
 }
 .admin-font-upload-error {

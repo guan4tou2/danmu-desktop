@@ -205,7 +205,11 @@ def _open_section(page, section_id: str):
         page.wait_for_selector("#sec-viewer-config-defaults", state="visible", timeout=5000)
         return
 
-    page.wait_for_selector(f"#{section_id}", state="visible", timeout=5000)
+    page.wait_for_selector(
+        f"#{section_id}",
+        state="attached" if section_id == "sec-live-feed" else "visible",
+        timeout=5000,
+    )
 
     # 若 section 是 <details>，確保它展開（內部元素才會 visible）。
     details = page.locator(f"details#{section_id}")
@@ -636,7 +640,7 @@ def test_admin_fullpage_empty_states(admin_page):
     _open_section(admin_page, "sec-live-feed")
     # 2026-07-30 版面跟場次狀態走：無場次時訊息流整卡收合（收合本身就是
     # 空狀態的處理——沒有訊息可看的時刻不佔主舞台），開場橫幅升為主角。
-    admin_page.wait_for_selector("#sec-live-feed.is-idle-collapsed", timeout=5000)
+    admin_page.wait_for_selector("#sec-live-feed.is-idle-collapsed", state="attached", timeout=5000)
     assert not admin_page.is_visible("#sec-live-feed .admin-lf-v4__card")
     assert admin_page.eval_on_selector(
         "#admin-session-banner", "el => el.classList.contains('is-hero')"
@@ -717,7 +721,7 @@ def test_modqueue_does_not_storm_the_list_endpoint(admin_page):
         "request",
         lambda r: calls.append(r.url) if "/admin/modqueue/list" in r.url else None,
     )
-    admin_page.evaluate('() => { window.location.hash = "#/moderation"; }')
+    admin_page.evaluate('() => { window.location.hash = "#/moderation/queue"; }')
     admin_page.wait_for_timeout(2500)
 
     assert len(calls) >= 1, (
@@ -1312,3 +1316,98 @@ def test_palette_visual_layout_preview_and_reduced_motion(admin_page, width, the
         editor.locator("[data-palette-preview]").first.click()
         editor.locator("[data-palette-hex]").fill("#38BDF8")
         editor.screenshot(path=str(target / f"palette-{width}-{theme}.png"))
+
+
+@pytest.mark.parametrize("width", [375, 1280])
+def test_friction_theme_disclosure_and_toast(admin_page, width):
+    """Preview limitations remain visible and toast text is readable in dark mode."""
+    page = admin_page
+    page.set_viewport_size({"width": width, "height": 900})
+    page.evaluate("document.documentElement.setAttribute('data-theme', 'dark')")
+    _open_section(page, "sec-viewer-theme")
+    note = page.locator("#sec-viewer-theme .admin-ui-page-note")
+    expect(note).to_contain_text("尚未寫入伺服器")
+    expect(note).to_be_visible()
+    page.evaluate("window.showToast('QA toast contrast', true)")
+    toast = page.locator("#toast-container > div").filter(has_text="QA toast contrast")
+    expect(toast).to_be_visible()
+    ratio = toast.evaluate("""el => {
+      const rgb = value => {
+        const c = document.createElement('canvas').getContext('2d');
+        c.fillStyle = value; c.fillRect(0,0,1,1);
+        return [...c.getImageData(0,0,1,1).data].slice(0,3);
+      };
+      const lum = v => rgb(v).map(x => {x/=255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4})
+        .reduce((a,x,i)=>a+x*[.2126,.7152,.0722][i],0);
+      const s=getComputedStyle(el), a=lum(s.color), b=lum(s.backgroundColor);
+      return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+    }""")
+    assert ratio >= 4.5
+    box = toast.bounding_box()
+    assert box["x"] >= 0 and box["x"] + box["width"] <= width + 1
+
+
+def test_friction_feed_scroll_anchor_survives_new_message(admin_page):
+    page = admin_page
+    batch = [{"data": {"text": "message " + str(i), "message_id": str(i)}} for i in range(80)]
+
+    def respond(route):
+        nonlocal batch
+        items, batch = batch, []
+        route.fulfill(json={"entries": items, "next_since": 1})
+
+    page.route("**/admin/live-feed/recent?*", respond)
+    page.route(
+        "**/admin/session/current",
+        lambda r: r.fulfill(json={"status": "live", "name": "QA", "started_at": 1}),
+    )
+    page.reload()
+    expect(page.locator(".admin-live-feed-row")).to_have_count(80)
+    page.evaluate(
+        "async () => { await document.fonts.ready; await Promise.all(document.getAnimations().filter(a => a.effect.getTiming().iterations !== Infinity).map(a => a.finished.catch(() => {}))); }"
+    )
+    page.locator("#liveFeedList").evaluate("el => el.scrollTop = 300")
+    anchor_id = page.locator(".admin-live-feed-row").nth(10).get_attribute("data-id")
+    anchor = page.locator(f'.admin-live-feed-row[data-id="{anchor_id}"]')
+    before = anchor.evaluate(
+        "el => el.getBoundingClientRect().top - document.getElementById('liveFeedList').getBoundingClientRect().top"
+    )
+    batch = [{"data": {"text": "new arrival", "message_id": "arrival"}}]
+    expect(page.locator(".admin-live-feed-row")).to_have_count(81)
+    after = anchor.evaluate(
+        "el => el.getBoundingClientRect().top - document.getElementById('liveFeedList').getBoundingClientRect().top"
+    )
+    assert abs(after - before) <= 2
+    page.locator("[data-lf-jump-btn]").click()
+    assert page.locator("#liveFeedList").evaluate("el => el.scrollTop") == 0
+
+
+def test_friction_rules_reflow_at_375(admin_page):
+    page = admin_page
+    page.set_viewport_size({"width": 375, "height": 900})
+    page.route(
+        "**/admin/filters/list",
+        lambda r: r.fulfill(
+            json={
+                "rules": [
+                    {
+                        "id": "qa",
+                        "type": "regex",
+                        "pattern": "long-pattern-" * 12,
+                        "action": "review",
+                        "priority": 1,
+                        "enabled": True,
+                    }
+                ]
+            }
+        ),
+    )
+    page.reload()
+    _open_section(page, "sec-filters")
+    row = page.locator(".hud-rule-row[data-rule-id='qa']")
+    expect(row).to_be_visible()
+    boxes = row.evaluate(
+        "el => [...el.children].map(c => {const b=c.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right}})"
+    )
+    assert boxes[0]["y"] < boxes[1]["y"]
+    assert all(b["x"] >= 0 and b["right"] <= 376 for b in boxes)
