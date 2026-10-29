@@ -581,7 +581,13 @@
   let _pollerSince = 0;
   const _POLL_INTERVAL_MS = 1500;
 
+  // 同時最多一個請求在飛：慢網路下第二個 tick 會用同一個游標再要一次，
+  // 兩份回應都帶同一批訊息，列表就會重複插入。
+  let _pollInFlight = false;
+
   async function _pollOnce() {
+    if (_pollInFlight) return;
+    _pollInFlight = true;
     try {
       const r = await fetch(
         "/admin/live-feed/recent?since=" + encodeURIComponent(_pollerSince),
@@ -591,12 +597,23 @@
       const j = await r.json();
       if (Array.isArray(j.entries)) {
         for (const e of j.entries) {
-          if (e && e.data) addEntry(e.data);
+          if (!e || !e.data) continue;
+          // 第二道防線：只接受比游標新的資料（seq 單調遞增），
+          // 重送或亂序的舊回應不會重複渲染。
+          if (typeof e.seq === "number") {
+            if (e.seq <= _pollerSince) continue;
+            _pollerSince = e.seq;
+          }
+          addEntry(e.data);
         }
       }
-      if (typeof j.next_since === "number") _pollerSince = j.next_since;
+      if (typeof j.next_since === "number" && j.next_since > _pollerSince) {
+        _pollerSince = j.next_since;
+      }
     } catch (_) {
       // network blip — next tick will retry from same cursor
+    } finally {
+      _pollInFlight = false;
     }
   }
 

@@ -85,7 +85,12 @@ def overlay_recall():
 
     notification = {"type": "recall", "message_id": message_id}
     try:
-        messaging.forward_to_ws_server(notification, bypass_broadcast_gate=True)
+        result = messaging.forward_to_ws_server(notification, bypass_broadcast_gate=True)
+        if not isinstance(result, dict) or result.get("status") != "sent":
+            current_app.logger.error(
+                "[overlay] recall not delivered: %s", sanitize_log_string(str(result))
+            )
+            return _json_response({"error": "broadcast_failed"}, 500)
         current_app.logger.info("[overlay] recall %s", sanitize_log_string(message_id))
         try:
             audit_log.append("broadcast", "overlay_recalled", actor="admin")
@@ -97,4 +102,3 @@ def overlay_recall():
         )
         return _json_response({"error": "broadcast_failed"}, 500)
     return _json_response({"status": "ok", "message_id": message_id})
-

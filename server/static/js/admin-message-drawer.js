@@ -14,7 +14,7 @@
  *
  * Action buttons (⊘ ban-fingerprint / ↗ recall / + blacklist / reply):
  *   2026-10-29：API 一律走共用的 window.AdminModeration（admin-moderation-
- *     actions.js）——分流（有時限 /admin/modbans、永久 /admin/live/block）、
+ *     actions.js）——分流（有時限 /admin/mod/bans/add、永久 /admin/live/block）、
  *     錯誤處理與提示都在那一層；這裡只留確認 UI 與本地狀態。
  *
  * Loaded as <script defer> in admin.html. Globals: csrfFetch, showToast,
@@ -311,14 +311,14 @@
   // ── ban（2026-10-29：API 呼叫改走共用 AdminModeration）──────────────
   // 確認 UI 留在這裡——封禁時長對話框（4 顆時長 chip＋原因）是這個入口
   // 專有的，共用層不該知道它。但**打哪支 API** 不該由入口決定：
-  // 有時限走 /admin/modbans、永久走 /admin/live/block 的分流在共用層。
+  // 有時限走 /admin/mod/bans/add、永久走 /admin/live/block 的分流在共用層。
 
   async function _banFingerprint(reason, durationS, durationLabel) {
     const fp = _state.entry && _state.entry.data && _state.entry.data.fingerprint;
     if (!fp) return;
     const seconds = parseInt(durationS || 0, 10) || 0;
     // 永久封禁沿用 /admin/live/block（黑名單，訊息會被遮罩）；有時限的走
-    // /admin/modbans，那裡才有 duration_s 與到期判定。兩者都會讓 /fire 擋下
+    // /admin/mod/bans/add，那裡才有 duration_s 與到期判定。兩者都會讓 /fire 擋下
     // 後續訊息，差別在於前者不會自己失效。對話框已經確認過，skipConfirm。
     const result = seconds > 0
       ? await window.AdminModeration.banFingerprint(fp, seconds, reason)

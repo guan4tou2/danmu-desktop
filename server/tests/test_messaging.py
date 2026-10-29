@@ -86,6 +86,20 @@ def test_forward_queues_when_full_in_queue_mode(app):
     assert result == {"status": "queued"}
 
 
+@pytest.mark.parametrize("notification", [{"type": "recall", "message_id": "x"}, {"type": "clear"}])
+@pytest.mark.parametrize("mode", ["drop", "queue"])
+def test_forward_recall_and_clear_bypass_limiter(app, mode, notification):
+    """畫面滿載時，撤回/清屏這類控制命令不能被丟棄或排隊。"""
+    onscreen_config.set_state(max_onscreen_danmu=1, overflow_mode=mode)
+    with app.app_context():
+        messaging.forward_to_ws_server({"text": "a", "speed": 1})
+        ws_queue.dequeue_all()
+        result = messaging.forward_to_ws_server(dict(notification), bypass_broadcast_gate=True)
+    assert result["status"] == "sent"
+    assert any(m.get("type") == notification["type"] for m in ws_queue.dequeue_all())
+    assert onscreen_limiter.get_state()["queue_len"] == 0
+
+
 def test_forward_settings_changed_bypasses_limiter(app):
     onscreen_config.set_state(max_onscreen_danmu=1, overflow_mode="drop")
     with app.app_context():

@@ -66,7 +66,7 @@
   }
 
   /**
-   * POST /admin/modbans — 有時限的封禁（到期自動失效）。
+   * POST /admin/mod/bans/add — 有時限的封禁（到期自動失效）。
    * 永久封鎖請走 callBlock("fingerprint", …)：兩者的差別是前者不會自己失效。
    * @returns {Promise<{ok: boolean, error?: string}>}
    */
@@ -74,7 +74,7 @@
     if (!fp) return { ok: false, error: "empty-fingerprint" };
     var s = parseInt(seconds || 0, 10) || 0;
     try {
-      var resp = await window.csrfFetch("/admin/modbans", {
+      var resp = await window.csrfFetch("/admin/mod/bans/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -115,7 +115,12 @@
   // ── 高階：確認 ＋ 呼叫 ＋ 提示 ──────────────────────────────────────────
 
   function _confirmBlock(type, value) {
-    return window.HudConfirm ? window.HudConfirm.open({
+    // Fail-closed：確認元件沒載入時不能跳過確認直接封鎖——封鎖會持續影響後續訊息。
+    if (!window.HudConfirm) {
+      if (window.showToast) window.showToast(t("blockFailed"), false);
+      return Promise.resolve(false);
+    }
+    return window.HudConfirm.open({
       icon: "⊘",
       title: t("lfBlockTitle"),
       subtitle: t("cfmSubBlockFuture"),
@@ -124,7 +129,7 @@
         .replace("{label}", _label(type))
         .replace("{display}", _display(type, value)),
       confirmLabel: t("lfBlockTitle"),
-    }) : Promise.resolve(true);
+    });
   }
 
   function _toastResult(ok, fallbackKey, detail) {

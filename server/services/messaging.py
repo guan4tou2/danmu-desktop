@@ -104,6 +104,11 @@ def _raw_forward(data) -> bool:
         return False
 
 
+# 控制訊息：不是彈幕，不該和彈幕搶 onscreen limiter 的名額。
+# 畫面滿載時主持人最需要的就是 recall / clear，不能被排隊或丟棄。
+_CONTROL_TYPES = frozenset({"settings_changed", "recall", "clear"})
+
+
 def forward_to_ws_server(data, bypass_broadcast_gate=False):
     """Forward `data` to the overlay WS subject to broadcast gate + onscreen limiter.
 
@@ -119,11 +124,12 @@ def forward_to_ws_server(data, bypass_broadcast_gate=False):
     The drain worker respects this gate so a pause during release parks
     the remaining messages again.
 
-    Non-danmu meta payloads (settings_changed) bypass BOTH gates so admin
-    actions still propagate during standby and at limiter saturation.
+    Non-danmu control payloads (settings_changed / recall / clear) bypass BOTH
+    gates so admin actions still propagate during standby and at limiter
+    saturation.
     """
-    # Meta messages bypass everything — admin toggles must reach overlay.
-    if isinstance(data, dict) and data.get("type") == "settings_changed":
+    # Control messages bypass everything — admin actions must reach overlay.
+    if isinstance(data, dict) and data.get("type") in _CONTROL_TYPES:
         ok = _raw_forward(data)
         return {"status": "sent"} if ok else {"status": "dropped", "reason": "forward_failed"}
 

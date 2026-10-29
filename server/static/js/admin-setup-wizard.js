@@ -462,6 +462,12 @@
           if (target) window.location.hash = target;
         });
       });
+      // 完成頁另有主按鈕「進入控制台」——不能跟深連結共用 return，
+      // 否則 _complete 永遠沒綁（2026-10-29 審查抓到的回歸）。
+      if (stepId === "done") {
+        const complete = root.querySelector("[data-setup-complete-cta]");
+        if (complete) complete.addEventListener("click", _complete);
+      }
       return;
     }
     if (stepId === "theme") {
@@ -472,12 +478,6 @@
         });
       });
       return;
-    }
-    if (stepId === "done") {
-      const complete = root.querySelector("[data-setup-complete-cta]");
-      if (complete) {
-        complete.addEventListener("click", _complete);
-      }
     }
   }
 

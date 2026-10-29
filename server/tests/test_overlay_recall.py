@@ -86,6 +86,43 @@ def test_recall_is_idempotent(client):
         assert resp.status_code == 200
 
 
+def test_recall_succeeds_when_onscreen_cap_is_full(client):
+    """畫面已滿時，撤回命令仍要實際送達，不能跟一般彈幕搶名額。"""
+    from server.services import onscreen_config, onscreen_limiter
+
+    token = _login(client)
+    onscreen_config.set_state(max_onscreen_danmu=1, overflow_mode="drop")
+    assert onscreen_limiter.try_send({"text": "a", "speed": 1}, lambda d: True)["status"] == "sent"
+    ws_queue.dequeue_all()
+
+    resp = client.post(
+        "/admin/overlay/recall",
+        json={"message_id": "abc123"},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == 200
+    assert [m for m in ws_queue.dequeue_all() if m.get("type") == "recall"]
+
+
+def test_recall_reports_failure_when_not_delivered(client, monkeypatch):
+    """轉送沒有成功送出時，API 不能回 200 ok。"""
+    from server.services import messaging
+
+    token = _login(client)
+    monkeypatch.setattr(
+        messaging,
+        "forward_to_ws_server",
+        lambda *a, **kw: {"status": "dropped", "reason": "forward_failed"},
+    )
+    resp = client.post(
+        "/admin/overlay/recall",
+        json={"message_id": "abc123"},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == 500
+    assert json.loads(resp.data)["error"] == "broadcast_failed"
+
+
 def test_recall_truncates_overlong_id(client):
     """超過 64 字元要截斷，不能原樣進廣播（避免被當成放大器）。"""
     token = _login(client)

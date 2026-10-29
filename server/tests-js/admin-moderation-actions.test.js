@@ -70,6 +70,16 @@ describe("AdminModeration shared actions", () => {
     expect(toasts).toHaveLength(0);
   });
 
+  test("missing HudConfirm fails closed: no API call, failure toast", async () => {
+    delete window.HudConfirm;
+
+    const ok = await window.AdminModeration.blockKeyword("髒話");
+
+    expect(ok).toBe(false);
+    expect(calls).toHaveLength(0);
+    expect(toasts[0].ok).toBe(false);
+  });
+
   test("a failed request returns false and toasts failure", async () => {
     window.csrfFetch = jest.fn(async () => ({ ok: false, status: 500 }));
     const ok = await window.AdminModeration.blockKeyword("x");
@@ -79,11 +89,11 @@ describe("AdminModeration shared actions", () => {
     expect(toasts[0].msg).toBe("blockFailed");
   });
 
-  test("banFingerprint routes timed bans to /admin/modbans with duration", async () => {
+  test("banFingerprint routes timed bans to /admin/mod/bans/add with duration", async () => {
     const result = await window.AdminModeration.banFingerprint("fp123", 3600, "洗頻");
 
     expect(result.ok).toBe(true);
-    expect(lastCall().url).toBe("/admin/modbans");
+    expect(lastCall().url).toBe("/admin/mod/bans/add");
     expect(lastCall().body).toEqual({
       target_kind: "fingerprint",
       target: "fp123",

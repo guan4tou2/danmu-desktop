@@ -157,6 +157,37 @@ describe("live feed incremental rendering", () => {
     delete window.AdminMessageDrawer;
   });
 
+  test("a slow poll does not overlap with the next tick (no duplicate rows)", async () => {
+    queue.push(entry(1, "慢回應", "id1"));
+    let release;
+    const gate = new Promise(r => { release = r; });
+    const base = fetchMock.getMockImplementation();
+    fetchMock.mockImplementation(async url => { await gate; return base(url); });
+
+    // 三個 tick 都在第一個請求還沒回來時觸發
+    const before = fetchMock.mock.calls.length;
+    await jest.advanceTimersByTimeAsync(1500 * 3);
+    expect(fetchMock.mock.calls.length - before).toBe(1);
+
+    release();
+    await jest.advanceTimersByTimeAsync(0);
+    expect(rows()).toHaveLength(1);
+  });
+
+  test("entries at or below the cursor are ignored even if a response replays them", async () => {
+    queue.push(entry(1, "a", "id1"), entry(2, "b", "id2"));
+    await poll();
+    expect(rows()).toHaveLength(2);
+
+    // 伺服器重送舊資料（例如代理快取或亂序回應），不該重複插入
+    fetchMock.mockImplementation(async () => ({
+      ok: true,
+      json: async () => ({ entries: [entry(1, "a", "id1"), entry(2, "b", "id2")], next_since: 2 })
+    }));
+    await poll();
+    expect(rows()).toHaveLength(2);
+  });
+
   test("the list is capped and the oldest rows are removed", async () => {
     for (let i = 1; i <= 205; i++) queue.push(entry(i, "訊息 " + i, "id" + i));
     await poll();
