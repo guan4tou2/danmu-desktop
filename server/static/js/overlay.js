@@ -500,6 +500,27 @@
           return;
         }
 
+        // 2026-10-29：撤回單則。與 clear 的差別是「只拿走這一則」——
+        // 主持人處理一句不該出現的話時，不該被迫清空整屏或永久封鎖這個人。
+        // 找不到（已飛出畫面／已自然消失）就是 no-op，可安全重送。
+        if (data.type === "recall") {
+          var recallId = data.message_id ? String(data.message_id) : "";
+          if (recallId) {
+            var victims = document.querySelectorAll("[data-message-id]");
+            for (var vi = 0; vi < victims.length; vi++) {
+              if (victims[vi].getAttribute("data-message-id") === recallId) {
+                (function (node) {
+                  node.style.transition = "opacity 160ms ease-out";
+                  node.style.opacity = "0";
+                  setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 170);
+                })(victims[vi]);
+              }
+            }
+            console.log("[overlay] Recalled by admin:", recallId);
+          }
+          return;
+        }
+
         // Konami easter egg — admin pressed ↑↑↓↓←→←→BA. Freeze every visible
         // danmu in place, scale up + rotate + fly outward as particles, then
         // remove the lot. Pure visual; no state change.
@@ -651,7 +672,8 @@
           data.layout || "scroll",
           data.layoutConfig || null,
           data.nickname || null,
-          data.emojis || null
+          data.emojis || null,
+          data.message_id || null
         ).then(function (confirmed) {
           if (confirmed === true && typeof data.message_id === "string" &&
               ws === messageSocket && messageSocket.readyState === WebSocket.OPEN) {
@@ -733,7 +755,7 @@
   }
 
   // ── showdanmu ──────────────────────────────────────────────────────────────
-  function showdanmu(text, opacity, color, size, speed, fontInfo, textStyles, displayArea, effectCss, layout, layoutConfig, nickname, emojis) {
+  function showdanmu(text, opacity, color, size, speed, fontInfo, textStyles, displayArea, effectCss, layout, layoutConfig, nickname, emojis, messageId) {
     return new Promise(function (resolve) {
     layout = layout || "scroll";
     layoutConfig = layoutConfig || null;
@@ -759,6 +781,9 @@
     var wrapper = document.createElement("div");
     wrapper.className = "danmu-wrapper";
     wrapper.style.cssText = "position:absolute;display:inline-block;white-space:nowrap;z-index:20;"; // z 20 > #overlay-idle 的 10：入場 QR 顯示中彈幕要飛在場景上（與 Electron child 同一決策）
+    // 2026-10-29：把 message_id 掛在節點上，admin 的「撤下這一則」才有對象。
+    // 沒有這個屬性，撤回只能退化成整屏 clear。
+    if (messageId) wrapper.setAttribute("data-message-id", String(messageId));
 
     var danmu;
     if (imgs.test(text)) {

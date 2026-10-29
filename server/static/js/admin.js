@@ -125,6 +125,9 @@ document.addEventListener("DOMContentLoaded", () => {
     plugins:     { nav: "integrations", tab: "plugins" },
     "api-tokens": { nav: "integrations", tab: "api-tokens" },
     scheduler:   { nav: "integrations", tab: "scheduler" },
+    // 2026-10-29：側欄「安全」與 #/security 書籤都落到系統頁的安全分頁。
+    // ADMIN_ROUTES 裡那條 security 已移除，否則它會先被查到、alias 永遠不生效。
+    security:    { nav: "system", tab: "security" },
   });
 
   // Maps deprecated single-segment routes → P0-0 nav homes.
@@ -756,6 +759,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 <!-- 系統：與活動當下無關的維運。危險操作集中在備份與還原頁最底。 -->
                                 <div class="admin-dash-nav-label" data-i18n="adminNavGroupSystem">系統</div>
+                                <!-- 2026-10-29：這個群組以前**沒有「系統」這一列**。
+                                     分組標籤寫著「系統」，底下四列卻都不是系統頁；
+                                     系統總覽／WCAG／關於／Fire Token 只能靠 ⌘K 或直鏈
+                                     才到得了（全庫沒有任何側欄入口）。補上這一列，
+                                     它同時是那四個分頁的家。 -->
+                                <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
+                                    <span class="admin-dash-nav-icon">◫</span>
+                                    <span data-i18n="adminNavSystem">系統</span>
+                                </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◷</span>
                                     <span data-i18n="adminNavHistory">紀錄與匯出</span>
@@ -1350,7 +1362,11 @@ document.addEventListener("DOMContentLoaded", () => {
     system:    { title: "系統",  kicker: "SYSTEM · 健康度與組態", sections: ["sec-system-overview", "admin-security-v2-page", "sec-firetoken-overview", "sec-wcag-overview", "sec-about-overview"] },
     // Legacy alias target only. Security now resolves under system/security;
     // the v2 page handles its own visibility from activeRoute + activeLeaf.
-    security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: ["admin-security-v2-page"] },
+    // 2026-10-29：這一條移除，改由 _routeAliases 指到 system/security。
+    // 留著它會讓 applyRoute 的「先查 ADMIN_ROUTES、再查 alias」順序把
+    // 側欄「安全」攔在這裡 —— 同一頁於是出現兩種外殼：從側欄進去沒有分頁列，
+    // 從 system 進去有。現在兩邊都是 system，分頁列一致。
+    // security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: ["admin-security-v2-page"] },
     // 2026-09-07 設計稿 08 · H1：時間軸匯出（sec-timeline-export）從「紀錄與
     // 匯出 › 重播」搬進來——「把資料整批倒出來」是備份的事，而「全部清除」
     // 本來就住這頁。場次面板只匯出單一場次，取代不了跨場次的範圍匯出。

@@ -14,7 +14,16 @@
   var escapeHtml = window.AdminUtils.escapeHtml;
 
   const RULE_TYPES = ["keyword", "regex", "replace", "rate_limit"];
-  const ACTIONS = ["block", "replace", "allow"];
+  // 2026-10-29：`review` 補進來。後端 _build_rule 的白名單早就有它
+  // （services/filter_engine.py），但前端這份沒跟上，於是「送審」這個
+  // 動作在 UI 上根本不存在。
+  const ACTIONS = ["block", "replace", "allow", "review"];
+  const ACTION_LABEL_KEY = {
+    block: "fltActBlock",
+    replace: "fltActReplace",
+    allow: "fltActAllow",
+    review: "fltActReview",
+  };
 
   // ── Helpers ──────────────────────────────────────────────────
 
@@ -44,6 +53,7 @@
     block: "var(--hud-crimson)",
     replace: "var(--hud-amber)",
     allow: "var(--hud-lime)",
+    review: "var(--color-ink-accent)",
   };
 
   // ── Section HTML ─────────────────────────────────────────────
@@ -80,8 +90,12 @@
           <div class="admin-flt-v4__quick" data-flt-quick>
             ${[
               { id: "url",       label: ServerI18n.t("fltPresetUrl"),       pattern: "https?://[^\\s]+", action: "block" },
-              { id: "allcaps",   label: ServerI18n.t("fltPresetAllcaps"),       pattern: "^[A-Z\\W\\s]{8,}$", action: "mask" },
-              { id: "repeat",    label: ServerI18n.t("fltPresetRepeat"),     pattern: "(.)\\1{6,}", action: "mask" },
+              // 2026-10-29：這兩個原本送 action:"mask"，而後端白名單只收
+              // block / replace / allow / review —— 點下去必定 400，等於四個
+              // 快捷規則有兩個是壞的。改成 review：全大寫與重複字元是
+              // 「可疑但不確定」，送人看比直接封掉合理，也讓審核佇列有內容。
+              { id: "allcaps",   label: ServerI18n.t("fltPresetAllcaps"),       pattern: "^[A-Z\\W\\s]{8,}$", action: "review" },
+              { id: "repeat",    label: ServerI18n.t("fltPresetRepeat"),     pattern: "(.)\\1{6,}", action: "review" },
               { id: "emojionly", label: "Emoji-only",  pattern: "^[\\p{Emoji}\\s]+$", action: "block" },
             ].map((q) => `
               <button type="button" class="admin-flt-v4__qchip" data-flt-quick-id="${q.id}" data-flt-pattern="${q.pattern}" data-flt-action="${q.action}" data-flt-label="${q.label}">
@@ -107,7 +121,7 @@
               <span class="hud-filter-chip" data-filter-scope="replace">${ServerI18n.t("ulReplace")} <span data-filter-count="replace">0</span></span>
               <span class="hud-filter-chip" data-filter-scope="rate_limit">${ServerI18n.t("ulRate")} <span data-filter-count="rate_limit">0</span></span>
             </div>
-            <div class="hud-table-head" style="grid-template-columns: 1.6fr 80px 80px 60px 60px 40px;border-bottom:1px solid var(--hud-line-strong);padding:8px 14px">
+            <div class="hud-table-head admin-flt-v4__grid admin-flt-v4__head-row" style="border-bottom:1px solid var(--hud-line-strong);padding:8px 14px">
               <span>${ServerI18n.t("ulPattern")}</span>
               <span>${ServerI18n.t("ulType")}</span>
               <span>${ServerI18n.t("ulAction")}</span>
@@ -150,9 +164,13 @@
                   <div>
                     <label for="filterAction" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("mlAction")}</label>
                     <select id="filterAction" class="admin-ui-select">
-                      <option value="block">block</option>
-                      <option value="replace">replace</option>
-                      <option value="allow">allow</option>
+                      <option value="block">${ServerI18n.t("fltActBlock")}</option>
+                      <option value="replace">${ServerI18n.t("fltActReplace")}</option>
+                      <option value="allow">${ServerI18n.t("fltActAllow")}</option>
+                      <!-- 2026-10-29：review 是後端第四種動作（送進審核佇列），
+                           但下拉一直沒有它 —— 於是佇列只能靠手改 JSON 才會
+                           有東西，而它的預設分頁永遠是 All Clear。 -->
+                      <option value="review">${ServerI18n.t("fltActReview")}</option>
                     </select>
                   </div>
                 </div>
@@ -228,12 +246,17 @@
     }
 
     const dim = rule.enabled ? "" : "opacity:0.45;";
+    // 動作標籤也吃 i18n：raw `block` / `review` 是內部列舉值，不該是
+    // 主持人讀的字（與上面 typeLabel 同一個理由）。
+    const actionLabel = ACTION_LABEL_KEY[rule.action]
+      ? ServerI18n.t(ACTION_LABEL_KEY[rule.action])
+      : rule.action;
 
     return `
-      <div class="hud-table-row hud-rule-row" style="grid-template-columns: 1.6fr 80px 80px 60px 60px 40px;${dim}" data-rule-id="${escapeHtml(rule.id)}" data-rule-type="${escapeHtml(rule.type)}">
+      <div class="hud-table-row hud-rule-row admin-flt-v4__grid" style="${dim}" data-rule-id="${escapeHtml(rule.id)}" data-rule-type="${escapeHtml(rule.type)}">
         <span style="font-family:var(--font-mono);font-size:13px;color:var(--color-text-strong);word-break:break-all">${escapeHtml(patternText)}</span>
         <span class="hud-pill ${typePill}">${typeLabel}</span>
-        <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;padding:2px 6px;border-radius:3px;background:${actionCol};color:#000;font-weight:700;width:fit-content;text-transform:uppercase">${escapeHtml(rule.action)}</span>
+        <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;padding:2px 6px;border-radius:3px;background:${actionCol};color:#000;font-weight:700;width:fit-content">${escapeHtml(actionLabel)}</span>
         <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">P${escapeHtml(String(rule.priority))}</span>
         <label class="relative inline-block" style="width:32px;align-self:center" title="${escapeHtml(rule.enabled ? t("enabled", "Enabled") : t("disabled", "Disabled"))}">
           <input type="checkbox" class="sr-only filter-toggle-cb" data-rule-id="${escapeHtml(rule.id)}" ${rule.enabled ? "checked" : ""} />
@@ -471,6 +494,10 @@
           ` <span style="color:var(--color-text-secondary)">\u2192 ${escapeHtml(data.text)}</span>`;
       } else if (data.action === "allow") {
         resultHtml = `<span style="color: var(--color-ink-success);font-weight:600">${t("allowed", "ALLOWED")}</span>`;
+      } else if (data.action === "review") {
+        // 2026-10-29：review 沒接這條分支的話會落到 else，顯示成
+        // 「No match (pass)」——命中卻說沒命中，是測試面板最不該有的謊。
+        resultHtml = `<span style="color: var(--color-ink-accent);font-weight:600">${ServerI18n.t("fltActReview")}</span>`;
       } else {
         resultHtml = `<span style="color:var(--color-text-muted)">${t("noMatch", "No match (pass)")}</span>`;
       }

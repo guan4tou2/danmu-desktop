@@ -92,34 +92,36 @@
     themes: FALLBACK_THEMES.slice(),
     activeTheme: FALLBACK_THEMES[0].name,
     selectedTheme: FALLBACK_THEMES[0].name,
-    serverName: "Danmu Fire",
     publicUrl: "",
-    // 頂層常數，同樣延後解析——labelKey/descKey 交給 _renderToggleStep
-    // 在渲染當下 t()。
+    // 2026-10-29：三項改成真實存在的設定位置。以前這裡的 enabled 值只是
+    // 本機狀態——完成頁把它算成「N / M 啟用」，等於替不存在的功能背書。
+    // route 指到側欄真正放這些設定的頁面。
     moderationRules: [
       {
-        id: "sensitive",
-        labelKey: "setupWizardModSensitiveLabel",
-        descKey: "setupWizardModSensitiveDesc",
-        enabled: true,
-      },
-      {
-        id: "rate-limit",
+        id: "ratelimit",
         labelKey: "setupWizardModRateLimitLabel",
         descKey: "setupWizardModRateLimitDesc",
-        enabled: true,
+        route: "moderation/ratelimit",
       },
       {
-        id: "fingerprint",
+        id: "words",
+        labelKey: "setupWizardModSensitiveLabel",
+        descKey: "setupWizardModSensitiveDesc",
+        route: "moderation/blacklist",
+      },
+      {
+        id: "bans",
         labelKey: "setupWizardModFingerprintLabel",
         descKey: "setupWizardModFingerprintDesc",
-        enabled: true,
+        route: "moderation/bans",
       },
     ],
+    // 2026-10-29：就緒檢查的實際狀態（/overlay_status 的快照）。
+    // null = 還沒抓到；抓不到也照樣顯示其他列，只是標成未知。
+    readiness: null,
   };
 
   function _deriveServerSnapshot() {
-    _state.serverName = "Danmu Fire";
     _state.publicUrl = window.location.origin + "/";
   }
 
@@ -139,6 +141,7 @@
       _bindShell();
     }
     _fetchThemes();
+    _fetchReadiness();
     _renderStep();
   }
 
@@ -231,68 +234,113 @@
     _bindStep(stepId);
   }
 
-  // 設計稿 14：中文標籤旁邊不再擺一行大寫英文。原本每個欄位下面都有一行
-  // SERVER NAME / PUBLIC URL / PORT / WS PATH。
-  function _renderShellField(fieldId, label, value) {
-    return `
-      <div class="admin-setup-field">
-        <label class="admin-setup-field-label" for="setup-field-${fieldId}">${escapeHtml(label)}</label>
-        <input
-          id="setup-field-${fieldId}"
-          class="admin-setup-input"
-          data-setup-field="${fieldId}"
-          value="${escapeHtml(value)}"
-          readonly
-        />
-      </div>`;
-  }
-
   function _renderServerStep() {
+    // 2026-10-29：第一步從「靜態快照」升級成**就緒檢查**。
+    // 外部審查的表列得很清楚：每一步要有完成條件，而不是「按完成就算部署
+    // 成功」。這裡顯示的是**真實抓回來的狀態**——顯示端連了沒有，是
+    // /overlay_status 說了算，不是精靈說了算。抓不到（網路抖動）就標未知，
+    // 不假裝完成。
+    const ready = _state.readiness;
+    const overlayCount = ready ? (Number(ready.overlay_count) || 0) : null;
+    const displayOk = overlayCount !== null && overlayCount > 0;
+    const rows = [
+      {
+        ok: true,
+        title: ServerI18n.t("setupWizardReadyServer"),
+        value: _state.publicUrl,
+      },
+      {
+        ok: displayOk,
+        unknown: overlayCount === null,
+        title: ServerI18n.t("setupWizardReadyDisplay"),
+        value: displayOk
+          ? ServerI18n.t("setupWizardReadyDisplayOk", { n: overlayCount })
+          : ServerI18n.t("setupWizardReadyDisplayNone"),
+        goto: "#/overlay",
+      },
+      {
+        ok: !!(_state.activeTheme || _state.selectedTheme),
+        title: ServerI18n.t("setupWizardReadyTheme"),
+        value: _themeLabel(
+          _state.themes.filter(function (theme) {
+            return (theme.name || theme.id) === (_state.selectedTheme || _state.activeTheme);
+          })[0] || _state.themes[0]
+        ),
+      },
+      {
+        ok: false,
+        title: ServerI18n.t("setupWizardReadyViewerTest"),
+        value: ServerI18n.t("setupWizardReadyViewerTestDesc"),
+        goto: "#/viewer",
+      },
+    ];
+    const list = rows.map(function (row) {
+      const stateCls = row.unknown
+        ? "is-unknown"
+        : row.ok ? "is-done" : "is-pending";
+      const mark = row.unknown ? "?" : row.ok ? "✓" : "!";
+      const body =
+        '<span class="admin-setup-ready-title">' + escapeHtml(row.title) + "</span>" +
+        '<span class="admin-setup-ready-value">' + escapeHtml(row.value || "") + "</span>";
+      const tail = row.goto
+        ? '<a class="admin-setup-ready-go" href="' + row.goto + '" data-setup-goto="' + row.goto + '">' +
+            escapeHtml(ServerI18n.t("setupWizardModGo")) + "<span aria-hidden=\"true\">›</span></a>"
+        : "";
+      return (
+        '<div class="admin-setup-ready-row ' + stateCls + '">' +
+        '<span class="admin-setup-ready-mark" aria-hidden="true">' + mark + "</span>" +
+        body + tail + "</div>"
+      );
+    }).join("");
     return `
       <div class="admin-setup-step-pad">
-        <h2 class="admin-setup-step-title">${ServerI18n.t("setupWizardStepServer")}</h2>
-        <p class="admin-setup-step-desc">${ServerI18n.t("setupWizardServerDesc")}</p>
-        <div class="admin-setup-server-fields">
-          ${_renderShellField("public-url", ServerI18n.t("setupWizardPublicUrlLabel"), _state.publicUrl)}
-          ${_renderShellField("server-name", ServerI18n.t("setupWizardServerNameLabel"), _state.serverName)}
-        </div>
+        <h2 class="admin-setup-step-title">${escapeHtml(ServerI18n.t("setupWizardStepServer"))}</h2>
+        <p class="admin-setup-step-desc">${escapeHtml(ServerI18n.t("setupWizardServerDesc"))}</p>
+        <div class="admin-setup-ready-list">${list}</div>
       </div>`;
   }
 
-  function _renderToggleStep(title, desc, items, attrName) {
-    return `
-      <div class="admin-setup-step-pad">
-        <h2 class="admin-setup-step-title">${escapeHtml(title)}</h2>
-        <p class="admin-setup-step-desc">${escapeHtml(desc)}</p>
-        <div class="admin-setup-toggle-list">
-          ${items.map(function (item) {
-            return `
-              <button
-                type="button"
-                class="admin-setup-toggle-row${item.enabled ? " is-on" : ""}"
-                ${attrName}="${escapeHtml(item.id)}"
-                aria-pressed="${item.enabled ? "true" : "false"}"
-              >
-                <span class="admin-setup-toggle-body">
-                  <span class="admin-setup-toggle-title">${escapeHtml(ServerI18n.t(item.labelKey))}</span>
-                  <span class="admin-setup-toggle-desc">${escapeHtml(ServerI18n.t(item.descKey))}</span>
-                </span>
-                <span class="admin-setup-toggle-switch${item.enabled ? " is-on" : ""}">
-                  <span class="thumb"></span>
-                </span>
-              </button>`;
-          }).join("")}
-        </div>
-      </div>`;
+  // GET /overlay_status 是公開端點（credentials: same-origin），回傳
+  // overlay_count 與 mode——這是「顯示端連了沒有」的唯一事實來源。
+  async function _fetchReadiness() {
+    try {
+      const response = await fetch("/overlay_status", { credentials: "same-origin" });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const data = await response.json();
+      _state.readiness = {
+        overlay_count: Number(data.overlay_count) || 0,
+        mode: data.mode || "",
+      };
+    } catch (_) {
+      _state.readiness = null;
+    }
+    if (_state.open && STEPS[_state.step].id === "server") _renderStep();
   }
 
   function _renderModerationStep() {
-    return _renderToggleStep(
-      ServerI18n.t("setupWizardStepModeration"),
-      ServerI18n.t("setupWizardModerationDesc"),
-      _state.moderationRules,
-      "data-setup-moderation-toggle"
-    );
+    // 2026-10-29：三個開關整組移除。
+    // 「敏感字過濾：啟用內建敏感字詞庫」——伺服器根本沒有內建字詞庫；
+    // 「速率限制：每分鐘 20 則」——那本來就是預設值；
+    // 「指紋追蹤」——fingerprint_tracker 沒有開關。三個都是按了不會寫進
+    // 伺服器的裝飾，但完成頁會顯示「N / M 啟用」。假開關比沒有開關糟：
+    // 它教主持人「這裡按下去就生效」，之後到別頁設定時就不再信任介面。
+    // 這一步改成指引：真實的設定在「審核」頁。
+    const rows = _state.moderationRules.map(function (item) {
+      return `
+        <a class="admin-setup-mod-row" href="#/${item.route}" data-setup-goto="#/${item.route}">
+          <span class="admin-setup-mod-body">
+            <span class="admin-setup-mod-title">${escapeHtml(ServerI18n.t(item.labelKey))}</span>
+            <span class="admin-setup-mod-desc">${escapeHtml(ServerI18n.t(item.descKey))}</span>
+          </span>
+          <span class="admin-setup-mod-go">${escapeHtml(ServerI18n.t("setupWizardModGo"))}<span aria-hidden="true">›</span></span>
+        </a>`;
+    }).join("");
+    return `
+      <div class="admin-setup-step-pad">
+        <h2 class="admin-setup-step-title">${escapeHtml(ServerI18n.t("setupWizardStepModeration"))}</h2>
+        <p class="admin-setup-step-desc">${escapeHtml(ServerI18n.t("setupWizardModerationDesc"))}</p>
+        <div class="admin-setup-mod-list">${rows}</div>
+      </div>`;
   }
 
   // 設計稿 08 · F1 的四張卡帶的是**定位說明**（「暖色像素感，適合活動主視覺」），
@@ -356,7 +404,9 @@
       }
       return _state.selectedTheme || _state.activeTheme || "—";
     })();
-    const enabledModeration = _state.moderationRules.filter(function (item) { return item.enabled; }).length;
+    // 2026-10-29：審核那列拿掉。以前顯示「N / M 啟用」，但那些開關從來沒有
+    // 寫進伺服器——把建議值當成已套用狀態展示，是整個精靈最重的謊言。
+    // 改成明確的下一步：去「審核」頁確認。
     return `
       <div class="admin-setup-step-pad admin-setup-done">
         <div class="admin-setup-done-icon">✓</div>
@@ -365,7 +415,10 @@
         <div class="admin-setup-done-summary">
           <div class="row"><span class="k">${ServerI18n.t("setupWizardStepServer")}</span><span class="v">${escapeHtml(_state.publicUrl)}</span></div>
           <div class="row"><span class="k">${ServerI18n.t("setupWizardStepTheme")}</span><span class="v">${escapeHtml(themeName)}</span></div>
-          <div class="row"><span class="k">${ServerI18n.t("setupWizardStepModeration")}</span><span class="v">${ServerI18n.t("setupWizardEnabledCount", { n: enabledModeration, total: _state.moderationRules.length })}</span></div>
+        </div>
+        <div class="admin-setup-done-next">
+          <a class="admin-setup-done-link" href="#/moderation" data-setup-goto="#/moderation">${escapeHtml(ServerI18n.t("setupWizardStepModeration"))}<span aria-hidden="true">›</span></a>
+          <a class="admin-setup-done-link" href="#/overlay" data-setup-goto="#/overlay">${escapeHtml(ServerI18n.t("adminRouteTitle_overlay"))}<span aria-hidden="true">›</span></a>
         </div>
         <button type="button" class="admin-setup-done-cta" data-setup-complete-cta>${ServerI18n.t("setupWizardEnterConsole")}</button>
       </div>`;
@@ -396,23 +449,17 @@
     });
   }
 
-  function _toggleList(items, id) {
-    return items.map(function (item) {
-      if (item.id === id) {
-        return Object.assign({}, item, { enabled: !item.enabled });
-      }
-      return item;
-    });
-  }
-
   function _bindStep(stepId) {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
-    if (stepId === "moderation") {
-      root.querySelectorAll("[data-setup-moderation-toggle]").forEach(function (button) {
-        button.addEventListener("click", function () {
-          _state.moderationRules = _toggleList(_state.moderationRules, button.dataset.setupModerationToggle);
-          _renderStep();
+    if (stepId === "moderation" || stepId === "done" || stepId === "server") {
+      // 2026-10-29：三個步驟的深連結走同一條路——換 hash 關閉精靈，
+      // 由 router 接手（_onHashChange 也會兜底關閉）。以前這裡只綁假開關。
+      root.querySelectorAll("[data-setup-goto]").forEach(function (link) {
+        link.addEventListener("click", function () {
+          _close();
+          const target = link.dataset.setupGoto;
+          if (target) window.location.hash = target;
         });
       });
       return;

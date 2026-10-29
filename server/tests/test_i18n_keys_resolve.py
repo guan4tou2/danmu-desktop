@@ -28,6 +28,13 @@ _CALL_RE = re.compile(r'(?:ServerI18n\.t|\bt|\bi18n)\(\s*"([A-Za-z][A-Za-z0-9_]*
 
 # i18n.js 是 build-i18n.js 產生的，裡面本來就內嵌所有語言的字典。
 _SKIP_FILES = {"i18n.js"}
+# 2026-10-29：admin.bundle.js 也跳過。bundle 是 manifest 那 67 支的壓縮版，
+# 每一個 `t("key")` 在原始檔裡都掃得到——掃它只有壞處：esbuild 重新配名時
+# 可能把某個區域輔助函式命名成 `t`（例如 admin-dashboard 的 `<option>`
+# helper `opt`），於是 `opt("continue", …)` 被這條 regex 當成
+# `t("continue", …)`，多出兩個根本不存在的「缺 key」。壓縮碼的識別字
+# 不可信，掃原始檔就夠了。
+_SKIP_FILES.add("admin.bundle.js")
 
 
 def _locale(lang: str) -> dict:

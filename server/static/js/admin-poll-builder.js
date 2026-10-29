@@ -125,11 +125,13 @@
       function qid() { return "q_" + Math.random().toString(36).slice(2, 8); }
       function oid() { return "o_" + Math.random().toString(36).slice(2, 6); }
       function newOpt(letter) {
-        return { id: oid(), label: "", img: "" };
+        // 2026-10-29：img 欄位移除。選項圖片從來沒有上傳管道。
+        return { id: oid(), label: "" };
       }
       function newQuestion() {
+        // 2026-10-29：multi / crop 移除——兩者只寫本機 state，建立請求不送。
         return {
-          id: qid(), text: "", timer: 90, multi: false, crop: "16:9",
+          id: qid(), text: "", timer: 90,
           image_url: "", server_q_id: "",
           options: [newOpt("A"), newOpt("B")],
         };
@@ -190,13 +192,15 @@
           if (sessionRunning) row.classList.add("is-running");
           row.dataset.qid = q.id;
           row.draggable = true;
-          const hasImg = !!q.image_url || q.options.some(o => o.img);
+          // 2026-10-29：meta 不再提 crop、不算選項圖。兩者從來只存在本機
+          // state：建立請求不送、後端 schema 也不收（unknown = EXCLUDE）。
+          const hasImg = !!q.image_url;
           row.innerHTML = `
             <span class="drag-handle" title="${ServerI18n.t("pollBuilderDragReorderTitle")}">⋮⋮</span>
             <span class="idx">${i + 1}</span>
             <div class="info">
               <div class="text">${escapeHtml(q.text || ServerI18n.t("pollBuilderEmptyQuestionPlaceholder"))}</div>
-              <div class="meta">${ServerI18n.t("pollBuilderOptionsCount", { n: q.options.length })} · ${q.timer === 0 ? ServerI18n.t("pollBuilderNoTimeLimit") : q.timer + "s"} · ${hasImg ? ServerI18n.t("pollBuilderHasImageCrop", { crop: q.crop }) : ServerI18n.t("pollBuilderPlainText")}</div>
+              <div class="meta">${ServerI18n.t("pollBuilderOptionsCount", { n: q.options.length })} · ${q.timer === 0 ? ServerI18n.t("pollBuilderNoTimeLimit") : q.timer + "s"} · ${hasImg ? ServerI18n.t("pollBuilderHasImage") : ServerI18n.t("pollBuilderPlainText")}</div>
             </div>
             ${sessionRunning ? '<span class="editing-chip" style="background:rgba(134,239,172,0.12);color: var(--color-ink-success)">● ' + ServerI18n.t("uiLive") + '</span>' : (q.id === activeId ? `<span class="editing-chip">${ServerI18n.t("pollBuilderEditingChip")}</span>` : "")}
           `;
@@ -231,23 +235,17 @@
             `}
           </div>
 
-          <div class="admin-poll-crop" data-ed-crop-row>
-            <span class="crop-label">${ServerI18n.t("pollBuilderCropLabel")}</span>
-            ${["16:9", "1:1", "4:3"].map(r => `
-              <button type="button" data-ed-crop="${r}" class="${q.crop === r ? "is-active" : ""}">${r}</button>
-            `).join("")}
-            <span class="crop-note">${ServerI18n.t("pollBuilderCropApplyNote")}</span>
-          </div>
-
+          <!-- 2026-10-29：裁切比例列移除。q.crop 只寫本機 state——建立請求
+               不送、PollQuestionSchema 不收，觀眾端從來沒有讀過它。 -->
           <div class="admin-poll-field-label">${ServerI18n.t("pollBuilderOptionsFieldLabel")}</div>
           <div class="admin-poll-opts" data-ed-opts>
             ${q.options.map((opt, oi) => `
               <div class="admin-poll-opt" data-oid="${opt.id}" draggable="true">
                 <span class="drag-handle">⋮⋮</span>
                 <span class="opt-tag">${String.fromCharCode(65 + oi)}</span>
-                <button type="button" class="opt-img-toggle ${opt.img ? "is-on" : ""}" data-ed-opt-img="${opt.id}" title="${ServerI18n.t("pollBuilderToggleImageTitle")}">
-                  ${opt.img ? '<span class="img-on">🖼</span>' : `<span class="img-off">${ServerI18n.t("pollBuilderAddImageShort")}</span>`}
-                </button>
+                <!-- 2026-10-29：選項圖片鈕移除。它只把 opt.img 設成字串
+                     "placeholder"，沒有上傳、沒有送出、後端 schema 也只收
+                     options 字串陣列——是一顆看起來能用的假按鈕。 -->
                 <input type="text" data-ed-opt-text="${opt.id}" value="${escapeHtml(opt.label || "")}" placeholder="${ServerI18n.t("pollBuilderOptionPlaceholder", { letter: String.fromCharCode(65 + oi) })}" maxlength="100" />
                 ${q.options.length > 2 ? `<button type="button" class="opt-remove" data-ed-opt-remove="${opt.id}" title="${ServerI18n.t("pollBuilderDeleteTitle")}">${window.AdminUtils.closeIcon}</button>` : ""}
               </div>
@@ -266,10 +264,10 @@
                 <option value="0"${q.timer === 0 ? " selected" : ""}>${ServerI18n.t("pollBuilderNoTimeLimit")}</option>
               </select>
             </label>
-            <label class="foot-field foot-check">
-              <input type="checkbox" data-ed-multi ${q.multi ? "checked" : ""} />
-              <span>${ServerI18n.t("pollBuilderAllowMulti")}</span>
-            </label>
+            <!-- 2026-10-29：「允許多選」移除。q.multi 只寫本機 state，建立
+                 請求沒有這個欄位、PollQuestionSchema 也不收——觀眾端從頭到
+                 尾都是單選。要回來就得整條串：schema → poll_service →
+                 viewer 投票 UI → 計票。 -->
             <div class="foot-spacer"></div>
             <!-- 2026-07-30：「START Qn」舊路徑移除——它繞過 session 模型直打
                  舊單題 /admin/poll/create、前端自己 watchAndAdvance，連圖片
@@ -757,19 +755,12 @@
         const q = findQ(activeId);
         if (!q) return;
         if (e.target.matches("[data-ed-timer]")) { q.timer = +e.target.value; persist(); renderQueue(); }
-        else if (e.target.matches("[data-ed-multi]")) { q.multi = e.target.checked; persist(); }
       });
       editorEl.addEventListener("click", async (e) => {
         const q = findQ(activeId);
         if (!q) return;
-        const cropBtn = e.target.closest("[data-ed-crop]");
-        if (cropBtn) { q.crop = cropBtn.dataset.edCrop; persist(); renderEditor(); return; }
-        const imgToggle = e.target.closest("[data-ed-opt-img]");
-        if (imgToggle) {
-          const opt = q.options.find(o => o.id === imgToggle.dataset.edOptImg);
-          if (opt) { opt.img = opt.img ? "" : "placeholder"; persist(); renderEditor(); }
-          return;
-        }
+        // 2026-10-29：data-ed-crop / data-ed-opt-img 兩個分支移除——
+        // 對應的 UI 已退場，只寫本機 state 的行為不該留下來。
         const rem = e.target.closest("[data-ed-opt-remove]");
         if (rem) {
           const oid = rem.dataset.edOptRemove;

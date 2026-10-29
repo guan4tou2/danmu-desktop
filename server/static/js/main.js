@@ -2144,9 +2144,9 @@ document.addEventListener("DOMContentLoaded", () => {
     el.innerHTML = `
       <div class="admin-offline-banner__head">
         <span class="admin-offline-banner__dot"></span>
-        <span class="admin-offline-banner__title">離線中 · 連線後將自動送出</span>
+        <span class="admin-offline-banner__title">${ServerI18n.t("offlineBannerTitle")}</span>
       </div>
-      <div class="admin-offline-banner__meta" data-offline-meta>重新連線中 · 5.0 秒 · 已排隊 0 則訊息</div>
+      <div class="admin-offline-banner__meta" data-offline-meta></div>
       <div class="admin-offline-banner__progress"><div class="admin-offline-banner__progress-fill" data-offline-fill></div></div>`;
     document.body.appendChild(el);
     _offlineBannerEl = el;
@@ -2189,9 +2189,9 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="admin-eoff__sub" data-eoff-sub>已離線 1 分 00 秒</div>
         <div class="admin-eoff__desc">已超過 60 秒無法連線。請確認網路狀態，或聯繫活動主辦方。</div>
         <div class="admin-eoff__queue" data-eoff-queue hidden>
-          <div class="admin-eoff__queue-label">已排隊 <span data-eoff-queue-n>1</span> 則訊息</div>
+          <div class="admin-eoff__queue-label" data-eoff-queue-label></div>
           <div class="admin-eoff__queue-text" data-eoff-queue-text></div>
-          <div class="admin-eoff__queue-foot">連線恢復後自動送出</div>
+          <div class="admin-eoff__queue-foot">${ServerI18n.t("eoffDraftFoot")}</div>
         </div>
         <button type="button" class="admin-eoff__retry" data-eoff-retry>強制重新連線</button>
         <a class="admin-eoff__home" href="/">返回首頁</a>
@@ -2255,10 +2255,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const left = Math.max(0, (_offlineRetryAt - Date.now()) / 1000);
       const total = _offlineBackoff;
       const pct = Math.min(100, ((total - left) / total) * 100);
-      // Queued messages = 1 when there's text in the input we couldn't ship.
-      const queuedText = (elements.danmuText && elements.danmuText.value.trim()) || "";
-      const queued = queuedText ? 1 : 0;
-      if (meta) meta.textContent = `重新連線中 · ${left.toFixed(1)} 秒 · 已排隊 ${queued} 則訊息`;
+      // 2026-10-29：這裡算的是**輸入框裡的草稿**，不是被伺服器接受的佇列。
+      // 以前標成「已排隊 N 則訊息」——「排隊」在這個產品裡有明確意義
+      // （已進待顯示佇列、等著上屏），把還沒送出的草稿說成已排隊，
+      // 觀眾會以為伺服器已經收到。文案改成「未送出草稿」，並走 i18n
+      // （原本是硬編中文，其他語言直接看到 key 名）。
+      const draftText = (elements.danmuText && elements.danmuText.value.trim()) || "";
+      const draftCount = draftText ? 1 : 0;
+      if (meta) {
+        meta.textContent = ServerI18n.t("offlineMetaReconnecting", { sec: left.toFixed(1), n: draftCount });
+      }
       if (fill) fill.style.width = pct + "%";
       if (left <= 0) {
         // Bump backoff for the next cycle (capped). main.js's existing
@@ -2277,12 +2283,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const sub = card.querySelector("[data-eoff-sub]");
         const queueBox = card.querySelector("[data-eoff-queue]");
         const queueText = card.querySelector("[data-eoff-queue-text]");
-        const queueN = card.querySelector("[data-eoff-queue-n]");
         if (sub) sub.textContent = `已離線 ${_fmtOfflineDuration(offlineDur)}`;
         if (queueBox) {
-          queueBox.hidden = !queuedText;
-          if (queueText) queueText.textContent = queuedText;
-          if (queueN) queueN.textContent = String(queued);
+          const draftLabel = card.querySelector("[data-eoff-queue-label]");
+          queueBox.hidden = !draftText;
+          if (draftText && queueText) queueText.textContent = draftText;
+          if (draftLabel) draftLabel.textContent = ServerI18n.t("eoffDraftLabel", { n: draftCount });
         }
       }
     }, 250);

@@ -51,6 +51,10 @@ def _broadcast_live_feed(data):
         "layout": data.get("layout", "scroll"),
         "isImage": data.get("isImage", False),
         "fingerprint": data.get("fingerprint", ""),
+        # 2026-10-29：帶上 message_id，admin 才能對「這一則」下撤回指令。
+        # 沒有它，主持人唯一的手段是把整屏清空或永久封鎖——
+        # 用過度手段解暫時需求（見 docs/audits/admin-ux-friction-2026-10-29.md F2）。
+        "message_id": data.get("message_id", ""),
     }
     try:
         live_feed_buffer.append(snapshot)

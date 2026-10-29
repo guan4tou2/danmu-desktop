@@ -26,12 +26,13 @@
   let filterTab = "all"; // "all" | "muted"
   /** @type {Set<string>} */
   let _entryCounter = 0;
+  // 使用者往下讀時，頂端又插進來的則數（跳轉 pill 的計數）。
+  let _unseen = 0;
 
   // DOM references (set after section is injected)
   let listEl = null;
   let pauseBtn = null;
   let searchInput = null;
-  let countBadge = null;
 
   // ── Helpers ──────────────────────────────────────────────
 
@@ -186,6 +187,21 @@
     const actions = document.createElement("span");
     actions.className = "admin-live-feed-actions is-hover-reveal";
 
+    // 2026-10-29：撤下單則。在這之前，處理一句不該出現的話只有兩條路——
+    // 永久封鎖發話者，或清空整屏。兩者都是拿大砲打蚊子。
+    if (d.message_id) {
+      const recallBtn = document.createElement("button");
+      recallBtn.type = "button";
+      recallBtn.className = "admin-ui-chip admin-live-feed-action";
+      recallBtn.textContent = ServerI18n.t("lfRecallBtn");
+      recallBtn.title = ServerI18n.t("lfRecallTitle");
+      recallBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        recallAction(entry);
+      });
+      actions.appendChild(recallBtn);
+    }
+
     const blockKwBtn = document.createElement("button");
     blockKwBtn.type = "button";
     blockKwBtn.className = "admin-ui-chip is-danger admin-live-feed-action";
@@ -211,61 +227,103 @@
     }
 
     row.appendChild(actions);
+
+    // 2026-10-29：點列／Enter 開啟訊息詳情抽屜（同指紋歷史、回覆到顯示層）。
+    // 抽屜模組一直都在，但全庫沒有任何人呼叫它——能力等於不存在。
+    row.classList.add("is-clickable");
+    row.addEventListener("click", (e) => {
+      if (e.target.closest(".admin-live-feed-actions")) return;
+      openDetail(entry);
+    });
+    row.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" || e.target.closest("button")) return;
+      e.preventDefault();
+      openDetail(entry);
+    });
+
     return row;
   }
 
-  // ── Block action (POST /admin/live/block) ────────────────
-
-  async function blockAction(type, value, markEntryId) {
-    if (!value) return;
-    const label = type === "keyword" ? ServerI18n.t("blockLabelKeyword") : ServerI18n.t("blockLabelFingerprint");
-    const display =
-      type === "keyword" ? truncate(value, 30) : value.slice(0, FP_DISPLAY_LEN);
-
-    const ok = await window.HudConfirm?.open({
-      icon: "⊘",
-      title: ServerI18n.t("lfBlockTitle"),
-      subtitle: ServerI18n.t("cfmSubBlockFuture"),
-      severity: "danger",
-      bodyText: ServerI18n.t("blockConfirm").replace("{label}", label).replace("{display}", display),
-      confirmLabel: ServerI18n.t("lfBlockTitle"),
-    });
-    if (!ok) return;
-
-    try {
-      const resp = await window.csrfFetch("/admin/live/block", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: type, value: value }),
-      });
-      const result = await resp.json();
-      if (resp.ok) {
-        showToast(result.message || ServerI18n.t("blockFallback").replace("{label}", label));
-        // Mark local entry(ies) matching this block as muted so they show in "MUTED" tab
-        if (markEntryId) {
-          const e = entries.find((x) => x.id === markEntryId);
-          if (e) e.muted = true;
-        } else {
-          entries.forEach((e) => {
-            if (type === "keyword" && e.data.text === value) e.muted = true;
-            if (type === "fingerprint" && e.data.fingerprint === value) e.muted = true;
-          });
-        }
-        renderList();
-      } else {
-        showToast(result.error || ServerI18n.t("blockFailed"), false);
-      }
-    } catch (err) {
-      console.error("[LiveFeed] Block failed:", err);
-      showToast(ServerI18n.t("blockRequestFailed"), false);
+  function openDetail(entry) {
+    if (window.AdminMessageDrawer && typeof window.AdminMessageDrawer.open === "function") {
+      window.AdminMessageDrawer.open(entry);
     }
   }
 
+  // ── Recall one message（走共用 AdminModeration.recall）────
+  // 不需要確認：它不刪資料、不動黑名單，只是把這一則從大螢幕拿下來。
+  // 加一層 confirm 等於把「一鍵撤下」變回「三步撤下」，正好違背它的目的。
+
+  async function recallAction(entry) {
+    const id = entry && entry.data && entry.data.message_id;
+    if (!id) return;
+    const result = await window.AdminModeration.recall(id);
+    if (!result.ok) {
+      console.error("[LiveFeed] Recall failed:", result.error);
+      showToast(ServerI18n.t("lfRecallFailed"), false);
+      return;
+    }
+    entry.recalled = true;
+    const row = _rowById(entry.id);
+    if (row) row.classList.add("is-recalled");
+    showToast(ServerI18n.t("lfRecallDone"));
+  }
+
+  // ── Block action（2026-10-29 改走共用的 AdminModeration）────────────────
+  // 確認、API、提示都在那一層——訊息流只負責自己的本地狀態：把命中列標成
+  // muted，讓「已封鎖」分頁立刻看得到。抽屜與未來的入口共用同一份確認文案
+  // 與同一支 API，不會再各自漂移。
+
+  async function blockAction(type, value, markEntryId) {
+    if (!value) return;
+    const blockFn = type === "keyword"
+      ? window.AdminModeration.blockKeyword
+      : window.AdminModeration.blockFingerprint;
+    const ok = await blockFn.call(window.AdminModeration, value);
+    if (!ok) return;
+    if (markEntryId) {
+      const e = entries.find((x) => x.id === markEntryId);
+      if (e) e.muted = true;
+    } else {
+      entries.forEach((e) => {
+        if (type === "keyword" && e.data.text === value) e.muted = true;
+        if (type === "fingerprint" && e.data.fingerprint === value) e.muted = true;
+      });
+    }
+    renderList();
+  }
+
+
+  // ── Focus / lookup helpers (2026-10-29) ──────────────────
+  // 焦點以前綁在 DOM 節點上，而列表每則訊息都整批重建 —— 於是 J/K 巡覽
+  // 在真正有流量的時候每則斷一次。現在焦點記在 entry.id 上，重建後還原。
+
+  function _rowById(id) {
+    if (!listEl || !id) return null;
+    const rows = listEl.children;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].dataset && rows[i].dataset.id === id) return rows[i];
+    }
+    return null;
+  }
+
+  function _focusedRowId() {
+    const a = document.activeElement;
+    const row = a && a.closest ? a.closest(".admin-live-feed-row") : null;
+    return row ? row.dataset.id : null;
+  }
+
+  function _restoreRowFocus(id) {
+    if (!id) return;
+    const row = _rowById(id);
+    if (row && document.activeElement !== row) row.focus({ preventScroll: true });
+  }
 
   // ── Full re-render of visible list ───────────────────────
 
   function renderList() {
     if (!listEl) return;
+    const focusId = _focusedRowId();
     const frag = document.createDocumentFragment();
     const visible = entries.filter((e) => matchesSearch(e) && matchesFilter(e));
 
@@ -286,53 +344,104 @@
       listEl.appendChild(frag);
     }
 
-    updateCountBadge();
+    _refreshChrome();
+    _restoreRowFocus(focusId);
+  }
+
+  // ── Incremental insert (2026-10-29) ──────────────────────
+  // 新訊息只插一列，不重建整張表。兩個副作用一併處理：
+  //   · 使用者往下讀舊訊息時，插入不能把他正在看的那一段推走
+  //   · 捲到頂（或本來就在頂）時才跟著最新訊息走
+
+  function _insertRow(entry) {
+    if (!listEl) return null;
+    if (!matchesSearch(entry) || !matchesFilter(entry)) return null;
+    const empty = listEl.querySelector("[data-empty-kind='live-feed']");
+    if (empty) empty.remove();
+
+    const stickToTop = listEl.scrollTop <= 8;
+    const row = createEntryEl(entry);
+    if (stickToTop) {
+      // 最常見的情況：跟著最新訊息走。這條路不量 scrollHeight——
+      // 批次進來 30 則時，量 30 次就是 30 次強制重排。
+      listEl.insertBefore(row, listEl.firstChild);
+    } else {
+      // 使用者正在往下讀：補回被推走的高度，並累計「上面還有幾則沒看」。
+      const beforeHeight = listEl.scrollHeight;
+      listEl.insertBefore(row, listEl.firstChild);
+      listEl.scrollTop += listEl.scrollHeight - beforeHeight;
+      _unseen += 1;
+    }
+    return row;
+  }
+
+  function _trimRows() {
+    const overflow = entries.length - MAX_ENTRIES;
+    if (overflow <= 0) return;
+    const dropped = entries.splice(0, overflow);
+    dropped.forEach((e) => {
+      const row = _rowById(e.id);
+      if (row) row.remove();
+    });
+  }
+
+  function _refreshChrome() {
     _updateRateBar();
     _updateChipCounts();
     _updateJumpPill();
   }
 
-  function updateCountBadge() {
-    if (!countBadge) return;
-    const total = entries.length;
-    const buffered = pauseBuffer.length;
-    countBadge.textContent =
-      ServerI18n.t("lfCountUnit", { n: total }) + (buffered > 0 ? ` (+${buffered})` : "");
-  }
+  // 2026-10-29：updateCountBadge() 移除。它一直在找 #liveFeedCount，
+  // 而那個節點從分頁 chips 上線之後就不存在了——每則訊息都在更新一個
+  // 永遠是 null 的元素。數量現在由 _updateChipCounts 寫進 chips。
 
   // ── Add entry ────────────────────────────────────────────
 
   function addEntry(data) {
-    const entry = { ts: Date.now(), data: data, id: "e" + (++_entryCounter) };
+    const entry = {
+      ts: Date.now(),
+      data: data,
+      // message_id 是伺服器給的穩定識別碼，撤回與詳情抽屜都要用它。
+      // 沒有它（舊資料／測試資料）才退回本機流水號。
+      id: (data && data.message_id) ? "m" + data.message_id : "e" + (++_entryCounter),
+    };
     // 2026-05-17 v4: tag entries with status flags for filter chips.
     if (data && data.status === "blocked") entry.muted = true;
     if (data && (data.sensitive || data.flagged)) entry.sensitive = true;
     if (paused) {
       pauseBuffer.push(entry);
-      updateCountBadge();
+      _updateChipCounts();
       _updateJumpPill();
       return;
     }
     entries.push(entry);
-    if (entries.length > MAX_ENTRIES) {
-      const dropped = entries.splice(0, entries.length - MAX_ENTRIES);
-    }
-    // Simple full re-render — keeps filter tabs correct and perf is fine at MAX_ENTRIES=200.
-    renderList();
+    _insertRow(entry);
+    _trimRows();
+    _refreshChrome();
   }
 
-  // Jump pill: shows when paused (or user has scrolled up) — count buffered.
+  // Jump pill: shows when paused, or when the user has scrolled away from the
+  // newest end and messages kept arriving. Before 2026-10-29 this element was
+  // rendered but never bound — a visible button that did nothing.
   function _updateJumpPill() {
     const jump = document.querySelector("[data-lf-jump]");
     const n = document.querySelector("[data-lf-jump-n]");
     if (!jump || !n) return;
     const buffered = pauseBuffer.length;
-    if (buffered > 0) {
+    const count = buffered > 0 ? buffered : _unseen;
+    if (count > 0) {
       jump.hidden = false;
-      n.textContent = String(buffered);
+      n.textContent = String(count);
     } else {
       jump.hidden = true;
     }
+  }
+
+  function _jumpToLatest() {
+    if (paused) togglePause();
+    _unseen = 0;
+    if (listEl) listEl.scrollTop = 0;
+    _updateJumpPill();
   }
 
   function _updateRateBar() {
@@ -377,9 +486,11 @@
       if (entries.length > MAX_ENTRIES) {
         entries.splice(0, entries.length - MAX_ENTRIES);
       }
+      _unseen = 0;
       renderList();
     } else {
-      updateCountBadge();
+      _updateChipCounts();
+      _updateJumpPill();
     }
   }
 
@@ -505,20 +616,28 @@
 
   function init() {
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
+    // 2026-10-29：掛上之後就斷開。原本這個 observer 整場都活著，admin 每一次
+    // DOM 變動（訊息流每則訊息、每次 toast）都會觸發一次 getElementById，
+    // 只為了確認一件早就成立的事。掛載是一次性的，觀察也該是一次性的。
     const observer = new MutationObserver(() => {
       if (document.getElementById("settings-grid") && !document.getElementById(SECTION_ID)) {
-        if (injectSection()) bindUI();
+        if (injectSection()) {
+          bindUI();
+          observer.disconnect();
+        }
       }
     });
     observer.observe(document.body, { childList: true, subtree: true });
-    if (injectSection()) bindUI();
+    if (injectSection()) {
+      bindUI();
+      observer.disconnect();
+    }
   }
 
   function bindUI() {
     listEl = document.getElementById("liveFeedList");
     pauseBtn = document.getElementById("liveFeedPauseBtn");
     searchInput = document.getElementById("liveFeedSearch");
-    countBadge = document.getElementById("liveFeedCount");
 
     const clearBtn = document.getElementById("liveFeedClearBtn");
     const tabs = document.querySelectorAll(".admin-live-feed-tab");
@@ -528,9 +647,23 @@
       clearBtn.addEventListener("click", () => {
         entries = [];
         pauseBuffer = [];
+        _unseen = 0;
         renderList();
       });
     }
+
+    // 跳轉 pill 以前只會被顯示，按了沒有反應（沒有綁任何 listener）。
+    const jumpBtn = document.querySelector("[data-lf-jump-btn]");
+    if (jumpBtn) jumpBtn.addEventListener("click", _jumpToLatest);
+    if (listEl) {
+      listEl.addEventListener("scroll", () => {
+        if (listEl.scrollTop <= 8 && _unseen > 0) {
+          _unseen = 0;
+          _updateJumpPill();
+        }
+      }, { passive: true });
+    }
+
     tabs.forEach((t) => {
       t.addEventListener("click", () => {
         tabs.forEach((x) => x.classList.remove("is-active"));
@@ -566,29 +699,33 @@
 
     function _ensureActions(row) {
       if (row.querySelector(".admin-live-feed-row__swipe-actions")) return;
+      const id = row.dataset.id;
+      const entry = entries.find((en) => en.id === id);
+      const hasMsgId = !!(entry && entry.data && entry.data.message_id);
       const wrap = document.createElement("div");
       wrap.className = "admin-live-feed-row__swipe-actions";
+      // 2026-10-29：原本三顆——遮罩／靜音／封禁。其中「靜音」與「封禁」打的
+      // 是同一支 API（同一個永久效果），「遮罩」則是把整句文本加進黑名單。
+      // 三個按鈕、兩種行為、零個「暫時」——比只有兩顆更糟，因為它承諾了
+      // 一個不存在的選項。現在只留真的做得到的兩件事。
       wrap.innerHTML = `
-        <button type="button" class="admin-live-feed-row__swipe-btn admin-live-feed-row__swipe-btn--mask" data-swipe-act="mask">
-          <span class="admin-live-feed-row__swipe-btn-icon">◐</span>${ServerI18n.t("lfSwipeMask")}
-        </button>
-        <button type="button" class="admin-live-feed-row__swipe-btn admin-live-feed-row__swipe-btn--mute" data-swipe-act="mute">
-          <span class="admin-live-feed-row__swipe-btn-icon">◐</span>${ServerI18n.t("lfSwipeMute")}
+        <button type="button" class="admin-live-feed-row__swipe-btn admin-live-feed-row__swipe-btn--mask" data-swipe-act="recall" ${hasMsgId ? "" : "disabled"}>
+          <span class="admin-live-feed-row__swipe-btn-icon">◌</span>${ServerI18n.t("lfRecallBtn")}
         </button>
         <button type="button" class="admin-live-feed-row__swipe-btn admin-live-feed-row__swipe-btn--ban" data-swipe-act="ban">
           <span class="admin-live-feed-row__swipe-btn-icon">⊘</span>${ServerI18n.t("lfSwipeBan")}
         </button>`;
       wrap.addEventListener("click", function (e) {
         const btn = e.target.closest("[data-swipe-act]");
-        if (!btn) return;
-        const id = row.dataset.id;
-        const entry = entries.find((en) => en.id === id);
-        if (!entry || !entry.data) return;
+        if (!btn || btn.disabled) return;
+        const rowId = row.dataset.id;
+        const rowEntry = entries.find((en) => en.id === rowId);
+        if (!rowEntry || !rowEntry.data) return;
         const act = btn.dataset.swipeAct;
-        if (act === "ban" || act === "mute") {
-          if (entry.data.fingerprint) blockAction("fingerprint", entry.data.fingerprint, id);
-        } else if (act === "mask") {
-          if (entry.data.text) blockAction("keyword", entry.data.text, id);
+        if (act === "ban") {
+          if (rowEntry.data.fingerprint) blockAction("fingerprint", rowEntry.data.fingerprint, rowId);
+        } else if (act === "recall") {
+          recallAction(rowEntry);
         }
         row.classList.remove("is-swiped");
       });

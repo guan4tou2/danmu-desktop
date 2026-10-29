@@ -1187,7 +1187,14 @@ def test_a11y_focus_lang_and_live_region(zh):
     # 顏色改「色點＋名稱」磚，選中加 ✓ 與 2px 粗框
     html = _read("server/templates/index.html")
     assert "viewer-swatch-dot" in html and "viewer-swatch-name" in html
-    assert 'data-i18n-aria="swatchAriaWhite"' in html
+    # 2026-10-29：色票改成由 services/viewer_colors.py 的 preset 迴圈產生，
+    # aria 標籤因此是樣板插值而不是字面值 —— 原本釘字面值 'swatchAriaWhite'
+    # 的斷言在色票樣板化當天就失效了（一直紅著）。這裡改釘「有插 aria_key」
+    # 這條真正的契約，並回頭確認 preset 資料確實提供它。
+    assert 'data-i18n-aria="{{ preset.aria_key }}"' in html
+    from server.services.viewer_colors import DEFAULT_COLOR_PRESETS
+
+    assert any(p["aria_key"] == "swatchAriaWhite" for p in DEFAULT_COLOR_PRESETS)
     assert zh["swatchAriaWhite"] == "顏色：白"
     viewer_css = _read("server/static/css/viewer-v2.css")
     assert "min-height: 44px;" in viewer_css.split(".viewer-swatch-preset{")[1].split("}")[0]

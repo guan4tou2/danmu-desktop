@@ -13,6 +13,7 @@
     "admin-tabs.js",
     "admin-quick-action.js",
     "admin-hud-modal.js",
+    "admin-moderation-actions.js",
     "admin-skeletons.js",
     "admin-empty-states.js",
     "admin-identity.js",

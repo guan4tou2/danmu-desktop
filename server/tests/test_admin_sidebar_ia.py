@@ -69,6 +69,13 @@ EXPECTED_NAV_ORDER = [
     # 系統 — 與活動當下無關的維運
     # (v8: `security` 提升為側欄列，推翻 2026-05-13 的「不得獨立成列」決定；
     #  `system` 降級——它的分頁內容分別由 security / 擴充 承接)
+    #
+    # 2026-10-29：`system` 回到側欄第一列。v8 把它降級的理由是「分頁內容
+    # 各有去處」，但實際上 system 的五個分頁裡只有 security 有側欄入口，
+    # 總覽／WCAG／關於／Fire Token 全靠 ⌘K 或直鏈——分組標籤寫著「系統」，
+    # 底下卻沒有一列是系統頁。同時 security 改成 system 的安全分頁
+    # （_routeAliases），兩邊共用同一個外殼與分頁列。
+    "system",
     "history",
     "backup",
     "security",
@@ -157,7 +164,8 @@ def test_truly_retired_slugs_have_no_sidebar_button(admin_js: str):
         # v8 IA (2026-08-19)：降級到「擴充」hub，路由本身保留
         # （2026-09-06 設計稿 08/14：`widgets` 已回到「外觀與素材」，
         #   從這份清單移出）
-        "system",
+        # （2026-10-29：`system` 也回到側欄——它的四個分頁原本沒有任何入口，
+        #   從這份清單移出）
         "plugins",
         "webhooks",
         "api-tokens",
@@ -374,7 +382,11 @@ DEEP_LINK_ALIASES = {
 # entries. Verify they have their own route config (not aliased).
 # 2026-09-07 設計稿 08 · X1：`webhooks` 從這份清單移出——它現在是「擴充」
 # 的第一個分段，不再有自己的 ADMIN_ROUTES entry。
-PROMOTED_TO_FIRST_CLASS = ["sessions", "search", "audience", "security"]
+PROMOTED_TO_FIRST_CLASS = ["sessions", "search", "audience"]
+# 2026-10-29：`security` 從這份清單移出。它不再是獨立的 ADMIN_ROUTES 條目，
+# 而是 system 的安全分頁（_routeAliases 指到 {nav: "system", tab: "security"}）。
+# 留著獨立條目反而讓側欄「安全」與 system/security 變成同一頁的兩種外殼：
+# 前者沒有分頁列，後者有不只一個分頁。
 
 
 @pytest.mark.parametrize("slug, parent_tab", list(DEEP_LINK_ALIASES.items()))
@@ -692,7 +704,9 @@ def test_routes_owning_a_v2_page_do_not_declare_empty_sections(admin_js: str):
     show itself. This pinned #/security after it regressed that way.
     """
     sections_by_slug = _admin_routes_sections(admin_js)
-    for slug in ("security", "backup", "overlay"):
+    # 2026-10-29：`security` → `system`。安全頁現在掛在 system 的
+    # admin-security-v2-page 分頁底下，owner 是 system。
+    for slug in ("system", "backup", "overlay"):
         assert sections_by_slug.get(slug), (
             f"ADMIN_ROUTES.{slug}.sections is empty — the route's v2 page "
             f"lives inside settings-grid, which the container-visibility "

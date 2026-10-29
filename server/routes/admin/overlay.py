@@ -7,10 +7,14 @@ fit a domain-specific module. Currently:
   notification that overlay.js handles by removing every visible danmu
   (mirrors konami's animation flow, just without the particle effect).
 
+* ``POST /admin/overlay/recall`` — broadcast a ``{"type": "recall"}`` for
+  one ``message_id``, removing just that danmu. Added 2026-10-29: clearing
+  the whole screen to hide one message was the only option before it.
+
 Sister of ``/admin/konami/trigger`` — same broadcast plumbing.
 """
 
-from flask import current_app
+from flask import current_app, request
 
 from ...services import audit_log, messaging
 from ...services.security import rate_limit
@@ -56,3 +60,41 @@ def overlay_clear():
         )
         return _json_response({"error": "broadcast_failed"}, 500)
     return _json_response({"status": "ok"})
+
+
+@admin_bp.route("/overlay/recall", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def overlay_recall():
+    """Remove a single danmu from every overlay client.
+
+    The counterpart to ``/overlay/clear``: when one message is inappropriate
+    but the speaker is not, wiping the whole screen (or permanently banning
+    the fingerprint) is the wrong tool. Overlay clients tag each rendered
+    danmu with ``data-message-id`` and remove just that node on ``recall``.
+
+    Body: ``{"message_id": "<hex>"}``. Unknown / already-expired ids are a
+    no-op on the client, so this is idempotent and safe to retry.
+    """
+    payload = request.get_json(silent=True) or {}
+    message_id = payload.get("message_id")
+    if not isinstance(message_id, str) or not message_id.strip():
+        return _json_response({"error": "message_id_required"}, 400)
+    message_id = message_id.strip()[:64]
+
+    notification = {"type": "recall", "message_id": message_id}
+    try:
+        messaging.forward_to_ws_server(notification, bypass_broadcast_gate=True)
+        current_app.logger.info("[overlay] recall %s", sanitize_log_string(message_id))
+        try:
+            audit_log.append("broadcast", "overlay_recalled", actor="admin")
+        except Exception:
+            pass
+    except Exception as exc:  # pragma: no cover — best-effort logging
+        current_app.logger.error(
+            "[overlay] recall broadcast failed: %s", sanitize_log_string(str(exc))
+        )
+        return _json_response({"error": "broadcast_failed"}, 500)
+    return _json_response({"status": "ok", "message_id": message_id})
+

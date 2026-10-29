@@ -12,10 +12,10 @@
  *   ✓ Fingerprint stats — GET /admin/fingerprints (in-memory tracker)
  *   ✓ Same-fp recent msgs — filter in-memory live-feed entries
  *
- * Action buttons (★ pin / ◐ mask / ⊘ hide / ⊗ ban / ↗ overlay-reply):
- *   ⊗ ban-fingerprint wires to existing /admin/live/block (live-feed
- *     already does this); other BE-blocked controls render as non-clickable
- *     placeholder boxes in strict prototype mode.
+ * Action buttons (⊘ ban-fingerprint / ↗ recall / + blacklist / reply):
+ *   2026-10-29：API 一律走共用的 window.AdminModeration（admin-moderation-
+ *     actions.js）——分流（有時限 /admin/modbans、永久 /admin/live/block）、
+ *     錯誤處理與提示都在那一層；這裡只留確認 UI 與本地狀態。
  *
  * Loaded as <script defer> in admin.html. Globals: csrfFetch, showToast,
  * AdminUtils, AdminIdentity.
@@ -40,9 +40,14 @@
 
   // ── trigger ──────────────────────────────────────────────────────
 
+  // 開啟前後把焦點記住：關閉時要回到原本那一列，鍵盤使用者才不會被丟回
+  // 文件開頭（抽屜 2026-10-29 才接上入口，之前沒有人會被丟掉）。
+  let _prevFocus = null;
+
   function _onRequestOpen(e) {
     const data = e.detail && e.detail.entry;
     if (!data) return;
+    if (!_state.open) _prevFocus = document.activeElement;
     _state.entry = data;
     _open();
     if (data.data && data.data.fingerprint) _fetchFingerprintStats(data.data.fingerprint);
@@ -57,6 +62,12 @@
       _bindShell();
     }
     _render();
+    // 把焦點送進抽屜，Tab 才不會跑到背後那張列表。
+    const first = document.querySelector("#" + ROOT_ID + " .admin-msgd-v4__close")
+      || document.querySelector("#" + ROOT_ID + " button");
+    if (first) {
+      try { first.focus({ preventScroll: true }); } catch (_) {}
+    }
   }
 
   function _close() {
@@ -64,11 +75,20 @@
     document.body.dataset.messageDrawerOpen = "";
     const root = document.getElementById(ROOT_ID);
     if (root) root.remove();
+    if (_prevFocus && typeof _prevFocus.focus === "function" && document.contains(_prevFocus)) {
+      try { _prevFocus.focus({ preventScroll: true }); } catch (_) {}
+    }
+    _prevFocus = null;
   }
 
   function _onKey(e) {
     if (!_state.open) return;
     if (e.key === "Escape") { _close(); return; }
+    // 2026-10-29：在回覆框裡打 j / k 不該翻頁——抽屜一直到這一天才接上
+    // 入口，這個衝突之前沒有任何機會被發現。
+    const el = document.activeElement;
+    const tag = el ? (el.tagName || "").toLowerCase() : "";
+    if (el && (el.isContentEditable || tag === "input" || tag === "textarea" || tag === "select")) return;
     if (e.key === "ArrowLeft" || e.key === "k") { _navigate(-1); e.preventDefault(); return; }
     if (e.key === "ArrowRight" || e.key === "j") { _navigate(+1); e.preventDefault(); return; }
   }
@@ -155,8 +175,7 @@
       if (a === "close") _close();
       else if (a === "ban-fp") _openBanConfirm();
       else if (a === "ban-fp-quick") _banFingerprint();
-      else if (a === "mute-fp") _muteFingerprint();
-      else if (a === "mask-msg") _maskMessage();
+      else if (a === "recall-msg") _recallMessage();
       else if (a === "blacklist-kw") _blacklistKeyword();
       else if (a === "reply") _sendHostReply();
       else if (a === "prev") _navigate(-1);
@@ -242,8 +261,11 @@
         <div class="admin-msgd-v4__seclabel">${ServerI18n.t("msgDrawerSecModeration")}</div>
         <div class="admin-msgd-v4__mod-buttons">
           <button type="button" class="admin-msgd-v4__modbtn is-ban" data-msgd-action="ban-fp" ${fp === "—" ? "disabled" : ""}>${escapeHtml(ServerI18n.t("msgdBanFpBtn"))}</button>
-          <button type="button" class="admin-msgd-v4__modbtn is-mute" data-msgd-action="mute-fp" ${fp === "—" ? "disabled" : ""}>${escapeHtml(ServerI18n.t("msgdMuteFpBtn"))}</button>
-          <button type="button" class="admin-msgd-v4__modbtn is-mask" data-msgd-action="mask-msg">◑ Mask</button>
+          <!-- 2026-10-29：原本這裡是「靜音指紋」＋「◑ Mask」兩顆。
+               靜音與封禁打的是同一支 API（同一個永久效果），而 Mask 其實是
+               把整句文本加進黑名單——兩顆都在承諾一個不存在的選項。
+               換成真的做得到的事：把這一則從大螢幕撤下。 -->
+          <button type="button" class="admin-msgd-v4__modbtn is-mask" data-msgd-action="recall-msg" ${d.message_id ? "" : "disabled"}>${escapeHtml(ServerI18n.t("lfRecallBtn"))}</button>
           <button type="button" class="admin-msgd-v4__modbtn is-blacklist" data-msgd-action="blacklist-kw">${ServerI18n.t("msgDrawerBlacklistBtn")}</button>
         </div>
       </section>
@@ -286,41 +308,29 @@
     return ServerI18n.t("msgDrawerDayAgo", { n: Math.floor(diffSec / 86400) });
   }
 
-  // ── ban via existing /admin/live/block ──────────────────────────
+  // ── ban（2026-10-29：API 呼叫改走共用 AdminModeration）──────────────
+  // 確認 UI 留在這裡——封禁時長對話框（4 顆時長 chip＋原因）是這個入口
+  // 專有的，共用層不該知道它。但**打哪支 API** 不該由入口決定：
+  // 有時限走 /admin/modbans、永久走 /admin/live/block 的分流在共用層。
 
   async function _banFingerprint(reason, durationS, durationLabel) {
     const fp = _state.entry && _state.entry.data && _state.entry.data.fingerprint;
     if (!fp) return;
     const seconds = parseInt(durationS || 0, 10) || 0;
-    try {
-      // 永久封禁沿用 /admin/live/block（黑名單，訊息會被遮罩）；有時限的走
-      // /admin/modbans，那裡才有 duration_s 與到期判定。兩者都會讓 /fire 擋下
-      // 後續訊息，差別在於前者不會自己失效。
-      const r = seconds > 0
-        ? await window.csrfFetch("/admin/modbans", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              target_kind: "fingerprint",
-              target: fp,
-              duration_s: seconds,
-              reason: reason || "",
-              kind: "ban",
-            }),
-          })
-        : await window.csrfFetch("/admin/live/block", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "fingerprint", value: fp, reason: reason || "" }),
-          });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      const label = durationLabel || (seconds > 0 ? ServerI18n.t("msgDrawerSecondsLabel", { n: seconds }) : ServerI18n.t("msgDrawerPermanent"));
-      window.showToast && window.showToast(ServerI18n.t("msgDrawerToastBanned", { fp: fp.slice(0, 8), label: label }), true);
-      _closeBanConfirm();
-      _close();
-    } catch (e) {
-      window.showToast && window.showToast(ServerI18n.t("msgDrawerBanFailed", { msg: e.message || "" }), false);
+    // 永久封禁沿用 /admin/live/block（黑名單，訊息會被遮罩）；有時限的走
+    // /admin/modbans，那裡才有 duration_s 與到期判定。兩者都會讓 /fire 擋下
+    // 後續訊息，差別在於前者不會自己失效。對話框已經確認過，skipConfirm。
+    const result = seconds > 0
+      ? await window.AdminModeration.banFingerprint(fp, seconds, reason)
+      : await window.AdminModeration.callBlock("fingerprint", fp, reason);
+    if (!result.ok) {
+      window.showToast && window.showToast(ServerI18n.t("msgDrawerBanFailed", { msg: result.error || "" }), false);
+      return;
     }
+    const label = durationLabel || (seconds > 0 ? ServerI18n.t("msgDrawerSecondsLabel", { n: seconds }) : ServerI18n.t("msgDrawerPermanent"));
+    window.showToast && window.showToast(ServerI18n.t("msgDrawerToastBanned", { fp: fp.slice(0, 8), label: label }), true);
+    _closeBanConfirm();
+    _close();
   }
 
   // 2026-05-18 design v4-r2: BanConfirm migrated to the shared HudConfirm
@@ -404,45 +414,30 @@
   // function; HudConfirm now manages its own close lifecycle.
   function _closeBanConfirm() { /* no-op; HudConfirm self-closes */ }
 
-  async function _muteFingerprint() {
-    // Mute = same backend call as ban (permanent block of fp). Surfaced as
-    // "softer" action just because design v4 spec separates them; backend
-    // model is identical until tiered moderation lands.
-    return _banFingerprint("[mute]");
+  // 2026-10-29：撤回單則。與「黑名單」的差別是它不寫入任何規則——
+  // 只把這一則從大螢幕拿下來，發話的人與後續訊息都不受影響。
+  // API 呼叫走共用的 AdminModeration；確認在這裡也省了（同上理由）。
+  async function _recallMessage() {
+    const entry = _state.entry;
+    const id = entry && entry.data && entry.data.message_id;
+    if (!id) return;
+    const result = await window.AdminModeration.recall(id);
+    if (!result.ok) {
+      window.showToast && window.showToast(ServerI18n.t("lfRecallFailed"), false);
+      return;
+    }
+    window.showToast && window.showToast(ServerI18n.t("lfRecallDone"), true);
+    _close();
   }
-  async function _maskMessage() {
-    // Mask a single message in the live feed (frontend-only — same UX as
-    // /admin/live/block with type=keyword on the message text).
+
+  async function _blacklistKeyword() {
+    // 2026-10-29：改走共用的 AdminModeration.blockKeyword——確認、API、提示
+    // 都在那層。原本這裡與訊息流各有一份確認文案（msgDrawerBlacklistKw* vs
+    // lfBlock*），同一個操作兩種說法，正是「各自實作」必然的漂移。
     const text = _state.entry && _state.entry.data && _state.entry.data.text;
     if (!text) return;
-    const ok = await window.HudConfirm?.open({
-      icon: "⊘",
-      title: ServerI18n.t("msgDrawerBlacklistKwTitle"),
-      subtitle: ServerI18n.t("cfmSubBlacklistKeyword"),
-      severity: "danger",
-      body: ServerI18n.t("msgDrawerBlacklistKwBody"),
-      confirmLabel: ServerI18n.t("msgDrawerBlacklistKwConfirm"),
-    });
-    if (!ok) return;
-    try {
-      const r = await window.csrfFetch("/admin/live/block", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "keyword", value: text }),
-      });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      window.showToast && window.showToast(ServerI18n.t("msgDrawerToastBlacklisted"), true);
-      _close();
-    } catch (e) {
-      window.showToast && window.showToast(ServerI18n.t("msgDrawerMaskFailed", { msg: e.message || "" }), false);
-    }
-  }
-  async function _blacklistKeyword() {
-    // Alias of _maskMessage — design v4 shows both buttons (Mask vs 黑名單)
-    // but backend has one endpoint. We keep both for UI parity, future
-    // server-side split (mask = current-session only / 黑名單 = persistent)
-    // is the natural follow-up.
-    return _maskMessage();
+    const ok = await window.AdminModeration.blockKeyword(text);
+    if (ok) _close();
   }
   async function _sendHostReply() {
     const ta = document.querySelector("[data-msgd-reply]");

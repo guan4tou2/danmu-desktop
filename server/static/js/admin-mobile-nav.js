@@ -45,11 +45,39 @@
     { route: "viewer",       icon: "◐", labelKey: "adminRouteTitle_viewer", descKey: "mnavDescViewer" },
     { route: "effects",      icon: "✦", labelKey: "mnavEffects", descKey: "mnavDescEffects" },
     { route: "themes",       icon: "❖", labelKey: "mnavThemes", descKey: "mnavDescThemes" },
+    // 2026-10-29：小工具在側欄有自己一列，手機這層卻沒有——等於手機完全
+    // 到不了（⌘K 在手機上不是可行入口）。補回來。
+    { route: "widgets",      icon: "▥", labelKey: "adminNavWidgets" },
     { route: "history",      icon: "◷", labelKey: "adminRouteTitle_history", descKey: "mnavDescHistory" },
     { route: "backup",       icon: "⇪", labelKey: "mnavBackup", descKey: "mnavDescBackup" },
-    { route: "security",     icon: "⚿", labelKey: "adminRouteTitle_security", descKey: "mnavDescSecurity" },
+    // 2026-10-29：security 換成 system。安全現在是系統頁的分頁（兩邊同一
+    // 外殼），抽屜裡再放一列「安全」就是同一個東西開兩扇門。
+    { route: "system",       icon: "◫", labelKey: "adminNavSystem", descKey: "mnavDescSystem" },
     { route: "integrations", icon: "⌬", labelKey: "adminNavIntegrations", desc: "Slido · Discord · OBS" },
   ];
+
+  // 舊 slug → 現行路由。底部導覽的「目前在哪」必須用**解析後**的路由判斷，
+  // 否則 #/security（現在是 system/security）會被當成未知路由。
+  // 與 admin.js 的 _routeAliases 對齊，只列行動端可能遇到的那幾條。
+  const ROUTE_ALIAS = {
+    dashboard: "live",
+    messages: "live",
+    broadcast: "overlay",
+    "viewer-config": "viewer",
+    display: "viewer",
+    security: "system",
+    modqueue: "moderation",
+    modbans: "moderation",
+    fingerprints: "moderation",
+    ratelimit: "moderation",
+    audit: "history",
+    replay: "history",
+    fonts: "assets",
+    webhooks: "integrations",
+    plugins: "integrations",
+    "api-tokens": "integrations",
+    scheduler: "integrations",
+  };
 
   let _overflowOpen = false;
   let _pendingCount = 0;
@@ -91,12 +119,15 @@
   }
 
   function _activeFromHash() {
-    const slug = (location.hash || "").replace("#/", "").split("/")[0] || "";
-    // Map admin route → mobile tab id. Anything outside the 5 primary
-    // tabs falls under "more".
+    const raw = (location.hash || "").replace(/^#\//, "").split("/")[0] || "";
+    const slug = ROUTE_ALIAS[raw] || raw;
     if (TABS.some((t) => t.id === slug)) return slug;
     if (OVERFLOW.some((o) => o.route === slug)) return "more";
-    return "live";
+    // 2026-10-29：以前這裡 `return "live"`。任何不在清單上的路由
+    // （#/session-detail、#/poll-deepdive、#/setup、#/onboarding-tour、
+    // #/wcag、#/about…）都會把「控制台」點亮——一個會說謊的狀態指示。
+    // 回空字串＝沒有任何 tab 亮著，誠實優於好看。
+    return "";
   }
 
   function _syncActive() {

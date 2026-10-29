@@ -52,6 +52,11 @@
     { labelKey: "cmdkSettingRatelimit",   route: "moderation", tab: "ratelimit", section: "sec-ratelimit" },
     { labelKey: "cmdkSettingEffects",       route: "effects",   section: "sec-effects" },
     { labelKey: "cmdkSettingEffectsMgmt", route: "effects", section: "sec-effects-mgmt" },
+    // 2026-10-29：安全不再是獨立的 ADMIN_ROUTES 條目（改成 system 的分頁），
+    // 而 ROUTE_SLUGS 的解析靠 ADMIN_ROUTES[slug].title，少了條目就整筆被濾掉
+    // ——⌘K 從此搜不到「安全」。用別名 slug 補回來，alias 會解析到
+    // {nav: "system", tab: "security"}。
+    { labelKey: "adminRouteTitle_security", route: "security", tab: "security", section: "admin-security-v2-page" },
     { label: "Emoji",               route: "assets",    section: "sec-emojis" },
     { label: "Stickers",            route: "assets",    section: "sec-stickers" },
     { label: "Sounds",              route: "assets",    section: "sec-sounds" },
