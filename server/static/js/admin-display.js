@@ -1036,7 +1036,10 @@
       FontSize:   [true, 20, 100, 50],
       Speed:      [true, 0.5, 3, 1],
       Color:      [true, 0,  0,   "FFFFFF"],
-      FontFamily: [false, "", "", "NotoSansTC"],
+      // 2026-11-03：還原預設值原本把 FontFamily[0] 寫成 false——和 Server
+      // 端預設（routes/api.py: [true, "", "", "NotoSansTC"]）相反，按一次
+      // 「還原預設值」反而關掉觀眾端字型選擇。對齊 Server 預設值。
+      FontFamily: [true, "", "", "NotoSansTC"],
       Layout:     [true, "", "", "scroll"],
     };
     const ok = await window.HudConfirm?.open({

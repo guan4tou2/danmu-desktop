@@ -56,6 +56,28 @@ def test_list_available_fonts_includes_defaults(client):
         uploaded_file.unlink()
 
 
+def test_public_font_list_excludes_undeliverable_catalog_fonts(client):
+    """2026-11-03 字型載入缺口 P0：catalog 字體沒有檔案就無法交付（url=None，
+    2026-08 移除 Google Fonts CSS 後沒有任何載入來源），觀眾端選了只會靜默
+    回退。公開列表不得再提供這些選項；系統字體（Arial）可由瀏覽器自行解析、
+    內建 NotoSansTC 一定在；管理端目錄（include_disabled=True）仍完整。"""
+    with client.application.test_request_context("/"):
+        public = list_available_fonts()["fonts"]
+        admin = list_available_fonts(include_disabled=True)["fonts"]
+
+    public_names = {f["name"] for f in public}
+    admin_names = {f["name"] for f in admin}
+
+    assert "Klee One" not in public_names  # catalog、無檔案 → 不可交付
+    assert "Klee One" in admin_names  # 管理端仍看得到完整目錄
+    assert "NotoSansTC" in public_names  # 內建字型
+    assert admin_names >= public_names  # 公開列表是管理目錄的子集
+    # 不變量：公開列表裡每個字體都必須可交付——要嘛帶 url（內建／上傳），
+    # 要嘛是瀏覽器可自行解析的系統字體。不允許 url=None 的 catalog 字體。
+    for font in public:
+        assert font["url"] or font["type"] == "system", font
+
+
 def test_delete_uploaded_font_removes_file(client):
     target = Path(state.USER_FONTS_DIR) / "Removable.ttf"
     target.write_text("data")

@@ -11,8 +11,12 @@ from ..managers import settings_store
 from ..services.security import generate_font_token
 from ..utils import sanitize_log_string
 
-# Curated built-in font catalog. Fonts loaded via Google Fonts CSS in the
-# HTML templates have url=None; the browser uses the pre-loaded CSS family.
+# Curated built-in font catalog.
+# 2026-11-03：url=None 的 catalog 字體**沒有任何載入來源**——2026-08 的介面
+# 優化移除了 Google Fonts CSS 之後，「瀏覽器會用預載的 CSS family」這個前提
+# 已不成立；觀眾端／overlay 只在 url 存在時注入 @font-face。這些條目因此只
+# 出現在管理端目錄（include_disabled=True）；觀眾端公開列表只含真正可交付的
+# 字體（內建 NotoSansTC、系統字體、已上傳檔案），見 list_available_fonts。
 # Metadata (foundry, weight, sizeLabel, format) is informational — shown in
 # the admin Fonts page. Status "enabled"/"default"/"disabled" is derived at
 # runtime from the FontFamily allowlist in SettingsStore.
@@ -372,6 +376,17 @@ def list_available_fonts(include_disabled: bool = False):
 
     allowlist = _get_font_allowlist()
 
+    # Uploaded file stems — the uploaded-fonts block below emits the real
+    # entries; this set only tells the catalog loop which names already have
+    # a deliverable file.
+    uploaded_stems = set()
+    try:
+        for filename in os.listdir(state.USER_FONTS_DIR):
+            if filename.lower().endswith(".ttf"):
+                uploaded_stems.add(os.path.splitext(filename)[0])
+    except OSError:
+        pass  # the uploaded-fonts block below logs the real error
+
     # --- Bundled NotoSansTC (always present, always the fallback default) ---
     bundled = {
         "name": "NotoSansTC",
@@ -389,6 +404,14 @@ def list_available_fonts(include_disabled: bool = False):
     catalog_fonts = []
     for entry in _FONT_CATALOG:
         name = entry["name"]
+        # 2026-11-03（字型載入缺口 P0）：catalog 字體沒有檔案就無法交付
+        # （url=None，且 2026-08 移除 Google Fonts CSS 後沒有任何載入來源），
+        # 觀眾端選了只會靜默回退。公開列表只保留瀏覽器可自行解析的系統字體；
+        # 已上傳同名檔案的由下方 uploaded 區塊帶 url 出現，這裡不再重複一份
+        # 沒有 url 的同名條目。管理端（include_disabled=True）仍看得到完整
+        # 目錄以利管理與上傳對照。
+        if not include_disabled and entry["type"] != "system" and name not in uploaded_stems:
+            continue
         status = _resolve_status(name, allowlist, default_name, entry["type"])
         font = {
             **entry,
