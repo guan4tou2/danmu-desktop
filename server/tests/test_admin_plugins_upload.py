@@ -156,6 +156,14 @@ def test_upload_rejects_wrong_extension(client):
     assert ".py" in resp.get_json()["error"]
 
 
+def test_upload_rejects_js_files(client):
+    """2026-11-03：PluginManager 掃描只載入 .py——.js 上傳成功卻永不執行，
+    是對使用者的假預期。上傳端改為拒收 .js，直到有真正的 JS 執行環境。"""
+    resp = upload_file(client, filename="plugin.js", content=b"// @name js plugin\n")
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "Only .py files are accepted"
+
+
 def test_upload_rejects_empty_file(client):
     resp = upload_file(client, filename="empty.py", content=b"")
     assert resp.status_code == 400

@@ -15,7 +15,10 @@ from . import _json_response, admin_bp, require_csrf, require_login
 
 # v5 Batch 11 (2026-05-19) — plugin upload constants.
 _PLUGIN_MAX_BYTES = 256 * 1024
-_PLUGIN_EXTS = (".py", ".js")
+# 2026-11-03：移除 ".js"——PluginManager 掃描時只 glob("*.py")（plugin_manager.py
+# 兩處掃描皆然），.js 上傳成功卻永不執行，等於對使用者說謊。短期只收 .py；
+# 未來若要支援 JS 插件，應先定義獨立執行環境與 SDK（見 2026-11 架構審查）。
+_PLUGIN_EXTS = (".py",)
 # Match `# @key value` (Python) or `// @key value` (JS) on lines before
 # any code. We stop scanning when we hit a non-comment, non-blank line.
 #
@@ -148,7 +151,7 @@ def _user_plugins_dir() -> Path:
 @require_csrf
 @require_login
 def upload_plugin():
-    """Upload a .py/.js plugin (v5 Batch 11 plugin upload flow).
+    """Upload a .py plugin (v5 Batch 11 plugin upload flow).
 
     Multipart `file` required. Optional query `?dry_run=true` returns
     manifest + validation without writing anything — used by the modal's
@@ -164,7 +167,7 @@ def upload_plugin():
     if not filename:
         return _json_response({"error": "Invalid filename"}, 400)
     if not filename.endswith(_PLUGIN_EXTS):
-        return _json_response({"error": "Only .py or .js files are accepted"}, 400)
+        return _json_response({"error": "Only .py files are accepted"}, 400)
 
     raw = file.read()
     if not raw:
