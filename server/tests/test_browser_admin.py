@@ -1289,8 +1289,15 @@ def test_palette_visual_layout_preview_and_reduced_motion(admin_page, width, the
         == 0
     )
     assert editor.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
-    assert editor.locator("[data-palette-remove]").first.bounding_box()["height"] >= 44
-    assert editor.locator("[data-palette-add]").bounding_box()["height"] >= 44
+    # 2026-11-03：bounding_box() 在元素瞬時不可見時回傳 None（CI 上
+    # light-782 / light-1440 各閃過一次）。先斷言可見再量測——若真有
+    # 佈局 bug 把按鈕藏起來，這裡會確定性失敗，而不是隨機 NoneType。
+    remove_btn = editor.locator("[data-palette-remove]").first
+    add_btn = editor.locator("[data-palette-add]")
+    expect(remove_btn).to_be_visible()
+    expect(add_btn).to_be_visible()
+    assert remove_btn.bounding_box()["height"] >= 44
+    assert add_btn.bounding_box()["height"] >= 44
     editor.locator("[data-palette-hex]").fill("invalid")
     editor.locator("[data-palette-hex]").press("Enter")
     expect(editor.locator("[data-palette-hex]")).to_have_attribute("aria-invalid", "true")
