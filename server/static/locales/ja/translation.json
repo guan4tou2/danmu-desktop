@@ -623,7 +623,7 @@
   "recordingProgress": "録画中：{sent}/{total}",
   "recordingReplay": "リプレイを録画中：{count}件、{speed}倍速",
   "widgetsTitle": "ウィジェット",
-  "widgetsDesc": "大画面に出しっぱなしにするスコアボード・ティッカー・テキストラベル。プレビューの箱をドラッグすると位置を変えられます。",
+  "widgetsDesc": "大画面に出しっぱなしにするスコアボード・ティッカー・テキストラベル。プレビューの箱をドラッグすると位置を変えられます。現在は OBS ブラウザソースのみ表示対応で、デスクトップ表示側は未対応です。",
   "widgetScoreboard": "スコアボード",
   "widgetTicker": "ティッカー",
   "widgetLabel": "テキストラベル",

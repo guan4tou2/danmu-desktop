@@ -623,7 +623,7 @@
   "recordingProgress": "녹화 중: {sent}/{total}",
   "recordingReplay": "재생 녹화 중: {count}건, {speed}x 속도",
   "widgetsTitle": "위젯",
-  "widgetsDesc": "큰 화면에 계속 띄워 두는 점수판, 흐르는 자막, 텍스트 라벨입니다. 미리보기의 상자를 끌어 위치를 바꿀 수 있습니다.",
+  "widgetsDesc": "큰 화면에 계속 띄워 두는 점수판, 흐르는 자막, 텍스트 라벨입니다. 미리보기의 상자를 끌어 위치를 바꿀 수 있습니다. 현재 OBS 브라우저 소스에서만 표시되며 데스크톱 표시 화면은 아직 지원하지 않습니다.",
   "widgetScoreboard": "스코어보드",
   "widgetTicker": "티커",
   "widgetLabel": "텍스트 라벨",

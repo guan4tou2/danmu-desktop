@@ -9,6 +9,7 @@ from server import state
 from server.services.fonts import (
     build_font_payload,
     delete_uploaded_font,
+    is_allowed_font,
     list_available_fonts,
     list_uploaded_fonts,
     save_uploaded_font,
@@ -54,6 +55,43 @@ def test_list_available_fonts_includes_defaults(client):
     assert "token=" in uploaded["ListedFont"]["url"]
     if uploaded_file.exists():
         uploaded_file.unlink()
+
+
+def test_is_allowed_font_validates_names(client):
+    """2026-11-03 字型 P1：觀眾可提交的字型名稱必須通過伺服器端驗證。
+
+    以前任何字串都照單全收進 fontInfo.name——既繞過管理員允許清單，
+    也讓 `My"Font` 這類名字在 secure_filename 後命中已上傳字型時，把
+    引號帶進 overlay @font-face 的樣式表字串（CSS injection）。
+    """
+    with client.application.test_request_context("/"):
+        assert is_allowed_font("NotoSansTC") is True
+        # 未知名稱／注入字串一律拒絕
+        assert is_allowed_font("Comic Sans") is False
+        assert is_allowed_font('My"Font') is False
+        assert is_allowed_font("x; } * { color: red }") is False
+        assert is_allowed_font("") is False
+        assert is_allowed_font(None) is False
+        assert is_allowed_font("a" * 100) is False
+        # 系統字體也要過允許清單——預設空允許清單只開 _DEFAULT_ENABLED，
+        # Arial 不在其中，跟觀眾端下拉選單的選項一致
+        assert is_allowed_font("Arial") is False
+        # 上傳字型：名稱必須**精確**等於檔案 stem（不是 secure_filename 後相等）
+        font_path = Path(state.USER_FONTS_DIR) / "Upload.ttf"
+        font_path.write_text("data")
+        try:
+            assert is_allowed_font("Upload") is True
+            assert is_allowed_font('Upload"; } * { display: none }') is False
+        finally:
+            font_path.unlink()
+
+
+def test_build_font_payload_labels_undeliverable_catalog_font_as_catalog(client):
+    """沒有檔案的目錄字體不是系統字體——payload 不得謊稱 type=system。"""
+    with client.application.test_request_context("/"):
+        payload = build_font_payload("Orbitron")
+    assert payload["type"] == "catalog"
+    assert payload["url"] is None
 
 
 def test_public_font_list_excludes_undeliverable_catalog_fonts(client):

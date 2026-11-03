@@ -15,7 +15,7 @@ from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
 from ..services.emoji import emoji_service
 from ..services.filter_engine import filter_engine
-from ..services.fonts import build_font_payload, list_available_fonts
+from ..services.fonts import build_font_payload, is_allowed_font, list_available_fonts
 from ..services.ip import get_client_ip as _extract_client_ip
 from ..services.layout import get_all_modes, get_layout_config, get_layout_css
 from ..services.plugin_manager import plugin_manager
@@ -110,7 +110,10 @@ def _resolve_danmu_style(data):
     # present-but-None (dict.get's fallback doesn't fire for present keys).
     # Coalesce None → {} before `.get("name")` to avoid AttributeError.
     font_info = data.get("fontInfo") or {}
-    if font_setting[0] and font_info.get("name"):
+    # 2026-11-03（字型 P1）：觀眾提交的字型名稱必須通過伺服器端驗證——
+    # 可用清單＋允許清單交叉核對。以前任何字串都照單全收，既繞過管理員
+    # 允許清單，也讓特定名字把引號帶進 overlay 的 @font-face 樣式表。
+    if font_setting[0] and font_info.get("name") and is_allowed_font(font_info["name"]):
         chosen_font_name = font_info["name"]
     data["fontInfo"] = build_font_payload(chosen_font_name)
 

@@ -1,4 +1,5 @@
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict
@@ -130,6 +131,51 @@ def _resolve_status(name: str, allowlist: set, default_name: str, font_type: str
     return "enabled" if name in allowlist else "disabled"
 
 
+# 觀眾可提交的字型名稱字元集。上傳字型的 stem 經過 secure_filename（ASCII
+# 安全字元），目錄字型名全是 ASCII——超出這個集合的名字不可能是合法選擇，
+# 只可能是探測或注入。
+_FONT_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 ._\-]{0,63}$")
+
+
+def is_allowed_font(name: Any) -> bool:
+    """Server-side validation for a viewer-supplied font name.
+
+    2026-11-03（字型 P1）：任何字串以前都會被照單全收進 fontInfo.name——
+    既繞過管理員允許清單，也讓 `My"Font` 這類名字在 secure_filename 後
+    恰好命中已上傳字型（MyFont.ttf）時，把引號帶進 overlay @font-face
+    的樣式表字串（CSS injection）。合法名字只有三種：內建 NotoSansTC、
+    狀態非 disabled 的系統／已上傳字型（名稱必須**精確**等於檔案 stem，
+    不是 secure_filename 後相等）。其餘一律回退管理員預設。
+    """
+    if not isinstance(name, str):
+        return False
+    name = name.strip()
+    if not _FONT_NAME_RE.match(name):
+        return False
+
+    try:
+        default_name = (
+            settings_store.get_options().get("FontFamily", [None, None, None, None])[3]
+            or "NotoSansTC"
+        )
+    except (IndexError, KeyError, TypeError):
+        default_name = "NotoSansTC"
+    if name == default_name or name == "NotoSansTC":
+        return True
+
+    allowlist = _get_font_allowlist()
+    if name in _SYSTEM_NAMES:
+        font_type = "system"
+    elif (Path(state.USER_FONTS_DIR) / f"{name}.ttf").exists():
+        # 精確 stem 匹配——不是 secure_filename(name) 相等。字元集regex
+        # 已排除引號與控制字元，名稱帶壞字元時在這裡之前就被拒了。
+        font_type = "uploaded"
+    else:
+        return False
+
+    return _resolve_status(name, allowlist, default_name, font_type) != "disabled"
+
+
 def toggle_font(name: str, enabled: bool) -> list:
     """Enable or disable a font by updating the FontFamily allowlist.
 
@@ -180,7 +226,9 @@ def build_font_payload(chosen_font_name: str):
     elif chosen_font_name in ["Arial", "Verdana", "Times New Roman", "Courier New"]:
         final_font_type = "system"
     elif chosen_font_name != "NotoSansTC":
-        final_font_type = "system"
+        # 2026-11-03：沒有檔案的目錄字體不是「系統字體」，別謊稱 system。
+        # overlay 對無 url 的字體本來就跳過 @font-face，行為不變，資料如實。
+        final_font_type = "catalog"
 
     return {
         "name": chosen_font_name,

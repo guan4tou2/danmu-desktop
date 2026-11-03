@@ -658,7 +658,7 @@
   "recordingProgress": "錄製中：{sent}/{total}",
   "recordingReplay": "錄製重播：{count} 筆記錄，{speed}x 速度",
   "widgetsTitle": "小工具",
-  "widgetsDesc": "常駐在大螢幕上的計分板、跑馬燈或文字標籤。拖預覽裡的方塊可改位置。",
+  "widgetsDesc": "常駐在大螢幕上的計分板、跑馬燈或文字標籤。拖預覽裡的方塊可改位置。目前僅 OBS 瀏覽器來源會顯示；桌面顯示端尚未支援。",
   "widgetScoreboard": "計分板",
   "widgetTicker": "跑馬燈",
   "widgetLabel": "文字標籤",

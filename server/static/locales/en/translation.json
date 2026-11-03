@@ -658,7 +658,7 @@
   "recordingProgress": "Recording: {sent}/{total}",
   "recordingReplay": "Recording replay: {count} records at {speed}x",
   "widgetsTitle": "Widgets",
-  "widgetsDesc": "Scoreboards, tickers and text labels that stay on the big screen. Drag a box in the preview to move it.",
+  "widgetsDesc": "Scoreboards, tickers and text labels that stay on the big screen. Drag a box in the preview to move it. Currently shown via OBS browser source only; the desktop display does not support them yet.",
   "widgetScoreboard": "Scoreboard",
   "widgetTicker": "Ticker",
   "widgetLabel": "Text label",
