@@ -90,9 +90,7 @@ def _normalize_state(raw) -> dict:
     return {"widgets": widgets}
 
 
-_widget_state = JsonState(
-    "widgets.json", default=_default_state, normalize=_normalize_state
-)
+_widget_state = JsonState("widgets.json", default=_default_state, normalize=_normalize_state)
 
 
 def _persist(widgets: Dict[str, dict]) -> None:

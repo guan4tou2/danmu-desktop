@@ -401,9 +401,7 @@ class TestPersistence:
             },
         )
         widgets.update_scoreboard_score(board["id"], 0, 2)
-        widgets.create_widget(
-            "label", {"text": "歡迎參加社課", "position": "bottom-center"}
-        )
+        widgets.create_widget("label", {"text": "歡迎參加社課", "position": "bottom-center"})
 
         # 模擬 Server 重啟：清快取、重新載入同一個檔案
         widgets.reset_for_tests(path=path)
