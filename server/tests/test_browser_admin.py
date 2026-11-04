@@ -1289,15 +1289,28 @@ def test_palette_visual_layout_preview_and_reduced_motion(admin_page, width, the
         == 0
     )
     assert editor.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
-    # 2026-11-03：bounding_box() 在元素瞬時不可見時回傳 None（CI 上
-    # light-782 / light-1440 各閃過一次）。先斷言可見再量測——若真有
-    # 佈局 bug 把按鈕藏起來，這裡會確定性失敗，而不是隨機 NoneType。
-    remove_btn = editor.locator("[data-palette-remove]").first
-    add_btn = editor.locator("[data-palette-add]")
-    expect(remove_btn).to_be_visible()
-    expect(add_btn).to_be_visible()
-    assert remove_btn.bounding_box()["height"] >= 44
-    assert add_btn.bounding_box()["height"] >= 44
+
+    def _assert_touch_target(locator):
+        """44px 觸控目標斷言（含重繪競態重試）。
+
+        admin.js 對設定格線是整段 innerHTML 重繪——「可見斷言」與「量測」
+        之間可能剛好夾一次重繪，舊節點 detach 的瞬間 bounding_box() 回傳
+        None（CI 上 light-782 / light-1440 各閃過一次，dark 參數從未失敗）。
+        locator 每次呼叫都重新解析 DOM，重繪後的節點是可見的，因此短重試
+        即可收斂；若五次都量不到，就是真佈局問題，最後一次的 box 會留在
+        訊息裡供診斷。
+        """
+        last_box = None
+        for _ in range(5):
+            expect(locator).to_be_visible()
+            last_box = locator.bounding_box()
+            if last_box is not None and last_box["height"] >= 44:
+                return
+            page.wait_for_timeout(200)
+        raise AssertionError(f"touch target missing or too small: {last_box}")
+
+    _assert_touch_target(editor.locator("[data-palette-remove]").first)
+    _assert_touch_target(editor.locator("[data-palette-add]"))
     editor.locator("[data-palette-hex]").fill("invalid")
     editor.locator("[data-palette-hex]").press("Enter")
     expect(editor.locator("[data-palette-hex]")).to_have_attribute("aria-invalid", "true")
