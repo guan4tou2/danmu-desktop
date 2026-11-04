@@ -116,6 +116,34 @@ def test_public_font_list_excludes_undeliverable_catalog_fonts(client):
         assert font["url"] or font["type"] == "system", font
 
 
+def test_uploaded_font_shadowing_catalog_name_appears_once(client):
+    """2026-11-04：上傳字型與內建 catalog 同名時，公開列表只能出現一次，
+    且必須是帶簽名 url 的 uploaded 條目——不能同時出現無 url 的目錄項。
+    （同名去重條件曾寫反，保留了無 url 的那份。）"""
+    from server import state as server_state
+
+    font_path = Path(server_state.USER_FONTS_DIR) / "Orbitron.ttf"
+    font_path.write_text("data")
+    try:
+        with client.application.test_request_context("/"):
+            public = list_available_fonts()["fonts"]
+            admin = list_available_fonts(include_disabled=True)["fonts"]
+
+        public_orbitron = [f for f in public if f["name"] == "Orbitron"]
+        assert len(public_orbitron) == 1, public_orbitron
+        assert public_orbitron[0]["type"] == "uploaded"
+        assert "token=" in public_orbitron[0]["url"]
+
+        # 管理端目錄仍同時看得到 catalog 條目（供管理對照），但同樣只有
+        # 一份 catalog 版本。
+        admin_catalog_orbitron = [
+            f for f in admin if f["name"] == "Orbitron" and f["type"] == "catalog"
+        ]
+        assert len(admin_catalog_orbitron) == 1
+    finally:
+        font_path.unlink(missing_ok=True)
+
+
 def test_delete_uploaded_font_removes_file(client):
     target = Path(state.USER_FONTS_DIR) / "Removable.ttf"
     target.write_text("data")

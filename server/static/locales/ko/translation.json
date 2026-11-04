@@ -2424,7 +2424,7 @@
   "modStatMaskedToday": "오늘 마스킹",
   "modStatBlockedToday": "오늘 차단",
   "modStatPending": "심사 대기",
-  "pluginsUploadBtnLabel": ".py/.js 업로드",
+  "pluginsUploadBtnLabel": ".py 업로드",
   "pluginsStatLoaded": "로드됨",
   "pluginsStatRunning": "실행 중",
   "pluginsDeltaLive": "실시간 enabled",

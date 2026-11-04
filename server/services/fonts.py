@@ -424,17 +424,6 @@ def list_available_fonts(include_disabled: bool = False):
 
     allowlist = _get_font_allowlist()
 
-    # Uploaded file stems — the uploaded-fonts block below emits the real
-    # entries; this set only tells the catalog loop which names already have
-    # a deliverable file.
-    uploaded_stems = set()
-    try:
-        for filename in os.listdir(state.USER_FONTS_DIR):
-            if filename.lower().endswith(".ttf"):
-                uploaded_stems.add(os.path.splitext(filename)[0])
-    except OSError:
-        pass  # the uploaded-fonts block below logs the real error
-
     # --- Bundled NotoSansTC (always present, always the fallback default) ---
     bundled = {
         "name": "NotoSansTC",
@@ -455,10 +444,10 @@ def list_available_fonts(include_disabled: bool = False):
         # 2026-11-03（字型載入缺口 P0）：catalog 字體沒有檔案就無法交付
         # （url=None，且 2026-08 移除 Google Fonts CSS 後沒有任何載入來源），
         # 觀眾端選了只會靜默回退。公開列表只保留瀏覽器可自行解析的系統字體；
-        # 已上傳同名檔案的由下方 uploaded 區塊帶 url 出現，這裡不再重複一份
-        # 沒有 url 的同名條目。管理端（include_disabled=True）仍看得到完整
-        # 目錄以利管理與上傳對照。
-        if not include_disabled and entry["type"] != "system" and name not in uploaded_stems:
+        # 已上傳同名檔案的由下方 uploaded 區塊帶 url 出現——2026-11-04 修正：
+        # 這裡要一律跳過，否則同名會出現兩次（一次無 url、一次有 url）。
+        # 管理端（include_disabled=True）仍看得到完整目錄以利管理與上傳對照。
+        if not include_disabled and entry["type"] != "system":
             continue
         status = _resolve_status(name, allowlist, default_name, entry["type"])
         font = {

@@ -2424,7 +2424,7 @@
   "modStatMaskedToday": "Masked today",
   "modStatBlockedToday": "Blocked today",
   "modStatPending": "Pending review",
-  "pluginsUploadBtnLabel": "Upload .py/.js",
+  "pluginsUploadBtnLabel": "Upload .py",
   "pluginsStatLoaded": "Loaded",
   "pluginsStatRunning": "Running",
   "pluginsDeltaLive": "live enabled",

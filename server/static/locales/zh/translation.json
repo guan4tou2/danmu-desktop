@@ -2424,7 +2424,7 @@
   "modStatMaskedToday": "今日遮罩",
   "modStatBlockedToday": "今日封鎖",
   "modStatPending": "待審核",
-  "pluginsUploadBtnLabel": "上傳 .py/.js",
+  "pluginsUploadBtnLabel": "上傳 .py",
   "pluginsStatLoaded": "已載入",
   "pluginsStatRunning": "運行中",
   "pluginsDeltaLive": "即時 enabled",
