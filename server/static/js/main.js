@@ -1335,15 +1335,25 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     })();
 
+    let closeTimer = null;
+    const dialogControls = () => Array.from(sheet.querySelectorAll(
+      'button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], [tabindex="0"]'
+    )).filter((el) => el.getClientRects().length && !el.closest('[hidden]'));
     const open = () => {
+      if (closeTimer) clearTimeout(closeTimer);
       sheet.hidden = false;
       hamb.setAttribute("aria-expanded", "true");
       requestAnimationFrame(() => sheet.classList.add("is-open"));
+      const controls = dialogControls();
+      if (controls.length) controls[0].focus();
     };
     const close = () => {
       sheet.classList.remove("is-open");
       hamb.setAttribute("aria-expanded", "false");
-      setTimeout(() => { sheet.hidden = true; }, 180);
+      if (closeTimer) clearTimeout(closeTimer);
+      // Return focus immediately; never leave it inside a hidden sheet.
+      hamb.focus();
+      closeTimer = setTimeout(() => { sheet.hidden = true; closeTimer = null; }, 180);
     };
 
     // Hamburger + close triggers
@@ -1355,7 +1365,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.target.closest("[data-mobile-sheet-close]")) close();
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !sheet.hidden) close();
+      if (sheet.hidden || !sheet.classList.contains("is-open")) return;
+      if (e.key === "Escape") { e.preventDefault(); close(); return; }
+      if (e.key !== "Tab") return;
+      const controls = dialogControls();
+      if (!controls.length) { e.preventDefault(); return; }
+      const first = controls[0], last = controls[controls.length - 1];
+      if (e.shiftKey && (document.activeElement === first || !sheet.contains(document.activeElement))) {
+        e.preventDefault(); last.focus();
+      } else if (!e.shiftKey && (document.activeElement === last || !sheet.contains(document.activeElement))) {
+        e.preventDefault(); first.focus();
+      }
     });
 
     // Theme segment buttons

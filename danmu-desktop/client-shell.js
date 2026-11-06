@@ -301,13 +301,19 @@
 
     if (!seen && !hasServer()) {
       onboarding.hidden = false;
+      // An aria-modal dialog must isolate the underlying controls.
+      $(".client-shell, .client-titlebar").forEach(function (el) { el.inert = true; });
       setTimeout(function () { try { input.focus(); } catch (e) {} }, 60);
     }
 
     function finish() {
       try { localStorage.setItem("danmu_onboarded", "1"); } catch (e) {}
       onboarding.hidden = true;
+      $(".client-shell, .client-titlebar").forEach(function (el) { el.inert = false; });
       renderMainCard();
+      // Move focus out of the hidden dialog after onboarding finishes.
+      var primaryAction = $("[data-client-overlay-button]");
+      if (primaryAction) primaryAction.focus();
     }
 
     function applyAndTest() {
