@@ -25,7 +25,9 @@
   "license": "CC0-1.0",
   "devDependencies": {
     "@babel/core": "^8.1.0",
+    "@babel/parser": "^7.29.14",
     "@babel/preset-env": "^8.0.7",
+    "@babel/traverse": "^7.29.14",
     "@jest/globals": "^30.5.2",
     "@playwright/test": "^1.65.0",
     "babel-loader": "^10.1.1",
