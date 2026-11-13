@@ -153,6 +153,7 @@ traefik/acme.json
 
 # Playwright MCP / test artifacts
 .playwright-mcp/
+.workbuddy-ai/
 danmu-desktop/test-results/
 
 # Runtime data files (generated at runtime, not source-controlled)

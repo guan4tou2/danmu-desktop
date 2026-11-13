@@ -31,3 +31,11 @@ updates:
     directory: "/server"
     schedule:
       interval: "weekly"
+    # Python 基底映像只跟 patch／digest。3.11 → 3.15 這種跳版在 semver 是
+    # minor，wheel 常常還沒跟上，Docker build 會直接失敗（PR #209）。
+    # 要升 Python minor 版時手動改 Dockerfile 與 pyproject 的 requires-python。
+    ignore:
+      - dependency-name: "python"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
