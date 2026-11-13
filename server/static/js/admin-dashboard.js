@@ -212,63 +212,14 @@
   //   Q&A  → amber  (ends with question mark)
   //   FLAG → crimson (masked / admin-blocked)
 
-
-
-  // ── Message row actions binding ─────────────────────────────────────────
-  //
-  // Hook per-row chips: 遮罩 / 隱藏 / 黑名單 / ⋯. All routed through existing
-  // admin endpoints. Failures show a toast; success refreshes the feed.
-  function _bindMessageRowActions(container) {
-    if (container.dataset.actionsBound === "1") return;
-    container.dataset.actionsBound = "1";
-    container.addEventListener("click", async (e) => {
-      const btn = e.target.closest("[data-msg-action]");
-      if (!btn) return;
-      const row = btn.closest(".admin-dash-msg-row");
-      if (!row) return;
-      const action = btn.dataset.msgAction;
-      const fp = row.dataset.msgFp;
-      const msgId = row.dataset.msgId;
-      if (action === "blacklist") {
-        if (!fp) { window.showToast && window.showToast(ServerI18n.t("dashToastNoFp"), false); return; }
-        const ok = await window.HudConfirm?.open({
-          icon: "⊘",
-          title: ServerI18n.t("dashBlacklistTitle"),
-          subtitle: ServerI18n.t("cfmSubBlacklistFp"),
-          severity: "danger",
-          body:
-            ServerI18n.t("dashBlacklistBody") +
-            `<div style="margin-top:10px;font-family:var(--font-mono);font-size:13px;` +
-            `color:var(--color-text-muted)">fp:${_escapeHtml(fp)}</div>`,
-          confirmLabel: ServerI18n.t("dashBlacklistTitle"),
-        });
-        if (!ok) return;
-        try {
-          const r = await window.csrfFetch("/admin/blacklist/add", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ keyword: `fp:${fp}` }),
-          });
-          if (!r.ok) throw new Error("HTTP " + r.status);
-          window.showToast && window.showToast(ServerI18n.t("dashToastBlacklistedFp", { fp: fp }), true);
-        } catch (_) {
-          window.showToast && window.showToast(ServerI18n.t("dashToastBlacklistFailed"), false);
-        }
-      } else if (action === "mask" || action === "hide") {
-        // Both map to a soft-mask state in the message log. We don't have
-        // a dedicated endpoint yet — visually mute the row and toast the
-        // intent so the user sees feedback. Persistent moderation lives
-        // on the /moderation page; this is the dashboard quick-act path.
-        row.classList.add("is-masked-row");
-        window.showToast && window.showToast(action === "mask" ? ServerI18n.t("dashToastMasked") : ServerI18n.t("dashToastHidden"), true);
-      } else if (action === "more") {
-        // Future: open message drawer (v4 P0-3 design). v7 IA: messages
-        // merged into the live console, so jump there.
-        const nav = document.querySelector('[data-route="live"]');
-        if (nav) nav.click();
-      }
-    });
-  }
+  // 2026-10-29：_bindMessageRowActions() 整塊移除。
+  // 它綁的 [data-msg-action] 按鈕**從來沒有被任何渲染路徑產生過**
+  // （全庫零個 emit 點），而且黑名單分支打的是 /admin/blacklist/add——
+  // 那是**文字關鍵字**黑名單，拿來收 `fp:<fingerprint>` 等於沒有封鎖任何人，
+  // 卻會顯示成功。遮罩／隱藏分支更只是 row.classList.add 後 toast 成功，
+  // 完全沒有後端。訊息列的快速處理已由訊息流自己的動作接手
+  // （admin-live-feed.js：撤下／封鎖，走 /admin/live/recall 與 /admin/live/block）。
+  // 舊程式碼留著的唯一效果，是下一個接手的人以為「Dashboard 有審核功能」。
 
   // Tile template per prototype admin-v3.jsx:160. Real widget data has
   // {id, type, position, visible, config}; we map type→title/kind,

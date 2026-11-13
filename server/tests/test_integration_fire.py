@@ -1,6 +1,7 @@
 """整合測試：POST /fire → ws_queue → 驗證 payload 結構與業務邏輯"""
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -57,6 +58,33 @@ def test_fire_color_strips_hash(client):
     color = ws_queue.dequeue_all()[0]["color"]
     assert not color.startswith("#")
     assert color.upper() == "FF0000"
+
+
+def test_fire_font_name_validated_against_server_list(client):
+    """2026-11-03 字型 P1：觀眾提交的字型名稱必須通過伺服器端驗證。
+
+    未知名稱（含注入字串）回退管理員預設，不再照單全收——以前既繞過
+    允許清單，也可能把引號帶進 overlay 的 @font-face 樣式表。
+    """
+    resp = client.post("/fire", json={"text": "hi", "font": 'Evil"; } * { display: none }'})
+    assert resp.status_code == 200
+    msg = ws_queue.dequeue_all()[0]
+    assert msg["fontInfo"]["name"] == "NotoSansTC"
+    assert msg["fontInfo"]["type"] == "default"
+
+
+def test_fire_font_name_allows_uploaded_font(client):
+    """精確等於已上傳字型 stem 的名稱照常可用（帶簽名 url）。"""
+    font_path = Path(state.USER_FONTS_DIR) / "Upload.ttf"
+    font_path.write_text("data")
+    try:
+        resp = client.post("/fire", json={"text": "hi", "font": "Upload"})
+        assert resp.status_code == 200
+        msg = ws_queue.dequeue_all()[0]
+        assert msg["fontInfo"]["type"] == "uploaded"
+        assert "token=" in msg["fontInfo"]["url"]
+    finally:
+        font_path.unlink(missing_ok=True)
 
 
 def test_fire_enqueues_only_one_message_per_call(client):

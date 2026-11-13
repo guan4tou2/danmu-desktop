@@ -558,6 +558,23 @@ function initOverlayWs(config) {
             return;
           }
 
+          // 2026-10-29：撤回單則（POST /admin/overlay/recall）。與 clear 的差別
+          // 是只拿走指定 message_id 的那一個節點——處理一句不該出現的話時，
+          // 不必清空整屏，也不必永久封鎖發話的人。找不到就是 no-op。
+          if (data.type === "recall") {
+            const recallId = data.message_id ? String(data.message_id) : "";
+            if (recallId) {
+              document.querySelectorAll("[data-message-id]").forEach((el) => {
+                if (el.getAttribute("data-message-id") !== recallId) return;
+                el.style.transition = "opacity 160ms ease-out";
+                el.style.opacity = "0";
+                setTimeout(() => el.remove(), 170);
+              });
+              console.log("[WebSocket] Recalled by admin:", recallId);
+            }
+            return;
+          }
+
           // Konami easter egg from web admin (POST /admin/konami/trigger
           // → server WS broadcast). Local Electron Konami detection still
           // goes through the existing IPC path in renderer-modules/konami.js;
@@ -727,7 +744,8 @@ function initOverlayWs(config) {
                 dataPayload.layout || "scroll",
                 dataPayload.layoutConfig || null,
                 dataPayload.nickname || null,
-                dataPayload.emojis || null
+                dataPayload.emojis || null,
+                dataPayload.message_id || null
               );
               Promise.resolve(rendered).then((confirmed) => {
                 if (confirmed === true && typeof dataPayload.message_id === "string" &&

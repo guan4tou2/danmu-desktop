@@ -1,7 +1,7 @@
 /**
  * Admin · Plugin Upload Flow (v5 Batch 11, 2026-05-19)
  *
- * 4-step modal triggered by the `+ 上傳 .py/.js` button on #/plugins:
+ * 4-step modal triggered by the `+ 上傳 .py` button on #/plugins:
  *   1. Picker     — dropzone (drag/drop or file input)
  *   2. Preview    — manifest card (or syntax / missing / deps-missing variant)
  *   3. Confirm    — HudConfirm modal listing permissions + install steps
@@ -109,7 +109,7 @@
           <div class="admin-pu-dropzone-icon">${icon}</div>
           <div class="admin-pu-dropzone-msg">${escapeHtml(msg)}</div>
           <div class="admin-pu-dropzone-hint">${ServerI18n.t("pluginsUploadDropzoneHint")}</div>
-          <input type="file" accept=".py,.js" data-pu-file hidden />
+          <input type="file" accept=".py" data-pu-file hidden />
         </div>
         <footer class="admin-pu-foot">
           <button type="button" class="admin-ui-action admin-pu-btn" data-pu-close>${ServerI18n.t("cancel")}</button>
@@ -145,7 +145,10 @@
   }
 
   function _handleFile(file) {
-    if (!file.name.match(/\.(py|js)$/i)) {
+    // 2026-11-03：後端契約改為僅收 .py（PluginManager 只載 .py，.js 上傳
+    // 成功卻永不執行）——前端選擇器與驗證同步對齊，別讓使用者選了 .js
+    // 才在伺服器端撞 400。
+    if (!file.name.match(/\.py$/i)) {
       _setStep(1, _renderStep1("error-type"));
       _bindStep1();
       return;
@@ -270,8 +273,9 @@
     const ver = m.version ? `v${escapeHtml(m.version)}` : "—";
     const author = m.author ? `@${escapeHtml(m.author.replace(/^@/, ""))}` : "—";
     const desc = m.description || ServerI18n.t("pluginsUploadNoDescription");
-    const lang = state.filename.endsWith(".js") ? "JS" : "PY";
-    const langCls = lang === "PY" ? "is-warn" : "is-cyan";
+    // 2026-11-03：僅 .py——原 .js 三元分支隨後端契約一併移除。
+    const lang = "PY";
+    const langCls = "is-warn";
 
     const declaredPerms = Array.isArray(m.permissions) ? m.permissions : [];
     const permRows = Object.keys(PERM_LABEL_KEYS).map((key) => {

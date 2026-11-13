@@ -656,7 +656,11 @@
     host.innerHTML = `
       <div class="admin-color-palette-head">
         <div>
-          <span class="admin-color-palette-eyebrow">${escapeHtml(t("viewerPaletteEyebrow"))}</span>
+          <!-- 2026-10-29：key 從 viewerPaletteEyebrow 改名為 viewerPaletteLabel。
+               文案沒變；設計契約禁的是 *Eyebrow / *Kicker 這種命名（那代表
+               「中文標籤旁邊再擺一行大寫英文」的舊版型）。這裡的 eyebrow 是
+               使用者語言的小標，與下方標題不重複。 -->
+          <span class="admin-color-palette-eyebrow">${escapeHtml(t("viewerPaletteLabel"))}</span>
           <h3 class="admin-color-palette-title">${escapeHtml(t("viewerPaletteTitle"))}</h3>
           <p class="admin-color-palette-note">${escapeHtml(t("viewerPaletteHint"))}</p>
         </div>
@@ -1032,7 +1036,10 @@
       FontSize:   [true, 20, 100, 50],
       Speed:      [true, 0.5, 3, 1],
       Color:      [true, 0,  0,   "FFFFFF"],
-      FontFamily: [false, "", "", "NotoSansTC"],
+      // 2026-11-03：還原預設值原本把 FontFamily[0] 寫成 false——和 Server
+      // 端預設（routes/api.py: [true, "", "", "NotoSansTC"]）相反，按一次
+      // 「還原預設值」反而關掉觀眾端字型選擇。對齊 Server 預設值。
+      FontFamily: [true, "", "", "NotoSansTC"],
       Layout:     [true, "", "", "scroll"],
     };
     const ok = await window.HudConfirm?.open({

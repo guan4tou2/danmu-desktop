@@ -24,19 +24,19 @@
   "author": "guan4tou2 <mole30608@gmail.com>",
   "license": "CC0-1.0",
   "devDependencies": {
-    "@babel/core": "^8.0.5",
-    "@babel/preset-env": "^8.0.5",
-    "@jest/globals": "^30.5.1",
-    "@playwright/test": "^1.63.0",
+    "@babel/core": "^8.1.0",
+    "@babel/preset-env": "^8.0.7",
+    "@jest/globals": "^30.5.2",
+    "@playwright/test": "^1.65.0",
     "babel-loader": "^10.1.1",
-    "electron": "^44.3.0",
-    "electron-builder": "^26.15.3",
-    "jest": "^30.5.1",
-    "jest-environment-jsdom": "^30.5.1",
-    "tailwindcss": "^4.3.2",
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0",
+    "jest": "^30.5.2",
+    "jest-environment-jsdom": "^30.5.2",
+    "tailwindcss": "^4.3.5",
     "terser-webpack-plugin": "^5.6.1",
-    "webpack": "^5.110.3",
-    "webpack-cli": "^7.2.3"
+    "webpack": "^5.112.2",
+    "webpack-cli": "^7.3.1"
   },
   "jest": {
     "testEnvironment": "jsdom",
@@ -114,8 +114,8 @@
     }
   },
   "dependencies": {
-    "electron-updater": "^6.8.9",
-    "i18next": "^26.4.2",
+    "electron-updater": "^6.8.11",
+    "i18next": "^27.0.1",
     "qrcode": "^1.5.4"
   },
   "overrides": {

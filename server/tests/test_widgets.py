@@ -6,11 +6,15 @@ from server.services import widgets
 
 
 @pytest.fixture(autouse=True)
-def _reset_widgets():
-    """Clear widgets between tests."""
-    widgets._widgets.clear()
+def _reset_widgets(tmp_path):
+    """Isolate the persisted widget store per test (2026-11-03 持久化 P0).
+
+    State now lives in runtime/widgets.json via JsonState — point each test
+    at its own file so nothing leaks between tests or into the real store.
+    """
+    widgets.reset_for_tests(path=tmp_path / "widgets.json")
     yield
-    widgets._widgets.clear()
+    widgets.reset_for_tests(path=tmp_path / "widgets.json")
 
 
 class TestCreateWidget:
@@ -377,3 +381,86 @@ class TestWidgetRoutes:
         _login(client)
         res2 = client.get("/admin/widgets/list")
         assert len(res2.get_json()["widgets"]) == 0
+
+
+class TestPersistence:
+    """2026-11-03 持久化 P0：store 原本只在記憶體，Server 重啟即全失。"""
+
+    def test_widgets_survive_store_reload(self, tmp_path):
+        """create/update/score 都要落盤；重新指向同一檔案（模擬重啟）後
+        狀態必須完整回來——計分板比數尤其不能丟。"""
+        path = tmp_path / "widgets.json"
+        widgets.reset_for_tests(path=path)
+
+        board = widgets.create_widget(
+            "scoreboard",
+            {
+                "title": "Match",
+                "teams": [{"name": "Red", "score": 0, "color": "#ff0000"}],
+                "position": "top-left",
+            },
+        )
+        widgets.update_scoreboard_score(board["id"], 0, 2)
+        widgets.create_widget("label", {"text": "歡迎參加社課", "position": "bottom-center"})
+
+        # 模擬 Server 重啟：清快取、重新載入同一個檔案
+        widgets.reset_for_tests(path=path)
+        reloaded = {w["type"]: w for w in widgets.list_widgets()}
+
+        assert set(reloaded) == {"scoreboard", "label"}
+        assert reloaded["scoreboard"]["config"]["teams"][0]["score"] == 2
+        assert reloaded["label"]["config"]["text"] == "歡迎參加社課"
+
+    def test_delete_and_clear_persist(self, tmp_path):
+        path = tmp_path / "widgets.json"
+        widgets.reset_for_tests(path=path)
+
+        w = widgets.create_widget("ticker", {"messages": ["a"], "position": "top-left"})
+        assert widgets.delete_widget(w["id"]) is True
+        widgets.create_widget("label", {"text": "keep"})
+
+        widgets.reset_for_tests(path=path)
+        names = [w["type"] for w in widgets.list_widgets()]
+        assert names == ["label"]
+
+        widgets.clear_all()
+        widgets.reset_for_tests(path=path)
+        assert widgets.list_widgets() == []
+
+    def test_corrupt_state_file_falls_back_to_empty(self, tmp_path):
+        path = tmp_path / "widgets.json"
+        path.write_text("not json at all", encoding="utf-8")
+        widgets.reset_for_tests(path=path)
+        assert widgets.list_widgets() == []
+
+    def test_invalid_entries_dropped_on_load(self, tmp_path):
+        """載入時逐項過 normalize：未知 type／缺欄位的條目剔除，
+        config 重新過 per-type 驗證器。"""
+        import json
+
+        path = tmp_path / "widgets.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "widgets": {
+                        "ok": {
+                            "id": "ok",
+                            "type": "label",
+                            "position": "top-left",
+                            "visible": True,
+                            "created_at": 123.0,
+                            "config": {"text": "hello", "fontSize": 999},
+                        },
+                        "bad_type": {"id": "bad_type", "type": "video", "config": {}},
+                        "not_a_dict": "junk",
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        widgets.reset_for_tests(path=path)
+
+        items = {w["id"]: w for w in widgets.list_widgets()}
+        assert set(items) == {"ok"}
+        # fontSize 999 被驗證器夾回 10–96
+        assert items["ok"]["config"]["fontSize"] == 96

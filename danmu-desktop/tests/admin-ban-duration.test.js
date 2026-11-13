@@ -48,8 +48,15 @@ test("no seconds-to-label arithmetic is reintroduced", () => {
   expect(SRC).not.toContain("_durationLabel");
 });
 
-test("timed bans go to /admin/modbans, permanent to /admin/live/block", () => {
-  expect(SRC).toContain("/admin/modbans");
-  expect(SRC).toContain("/admin/live/block");
-  expect(SRC).toContain("duration_s");
+// 這條契約的真正驗證在 server/tests/test_mod_bans_contract.py（打真實 Flask 端點）。
+// 這裡只釘住「前端不再打不存在的路徑」。
+test("timed bans go to /admin/mod/bans/add, permanent to /admin/live/block", () => {
+  const ACTIONS = fs.readFileSync(
+    path.join(__dirname, "..", "..", "server", "static", "js", "admin-moderation-actions.js"),
+    "utf8"
+  );
+  expect(ACTIONS).toContain('"/admin/mod/bans/add"');
+  expect(ACTIONS).not.toMatch(/"\/admin\/modbans"/);
+  expect(ACTIONS).toContain("/admin/live/block");
+  expect(ACTIONS).toContain("duration_s");
 });

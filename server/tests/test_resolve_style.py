@@ -69,8 +69,59 @@ def test_color_forced_when_setting_disabled():
 
 
 def test_font_field_converted_to_fontinfo():
-    """'font' string field is converted to fontInfo dict (legacy alias)."""
-    font_payload = {"name": "Arial", "url": None, "type": "system"}
+    """'font' string field is converted to fontInfo dict (legacy alias).
+
+    2026-11-03：名稱先過 is_allowed_font 伺服器端驗證（字型 P1）。這裡把
+    它 patch 成 True，專注測轉換管線本身；驗證規則見 test_fonts.py 與
+    test_fire_font_name_validated_against_server_list。
+    """
+    font_payload = {"name": "MyFont", "url": None, "type": "uploaded"}
+    options = {
+        "Color": [True, 0, 0, "#FFFFFF"],
+        "Opacity": [True, 0, 100, 70],
+        "FontSize": [True, 20, 100, 50],
+        "Speed": [True, 1, 10, 4],
+        "FontFamily": [True, "", "", "NotoSansTC"],
+        "Effects": [True, "", "", ""],
+    }
+    with patch("server.routes.api.is_allowed_font", return_value=True):
+        result, mock_font, _ = _resolve(
+            {"text": "hello", "font": "MyFont"},
+            options=options,
+            font_payload=font_payload,
+        )
+    # build_font_payload should be called with the user's chosen font
+    mock_font.assert_called_once_with("MyFont")
+    assert result["fontInfo"] == font_payload
+    # 'font' key should be removed from data
+    assert "font" not in result
+
+
+def test_fontinfo_passed_through_when_font_absent():
+    """fontInfo is used directly when 'font' field is absent."""
+    font_payload = {"name": "MyFont", "url": None, "type": "uploaded"}
+    options = {
+        "Color": [True, 0, 0, "#FFFFFF"],
+        "Opacity": [True, 0, 100, 70],
+        "FontSize": [True, 20, 100, 50],
+        "Speed": [True, 1, 10, 4],
+        "FontFamily": [True, "", "", "NotoSansTC"],
+        "Effects": [True, "", "", ""],
+    }
+    with patch("server.routes.api.is_allowed_font", return_value=True):
+        result, mock_font, _ = _resolve(
+            {"text": "hello", "fontInfo": {"name": "MyFont"}},
+            options=options,
+            font_payload=font_payload,
+        )
+    mock_font.assert_called_once_with("MyFont")
+    assert result["fontInfo"] == font_payload
+
+
+def test_font_name_not_allowed_falls_back_to_default():
+    """2026-11-03 字型 P1：未通過伺服器端驗證的名稱（例如空允許清單下的
+    Arial——觀眾端下拉裡也沒有它）回退管理員預設字型，不再照單全收。"""
+    font_payload = {"name": "NotoSansTC", "url": None, "type": "default"}
     options = {
         "Color": [True, 0, 0, "#FFFFFF"],
         "Opacity": [True, 0, 100, 70],
@@ -84,30 +135,9 @@ def test_font_field_converted_to_fontinfo():
         options=options,
         font_payload=font_payload,
     )
-    # build_font_payload should be called with the user's chosen font
-    mock_font.assert_called_once_with("Arial")
-    assert result["fontInfo"] == font_payload
-    # 'font' key should be removed from data
-    assert "font" not in result
-
-
-def test_fontinfo_passed_through_when_font_absent():
-    """fontInfo is used directly when 'font' field is absent."""
-    font_payload = {"name": "Verdana", "url": None, "type": "system"}
-    options = {
-        "Color": [True, 0, 0, "#FFFFFF"],
-        "Opacity": [True, 0, 100, 70],
-        "FontSize": [True, 20, 100, 50],
-        "Speed": [True, 1, 10, 4],
-        "FontFamily": [True, "", "", "NotoSansTC"],
-        "Effects": [True, "", "", ""],
-    }
-    result, mock_font, _ = _resolve(
-        {"text": "hello", "fontInfo": {"name": "Verdana"}},
-        options=options,
-        font_payload=font_payload,
-    )
-    mock_font.assert_called_once_with("Verdana")
+    # 空允許清單下 Arial 是 disabled（_DEFAULT_ENABLED 不含系統字體）→
+    # 與觀眾端下拉一致，回退預設
+    mock_font.assert_called_once_with("NotoSansTC")
     assert result["fontInfo"] == font_payload
 
 

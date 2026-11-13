@@ -3,20 +3,24 @@ Overlay widget service.
 
 Manages persistent overlay widgets (scoreboards, tickers, labels) that display
 alongside danmu. Widgets are broadcast to overlay clients via the WS queue.
+
+2026-11-03（Widget 持久化 P0）: the store used to be a plain in-memory dict —
+a server restart silently wiped every label, ticker and scoreboard (live
+scores included). State now lives in ``runtime/widgets.json`` via the shared
+JsonState container (atomic tmp+rename writes); everything read back from
+disk passes through the same per-type config validators the admin API uses.
 """
 
 import logging
 import re
-import threading
 import time
 import uuid
 from typing import Dict, List, Optional
 
 from server.services import ws_queue
+from server.services.json_state import JsonState
 
 logger = logging.getLogger(__name__)
-
-_lock = threading.Lock()
 
 # Valid widget types
 WIDGET_TYPES = {"scoreboard", "ticker", "label"}
@@ -36,8 +40,62 @@ POSITIONS = {
     },
 }
 
-# In-memory widget store
-_widgets: Dict[str, dict] = {}
+
+def _default_state() -> dict:
+    return {"widgets": {}}
+
+
+def _normalize_state(raw) -> dict:
+    """Validate + sanitize the persisted widget store.
+
+    Runs on load AND on every update, so anything that comes back from
+    disk is re-checked by the same validators that guard the admin API.
+    """
+    if not isinstance(raw, dict):
+        raise ValueError("widget state must be a dict")
+    raw_widgets = raw.get("widgets", {})
+    if not isinstance(raw_widgets, dict):
+        raise ValueError("widgets must be a dict")
+
+    widgets: Dict[str, dict] = {}
+    for wid, w in raw_widgets.items():
+        if not isinstance(w, dict):
+            continue
+        wtype = w.get("type")
+        if wtype not in WIDGET_TYPES:
+            continue
+        wid = str(wid)[:32]
+        position = w.get("position", "top-left")
+        if position not in POSITIONS:
+            position = "top-left"
+        try:
+            created_at = float(w.get("created_at") or 0.0)
+        except (TypeError, ValueError):
+            created_at = 0.0
+        try:
+            # 把存量 config 當「全新補丁」重過驗證器：缺的鍵補預設、
+            # 超界值被夾回範圍——而不是原樣放行（原樣放行會讓舊檔裡
+            # 手改壞的數值躲過鉗制）。單條腐壞只丟該條，不拖垮整個 store。
+            config = _validate_config(wtype, w.get("config") or {})
+        except (TypeError, ValueError):
+            continue
+        widgets[wid] = {
+            "id": wid,
+            "type": wtype,
+            "position": position,
+            "visible": bool(w.get("visible", True)),
+            "created_at": created_at,
+            "config": config,
+        }
+    return {"widgets": widgets}
+
+
+_widget_state = JsonState("widgets.json", default=_default_state, normalize=_normalize_state)
+
+
+def _persist(widgets: Dict[str, dict]) -> None:
+    """Replace the widgets map and persist (call while holding state.lock)."""
+    _widget_state.update({"widgets": widgets})
 
 
 def _broadcast():
@@ -45,7 +103,7 @@ def _broadcast():
     ws_queue.enqueue_message(
         {
             "type": "widget_sync",
-            "widgets": list(_widgets.values()),
+            "widgets": list(_widget_state.get()["widgets"].values()),
         }
     )
 
@@ -68,20 +126,21 @@ def create_widget(widget_type: str, config: dict) -> dict:
         "config": _validate_config(widget_type, config),
     }
 
-    with _lock:
-        _widgets[widget_id] = widget
+    with _widget_state.lock:
+        state = _widget_state.get()
+        state["widgets"][widget_id] = widget
+        _persist(state["widgets"])
     _broadcast()
     logger.info("Widget created: %s (%s)", widget_id, widget_type)
     return widget
 
 
 def update_widget(widget_id: str, config: dict) -> Optional[dict]:
-    with _lock:
-        if widget_id not in _widgets:
+    with _widget_state.lock:
+        state = _widget_state.get()
+        widget = state["widgets"].get(widget_id)
+        if widget is None:
             return None
-
-        widget = _widgets[widget_id]
-        widget_type = widget["type"]
 
         if "position" in config:
             pos = config["position"]
@@ -91,17 +150,22 @@ def update_widget(widget_id: str, config: dict) -> Optional[dict]:
         if "visible" in config:
             widget["visible"] = bool(config["visible"])
 
-        widget["config"] = _validate_config(widget_type, config, widget["config"])
+        widget["config"] = _validate_config(widget["type"], config, widget["config"])
+
+        state["widgets"][widget_id] = widget
+        _persist(state["widgets"])
 
     _broadcast()
     return widget
 
 
 def delete_widget(widget_id: str) -> bool:
-    with _lock:
-        if widget_id not in _widgets:
+    with _widget_state.lock:
+        state = _widget_state.get()
+        if widget_id not in state["widgets"]:
             return False
-        del _widgets[widget_id]
+        del state["widgets"][widget_id]
+        _persist(state["widgets"])
 
     _broadcast()
     logger.info("Widget deleted: %s", widget_id)
@@ -109,24 +173,23 @@ def delete_widget(widget_id: str) -> bool:
 
 
 def list_widgets() -> List[dict]:
-    with _lock:
-        return list(_widgets.values())
+    return list(_widget_state.get()["widgets"].values())
 
 
 def get_widget(widget_id: str) -> Optional[dict]:
-    with _lock:
-        return _widgets.get(widget_id)
+    return _widget_state.get()["widgets"].get(widget_id)
 
 
 def clear_all() -> None:
-    with _lock:
-        _widgets.clear()
+    with _widget_state.lock:
+        _widget_state.update({"widgets": {}})
     _broadcast()
 
 
 def update_scoreboard_score(widget_id: str, team_index: int, delta: int = 1) -> Optional[dict]:
-    with _lock:
-        widget = _widgets.get(widget_id)
+    with _widget_state.lock:
+        state = _widget_state.get()
+        widget = state["widgets"].get(widget_id)
         if not widget or widget["type"] != "scoreboard":
             return None
 
@@ -134,8 +197,16 @@ def update_scoreboard_score(widget_id: str, team_index: int, delta: int = 1) -> 
         if 0 <= team_index < len(teams):
             teams[team_index]["score"] = max(0, teams[team_index]["score"] + delta)
 
+        state["widgets"][widget_id] = widget
+        _persist(state["widgets"])
+
     _broadcast()
     return widget
+
+
+def reset_for_tests(path=None) -> None:
+    """Drop the cache and optionally redirect the store (pytest isolation)."""
+    _widget_state.reset_for_tests(path)
 
 
 # ── Sanitization helpers ─────────────────────────────────────────────────────

@@ -37,7 +37,12 @@
       // 先保留待審」這個選項會產生待審訊息，沒有佇列就沒地方看，
       // 稿上三格是示意，不是要把佇列刪掉。
       // 舊的 6 個 slug 全部保留為 deep-link 別名（_tabAliases）。
-      defaultTab: "queue",
+      // 2026-10-29：預設分頁從 queue 改成 blacklist。
+      // 佇列只收 action="review" 的規則，而那個動作直到同一天才出現在
+      // 規則下拉裡——在這之前，這個頁面的**預設落地頁永遠是 All Clear**，
+      // 等於告訴主持人「沒事」，同時把真正被攔下的訊息留在訊息流的灰列裡。
+      // 佇列保留為第一個分頁（有內容時才值得看），但不再當門面。
+      defaultTab: "blacklist",
       tabs: [
         { slug: "queue",        labelKey: "tabModQueue",       en: "QUEUE",   section: "sec-modqueue" },
         { slug: "blacklist",    labelKey: "tabModBlockedWords", en: "WORDS",

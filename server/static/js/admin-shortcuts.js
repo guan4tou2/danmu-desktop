@@ -266,7 +266,12 @@
   }
 
   function _feedActive() {
-    return !!(window.AdminLiveFeed && window.AdminLiveFeed.isVisible && window.AdminLiveFeed.isVisible());
+    if (!(window.AdminLiveFeed && window.AdminLiveFeed.isVisible && window.AdminLiveFeed.isVisible())) return false;
+    // 2026-10-29：抽屜與確認框開著時，j/k 屬於那一層。
+    // 訊息詳情抽屜自己用 j/k（←→）翻上下一則，兩邊同時接會一次跳兩格。
+    if (document.body.dataset.messageDrawerOpen === "1") return false;
+    if (document.getElementById("admin-hud-modal-root")) return false;
+    return true;
   }
 
   document.addEventListener("keydown", function (e) {

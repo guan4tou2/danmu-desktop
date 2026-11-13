@@ -1187,7 +1187,14 @@ def test_a11y_focus_lang_and_live_region(zh):
     # 顏色改「色點＋名稱」磚，選中加 ✓ 與 2px 粗框
     html = _read("server/templates/index.html")
     assert "viewer-swatch-dot" in html and "viewer-swatch-name" in html
-    assert 'data-i18n-aria="swatchAriaWhite"' in html
+    # 2026-10-29：色票改成由 services/viewer_colors.py 的 preset 迴圈產生，
+    # aria 標籤因此是樣板插值而不是字面值 —— 原本釘字面值 'swatchAriaWhite'
+    # 的斷言在色票樣板化當天就失效了（一直紅著）。這裡改釘「有插 aria_key」
+    # 這條真正的契約，並回頭確認 preset 資料確實提供它。
+    assert 'data-i18n-aria="{{ preset.aria_key }}"' in html
+    from server.services.viewer_colors import DEFAULT_COLOR_PRESETS
+
+    assert any(p["aria_key"] == "swatchAriaWhite" for p in DEFAULT_COLOR_PRESETS)
     assert zh["swatchAriaWhite"] == "顏色：白"
     viewer_css = _read("server/static/css/viewer-v2.css")
     assert "min-height: 44px;" in viewer_css.split(".viewer-swatch-preset{")[1].split("}")[0]
@@ -1559,7 +1566,7 @@ def test_ui_status_replaces_the_ad_hoc_status_dots():
 
 
 def test_live_feed_bottom_line_matches_spec_06(zh):
-    """設計稿 06 · §3：訊息流卡底是**一行**「自動捲動中 · 滑鼠停在訊息上可隱藏或封鎖」，
+    """設計稿 06 · §3：訊息流卡底是**一行**「自動捲動中 · 滑鼠停在訊息上可撤下或封鎖」，
     並在移除清單裡明列 DENSITY 切換。
 
     原本卡底是 `0 TOTAL · 0.0 MSG/S` 兩個等寬計數器：寫死在 JS 的英文（沒進
@@ -1582,8 +1589,10 @@ def test_live_feed_bottom_line_matches_spec_06(zh):
     for gone in (".admin-lf-v4__dchip", ".admin-lf-v4__density-label", "[data-density="):
         assert gone not in _strip_comments(css), gone
 
-    # 四語都有新的說明文案，且沒有全大寫英文殘留
-    assert zh["lfRowHint"] == "滑鼠停在訊息上可隱藏或封鎖"
+    # 四語都有新的說明文案，且沒有全大寫英文殘留。
+    # 2026-11-02：字面值從「隱藏」改為「撤下」——hover 動作實為單則撤回
+    # （lfRecallBtn）＋封鎖關鍵字／指紋，訊息流裡從來沒有「隱藏」這顆按鈕。
+    assert zh["lfRowHint"] == "滑鼠停在訊息上可撤下或封鎖"
     for lang in ("en", "ja", "ko"):
         d = json.loads(_read(f"server/static/locales/{lang}/translation.json"))
         assert d.get("lfRowHint"), lang

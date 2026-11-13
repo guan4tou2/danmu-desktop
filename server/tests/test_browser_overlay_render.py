@@ -746,8 +746,9 @@ def test_viewer_custom_color_and_fractional_speed_reach_animation(
     page.on("pageerror", lambda error: errors.append(str(error)))
     try:
         page.goto(f"http://127.0.0.1:{http_port}/")
+        # 函式形式：字串表達式會走 eval，轪詢時被頁面 CSP（無 unsafe-eval）擋下。
         page.wait_for_function(
-            "document.querySelector('#overlayStatus').dataset.connected === 'true'"
+            "() => document.querySelector('#overlayStatus').dataset.connected === 'true'"
         )
         dismiss = page.locator("[data-nameask-dismiss]")
         if dismiss.is_visible():
@@ -764,7 +765,8 @@ def test_viewer_custom_color_and_fractional_speed_reach_animation(
         page.locator("#colorHexInput").fill("#123abc")
         assert page.locator("#colorInput").input_value() == "#123abc"
         page.wait_for_function(
-            "getComputedStyle(document.querySelector('#previewText')).color === 'rgb(18, 58, 188)'"
+            "() => getComputedStyle(document.querySelector('#previewText')).color"
+            " === 'rgb(18, 58, 188)'"
         )
         # Presets and custom picker use the same value and keep the hex input synced.
         page.locator('[data-color="#38bdf8"]').click()
@@ -779,6 +781,12 @@ def test_viewer_custom_color_and_fractional_speed_reach_animation(
         for speed, arrow_count in [(1.1, 6), (1.2, 7)]:
             if width < 768 and page.locator("#viewerStyleSheet").is_hidden():
                 page.locator("#viewerStyleRow").click()
+                # 面板開啟後 30ms 才把焦點移到 focus trap 起點（viewer-style-sheet.js）；
+                # 等焦點落定再操作，否則慢的機器上方向鍵會掉到別的元素。
+                page.wait_for_function(
+                    "() => document.querySelector('#viewerStyleSheet')"
+                    ".contains(document.activeElement)"
+                )
             slider = page.locator("#speedRange")
             slider.focus()
             slider.press("Home")
