@@ -127,14 +127,16 @@
 
   function pageTemplate() {
     return `
-      <div id="${PAGE_ID}" class="admin-dsp2-page hud-page-stack lg:col-span-2" data-tpl="C">
-        <!-- 標題／說明兩套並存，由 data-dsp-mode 決定露哪一套（CSS 在 style.css）。
-             同一份面板服務顯示層與觀眾頁兩條路由，文案不能只寫一種。 -->
-        <div class="admin-ui-page-head">
-          <h2 class="admin-ui-page-title" data-dsp-only="values">${escapeHtml(t("displayValuesTitle"))}</h2>
-          <p class="admin-ui-page-note" data-dsp-only="values">${t("displayValuesNote")}</p>
-          <h2 class="admin-ui-page-title" data-dsp-only="audience">${escapeHtml(t("viewerGroupAudience"))}</h2>
-          <p class="admin-ui-page-note" data-dsp-only="audience">${t("displayViewerDefaultsNote")}</p>
+      <div id="${PAGE_ID}" class="lg:col-span-2" data-tpl="C">
+        <!-- 同一份面板服務兩條路由。顯示層 (values) 上它是次要設定，收進預設
+             收合的 details，summary 就是標題；觀眾頁 (audience) 上它是主體，
+             syncVisibility 把它展開、summary 藏起來。 -->
+        <details class="admin-dsp2-fold" data-dsp-fold>
+        <summary class="admin-ui-page-title" data-dsp-only="values">${escapeHtml(t("displayValuesTitle"))}</summary>
+        <div class="admin-dsp2-page hud-page-stack">
+        <div class="admin-ui-page-head" data-dsp-only="audience">
+          <h2 class="admin-ui-page-title">${escapeHtml(t("viewerGroupAudience"))}</h2>
+          <p class="admin-ui-page-note">${t("displayViewerDefaultsNote")}</p>
         </div>
 
         <!-- 顯示層專屬：大螢幕怎麼排（2026-08-19 設計稿 07 · R1）。
@@ -321,6 +323,8 @@
             </div>
           </div>
         </div>
+        </div>
+        </details>
       </div>`;
   }
 
@@ -1524,6 +1528,12 @@
     // v8（設計稿 07 · R4）：觀眾頁的四個分頁退場，四個 section 一起在台上，
     // 靠群組小標分段。tab 變數只剩下相容用途（舊 deep link 仍可帶著跑）。
     const showPanel = isViewerOwner || isDisplayOwner;
+    // 只在模式切換的那一刻設定收合：顯示層每次進來都是收合，觀眾頁永遠展開。
+    // （這裡掛在 subtree MutationObserver 上，水平觸發會把使用者剛展開的又關掉。）
+    const fold = page.querySelector("[data-dsp-fold]");
+    if (fold && page.dataset.dspMode !== (isDisplayOwner ? "values" : "audience")) {
+      fold.open = !isDisplayOwner;
+    }
     page.dataset.dspMode = isDisplayOwner ? "values" : "audience";
     page.style.display = showPanel ? "" : "none";
     ["sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-limits"]

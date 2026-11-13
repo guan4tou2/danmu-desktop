@@ -547,12 +547,13 @@
         ? ServerI18n.t("adminCockpitOn", { n: count })
         : ServerI18n.t("adminCockpitOff");
     }
+    // 按鈕跟著渲染開關走（不是裝置數）：沒有裝置連著時照樣能暫停，
+    // 訊息會排隊。data-i18n 一起換，切換語言時才不會跳回舊字。
     const toggle = card.querySelector('[data-cockpit-action="toggle"]');
     if (toggle) {
-      toggle.textContent = ServerI18n.t(on ? "adminCockpitTurnOff" : "adminCockpitTurnOn");
-      toggle.classList.toggle("is-danger", on);
-      toggle.classList.toggle("is-primary", !on);
-      toggle.dataset.next = on ? "standby" : "live";
+      toggle.dataset.i18n = live ? "broadcastBigPause" : "broadcastBigResume";
+      toggle.textContent = ServerI18n.t(toggle.dataset.i18n);
+      toggle.dataset.next = live ? "standby" : "live";
     }
     // 沒有裝置連著時，「清空畫面」沒有作用對象
     const clear = card.querySelector('[data-cockpit-action="clear"]');
@@ -567,37 +568,53 @@
     card.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-cockpit-action]");
       if (!btn) return;
+      // 與顯示層頁共用同一份動作（admin-broadcast.js）：同名、同確認、同提示
       const action = btn.dataset.cockpitAction;
       if (action === "clear") {
-        try {
-          const r = await window.csrfFetch("/admin/overlay/clear", { method: "POST" });
-          if (!r.ok) throw new Error("HTTP " + r.status);
-          window.showToast && window.showToast(ServerI18n.t("toastCleared"), true);
-        } catch (_) {
-          window.showToast && window.showToast(ServerI18n.t("toastClearFailed"), false);
-        }
+        window.AdminOverlayControl?.clearScreen();
         return;
       }
       if (action === "toggle") {
-        try {
-          const r = await window.csrfFetch("/admin/broadcast/toggle", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ mode: btn.dataset.next || "standby" }),
-          });
-          if (!r.ok) throw new Error("HTTP " + r.status);
-        } catch (_) {
-          window.showToast && window.showToast(ServerI18n.t("broadcastToastToggleFailed", { msg: "" }), false);
-        }
+        await window.AdminOverlayControl?.setDisplay(btn.dataset.next === "live");
         refreshCockpitOverlay();
       }
     });
 
-    // 兩顆次要動作只是入口，實際頁面各自擁有完整操作
     const qr = card.parentElement && card.parentElement.querySelector('[data-cockpit-action="idle-qr"]');
-    if (qr) qr.addEventListener("click", () => { location.hash = "#/overlay"; });
+    if (qr) qr.addEventListener("click", showJoinQr);
     const poll = card.parentElement && card.parentElement.querySelector('[data-cockpit-action="poll"]');
     if (poll) poll.addEventListener("click", () => { location.hash = "#/polls"; });
+  }
+
+  // 入場 QR 原地放大：與系統頁「公開網址 · QR」同一支 /admin/qr/public，
+  // 套同一個 .admin-soh-qr 外框，裝進共用的 HudConfirm。
+  async function showJoinQr() {
+    let data;
+    try {
+      const r = await fetch("/admin/qr/public", { credentials: "same-origin" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      data = await r.json();
+    } catch (_) {
+      window.showToast && window.showToast(ServerI18n.t("sohQrFailed"), false);
+      return;
+    }
+    const box = document.createElement("div");
+    box.className = "admin-soh-qr";
+    box.innerHTML = data.svg; // server 自己產生的 SVG，內容只有入場網址
+    const copy = await window.HudConfirm?.open({
+      icon: "▦",
+      titleText: data.url,
+      body: box,
+      severity: "info",
+      confirmLabel: ServerI18n.t("copyBtn"),
+      cancelLabel: ServerI18n.t("close"),
+      width: 360,
+    });
+    if (!copy) return;
+    navigator.clipboard?.writeText(data.url).then(
+      () => window.showToast && window.showToast(ServerI18n.t("sohCopied"), true),
+      () => window.showToast && window.showToast(ServerI18n.t("sohCopyFailed"), false)
+    );
   }
 
   function startCockpitPolling() {

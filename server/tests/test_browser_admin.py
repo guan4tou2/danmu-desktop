@@ -203,6 +203,15 @@ def _open_section(page, section_id: str):
     }
     if section_id in DISPLAY_LEGACY_IDS:
         page.wait_for_selector("#sec-viewer-config-defaults", state="visible", timeout=5000)
+        # 顯示層頁把彈幕外觀收進預設收合的 <details>（主動作在首屏頂端），
+        # 值編輯器要先展開才看得到。先等模式切到 values（收合在切換那一刻
+        # 才設定），再展開。
+        page.wait_for_selector(
+            '#sec-viewer-config-defaults[data-dsp-mode="values"]', state="visible", timeout=5000
+        )
+        fold = page.locator("#sec-viewer-config-defaults details[data-dsp-fold]:not([open]) > summary")
+        if fold.count() > 0:
+            fold.click()
         return
 
     page.wait_for_selector(
