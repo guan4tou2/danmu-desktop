@@ -158,9 +158,10 @@
 
       document.body.appendChild(root);
       document.addEventListener("keydown", _onKey);
-      // Focus the confirm button so Enter / Esc work without a click.
+      // Danger dialogs start on Cancel so a stray Enter never destroys data.
+      const initial = severity === "danger" ? "cancel" : "confirm";
       requestAnimationFrame(() => {
-        root.querySelector(".admin-hud-modal__btn--confirm")?.focus();
+        root.querySelector(`.admin-hud-modal__btn--${initial}`)?.focus();
       });
     });
   }
