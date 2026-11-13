@@ -1,10 +1,8 @@
 const DEFAULTS = {
   enabled: true,
   serverUrl: "http://localhost:4000",
-  mode: "live",
   includeAuthor: true,
-  minIntervalMs: 800,
-  maxTextLen: 100,
+  minIntervalMs: 3000,
   fireToken: "",
 };
 
@@ -22,18 +20,17 @@ async function load() {
   $("enabled").checked = !!s.enabled;
   $("serverUrl").value = s.serverUrl;
   $("fireToken").value = s.fireToken || "";
-  $("mode").value = s.mode;
   $("includeAuthor").checked = !!s.includeAuthor;
   $("minIntervalMs").value = s.minIntervalMs;
-  $("maxTextLen").value = s.maxTextLen;
 
   try {
     const res = await chrome.runtime.sendMessage({ type: "get_stats" });
-    if (res?.ok) {
-      const { forwarded, skipped, errors, lastError } = res.stats;
+    if (res?.ok && res.stats) {
+      const { sent, blocked, failed, dropped, error } = res.stats;
       setStatus(
-        `forwarded ${forwarded} · skipped ${skipped} · errors ${errors}` +
-          (lastError ? ` · ${lastError}` : ""),
+        `sent ${sent} · blocked ${blocked} · failed ${failed} · dropped ${dropped}` +
+          (error ? ` · ${error}` : ""),
+        error ? "err" : "",
       );
     }
   } catch {
@@ -46,13 +43,8 @@ async function save() {
     enabled: $("enabled").checked,
     serverUrl: $("serverUrl").value.trim() || DEFAULTS.serverUrl,
     fireToken: $("fireToken").value.trim(),
-    mode: $("mode").value,
     includeAuthor: $("includeAuthor").checked,
-    minIntervalMs: Math.max(0, parseInt($("minIntervalMs").value, 10) || 0),
-    maxTextLen: Math.min(
-      100,
-      Math.max(10, parseInt($("maxTextLen").value, 10) || 100),
-    ),
+    minIntervalMs: Math.min(10000, Math.max(500, parseInt($("minIntervalMs").value, 10) || DEFAULTS.minIntervalMs)),
   };
   await chrome.storage.local.set({ settings });
   setStatus("Saved.", "ok");
