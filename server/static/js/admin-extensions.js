@@ -25,7 +25,7 @@
     {
       id: "slido",
       name: "Slido Extension",
-      version: "v0.2.0",
+      version: "v0.3.0",
       icon: "▦",
       color: "var(--color-ink-accent)",
       // D-4：頂層常數，模組 parse 時 ServerI18n 尚未 init——存 key，
@@ -40,6 +40,7 @@
         ],
       },
       hasFireTokenUI: true,
+      hasLiveStatus: true,
     },
     {
       id: "discord",
@@ -78,7 +79,25 @@
     plainToken: null,       // raw token, only set right after regenerate
     sources: [],            // [{source, last_seen, count}]
     sourcesTimer: 0,
+    slidoStatus: null,      // {report, age_sec, stale} from /admin/integrations/slido/status
   };
+
+  const SLIDO_ERRORS = ["rate_limited", "no_overlay", "rejected", "feed_unrecognized", "server_unreachable"];
+
+  // One line, three looks: waiting (muted), receiving (green), error (red).
+  // Pure so the jest suite can pin every state without a server.
+  function slidoStatusView(status) {
+    const report = status && !status.stale ? status.report : null;
+    if (!report) return { tone: "", text: ServerI18n.t("extSlidoStatusNone") };
+    if (report.state === "error") {
+      const code = SLIDO_ERRORS.includes(report.error) ? report.error : "rejected";
+      return { tone: "is-error", text: ServerI18n.t("extSlidoErr_" + code) };
+    }
+    return {
+      tone: "is-live",
+      text: ServerI18n.t("extSlidoStatusWatching", { sent: report.sent || 0, blocked: report.blocked || 0 }),
+    };
+  }
 
   function buildSection() {
     return `
@@ -142,6 +161,9 @@
           ${flag}
         </div>
         <p class="admin-ext-desc">${escapeHtml(ServerI18n.t(ext.descKey))}</p>
+        ${ext.hasLiveStatus
+          ? `<p class="admin-ext-live-status" data-slido-status role="status" aria-live="polite">${escapeHtml(ServerI18n.t("extSlidoStatusNone"))}</p>`
+          : ""}
         ${installSection}
         ${tokenSection}
       </article>`;
@@ -166,6 +188,20 @@
       _state.sources = Array.isArray(data.sources) ? data.sources : [];
       _renderSourceLights();
     } catch (_) { /* silent */ }
+  }
+
+  async function _fetchSlidoStatus() {
+    try {
+      const r = await fetch("/admin/integrations/slido/status", { credentials: "same-origin" });
+      if (!r.ok) return;
+      _state.slidoStatus = await r.json();
+      _renderSlidoStatus();
+    } catch (_) { /* silent — the line keeps its last known value */ }
+  }
+
+  function _refresh() {
+    _fetchSources();
+    _fetchSlidoStatus();
   }
 
   async function _regenerateToken() {
@@ -274,6 +310,15 @@
     });
   }
 
+  function _renderSlidoStatus() {
+    const el = document.querySelector("[data-slido-status]");
+    if (!el) return;
+    const view = slidoStatusView(_state.slidoStatus);
+    el.textContent = view.text;
+    el.classList.toggle("is-live", view.tone === "is-live");
+    el.classList.toggle("is-error", view.tone === "is-error");
+  }
+
   // ── init ───────────────────────────────────────────────────────────
 
   function init() {
@@ -306,10 +351,12 @@
       _state.stopPoll = window.AdminUtils.pollWhileVisible({
         el: function () { return document.getElementById(PAGE_ID); },
         intervalMs: SOURCE_REFRESH_MS,
-        tick: _fetchSources,
+        tick: _refresh,
       });
     }
   }
+
+  window.AdminExtensions = { slidoStatusView };
 
   document.addEventListener("DOMContentLoaded", () => {
     if (!window.DANMU_CONFIG || !window.DANMU_CONFIG.session || !window.DANMU_CONFIG.session.logged_in) return;

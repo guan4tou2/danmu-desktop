@@ -111,6 +111,16 @@ describe("live feed incremental rendering", () => {
     expect(row.textContent).toContain("lfRecallBtn");
   });
 
+  test("integration danmu carry a source chip; viewer danmu do not", async () => {
+    queue.push({ seq: 1, data: { text: "from slido", message_id: "s1", source: "slido" } });
+    queue.push({ seq: 2, data: { text: "from a phone", message_id: "p1", source: "" } });
+    await poll();
+    const chipText = row => Array.from(row.querySelectorAll(".admin-live-feed-tag")).map(c => c.textContent);
+    const [phone, slido] = rows();
+    expect(chipText(slido)).toEqual(["Slido"]);
+    expect(chipText(phone)).toEqual([]);
+  });
+
   test("messages without message_id get no recall button", async () => {
     queue.push({ seq: 1, data: { text: "舊資料", fingerprint: "fp" } });
     await poll();
