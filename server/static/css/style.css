@@ -11693,9 +11693,8 @@ body.is-light .admin-login-wordmark.is-on-light,
   .admin-cockpit { grid-template-columns: 1fr; }
 }
 
-/* 手機寬：動作列換到下一行，清空與主動作分在兩端 */
+/* 手機寬：動作列一律獨佔一行，清空與主動作分在兩端 */
 @media (max-width: 480px) {
-  .admin-cockpit-overlay { flex-wrap: wrap; }
   .admin-cockpit-overlay-actions { width: 100%; justify-content: space-between; }
 }
 
@@ -11733,7 +11732,10 @@ body.is-light .admin-login-wordmark.is-on-light,
   color: var(--color-ink-success);
 }
 
-.admin-cockpit-overlay-body { flex: 1 1 auto; min-width: 0; }
+/* 依內容換行，不依視窗寬：狀態文字至少留 12rem，放不下時動作列自己
+   換到下一行並靠右（margin-left: auto）。按鈕字長隨語言變，固定斷點會失準。 */
+.admin-cockpit-overlay { flex-wrap: wrap; }
+.admin-cockpit-overlay-body { flex: 1 1 12rem; min-width: 0; }
 
 .admin-cockpit-overlay-title {
   font-size: var(--text-body);
@@ -11770,6 +11772,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   align-items: center;
   gap: var(--space-6);
   flex: 0 0 auto;
+  margin-left: auto;
 }
 
 /* ② 一行數字 —— tabular-nums，無 sparkline */

@@ -11,8 +11,10 @@
  * 後者看 /overlay_status。兩者一起寫在同一行狀態裡（statusText），控制台的
  * 顯示層卡用同一個函式，兩頁永遠說同一句話。
  *
- * 兩個場中動作 `setDisplay` / `clearScreen` 也掛在 window.AdminOverlayControl，
- * 控制台共用同一份：同一個動作全站一個名字、一種確認行為、一種可用條件。
+ * 場中動作 `setDisplay` / `toggleDisplay` / `clearScreen` 也掛在
+ * window.AdminOverlayControl。控制台、⌘K、快速鍵都走這一份：同一個動作
+ * 全站一個名字、一種確認行為、一種可用條件。狀態變化以 `admin-overlay-state`
+ * 事件廣播。
  *
  * 場次數字（已進行／訊息／觀眾裝置）只在控制台出現——這裡不重複。
  *
@@ -31,6 +33,7 @@
   // Session state (broadcast/status embeds the session field)
   let _sessionState = null;
   let _overlayCount = 0;
+  let _countKnown = false; // 還沒問過 /overlay_status 時不要拿 0 當真
 
   async function fetchStatus() {
     try {
@@ -44,8 +47,20 @@
     } catch (_) {}
     try {
       const r = await fetch("/overlay_status", { credentials: "same-origin" });
-      if (r.ok) _overlayCount = (await r.json()).overlay_count || 0;
+      if (r.ok) {
+        _overlayCount = (await r.json()).overlay_count || 0;
+        _countKnown = true;
+      }
     } catch (_) {}
+    publish();
+  }
+
+  // 顯示狀態只有這一個來源：每次得知新狀態就廣播出去，控制台的顯示層卡
+  // 不論當下看不看得見都照著更新，切回 #/live 時不必等輪詢。
+  function publish() {
+    document.dispatchEvent(new CustomEvent("admin-overlay-state", {
+      detail: { live: _serverState.mode === "live", count: _countKnown ? _overlayCount : undefined },
+    }));
   }
 
   async function postToggle(nextMode) {
@@ -60,6 +75,7 @@
         throw new Error(body && body.error ? body.error : `HTTP ${r.status}`);
       }
       _serverState = await r.json();
+      publish();
       return true;
     } catch (e) {
       console.warn("[admin-broadcast] toggle failed:", e);
@@ -92,6 +108,12 @@
     return ok;
   }
 
+  // 不知道目前狀態的入口（快速鍵）：先問一次後端，再走同一條路。
+  async function toggleDisplay() {
+    await fetchStatus();
+    return setDisplay(_serverState.mode !== "live");
+  }
+
   // 清空不可復原：danger 確認框，預設焦點在「取消」。永遠可按——
   // 「先暫停再清空」是緊急流程，停用只會讓主持人不知道為什麼按不下去。
   async function clearScreen() {
@@ -113,7 +135,7 @@
     }
   }
 
-  window.AdminOverlayControl = { setDisplay, clearScreen, statusText, toggleKey };
+  window.AdminOverlayControl = { setDisplay, toggleDisplay, clearScreen, statusText, toggleKey };
 
   // ---- page --------------------------------------------------------------
 

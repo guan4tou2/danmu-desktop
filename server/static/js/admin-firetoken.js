@@ -184,8 +184,7 @@
       };
       _state.plainToken = data.token;
       _renderToken();
-      _copyToClipboard(data.token);
-      window.showToast && window.showToast(ServerI18n.t("firetokenToastGenerated"), true);
+      window.AdminUtils.copyText(data.token, ServerI18n.t("firetokenToastGenerated"));
       _fetchAudit();
     } catch (e) {
       window.showToast && window.showToast(ServerI18n.t("firetokenToastGenerateFailed"), false);
@@ -215,21 +214,6 @@
     }
   }
 
-  function _copyToClipboard(text) {
-    if (!text) return;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).catch(() => {});
-    } else {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand("copy"); } catch (_) {}
-      document.body.removeChild(ta);
-    }
-  }
 
   // ── render ─────────────────────────────────────────────────────────
 
@@ -417,8 +401,7 @@
         else if (action === "revoke") _revoke();
         else if (action === "copy") {
           if (_state.plainToken) {
-            _copyToClipboard(_state.plainToken);
-            window.showToast && window.showToast(ServerI18n.t("firetokenToastCopied"), true);
+            window.AdminUtils.copyText(_state.plainToken, ServerI18n.t("firetokenToastCopied"));
           }
         }
       });

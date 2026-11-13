@@ -523,12 +523,35 @@
   //   · /admin/broadcast/status → 顯示開著還是暫停（按鈕、色點、文字都跟它）
   //   · /overlay_status → 有幾個顯示端連著（0 也照實寫出來）
   // 字樣由 AdminOverlayControl.statusText / toggleKey 決定，與顯示層頁同一份。
+  //
+  // 狀態快取在 _cockpitState，畫面一律從它重畫：
+  //   · 自己的輪詢（只在卡片看得見時打 API）
+  //   · admin-overlay-state 事件（任何入口切換成功、顯示層頁輪詢）——卡片
+  //     看不見也照寫，切回 #/live 時已經是新的
+  //   · admin-route-applied 進到控制台的那一刻，先用快取畫、再補問一次
   let _cockpitTimer = null;
+  let _cockpitState = null;
+
+  function renderCockpitOverlay() {
+    const card = document.querySelector("[data-cockpit-overlay]");
+    const ctl = window.AdminOverlayControl;
+    const st = _cockpitState;
+    if (!card || !ctl || !st) return;
+    card.classList.toggle("is-on", st.live);
+    const status = card.querySelector("[data-cockpit-status]");
+    if (status) status.textContent = ctl.statusText(st.live, st.count);
+    // data-i18n 一起換，切換語言時才不會跳回舊字。
+    const toggle = card.querySelector('[data-cockpit-action="toggle"]');
+    if (toggle) {
+      toggle.dataset.i18n = ctl.toggleKey(st.live);
+      toggle.textContent = ServerI18n.t(toggle.dataset.i18n);
+      toggle.dataset.next = st.live ? "standby" : "live";
+    }
+  }
 
   async function refreshCockpitOverlay() {
     const card = document.querySelector("[data-cockpit-overlay]");
-    const ctl = window.AdminOverlayControl;
-    if (!card || !ctl || card.offsetParent === null) return;
+    if (!card || card.offsetParent === null) return;
     let count = 0;
     let live = false;
     try {
@@ -539,18 +562,25 @@
       const r = await fetch("/admin/broadcast/status", { credentials: "same-origin" });
       if (r.ok) live = (await r.json()).mode === "live";
     } catch (_) {}
-
-    card.classList.toggle("is-on", live);
-    const status = card.querySelector("[data-cockpit-status]");
-    if (status) status.textContent = ctl.statusText(live, count);
-    // data-i18n 一起換，切換語言時才不會跳回舊字。
-    const toggle = card.querySelector('[data-cockpit-action="toggle"]');
-    if (toggle) {
-      toggle.dataset.i18n = ctl.toggleKey(live);
-      toggle.textContent = ServerI18n.t(toggle.dataset.i18n);
-      toggle.dataset.next = live ? "standby" : "live";
-    }
+    _cockpitState = { live, count };
+    renderCockpitOverlay();
   }
+
+  document.addEventListener("admin-overlay-state", (e) => {
+    const d = (e && e.detail) || {};
+    _cockpitState = {
+      live: !!d.live,
+      count: typeof d.count === "number" ? d.count : (_cockpitState ? _cockpitState.count : 0),
+    };
+    renderCockpitOverlay();
+  });
+
+  document.addEventListener("admin-route-applied", (e) => {
+    const route = e && e.detail && e.detail.route;
+    if (route !== "live" && route !== "dashboard") return;
+    renderCockpitOverlay();
+    refreshCockpitOverlay();
+  });
 
   function bindCockpit() {
     const card = document.querySelector("[data-cockpit-overlay]");
@@ -603,10 +633,7 @@
       width: 360,
     });
     if (!copy) return;
-    navigator.clipboard?.writeText(data.url).then(
-      () => window.showToast && window.showToast(ServerI18n.t("sohCopied"), true),
-      () => window.showToast && window.showToast(ServerI18n.t("sohCopyFailed"), false)
-    );
+    window.AdminUtils.copyText(data.url);
   }
 
   function startCockpitPolling() {
@@ -630,6 +657,7 @@
     startSessionPolling,
     stopSessionPolling,
     refreshCockpitOverlay,
+    renderCockpitOverlay,
     startCockpitPolling,
     stopCockpitPolling,
   };

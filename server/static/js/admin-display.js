@@ -302,7 +302,7 @@
 
             <div class="admin-dsp2-card admin-dsp2-admin-controlled" style="padding:14px;background:var(--admin-panel,var(--color-bg-base));border:1px solid var(--hud-line);border-radius:6px;display:flex;flex-direction:column;gap:10px">
               <div class="admin-ui-monolabel admin-dsp2-card-head">
-                <span>${escapeHtml(t("displayAdminControlledTitle"))}</span>
+                <span data-i18n="displayAdminControlledTitle">${escapeHtml(t("displayAdminControlledTitle"))}</span>
               </div>
               <div style="display:grid;grid-template-columns:auto 1fr;gap:7px 12px;align-items:start;font-size:11px;line-height:1.45">
                 <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="language">${escapeHtml(t("language"))}</span><span data-i18n="viewerThemeFollowBrowser">${escapeHtml(t("viewerThemeFollowBrowser"))}</span>
@@ -310,9 +310,8 @@
                 <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="displayAdminCtlSubmit">${escapeHtml(t("displayAdminCtlSubmit"))}</span><span data-i18n="fireDanmu">${escapeHtml(t("fireDanmu"))}</span>
                 <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="displayAdminCtlPollPrompt">${escapeHtml(t("displayAdminCtlPollPrompt"))}</span><span data-i18n="displayPollPromptExample">${escapeHtml(t("displayPollPromptExample"))}</span>
               </div>
-              <div style="padding-top:8px;border-top:1px solid var(--hud-line);font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);line-height:1.6">
-                ${escapeHtml(t("displayAdminControlledNote"))}
-              </div>
+              <div style="padding-top:8px;border-top:1px solid var(--hud-line);font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);line-height:1.6"
+                   data-i18n="displayAdminControlledNote">${escapeHtml(t("displayAdminControlledNote"))}</div>
             </div>
 
             <div class="admin-dsp2-card admin-dsp2-summary" id="dsp2-summary">
@@ -1503,10 +1502,33 @@
     }
   }
 
+  // 只切語言不重新載入時，這張面板（含收合區）整份照新語言重畫：模板裡的
+  // 字串、每列、色票、預覽、摘要都是渲染時才 t() 的，逐個補 data-i18n 會
+  // 漏。事件全部委派在外層 PAGE_ID 上，換掉內容不會掉 listener；收合狀態
+  // 照舊。updateUI() 換完語言會重跑路由 → admin-route-applied → 這裡。
+  let _renderedLang = null;
+  function relocalize(page) {
+    const lang = window.ServerI18n && window.ServerI18n.currentLang;
+    if (!lang || lang === _renderedLang) return;
+    const first = _renderedLang === null;
+    _renderedLang = lang;
+    if (first) return;
+    const fold = page.querySelector("[data-dsp-fold]");
+    const wasOpen = !!(fold && fold.open);
+    const tmp = document.createElement("div");
+    tmp.innerHTML = pageTemplate();
+    page.replaceChildren(...tmp.firstElementChild.childNodes);
+    const fresh = page.querySelector("[data-dsp-fold]");
+    if (fresh) fresh.open = wasOpen;
+    renderRows();
+    renderDisplayLayer();
+  }
+
   function syncVisibility() {
     const shell = document.querySelector(".admin-dash-grid");
     const page = document.getElementById(PAGE_ID);
     if (!shell || !page) return;
+    relocalize(page);
     const route = shell.dataset.activeRoute || "live";
     const leaf = shell.dataset.activeLeaf || route;
     _mirrorRouterTab(route, leaf);

@@ -40,36 +40,14 @@
     if (window.AdminCommandPalette) window.AdminCommandPalette.toggle();
   }
 
-  async function toggleDisplayLayer() {
-    var live = false;
-    try {
-      var r = await fetch("/admin/broadcast/status", { credentials: "same-origin" });
-      if (r.ok) live = (await r.json()).mode === "live";
-    } catch (e) {}
-    try {
-      var res = await cfetch("/admin/broadcast/toggle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: live ? "standby" : "live" }),
-      });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      toast(t(live ? "ksToastDisplayOff" : "ksToastDisplayOn", live ? "已關閉" : "已開啟"));
-      if (window.AdminDashboard && window.AdminDashboard.refreshCockpitOverlay) {
-        window.AdminDashboard.refreshCockpitOverlay();
-      }
-    } catch (e) {
-      toast(t("cmdkToastToggleFailed", "切換失敗"), false);
-    }
+  // 顯示層的兩個場中動作走 AdminOverlayControl（admin-broadcast.js）：
+  // 與控制台、顯示層頁同名、同提示、同確認——快速鍵不是繞過確認的後門。
+  function toggleDisplayLayer() {
+    window.AdminOverlayControl && window.AdminOverlayControl.toggleDisplay();
   }
 
-  async function clearScreen() {
-    try {
-      var r = await cfetch("/admin/overlay/clear", { method: "POST" });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      toast(t("toastCleared", "已清空"));
-    } catch (e) {
-      toast(t("toastClearFailed", "清空失敗"), false);
-    }
+  function clearScreen() {
+    window.AdminOverlayControl && window.AdminOverlayControl.clearScreen();
   }
 
   async function togglePoll() {
@@ -129,7 +107,7 @@
       group: "global",
       keys: [CMD, "⇧", "D"],
       labelKey: "ksToggleDisplay",
-      fallback: "切換顯示層",
+      fallback: "暫停顯示／繼續顯示",
       match: function (e) { return cmdKey(e) && e.shiftKey && (e.key === "d" || e.key === "D"); },
       run: toggleDisplayLayer,
     },
@@ -137,7 +115,7 @@
       group: "global",
       keys: [CMD, "⇧", "⌫"],
       labelKey: "ksClearScreen",
-      fallback: "清空大螢幕",
+      fallback: "清空畫面",
       match: function (e) { return cmdKey(e) && e.shiftKey && e.key === "Backspace"; },
       run: clearScreen,
     },
