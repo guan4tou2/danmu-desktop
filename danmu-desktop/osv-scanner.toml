@@ -1,0 +1,8 @@
+# OSV-Scanner 設定：套用在同目錄的 package-lock.json。
+# 這裡只放「上游沒有修補版、且不在出貨路徑上」的例外，每筆都要有到期日，
+# 到期後掃描會重新變紅，逼人回來看一次。能升級就升級，不要往這裡加。
+
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+ignoreUntil = 2027-02-14
+reason = "deepmerge 4.3.1 沒有修補版；只經由 jest-config 進入開發相依，不進映像檔也不進桌面安裝包。到期時確認 jest 是否已移除或更換它。"
