@@ -16,30 +16,37 @@ const DEFAULTS = {
 };
 const HEARTBEAT_MS = 30_000;
 
+let settings = { ...DEFAULTS };
 let bridge = null;
-let bridgeKey = "";
 let lastHeartbeatAt = 0;
 let lastReportedState = "";
 
-async function getSettings() {
-  const stored = await chrome.storage.local.get(["settings"]);
-  return { ...DEFAULTS, ...(stored.settings || {}) };
+function intervalOf(s) {
+  return Math.max(500, Number(s.minIntervalMs) || DEFAULTS.minIntervalMs);
 }
 
-function serverBase(settings) {
+async function loadSettings() {
+  const stored = await chrome.storage.local.get(["settings"]);
+  settings = { ...DEFAULTS, ...(stored.settings || {}) };
+  return settings;
+}
+
+function serverBase() {
   return String(settings.serverUrl || DEFAULTS.serverUrl).replace(/\/+$/, "");
 }
 
-function headersFor(settings) {
-  const headers = { "Content-Type": "application/json", "X-Fire-Source": Core.SOURCE };
-  if (settings.fireToken) headers["X-Fire-Token"] = settings.fireToken;
-  return headers;
+function headers() {
+  const h = { "Content-Type": "application/json", "X-Fire-Source": Core.SOURCE };
+  if (settings.fireToken) h["X-Fire-Token"] = settings.fireToken;
+  return h;
 }
 
-async function postFire(settings, payload) {
-  const resp = await fetch(serverBase(settings) + "/fire", {
+// Reads the *current* settings on every call, so changing the server URL
+// or token never needs a new bridge (which would lose its queue).
+async function postFire(payload) {
+  const resp = await fetch(serverBase() + "/fire", {
     method: "POST",
-    headers: headersFor(settings),
+    headers: headers(),
     body: JSON.stringify(payload),
   });
   const body = await resp.text().catch(() => "");
@@ -48,66 +55,47 @@ async function postFire(settings, payload) {
 
 // chrome.storage.session survives service-worker restarts (MV3 kills idle
 // workers after ~30 s); without it a restart would forget which questions
-// were already sent.
-async function loadSession() {
-  const s = await chrome.storage.session.get(["seenIds", "tabArmedAt", "enabledAt"]);
-  return {
-    seenIds: Array.isArray(s.seenIds) ? s.seenIds : [],
-    tabArmedAt: s.tabArmedAt && typeof s.tabArmedAt === "object" ? s.tabArmedAt : {},
-    enabledAt: Number.isFinite(s.enabledAt) ? s.enabledAt : null,
-  };
-}
-
-async function ensureBridge(settings) {
-  const key = [settings.serverUrl, settings.fireToken, settings.minIntervalMs, settings.includeAuthor].join("|");
-  if (bridge && bridgeKey === key && !bridge.isStopped()) return bridge;
-  const session = await loadSession();
-  if (bridge) bridge.stop();
-  bridgeKey = key;
+// were already handled and which pages already have a baseline.
+async function getBridge() {
+  if (bridge) return bridge;
+  await loadSettings();
+  const s = await chrome.storage.session.get(["seenIds", "pages"]);
   bridge = Core.createBridge({
-    post: (payload) => postFire(settings, payload),
-    minIntervalMs: Math.max(500, Number(settings.minIntervalMs) || DEFAULTS.minIntervalMs),
+    post: postFire,
+    minIntervalMs: intervalOf(settings),
     includeAuthor: settings.includeAuthor !== false,
-    seenIds: session.seenIds,
+    seenIds: Array.isArray(s.seenIds) ? s.seenIds : [],
+    pages: s.pages && typeof s.pages === "object" ? s.pages : {},
+    active: settings.enabled !== false,
   });
   return bridge;
 }
 
-async function armedAtFor(tabId) {
-  const session = await loadSession();
-  let enabledAt = session.enabledAt;
-  if (enabledAt == null) {
-    // Session storage is wiped on browser restart. Pin the start point
-    // once; a fresh Date.now() per call would keep moving it past every
-    // question that is already in flight.
-    enabledAt = Date.now();
-    await chrome.storage.session.set({ enabledAt });
-  }
-  const tabAt = session.tabArmedAt[String(tabId)] ?? enabledAt;
-  return Math.max(enabledAt, tabAt);
+async function persist(b) {
+  await chrome.storage.session.set({ seenIds: b.seenIds(), pages: b.pages() });
 }
 
-async function heartbeat(settings, force) {
-  if (!bridge || !settings.fireToken) return;
+async function heartbeat(force) {
+  if (!bridge || !settings.fireToken || settings.enabled === false) return;
   const snap = bridge.snapshot();
   const due = Date.now() - lastHeartbeatAt >= HEARTBEAT_MS;
   if (!force && !due && snap.state === lastReportedState) return;
   lastHeartbeatAt = Date.now();
   lastReportedState = snap.state;
   try {
-    await fetch(serverBase(settings) + "/integrations/slido/status", {
+    const resp = await fetch(serverBase() + "/integrations/slido/status", {
       method: "POST",
-      headers: headersFor(settings),
+      headers: headers(),
       body: JSON.stringify(snap),
     });
+    if (resp.status === 401) bridge.noteError("token_invalid");
   } catch (err) {
     console.warn("[slido-danmu] status report failed", err);
   }
 }
 
-// Messages are handled one at a time: the page-open stamp must be stored
-// before the first question list from that page is judged against it,
-// or the page's backlog would be compared with an older start point.
+// Messages are handled one at a time: a page's "opened" mark must land
+// before that page's first question list is used as its baseline.
 let chain = Promise.resolve();
 function serial(fn) {
   chain = chain.then(fn, fn);
@@ -115,45 +103,32 @@ function serial(fn) {
 }
 
 async function handleBody(msg, tabId) {
-  const settings = await getSettings();
-  if (!settings.enabled) return;
   const kind = Core.classifyUrl(msg.url);
   if (!kind) return;
-  const b = await ensureBridge(settings);
-  b.ingest(kind, String(msg.body || ""), await armedAtFor(tabId));
-  await chrome.storage.session.set({ seenIds: b.seenIds() });
-  // Sending is paced; report once it drains, without holding up the queue.
-  heartbeat(settings, false)
+  const b = await getBridge();
+  // Ingested even while switched off: ids are learned, nothing is queued.
+  b.ingest(kind, String(msg.body || ""), String(tabId));
+  await persist(b);
+  heartbeat(false)
     .then(() => b.idle())
-    .then(() => heartbeat(settings, false))
+    .then(() => persist(b))
+    .then(() => heartbeat(false))
     .catch(() => {});
 }
 
 async function handlePageOpen(tabId) {
-  const session = await loadSession();
-  session.tabArmedAt[String(tabId)] = Date.now();
-  await chrome.storage.session.set({ tabArmedAt: session.tabArmedAt });
-  const settings = await getSettings();
-  if (settings.enabled) {
-    await ensureBridge(settings);
-    await heartbeat(settings, true);
-  }
+  const b = await getBridge();
+  b.openPage(String(tabId));
+  await persist(b);
+  await heartbeat(true);
 }
 
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.session.set({ enabledAt: Date.now() });
-});
-
-// Turning the switch back on re-arms the "only questions from now on" rule.
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local" || !changes.settings) return;
-  const before = (changes.settings.oldValue || {}).enabled;
-  const after = (changes.settings.newValue || {}).enabled;
-  if (after === false && bridge) {
-    bridge.stop();
-    bridge = null;
-  }
-  if (after && before === false) chrome.storage.session.set({ enabledAt: Date.now() });
+  settings = { ...DEFAULTS, ...(changes.settings.newValue || {}) };
+  if (!bridge) return;
+  bridge.configure({ minIntervalMs: intervalOf(settings), includeAuthor: settings.includeAuthor !== false });
+  bridge.setActive(settings.enabled !== false);
 });
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -170,13 +145,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   if (msg && msg.type === "slido_ping") {
     // The worker may have been restarted since the last event; rebuild the
-    // bridge (counters start over) so the open tab keeps reporting.
-    getSettings()
-      .then(async (s) => {
-        if (!s.enabled) return;
-        await ensureBridge(s);
-        await heartbeat(s, false);
-      })
+    // bridge from session storage so the open tab keeps reporting.
+    getBridge()
+      .then(() => heartbeat(false))
       .catch(() => {});
     sendResponse({ ok: true });
     return false;
@@ -186,11 +157,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return false;
   }
   if (msg && msg.type === "test_connection") {
-    getSettings().then(async (settings) => {
+    loadSettings().then(async () => {
       try {
-        const res = await postFire(settings, { text: "Slido → Danmu connected ✓", fingerprint: "slido:test" });
+        const res = await postFire({ text: "Slido → Danmu connected ✓", fingerprint: "slido:test" });
         const verdict = Core.classifyFireResponse(res.status, res.body);
-        sendResponse(verdict.outcome === "sent" ? { ok: true } : { ok: false, error: `HTTP ${res.status}` });
+        sendResponse(
+          verdict.outcome === "sent"
+            ? { ok: true }
+            : { ok: false, error: verdict.error || `HTTP ${res.status}` },
+        );
       } catch (err) {
         sendResponse({ ok: false, error: String(err.message || err) });
       }

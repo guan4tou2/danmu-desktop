@@ -11,6 +11,13 @@
     }
   }
 
+  // Only an actual event page (app.sli.do/event/<hash>, wall/admin
+  // variants) counts as "watching Slido". Marketing pages such as
+  // www.slido.com share the domain but carry no questions.
+  function isEventPage(loc) {
+    return /(^|\.)(sli\.do|slido\.com)$/i.test(loc.hostname) && /^\/event\/[^/]+/.test(loc.pathname);
+  }
+
   try {
     const s = document.createElement("script");
     s.src = chrome.runtime.getURL("inject.js");
@@ -21,9 +28,9 @@
     console.debug("[slido-danmu] inject failed", err);
   }
 
-  // Only the top frame defines when this page started: questions asked
-  // before it was opened are history, not danmu.
-  if (window.top === window) {
+  // Only the top frame of an event page opens a "page": its first question
+  // list becomes the baseline of what is history.
+  if (window.top === window && isEventPage(window.location)) {
     send({ type: "slido_page_open" });
     // Keeps the admin card's status fresh while the tab stays open; the
     // service worker itself may be asleep between Slido events.
