@@ -41,7 +41,11 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # 釘在 24.04：`ubuntu-latest` 開始滾到 26.04 之後，鎖定的 Python playwright
+    # 1.58 會在安裝瀏覽器時直接失敗（"does not support chromium on
+    # ubuntu26.04-x64"），而且同一個 commit 會依抽到的 runner 時綠時紅。
+    # 等 playwright 升到支援 26.04 的版本再改回 ubuntu-latest。
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
