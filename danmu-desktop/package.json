@@ -115,7 +115,7 @@
   },
   "dependencies": {
     "electron-updater": "^6.8.11",
-    "i18next": "^27.0.1",
+    "i18next": "^27.1.1",
     "qrcode": "^1.5.4"
   },
   "overrides": {
