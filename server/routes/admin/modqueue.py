@@ -62,6 +62,9 @@ def modqueue_approve():
             "nickname": resolved.get("nick") or "",
             "fingerprint": resolved.get("fp") or "",
             "source": "admin_approved",
+            # Keep the original integration (e.g. a Slido question held by
+            # a review rule) so the feed still labels it after approval.
+            "integration": resolved.get("integration") or "",
         }
         messaging.forward_to_ws_server(forwarded, bypass_broadcast_gate=False)
     except Exception as exc:  # pragma: no cover — log + continue

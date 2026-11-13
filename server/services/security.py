@@ -479,30 +479,41 @@ def rate_limit(
     return decorator
 
 
-def is_fire_admin() -> bool:
-    """Return True when the request carries a matching X-Fire-Token header.
+def fire_token_state() -> str:
+    """Classify the request's ``X-Fire-Token`` header: absent / valid / invalid.
 
-    Matches either ``FIRE_ADMIN_TOKEN`` (env) or the enabled token from
-    ``services.fire_token`` (admin UI). Admin requests bypass public /fire
-    rate limits and captcha. Returns False (public client) when neither is
-    configured or the header is missing/mismatched. Uses
-    secrets.compare_digest to resist timing attacks.
+    Valid means it matches ``FIRE_ADMIN_TOKEN`` (env) or the enabled token
+    from ``services.fire_token`` (admin UI). A header that is present but
+    matches neither — wrong, revoked, rotated, or the feature is off — is
+    ``invalid``; callers reject it instead of quietly treating the sender as
+    a public client, so revoking a token actually stops the extension.
     """
     provided = (request.headers.get("X-Fire-Token") or "").strip()
     if not provided:
-        return False
+        return "absent"
     expected = (current_app.config.get("FIRE_ADMIN_TOKEN") or "").strip()
-    try:
-        if expected and secrets.compare_digest(expected, provided):
-            return True
-    except Exception:
-        return False
+    if expected and _same_secret(expected, provided):
+        return "valid"
     # The token the operator generates on the Extensions page. Before this
     # check /fire only knew the env var, so the token the admin UI told
     # people to paste into the Slido extension was silently ignored.
     from . import fire_token
 
-    return fire_token.verify(provided)
+    return "valid" if fire_token.verify(provided) else "invalid"
+
+
+def _same_secret(expected: str, provided: str) -> bool:
+    # Compare bytes: compare_digest raises TypeError on non-ASCII str, which
+    # turned a header like "é" into a 500 before any rate limit was charged.
+    return secrets.compare_digest(expected.encode("utf-8"), provided.encode("utf-8"))
+
+
+def is_fire_admin() -> bool:
+    """True when the request carries a valid X-Fire-Token (see fire_token_state).
+
+    Admin requests bypass public /fire rate limits and captcha.
+    """
+    return fire_token_state() == "valid"
 
 
 def enforce_fire_rate_limits(fingerprint: str | None, is_admin: bool) -> None:

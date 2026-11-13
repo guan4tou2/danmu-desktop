@@ -14,9 +14,12 @@ not use ``JsonState``.
 
 from __future__ import annotations
 
+import json
 import logging
 import threading
 import time
+import zipfile
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
@@ -26,13 +29,27 @@ STALE_AFTER_SEC = 90
 
 _STATES = frozenset({"watching", "error"})
 _ERRORS = frozenset(
-    {"", "rate_limited", "no_overlay", "rejected", "feed_unrecognized", "server_unreachable"}
+    {
+        "",
+        "rate_limited",
+        "screen_full",
+        "no_overlay",
+        "rejected",
+        "captcha_required",
+        "token_invalid",
+        "feed_unrecognized",
+        "server_unreachable",
+    }
 )
-_COUNTERS = ("sent", "blocked", "failed", "dropped", "skipped")
+_COUNTERS = ("sent", "held", "blocked", "failed", "dropped", "skipped")
 _MAX_COUNTER = 10_000_000
 
 _lock = threading.Lock()
 _report: Optional[Dict[str, Any]] = None
+# Last heartbeat that carried a wrong / revoked token. Unauthenticated by
+# nature, so it only ever flips the card to "token rejected" for a while;
+# it never touches the stored report.
+_rejected_at: Optional[float] = None
 
 
 def _normalize(raw: Any) -> Dict[str, Any]:
@@ -66,9 +83,10 @@ def record(raw: Any, now: Optional[float] = None) -> Dict[str, Any]:
     prev_error = previous["error"] if previous else ""
     if report["error"] and report["error"] != prev_error:
         logger.warning(
-            "[slido] extension reports %s (sent=%d blocked=%d failed=%d dropped=%d)",
+            "[slido] extension reports %s (sent=%d held=%d blocked=%d failed=%d dropped=%d)",
             report["error"],
             report["sent"],
+            report["held"],
             report["blocked"],
             report["failed"],
             report["dropped"],
@@ -78,17 +96,73 @@ def record(raw: Any, now: Optional[float] = None) -> Dict[str, Any]:
     return dict(report)
 
 
+def note_rejected(now: Optional[float] = None) -> None:
+    """Remember that a heartbeat arrived with an invalid token."""
+    global _rejected_at
+    ts = time.time() if now is None else now
+    with _lock:
+        first = _rejected_at is None or ts - _rejected_at > STALE_AFTER_SEC
+        _rejected_at = ts
+    if first:
+        logger.warning("[slido] extension heartbeat rejected: invalid fire token")
+
+
 def get_public(now: Optional[float] = None) -> Dict[str, Any]:
-    """``{report, age_sec, stale}``; ``report`` is None until the first one."""
+    """``{report, age_sec, stale, token_rejected}``.
+
+    ``report`` is None until the first valid one. ``token_rejected`` is True
+    while the latest heartbeat with a bad token is recent and newer than the
+    last valid report.
+    """
+    now = time.time() if now is None else now
     with _lock:
         report = dict(_report) if _report else None
+        rejected_at = _rejected_at
+    last_ok = report["received_at"] if report else None
+    token_rejected = (
+        rejected_at is not None
+        and now - rejected_at <= STALE_AFTER_SEC
+        and (last_ok is None or rejected_at > last_ok)
+    )
     if report is None:
-        return {"report": None, "age_sec": None, "stale": True}
-    age = max(0.0, (time.time() if now is None else now) - report["received_at"])
-    return {"report": report, "age_sec": round(age, 1), "stale": age > STALE_AFTER_SEC}
+        return {"report": None, "age_sec": None, "stale": True, "token_rejected": token_rejected}
+    age = max(0.0, now - report["received_at"])
+    return {
+        "report": report,
+        "age_sec": round(age, 1),
+        "stale": age > STALE_AFTER_SEC,
+        "token_rejected": token_rejected,
+    }
+
+
+_EXTENSIONS_DIR = Path(__file__).resolve().parent.parent / "static" / "extensions"
+_ZIP_PREFIX = "danmu-slido-extension-"
+
+
+def extension_info(directory: Optional[Path] = None) -> Optional[Dict[str, str]]:
+    """Version + download path of the packaged extension, or None.
+
+    Read from the zip itself (its manifest.json), not from slido-extension/:
+    the server image does not contain the repo root, but it does contain
+    static/ — so the card can never advertise a version it cannot serve.
+    """
+    folder = directory or _EXTENSIONS_DIR
+    zips = sorted(folder.glob(f"{_ZIP_PREFIX}*.zip"))
+    if not zips:
+        return None
+    path = zips[-1]
+    try:
+        with zipfile.ZipFile(path) as zf:
+            manifest = json.loads(zf.read("slido-extension/manifest.json").decode("utf-8"))
+        version = str(manifest["version"])
+    except (OSError, KeyError, ValueError, zipfile.BadZipFile) as exc:
+        logger.warning("[slido] cannot read %s: %s", path.name, exc)
+        return None
+    return {"version": version, "download_url": f"/static/extensions/{path.name}"}
 
 
 def reset_for_tests() -> None:
-    global _report
+    global _report, _rejected_at
     with _lock:
         _report = None
+        _rejected_at = None

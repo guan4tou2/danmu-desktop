@@ -113,8 +113,13 @@ class _ModQueue:
         pattern: str = "",
         severity: Optional[str] = None,
         meta: Optional[Dict[str, Any]] = None,
+        integration: str = "",
     ) -> str:
-        """Add a message to the pending queue. Returns the queue id."""
+        """Add a message to the pending queue. Returns the queue id.
+
+        ``integration`` (e.g. "slido") is kept so an approved message still
+        shows where it came from in the admin feed.
+        """
         qid = uuid.uuid4().hex[:12]
         now = time.time()
         ts = time.strftime("%H:%M:%S", time.localtime(now))
@@ -130,6 +135,7 @@ class _ModQueue:
             "matched_rule": rule_name or "review",
             "severity": severity or _infer_severity(rule_name, pattern),
             "meta": meta or {},
+            "integration": (integration or "")[:32],
         }
         with self._lock:
             self._pending.append(item)

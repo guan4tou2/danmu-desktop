@@ -36,7 +36,15 @@ _lock = threading.RLock()
 _state: Optional[Dict] = None
 _write_failure_logged: bool = False
 
+# Format 2 = the token actually opens the /fire admin lane (captcha and
+# public rate limits skipped). Tokens written before that (no "format")
+# were decorative — /fire ignored them — so they are loaded as "not set"
+# and the operator has to generate a new one; nobody's old, possibly
+# widely pasted token silently turns into a bypass after an upgrade.
+_FORMAT = 2
+
 _DEFAULT_STATE: Dict = {
+    "format": _FORMAT,
     "enabled": False,
     "token": "",  # raw token; only exposed once on regenerate
     "rotated_at": 0.0,
@@ -121,8 +129,19 @@ def _load_state() -> Dict:
         try:
             with open(_STATE_FILE, "r", encoding="utf-8") as f:
                 raw = json.load(f)
+            if isinstance(raw, dict) and raw.get("format") != _FORMAT and raw.get("token"):
+                # Pre-format-2 token: keep the file untouched (it is only
+                # overwritten when the operator regenerates) but do not honour it.
+                logger.warning(
+                    "fire_token: token in %s predates the /fire admin lane and is "
+                    "ignored — generate a new one on the Extensions page",
+                    _STATE_FILE,
+                )
+                _state = dict(_DEFAULT_STATE)
+                return _state
             if isinstance(raw, dict):
                 _state = {
+                    "format": _FORMAT,
                     "enabled": bool(raw.get("enabled", False)),
                     "token": str(raw.get("token", "")),
                     "rotated_at": float(raw.get("rotated_at", 0.0) or 0.0),
@@ -205,6 +224,7 @@ def regenerate() -> Dict:
         # Preserve created_at if there was already a token; otherwise stamp now.
         created_at = prev.get("created_at") if prev.get("token") else rotated
         s = {
+            "format": _FORMAT,
             "enabled": True,
             "token": new_token,
             "rotated_at": rotated,
@@ -231,7 +251,7 @@ def revoke() -> Dict:
     tokens — caller can immediately call regenerate() afterwards."""
     with _lock:
         prev = dict(_load_state())
-        s = {"enabled": False, "token": "", "rotated_at": 0.0, "created_at": 0.0}
+        s = {"format": _FORMAT, "enabled": False, "token": "", "rotated_at": 0.0, "created_at": 0.0}
         try:
             _write_state(s)
         except OSError as exc:
@@ -252,7 +272,9 @@ def verify(presented: str) -> bool:
     expected = s.get("token", "")
     if not expected or not presented:
         return False
-    return secrets.compare_digest(str(presented), expected)
+    # Bytes, not str: compare_digest raises TypeError on non-ASCII str, and
+    # the presented value comes straight from a request header.
+    return secrets.compare_digest(str(presented).encode("utf-8"), str(expected).encode("utf-8"))
 
 
 def reset_for_tests() -> None:

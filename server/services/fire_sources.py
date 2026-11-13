@@ -38,6 +38,21 @@ _UA_HINTS = (
 )
 
 
+# Integrations whose label may be attached to a danmu (admin feed chip,
+# history). Only honoured for requests with a valid fire token: the source
+# header itself is caller-controlled, and an untrusted "slido" or "admin"
+# label would let a viewer impersonate an integration or a host broadcast.
+KNOWN_INTEGRATIONS = frozenset({"slido", "discord", "obs", "bookmarklet"})
+
+
+def trusted_integration(label: str, token_valid: bool) -> Optional[str]:
+    """Return ``label`` if it may be stamped on the message, else None."""
+    if not token_valid:
+        return None
+    label = (label or "").strip().lower()
+    return label if label in KNOWN_INTEGRATIONS else None
+
+
 def detect(ua: str = "", explicit: str = "") -> str:
     """Pick the best source label for a /fire request.
 

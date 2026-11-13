@@ -46,12 +46,16 @@ def test_admin_token_bypasses_public_rate_limit(app, client, overlay_connected):
         assert r.status_code == 200, r.data
 
 
-def test_admin_token_mismatch_falls_back_to_public_limit(app, client, overlay_connected):
+def test_admin_token_mismatch_is_rejected_after_public_limit(app, client, overlay_connected):
+    # 2026-11-14 behaviour change: a wrong token used to fall back silently to
+    # the public lane (200, 200, 429). Now it is refused with 401 so revoking a
+    # token really stops the integration and it can tell why — but only after
+    # the public limit is charged, so the 401 is not an unthrottled oracle.
     app.config["FIRE_ADMIN_TOKEN"] = "admin-secret"
 
     headers = {"X-Fire-Token": "wrong"}
-    assert _post(client, headers=headers).status_code == 200
-    assert _post(client, headers=headers).status_code == 200
+    assert _post(client, headers=headers).status_code == 401
+    assert _post(client, headers=headers).status_code == 401
     # Third request from the same IP hits public FIRE_RATE_LIMIT=2
     assert _post(client, headers=headers).status_code == 429
 
@@ -67,12 +71,22 @@ def test_admin_token_has_own_ceiling(app, client, overlay_connected):
     assert _post(client, headers=headers).status_code == 429
 
 
-def test_no_admin_token_configured_means_header_ignored(app, client, overlay_connected):
+def test_no_admin_token_configured_rejects_token_header(app, client, overlay_connected):
+    # Same 2026-11-14 change as above: with no token configured anywhere, a
+    # request that still sends one is a misconfigured integration — 401, not
+    # a silent public-lane send. Requests without the header are unaffected.
     app.config["FIRE_ADMIN_TOKEN"] = ""  # feature off
     headers = {"X-Fire-Token": "anything"}
-    assert _post(client, headers=headers).status_code == 200
-    assert _post(client, headers=headers).status_code == 200
+    assert _post(client, headers=headers).status_code == 401
+    assert _post(client, headers=headers).status_code == 401
     assert _post(client, headers=headers).status_code == 429
+
+
+def test_no_token_header_behaves_as_before(app, client, overlay_connected):
+    app.config["FIRE_ADMIN_TOKEN"] = ""
+    assert _post(client).status_code == 200
+    assert _post(client).status_code == 200
+    assert _post(client).status_code == 429
 
 
 # --- Per-fingerprint rate limit ---------------------------------------------
