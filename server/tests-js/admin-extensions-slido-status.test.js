@@ -71,11 +71,14 @@ describe("Slido card", () => {
       .toEqual({ tone: "is-error", text: "extSlidoErr_rejected" });
   });
 
-  test("view: a rejected token wins over an older report and over 'waiting'", () => {
+  test("view: a rejected token replaces 'waiting' but never a fresh valid report", () => {
     const view = window.AdminExtensions.slidoStatusView;
     expect(view({ report: null, stale: true, token_rejected: true }))
       .toEqual({ tone: "is-error", text: "extSlidoErr_token_invalid" });
-    expect(view({ report: { state: "watching", sent: 1 }, stale: false, token_rejected: true }).tone).toBe("is-error");
+    expect(view({ report: { state: "watching", sent: 1 }, stale: true, token_rejected: true }).text)
+      .toBe("extSlidoErr_token_invalid");
+    // Forged bad-token heartbeats must not mask a live extension.
+    expect(view({ report: { state: "watching", sent: 1 }, stale: false, token_rejected: true }).tone).toBe("is-live");
   });
 
   test("the line follows the server status on each poll", async () => {

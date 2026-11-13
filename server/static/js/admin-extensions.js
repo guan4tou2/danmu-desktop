@@ -92,12 +92,13 @@
   // One line, three looks: waiting (muted), receiving (green), error (red).
   // Pure so the jest suite can pin every state without a server.
   function slidoStatusView(status) {
+    const report = status && !status.stale ? status.report : null;
     // A heartbeat with a revoked / wrong token can't report itself; the
-    // server remembers the rejection so the card does not just say "waiting".
-    if (status && status.token_rejected) {
+    // server remembers the rejection so the card does not just say
+    // "waiting". Anyone can trigger that, so a fresh valid report wins.
+    if (!report && status && status.token_rejected) {
       return { tone: "is-error", text: ServerI18n.t("extSlidoErr_token_invalid") };
     }
-    const report = status && !status.stale ? status.report : null;
     if (!report) return { tone: "", text: ServerI18n.t("extSlidoStatusNone") };
     if (report.state === "error") {
       const code = SLIDO_ERRORS.includes(report.error) ? report.error : "rejected";
