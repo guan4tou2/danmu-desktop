@@ -272,7 +272,11 @@ class PluginManager:
                 try:
                     entry.instance.on_shutdown()
                 except Exception:
-                    pass
+                    logger.warning(
+                        "[PluginManager] on_shutdown failed for plugin %s",
+                        getattr(entry.instance, "name", "?"),
+                        exc_info=True,
+                    )
 
         self.load_all()
 

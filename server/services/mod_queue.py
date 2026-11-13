@@ -201,7 +201,7 @@ class _ModQueue:
                         },
                     )
                 except Exception:
-                    pass
+                    logger.warning("audit_log.append failed for modqueue/%s", action, exc_info=True)
 
                 return resolved
         return None
