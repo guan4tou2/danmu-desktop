@@ -7,6 +7,7 @@ const DEFAULTS = {
 };
 
 const ERROR_TEXT = {
+  token_missing: "Fire token required",
   token_invalid: "Fire token rejected",
   captcha_required: "Captcha required (set a fire token)",
   rate_limited: "Rate-limited by the danmu server",

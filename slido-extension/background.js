@@ -55,24 +55,27 @@ async function postFire(payload) {
 
 // chrome.storage.session survives service-worker restarts (MV3 kills idle
 // workers after ~30 s); without it a restart would forget which questions
-// were already handled and which pages already have a baseline.
+// were already handled and each event's baseline.
 async function getBridge() {
   if (bridge) return bridge;
   await loadSettings();
-  const s = await chrome.storage.session.get(["seenIds", "pages"]);
+  const s = await chrome.storage.session.get(["handled", "tabs"]);
   bridge = Core.createBridge({
     post: postFire,
     minIntervalMs: intervalOf(settings),
     includeAuthor: settings.includeAuthor !== false,
-    seenIds: Array.isArray(s.seenIds) ? s.seenIds : [],
-    pages: s.pages && typeof s.pages === "object" ? s.pages : {},
+    handled: s.handled && typeof s.handled === "object" ? s.handled : {},
+    tabs: s.tabs && typeof s.tabs === "object" ? s.tabs : {},
     active: settings.enabled !== false,
+    // Without a token, Slido questions would go out on the public lane:
+    // unlabelled, counted as poll votes, captcha-gated. Observe only.
+    tokenSet: !!settings.fireToken,
   });
   return bridge;
 }
 
 async function persist(b) {
-  await chrome.storage.session.set({ seenIds: b.seenIds(), pages: b.pages() });
+  await chrome.storage.session.set({ handled: b.handled(), tabs: b.tabs() });
 }
 
 async function heartbeat(force) {
@@ -107,7 +110,7 @@ async function handleBody(msg, tabId) {
   if (!kind) return;
   const b = await getBridge();
   // Ingested even while switched off: ids are learned, nothing is queued.
-  b.ingest(kind, String(msg.body || ""), String(tabId));
+  b.ingest(kind, String(msg.body || ""), String(tabId), msg.url);
   await persist(b);
   heartbeat(false)
     .then(() => b.idle())
@@ -127,7 +130,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local" || !changes.settings) return;
   settings = { ...DEFAULTS, ...(changes.settings.newValue || {}) };
   if (!bridge) return;
-  bridge.configure({ minIntervalMs: intervalOf(settings), includeAuthor: settings.includeAuthor !== false });
+  bridge.configure({
+    minIntervalMs: intervalOf(settings),
+    includeAuthor: settings.includeAuthor !== false,
+    tokenSet: !!settings.fireToken,
+  });
   bridge.setActive(settings.enabled !== false);
 });
 
@@ -158,6 +165,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   if (msg && msg.type === "test_connection") {
     loadSettings().then(async () => {
+      if (!settings.fireToken) {
+        sendResponse({ ok: false, error: "token_missing" });
+        return;
+      }
       try {
         const res = await postFire({ text: "Slido → Danmu connected ✓", fingerprint: "slido:test" });
         const verdict = Core.classifyFireResponse(res.status, res.body);

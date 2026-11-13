@@ -60,6 +60,9 @@
       text: raw.text.replace(/\s+/g, " ").trim(),
       author: !raw.is_anonymous && typeof author.name === "string" ? author.name.trim() : "",
       anonymous: !!raw.is_anonymous,
+      // Slido's numeric event id; lets stream items from another event
+      // (single-page navigation) be told apart from the current one.
+      eventNum: raw.event_id != null ? String(raw.event_id) : "",
       // Never kept for anonymous questions — see buildFirePayload.
       authorId: !raw.is_anonymous && authorId != null ? String(authorId) : "",
       publishedAt: typeof stamp === "string" ? Date.parse(stamp) : NaN,
@@ -125,17 +128,27 @@
     return { questions, recognized: list.length === 0 || questions.length > 0 };
   }
 
-  // What counts as "new" is decided by id, not by clocks:
-  //   - the first question list a page loads is its baseline — every id in
-  //     it is history;
-  //   - an id first seen after that is a new question, even without any
-  //     timestamp (the live stream may not carry one);
-  //   - timestamps only help when they exist on both sides, and then they
-  //     are compared with Slido's own clock (the newest date in the
-  //     baseline list), never with this computer's clock.
-  function isHistory(q, page) {
-    if (!page || !page.baselined) return true;
-    return Number.isFinite(q.publishedAt) && Number.isFinite(page.refTime) && q.publishedAt <= page.refTime;
+  // What counts as "new" — prefer not sending over replaying old questions:
+  //   1. State is kept per browser tab *and* per Slido event (the event id
+  //      comes from the question-list URL), so moving to another event in
+  //      the same tab starts a fresh baseline without any page signal.
+  //   2. Anything that arrives in a question *list* is history — whatever
+  //      the sort order, page or refresh — unless Slido's own clock proves
+  //      it is newer: both it and the event's reference time have a
+  //      timestamp and it is strictly later.
+  //   3. Anything that arrives on the realtime *stream* and has not been
+  //      handled is new, with or without a timestamp (a timestamp at or
+  //      before the reference still marks it as history).
+  //   4. If lists keep showing unknown ids that cannot be dated and no
+  //      stream traffic is seen, the feed is not what we expect: report
+  //      feed_unrecognized instead of guessing.
+  // The local clock is never compared with Slido's.
+  const ORPHAN_LIMIT = 3;
+  const EVENT_IN_URL = /\/events\/([^/?#]+)\/questions(?:[?#/]|$)/;
+
+  function eventIdFromUrl(url) {
+    const m = EVENT_IN_URL.exec(String(url || ""));
+    return m ? decodeURIComponent(m[1]) : "";
   }
 
   function _truncate(s, max) {
@@ -186,92 +199,154 @@
     return { outcome: "failed", error: "rejected" };
   }
 
-  const ORPHAN_LIMIT = 3;
+  function _newTab() {
+    return { current: "", events: {}, orphans: 0, streamSeen: false };
+  }
+
+  function _max(a, b) {
+    if (!Number.isFinite(a)) return Number.isFinite(b) ? b : null;
+    return Number.isFinite(b) && b > a ? b : a;
+  }
 
   // deps.post(payload) -> Promise<{status, body}> (throw = network error)
   // deps.now() -> ms (pacing only); deps.sleep(ms) -> Promise
-  // deps.seenIds / deps.pages restore state saved by the service worker.
+  // deps.handled / deps.tabs restore state saved by the service worker.
+  // deps.tokenSet: false keeps everything observe-only (token_missing).
   function createBridge(deps) {
     const now = deps.now || (() => Date.now());
     const sleep = deps.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
     let minIntervalMs = deps.minIntervalMs != null ? deps.minIntervalMs : 3000;
     let includeAuthor = deps.includeAuthor !== false;
     const maxQueue = deps.maxQueue != null ? deps.maxQueue : 10;
+    const maxSeen = deps.maxSeen != null ? deps.maxSeen : MAX_SEEN;
 
-    const seen = new Set(deps.seenIds || []);
-    const pages = Object.assign({}, deps.pages || {});
+    // Handled ids per event (sent, held, blocked, dropped or history).
+    const handled = {};
+    for (const [eid, ids] of Object.entries(deps.handled || {})) handled[eid] = new Set(ids);
+    const tabs = JSON.parse(JSON.stringify(deps.tabs || {}));
     const queue = [];
     const queued = new Set();
     const stats = { sent: 0, held: 0, blocked: 0, failed: 0, dropped: 0, skipped: 0, lastError: "" };
     let active = deps.active !== false;
+    let tokenSet = deps.tokenSet !== false;
     let pumping = null;
     let lastSentAt = -Infinity;
 
-    function _remember(id) {
-      seen.add(id);
-      if (seen.size > MAX_SEEN) seen.delete(seen.values().next().value);
+    const key = (eid, id) => eid + "|" + id;
+    const sending = () => active && tokenSet;
+
+    function _isHandled(eid, id) {
+      return !!(handled[eid] && handled[eid].has(id));
     }
 
-    function _clearError(except) {
-      if (stats.lastError && stats.lastError !== except) stats.lastError = "";
+    function _remember(eid, id) {
+      const set = handled[eid] || (handled[eid] = new Set());
+      set.add(id);
+      // Capped per event. An id evicted here can come back only through a
+      // list (history by rule 2) or a stream update dated at or before the
+      // event's reference time, which sending advances — never as "new".
+      if (set.size > maxSeen) set.delete(set.values().next().value);
     }
 
-    function openPage(pageId) {
-      pages[pageId] = { baselined: false, refTime: NaN, orphans: 0 };
+    function _event(tab, eid) {
+      return tab.events[eid] || (tab.events[eid] = { ref: null, num: "" });
     }
 
-    function _history(q) {
-      _remember(q.id);
+    function _history(eid, q) {
+      _remember(eid, q.id);
       stats.skipped++;
     }
 
-    function ingest(kind, text, pageId) {
+    function _enqueue(eid, q) {
+      if (queue.length >= maxQueue) {
+        // Oldest pending goes first: a late question is worth less on a
+        // live screen than the one just asked. It counts as handled, so a
+        // later list refresh cannot bring it back.
+        const old = queue.shift();
+        queued.delete(key(old.eid, old.id));
+        _remember(old.eid, old.id);
+        stats.dropped++;
+      }
+      q.eid = eid;
+      queue.push(q);
+      queued.add(key(eid, q.id));
+    }
+
+    function openPage(tabId) {
+      tabs[tabId] = _newTab();
+    }
+
+    function _ingestList(tab, eid, questions) {
+      const ev = tab.events[eid];
+      const first = !ev;
+      const event = _event(tab, eid);
+      tab.current = eid;
+      let newest = null;
+      let undatable = 0;
+      let added = 0;
+      for (const q of questions) {
+        newest = _max(newest, q.publishedAt);
+        if (!event.num && q.eventNum) event.num = q.eventNum;
+        if (q.isReply || !q.isPublic) continue;
+        if (_isHandled(eid, q.id) || queued.has(key(eid, q.id))) continue;
+        const provenNew =
+          !first && Number.isFinite(q.publishedAt) && Number.isFinite(event.ref) && q.publishedAt > event.ref;
+        if (provenNew && sending()) {
+          _enqueue(eid, q);
+          added++;
+          continue;
+        }
+        if (!first && !provenNew && !(Number.isFinite(q.publishedAt) && Number.isFinite(event.ref))) {
+          undatable++;
+        }
+        _history(eid, q);
+      }
+      if (undatable && !tab.streamSeen) stats.lastError = "feed_unrecognized";
+      event.ref = _max(event.ref, newest);
+      return added;
+    }
+
+    function _ingestStream(tab, questions) {
+      if (questions.length) tab.streamSeen = true;
+      const eid = tab.current;
+      let added = 0;
+      for (const q of questions) {
+        if (q.isReply || !q.isPublic) continue;
+        if (!eid) {
+          // Stream traffic before this tab showed any event's list: we
+          // cannot tell which event it belongs to, let alone old from new.
+          tab.orphans++;
+          stats.skipped++;
+          if (tab.orphans >= ORPHAN_LIMIT) stats.lastError = "feed_unrecognized";
+          continue;
+        }
+        const event = _event(tab, eid);
+        if (_isHandled(eid, q.id) || queued.has(key(eid, q.id))) continue;
+        const otherEvent = q.eventNum && event.num && q.eventNum !== event.num;
+        const datedOld =
+          Number.isFinite(q.publishedAt) && Number.isFinite(event.ref) && q.publishedAt <= event.ref;
+        if (otherEvent || datedOld || !sending()) {
+          _history(eid, q);
+          continue;
+        }
+        _enqueue(eid, q);
+        added++;
+      }
+      return added;
+    }
+
+    function ingest(kind, text, tabId, url) {
       const parsed = parseBody(kind, text);
       if (!parsed.recognized) stats.lastError = "feed_unrecognized";
       else if (stats.lastError === "feed_unrecognized") stats.lastError = "";
-      if (!pages[pageId]) openPage(pageId);
-      const page = pages[pageId];
-
-      if (kind === "questions" && !page.baselined && parsed.recognized) {
-        let ref = NaN;
-        for (const q of parsed.questions) {
-          if (!seen.has(q.id)) _history(q);
-          if (Number.isFinite(q.publishedAt) && !(q.publishedAt <= ref)) ref = q.publishedAt;
-        }
-        page.baselined = true;
-        page.refTime = ref;
-        return 0;
-      }
-
+      const tab = tabs[tabId] || (tabs[tabId] = _newTab());
       let added = 0;
-      for (const q of parsed.questions) {
-        if (q.isReply || !q.isPublic || seen.has(q.id) || queued.has(q.id)) continue;
-        if (!page.baselined) {
-          // Stream traffic before the page's question list: we cannot tell
-          // old from new. Treat as history; if it keeps happening the feed
-          // is not shaped the way this extension expects.
-          _history(q);
-          page.orphans++;
-          if (page.orphans >= ORPHAN_LIMIT) stats.lastError = "feed_unrecognized";
-          continue;
-        }
-        if (isHistory(q, page) || !active) {
-          // While switched off we still learn ids, so turning the switch on
-          // means "from now on" without needing a page reload.
-          _history(q);
-          continue;
-        }
-        if (queue.length >= maxQueue) {
-          // Oldest pending goes first: a late question is worth less on a
-          // live screen than the one just asked.
-          const old = queue.shift();
-          queued.delete(old.id);
-          stats.dropped++;
-        }
-        queue.push(q);
-        queued.add(q.id);
-        added++;
+      if (kind === "questions" && parsed.recognized) {
+        added = _ingestList(tab, eventIdFromUrl(url) || "?", parsed.questions);
+      } else if (kind === "stream") {
+        added = _ingestStream(tab, parsed.questions);
       }
+      if (!tokenSet) stats.lastError = "token_missing";
       if (added) _pump();
       return added;
     }
@@ -280,17 +355,17 @@
       if (pumping) return pumping;
       pumping = (async () => {
         try {
-          while (queue.length && active) {
+          while (queue.length && sending()) {
             const wait = lastSentAt + minIntervalMs - now();
             if (wait > 0) await sleep(wait);
-            if (!active) break;
+            if (!sending()) break;
             const q = queue.shift();
             if (!q) break;
             lastSentAt = now();
             // Stays in `queued` while in flight, so a copy arriving meanwhile
             // (list refresh, upvote) is not queued a second time.
             await _sendOne(q);
-            queued.delete(q.id);
+            queued.delete(key(q.eid, q.id));
           }
         } finally {
           pumping = null;
@@ -309,27 +384,50 @@
       const verdict = classifyFireResponse(res && res.status, res && res.body);
       stats[verdict.outcome]++;
       // Only a final answer marks the question done; a failed send stays
-      // unseen so the next time Slido shows it, it is tried again.
-      if (verdict.outcome !== "failed") _remember(q.id);
+      // unhandled so the next time the stream shows it, it is tried again.
+      if (verdict.outcome !== "failed") {
+        _remember(q.eid, q.id);
+        // Advance the event's reference time past everything handled, so an
+        // id later evicted from the handled set still reads as history.
+        for (const tab of Object.values(tabs)) {
+          if (tab.events[q.eid]) tab.events[q.eid].ref = _max(tab.events[q.eid].ref, q.publishedAt);
+        }
+      }
       if (verdict.error) stats.lastError = verdict.error;
-      else _clearError("feed_unrecognized");
+      else if (stats.lastError !== "feed_unrecognized" && stats.lastError !== "token_missing") {
+        stats.lastError = "";
+      }
     }
 
-    // Switching off drops whatever is still waiting — counted, not silent.
+    // Anything still waiting when sending stops is counted and marked
+    // handled: switching back on means "from now on", not "the backlog".
+    function _dropPending() {
+      for (const q of queue) {
+        _remember(q.eid, q.id);
+        queued.delete(key(q.eid, q.id));
+        stats.dropped++;
+      }
+      queue.length = 0;
+    }
+
     function setActive(on) {
       active = !!on;
-      if (!active) {
-        stats.dropped += queue.length;
-        queue.length = 0;
-        queued.clear();
-      } else if (queue.length) {
-        _pump();
-      }
+      if (!sending()) _dropPending();
+      else if (queue.length) _pump();
     }
 
     function configure(opts) {
       if (opts.minIntervalMs != null) minIntervalMs = opts.minIntervalMs;
       if (opts.includeAuthor != null) includeAuthor = opts.includeAuthor !== false;
+      if (opts.tokenSet != null) {
+        tokenSet = !!opts.tokenSet;
+        if (!tokenSet) {
+          stats.lastError = "token_missing";
+          _dropPending();
+        } else if (stats.lastError === "token_missing") {
+          stats.lastError = "";
+        }
+      }
     }
 
     // Problems seen outside /fire (e.g. the status heartbeat got a 401).
@@ -351,6 +449,8 @@
       };
     }
 
+    if (!tokenSet) stats.lastError = "token_missing";
+
     return {
       ingest,
       openPage,
@@ -360,8 +460,9 @@
       snapshot,
       idle: () => pumping || Promise.resolve(),
       pending: () => queue.length,
-      seenIds: () => Array.from(seen),
-      pages: () => JSON.parse(JSON.stringify(pages, (k, v) => (Number.isNaN(v) ? null : v))),
+      isHandled: (eid, id) => _isHandled(eid, String(id)),
+      handled: () => Object.fromEntries(Object.entries(handled).map(([e, s]) => [e, Array.from(s)])),
+      tabs: () => JSON.parse(JSON.stringify(tabs)),
     };
   }
 
@@ -369,9 +470,9 @@
     VERSION,
     SOURCE,
     classifyUrl,
+    eventIdFromUrl,
     normalizeQuestion,
     parseBody,
-    isHistory,
     buildFirePayload,
     classifyFireResponse,
     createBridge,

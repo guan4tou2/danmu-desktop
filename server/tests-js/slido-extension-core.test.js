@@ -8,8 +8,8 @@
  * is_anonymous / is_public / path / date_published). Names and text are
  * placeholders. A live question-list response could not be captured without
  * joining a third-party event as a participant, so this shape is
- * "from the client code", not "recorded off the wire" — which is why newness
- * is decided by id and the tests below also cover payloads without dates.
+ * "from the client code", not "recorded off the wire" — which is why the
+ * rules prefer "not sent, error reported" over guessing.
  */
 const fs = require("fs");
 const path = require("path");
@@ -17,11 +17,14 @@ const path = require("path");
 const Core = require("../../slido-extension/core.js");
 
 const LIST = fs.readFileSync(path.join(__dirname, "fixtures/slido/questions-list.json"), "utf8");
-// Underscore on purpose: tailwind's scanner reads this folder, and a
+// Underscores on purpose: tailwind's scanner reads this folder, and a
 // hyphenated id that looks like a utility would be emitted as a class.
-const PAGE = "page_one";
-const QUESTIONS_URL =
-  "https://app.sli.do/eu1/api/v0.5/events/4914ff81-0000-4000-8000-000000000000/questions?path=%2Fquestions&sort=newest";
+const TAB = "tab_one";
+const EVENT_A = "4914ff81_event_a";
+const EVENT_B = "77aa0000_event_b";
+const listUrl = (eid, query) =>
+  `https://app.sli.do/eu1/api/v0.5/events/${eid}/questions?path=%2Fquestions&${query || "sort=top"}`;
+const STREAM_URL = "wss://app.sli.do/eu1/stream/v0.5/stream-sio/?EIO=4&transport=websocket";
 
 function question(id, publishedIso, extra) {
   const q = Object.assign(
@@ -69,22 +72,34 @@ function harness(opts) {
       (opts && opts.bridge) || {},
     ),
   );
-  bridge.openPage(PAGE);
-  return { bridge, posts };
-}
-
-// Page loaded with an initial list, then live traffic.
-function opened(opts, initial) {
-  const h = harness(opts);
-  h.bridge.ingest("questions", initial || "[]", PAGE);
+  const h = {
+    bridge,
+    posts,
+    list: (body, eid, query) => bridge.ingest("questions", body, TAB, listUrl(eid || EVENT_A, query)),
+    stream: (q) => bridge.ingest("stream", sioFrame(q), TAB, STREAM_URL),
+  };
   return h;
 }
 
-describe("classifyUrl", () => {
+// Event page loaded with an initial list, then live traffic.
+function opened(opts, initial) {
+  const h = harness(opts);
+  h.list(initial || "[]");
+  return h;
+}
+
+const texts = (posts) => posts.map((p) => p.payload.text);
+
+test("core VERSION matches manifest.json", () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "../../slido-extension/manifest.json"), "utf8"));
+  expect(Core.VERSION).toBe(manifest.version);
+});
+
+describe("classifyUrl / eventIdFromUrl", () => {
   test("recognises the question list and the realtime stream on Slido hosts only", () => {
-    expect(Core.classifyUrl(QUESTIONS_URL)).toBe("questions");
-    expect(Core.classifyUrl("https://app.sli.do/eu1/stream/v0.5/stream-sio/?EIO=4&transport=websocket")).toBe("stream");
-    expect(Core.classifyUrl("wss://app.sli.do/eu1/stream/v0.5/stream-sio/?EIO=4")).toBe("stream");
+    expect(Core.classifyUrl(listUrl(EVENT_A))).toBe("questions");
+    expect(Core.classifyUrl(STREAM_URL)).toBe("stream");
+    expect(Core.classifyUrl("https://app.sli.do/eu1/stream/v0.5/stream-sio/?EIO=4&transport=polling")).toBe("stream");
     expect(Core.classifyUrl("https://admin.slido.com/api/v0.5/events/abc/questions")).toBe("questions");
   });
 
@@ -96,6 +111,11 @@ describe("classifyUrl", () => {
     expect(Core.classifyUrl("https://sli.do.evil.example/api/events/abc/questions")).toBeNull();
     expect(Core.classifyUrl("")).toBeNull();
     expect(Core.classifyUrl(null)).toBeNull();
+  });
+
+  test("the event id comes from the list URL", () => {
+    expect(Core.eventIdFromUrl(listUrl(EVENT_B, "sort=newest&limit=20"))).toBe(EVENT_B);
+    expect(Core.eventIdFromUrl(STREAM_URL)).toBe("");
   });
 });
 
@@ -195,161 +215,230 @@ describe("classifyFireResponse", () => {
   });
 });
 
-describe("bridge: what counts as new", () => {
-  test("the page's first question list is history; only later ids are sent", async () => {
-    const { bridge, posts } = opened({}, LIST);
-    await bridge.idle();
-    expect(posts).toHaveLength(0);
-    bridge.ingest("stream", sioFrame(question(900, "2026-11-14T10:05:00Z")), PAGE);
-    await bridge.idle();
-    expect(posts.map((p) => p.payload.text)).toEqual(["Question number 900"]);
-    expect(bridge.snapshot()).toMatchObject({ state: "watching", sent: 1, skipped: 5 });
+describe("bridge: lists are history, the stream is new", () => {
+  test("the first list is history; a stream question is sent", async () => {
+    const h = opened({}, LIST);
+    h.stream(question(900, "2026-11-14T10:05:00Z"));
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 900"]);
+    expect(h.bridge.snapshot()).toMatchObject({ state: "watching", sent: 1, skipped: 3 });
   });
 
   test("a 200-question backlog on page load sends nothing", async () => {
     const backlog = Array.from({ length: 200 }, (_, i) => question(i + 1, `2026-11-14T09:${String(i % 60).padStart(2, "0")}:00Z`));
-    const { bridge, posts } = opened({}, list(backlog));
-    await bridge.idle();
-    expect(posts).toHaveLength(0);
-    expect(bridge.snapshot().skipped).toBe(200);
+    const h = opened({}, list(backlog));
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(0);
+    expect(h.bridge.snapshot().skipped).toBe(200);
   });
 
-  test("stream questions without any timestamp are still sent once the page has a baseline", async () => {
-    const { bridge, posts } = opened({}, list([question(1)]));
-    bridge.ingest("stream", sioFrame(question(2)), PAGE);
-    await bridge.idle();
-    expect(posts.map((p) => p.payload.text)).toEqual(["Question number 2"]);
+  test("stream questions without any timestamp are still sent", async () => {
+    const h = opened({}, list([question(1)]));
+    h.stream(question(2));
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 2"]);
   });
 
-  test("timestamps are compared with Slido's clock, not this computer's", async () => {
-    // Initial list's newest question is 10:00 server time. Whatever the local
-    // clock says, a question published at 10:00:30 is new and an old one
-    // that resurfaces (e.g. someone upvotes it) is not.
-    const { bridge, posts } = opened({}, list([question(1, "2026-11-14T09:59:00Z"), question(2, "2026-11-14T10:00:00Z")]));
-    bridge.ingest("stream", sioFrame(question(3, "2026-11-14T10:00:30Z")), PAGE);
-    bridge.ingest("stream", sioFrame(question(4, "2026-11-14T09:30:00Z")), PAGE); // older, never listed
-    await bridge.idle();
-    expect(posts.map((p) => p.payload.text)).toEqual(["Question number 3"]);
+  test("a later list with a different sort order is history (N3)", async () => {
+    // Baseline loaded sorted by "top" with only part of the questions.
+    const h = opened({}, list([question(1, "2026-11-14T09:50:00Z"), question(2, "2026-11-14T10:00:00Z")]));
+    // "Newest" list then shows older questions that were not in the top list.
+    h.list(list([question(3, "2026-11-14T09:55:00Z"), question(4, "2026-11-14T09:10:00Z")]), EVENT_A, "sort=newest");
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(0);
+  });
+
+  test("an older page of the list is history (N3)", async () => {
+    const h = opened({}, list([question(10, "2026-11-14T10:00:00Z")]));
+    h.list(list([question(5, "2026-11-14T08:00:00Z"), question(6)]), EVENT_A, "sort=newest&offset=50");
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(0);
+  });
+
+  test("a list item is new only when Slido's clock proves it is newer", async () => {
+    const h = opened({}, list([question(1, "2026-11-14T10:00:00Z")]));
+    h.list(list([question(1, "2026-11-14T10:00:00Z"), question(2, "2026-11-14T10:00:30Z"), question(3, "2026-11-14T10:00:00Z")]));
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 2"]);
+  });
+
+  test("a stream update of an old question dated before the baseline is history", async () => {
+    const h = opened({}, list([question(1, "2026-11-14T10:00:00Z")]));
+    h.stream(question(9, "2026-11-14T09:30:00Z")); // older, never listed (e.g. upvoted)
+    h.stream(question(10, "2026-11-14T10:00:30Z"));
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 10"]);
   });
 
   test("a local clock far ahead or behind changes nothing", async () => {
     for (const skew of [-3_600_000, 3_600_000]) {
       const h = harness({ bridge: { now: () => Date.now() + skew } });
-      h.bridge.ingest("questions", list([question(1, "2026-11-14T10:00:00Z")]), PAGE);
-      h.bridge.ingest("stream", sioFrame(question(2, "2026-11-14T10:00:01Z")), PAGE);
+      h.list(list([question(1, "2026-11-14T10:00:00Z")]));
+      h.stream(question(2, "2026-11-14T10:00:01Z"));
       await h.bridge.idle();
       expect(h.posts).toHaveLength(1);
     }
   });
 
-  test("stream traffic before the page's list is history; repeated it is flagged", async () => {
+  test("switching to another event in the same tab takes a new baseline without any page signal (N3)", async () => {
+    const h = opened({}, list([question(1)])); // event A
+    // Single-page navigation to event B: no openPage(), just B's list.
+    h.list(list([question(101, null, { event_id: 2 }), question(102, null, { event_id: 2 })]), EVENT_B);
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(0);
+    h.stream(question(103, null, { event_id: 2 }));
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 103"]);
+  });
+
+  test("after navigating away, stream items from the previous event are not sent", async () => {
+    const h = opened({}, list([question(1, null, { event_id: 1 })]));
+    h.list(list([question(101, null, { event_id: 2 })]), EVENT_B);
+    h.stream(question(5, null, { event_id: 1 }));
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(0);
+  });
+
+  test("stream traffic before any list is not sent; repeated it is flagged", async () => {
     const h = harness();
-    for (const id of [1, 2]) h.bridge.ingest("stream", sioFrame(question(id)), PAGE);
+    h.stream(question(1));
+    h.stream(question(2));
     expect(h.bridge.snapshot().state).toBe("watching");
-    h.bridge.ingest("stream", sioFrame(question(3)), PAGE);
+    h.stream(question(3));
     await h.bridge.idle();
     expect(h.posts).toHaveLength(0);
     expect(h.bridge.snapshot()).toMatchObject({ state: "error", error: "feed_unrecognized" });
   });
 
-  test("replies and questions still waiting for Slido moderation are not sent", async () => {
-    const { bridge, posts } = opened();
-    bridge.ingest("stream", sioFrame(question(1, null, { path: "/questions/77" })), PAGE);
-    bridge.ingest("stream", sioFrame(question(2, null, { is_public: false })), PAGE);
-    await bridge.idle();
-    expect(posts).toHaveLength(0);
+  test("lists with undatable unknown ids and no stream at all are flagged, not guessed (N3 rule 4)", async () => {
+    const h = opened({}, list([question(1)]));
+    h.list(list([question(1), question(2)])); // 2 is unknown, no timestamps, no stream seen
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(0);
+    expect(h.bridge.snapshot()).toMatchObject({ state: "error", error: "feed_unrecognized" });
   });
 
-  test("reopening the page takes a new baseline", async () => {
-    const { bridge, posts } = opened({}, list([question(1)]));
-    bridge.openPage(PAGE);
-    bridge.ingest("questions", list([question(1), question(2)]), PAGE); // 2 arrived while reloading
-    await bridge.idle();
-    expect(posts).toHaveLength(0);
+  test("the same unknown list id is fine once the stream is known to work", async () => {
+    const h = opened({}, list([question(1)]));
+    h.stream(question(2));
+    await h.bridge.idle();
+    h.list(list([question(1), question(2), question(3)]));
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 2"]);
+    expect(h.bridge.snapshot().state).toBe("watching");
+  });
+
+  test("replies and questions still waiting for Slido moderation are not sent", async () => {
+    const h = opened();
+    h.stream(question(1, null, { path: "/questions/77" }));
+    h.stream(question(2, null, { is_public: false }));
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(0);
   });
 
   test("while switched off ids are learned, so switching on means from now on", async () => {
-    const { bridge, posts } = opened({ bridge: { active: false } });
-    bridge.ingest("stream", sioFrame(question(1)), PAGE);
-    bridge.setActive(true);
-    bridge.ingest("stream", sioFrame(question(1, null, { score: 3 })), PAGE); // upvote of the old one
-    bridge.ingest("stream", sioFrame(question(2)), PAGE);
-    await bridge.idle();
-    expect(posts.map((p) => p.payload.text)).toEqual(["Question number 2"]);
+    const h = opened({ bridge: { active: false } });
+    h.stream(question(1));
+    h.bridge.setActive(true);
+    h.stream(question(1, null, { score: 3 })); // upvote of the old one
+    h.stream(question(2));
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 2"]);
   });
 });
 
 describe("bridge: delivery", () => {
   test("the same question arriving via stream, list refresh and updates is sent once", async () => {
     const q = question(42);
-    const { bridge, posts } = opened();
-    bridge.ingest("stream", sioFrame(q), PAGE);
-    bridge.ingest("questions", list([q]), PAGE);
-    bridge.ingest("stream", sioFrame(Object.assign({}, q, { score: 9 })), PAGE);
-    await bridge.idle();
-    expect(posts).toHaveLength(1);
+    const h = opened();
+    h.stream(q);
+    h.list(list([q]));
+    h.stream(Object.assign({}, q, { score: 9 }));
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(1);
   });
 
-  test("seen ids and page baselines survive a service-worker restart", async () => {
+  test("handled ids and baselines survive a service-worker restart", async () => {
     const first = opened();
-    first.bridge.ingest("stream", sioFrame(question(42)), PAGE);
+    first.stream(question(42));
     await first.bridge.idle();
     const posted = [];
     const restored = Core.createBridge({
       post: async (p) => { posted.push(p); return { status: 200 }; },
-      seenIds: first.bridge.seenIds(),
-      pages: first.bridge.pages(), // baseline kept: no reopen needed
+      handled: first.bridge.handled(),
+      tabs: first.bridge.tabs(),
     });
-    expect(restored.ingest("stream", sioFrame(question(42)), PAGE)).toBe(0);
-    expect(restored.ingest("stream", sioFrame(question(43)), PAGE)).toBe(1);
+    expect(restored.ingest("stream", sioFrame(question(42)), TAB, STREAM_URL)).toBe(0);
+    expect(restored.ingest("stream", sioFrame(question(43)), TAB, STREAM_URL)).toBe(1);
     await restored.idle();
     expect(posted.map((p) => p.text)).toEqual(["Question number 43"]);
   });
 
   test("sends are paced by minIntervalMs", async () => {
-    const { bridge, posts } = opened({ bridge: { minIntervalMs: 3000 } });
-    bridge.ingest("questions", list([1, 2, 3, 4].map((i) => question(i))), PAGE);
-    await bridge.idle();
-    expect(posts).toHaveLength(4);
-    posts.slice(1).forEach((p, i) => expect(p.at - posts[i].at).toBeGreaterThanOrEqual(3000));
+    const h = opened({ bridge: { minIntervalMs: 3000 } });
+    [1, 2, 3, 4].forEach((i) => h.stream(question(i)));
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(4);
+    h.posts.slice(1).forEach((p, i) => expect(p.at - h.posts[i].at).toBeGreaterThanOrEqual(3000));
   });
 
-  test("a flood beyond maxQueue drops the oldest pending questions and counts them", async () => {
-    const { bridge, posts } = opened({ bridge: { maxQueue: 10 } });
-    bridge.ingest("questions", list(Array.from({ length: 25 }, (_, i) => question(i + 1))), PAGE);
-    await bridge.idle();
-    expect(posts).toHaveLength(10);
-    expect(posts[posts.length - 1].payload.text).toBe("Question number 25");
-    expect(bridge.snapshot().dropped).toBe(15);
+  test("a flood beyond maxQueue drops the oldest, counts them, and they never come back (N4)", async () => {
+    const h = opened({ bridge: { maxQueue: 10 } });
+    const flood = Array.from({ length: 25 }, (_, i) => question(i + 1));
+    flood.forEach((q) => h.stream(q));
+    await h.bridge.idle();
+    const sentFirst = h.posts.length;
+    expect(h.bridge.snapshot().dropped).toBe(25 - sentFirst);
+    // A list refresh and a second round of stream updates bring nothing back.
+    h.list(list(flood));
+    flood.forEach((q) => h.stream(Object.assign({}, q, { score: 1 })));
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(sentFirst);
+    expect(h.bridge.snapshot().dropped).toBe(25 - sentFirst);
   });
 
-  test("switching off counts what was still waiting and sends nothing more", async () => {
-    const { bridge, posts } = opened();
-    bridge.ingest("questions", list([1, 2, 3].map((i) => question(i))), PAGE);
-    bridge.setActive(false);
-    await bridge.idle();
-    const sent = posts.length;
+  test("switching off counts what was still waiting; it is not sent after switching on (N4)", async () => {
+    const h = opened();
+    [1, 2, 3].forEach((i) => h.stream(question(i)));
+    h.bridge.setActive(false);
+    await h.bridge.idle();
+    const sent = h.posts.length;
     expect(sent).toBeLessThanOrEqual(1);
-    expect(bridge.snapshot().dropped).toBe(3 - sent);
-    expect(bridge.ingest("stream", sioFrame(question(9)), PAGE)).toBe(0);
-    await bridge.idle();
-    expect(posts).toHaveLength(sent);
-    expect(bridge.pending()).toBe(0);
+    expect(h.bridge.snapshot().dropped).toBe(3 - sent);
+    h.bridge.setActive(true);
+    [1, 2, 3].forEach((i) => h.stream(question(i, null, { score: 2 })));
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(sent);
+    expect(h.bridge.pending()).toBe(0);
   });
 
-  test("a question is only marked done after a final answer; failed ones are retried when seen again", async () => {
-    const { bridge, posts } = opened({ responses: [{ status: 503, body: '{"error":"No overlay connected."}' }] });
+  test("a sent question is never re-sent after the handled-id cap evicts it (N5)", async () => {
+    const h = opened({ bridge: { maxSeen: 5 } }, list([question(1, "2026-11-14T10:00:00Z")]));
+    h.stream(question(2, "2026-11-14T10:01:00Z")); // Q2 is sent
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 2"]);
+    // Twenty other ids push Q2 out of the 5-entry handled set.
+    h.list(list(Array.from({ length: 20 }, (_, i) => question(100 + i, "2026-11-14T09:00:00Z"))));
+    expect(h.bridge.isHandled(EVENT_A, 2)).toBe(false);
+    h.list(list([question(2, "2026-11-14T10:01:00Z")])); // list refresh, dated
+    h.list(list([question(2)])); // and undated
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(1);
+  });
+
+  test("a question is only marked done after a final answer; failed ones are retried on the stream", async () => {
+    const h = opened({ responses: [{ status: 503, body: '{"error":"No overlay connected."}' }] });
     const q = question(7);
-    bridge.ingest("stream", sioFrame(q), PAGE);
-    await bridge.idle();
-    expect(bridge.seenIds()).not.toContain("7");
-    bridge.ingest("stream", sioFrame(Object.assign({}, q, { score: 1 })), PAGE);
-    await bridge.idle();
-    expect(posts).toHaveLength(2);
-    expect(bridge.seenIds()).toContain("7");
-    bridge.ingest("stream", sioFrame(q), PAGE);
-    await bridge.idle();
-    expect(posts).toHaveLength(2);
+    h.stream(q);
+    await h.bridge.idle();
+    expect(h.bridge.isHandled(EVENT_A, 7)).toBe(false);
+    h.stream(Object.assign({}, q, { score: 1 }));
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(2);
+    expect(h.bridge.isHandled(EVENT_A, 7)).toBe(true);
+    h.stream(q);
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(2);
   });
 
   test("server outcomes become counters and a visible error state", async () => {
@@ -360,30 +449,48 @@ describe("bridge: delivery", () => {
       new Error("network down"),
       { status: 200, body: "{}" },
     ];
-    const { bridge } = opened({ responses });
-    bridge.ingest("questions", list([1, 2, 3, 4].map((i) => question(i))), PAGE);
-    await bridge.idle();
-    expect(bridge.snapshot()).toMatchObject({ state: "error", error: "server_unreachable", blocked: 1, held: 1, failed: 2, sent: 0 });
-    bridge.ingest("stream", sioFrame(question(5)), PAGE);
-    await bridge.idle();
-    expect(bridge.snapshot()).toMatchObject({ state: "watching", error: "", sent: 1 });
+    const h = opened({ responses });
+    [1, 2, 3, 4].forEach((i) => h.stream(question(i)));
+    await h.bridge.idle();
+    expect(h.bridge.snapshot()).toMatchObject({ state: "error", error: "server_unreachable", blocked: 1, held: 1, failed: 2, sent: 0 });
+    h.stream(question(5));
+    await h.bridge.idle();
+    expect(h.bridge.snapshot()).toMatchObject({ state: "watching", error: "", sent: 1 });
   });
 
   test("a rejected token is a distinct, visible error", async () => {
-    const { bridge } = opened({ responses: [{ status: 401, body: '{"error":"Invalid fire token"}' }] });
-    bridge.ingest("stream", sioFrame(question(1)), PAGE);
-    await bridge.idle();
-    expect(bridge.snapshot()).toMatchObject({ state: "error", error: "token_invalid", failed: 1 });
-    const h = opened();
-    h.bridge.noteError("token_invalid"); // heartbeat got a 401
-    expect(h.bridge.snapshot().error).toBe("token_invalid");
+    const h = opened({ responses: [{ status: 401, body: '{"error":"Invalid fire token"}' }] });
+    h.stream(question(1));
+    await h.bridge.idle();
+    expect(h.bridge.snapshot()).toMatchObject({ state: "error", error: "token_invalid", failed: 1 });
+    const h2 = opened();
+    h2.bridge.noteError("token_invalid"); // heartbeat got a 401
+    expect(h2.bridge.snapshot().error).toBe("token_invalid");
+  });
+
+  test("without a token nothing is sent and the error says so (N7)", async () => {
+    const h = opened({ bridge: { tokenSet: false } });
+    h.stream(question(1));
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(0);
+    expect(h.bridge.snapshot()).toMatchObject({ state: "error", error: "token_missing" });
+    // Setting a token later: still "from now on", the earlier one stays unsent.
+    h.bridge.configure({ tokenSet: true });
+    expect(h.bridge.snapshot().state).toBe("watching");
+    h.stream(question(1, null, { score: 1 }));
+    h.stream(question(2));
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 2"]);
+    // Clearing it again drops what was queued and reports it.
+    h.bridge.configure({ tokenSet: false });
+    expect(h.bridge.snapshot().error).toBe("token_missing");
   });
 
   test("an unrecognized question feed surfaces as feed_unrecognized", () => {
-    const { bridge } = opened();
-    bridge.ingest("questions", JSON.stringify({ unexpected: true }), PAGE);
-    expect(bridge.snapshot()).toMatchObject({ state: "error", error: "feed_unrecognized" });
-    bridge.ingest("questions", "[]", PAGE);
-    expect(bridge.snapshot().state).toBe("watching");
+    const h = opened();
+    h.list(JSON.stringify({ unexpected: true }));
+    expect(h.bridge.snapshot()).toMatchObject({ state: "error", error: "feed_unrecognized" });
+    h.list("[]");
+    expect(h.bridge.snapshot().state).toBe("watching");
   });
 });
