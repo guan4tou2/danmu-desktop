@@ -560,6 +560,24 @@ def enforce_fire_rate_limits(fingerprint: str | None, is_admin: bool) -> None:
             abort(429, description="Too Many Requests")
 
 
+def enforce_invalid_token_limit() -> None:
+    """Throttle requests that present a wrong X-Fire-Token. Aborts 429.
+
+    Uses its own per-IP bucket (same size as the public per-IP limit) so a
+    token guesser is slowed down without spending the viewers' per-IP,
+    per-fingerprint or global /fire budget — those are only charged after
+    captcha, and a junk token must not reach them before it.
+    """
+    cfg = current_app.config
+    client_ip = _get_client_ip()
+    if _check_ip_rules(client_ip) == "deny":
+        abort(429, description="Too Many Requests")
+    limit = int(cfg.get("FIRE_RATE_LIMIT", 20))
+    window = int(cfg.get("FIRE_RATE_WINDOW", 60))
+    if limit > 0 and not rate_limiter.allow(f"fire_badtoken:{client_ip}", limit, window):
+        abort(429, description="Too Many Requests")
+
+
 def verify_captcha(token: str | None) -> bool:
     """Verify a Turnstile / hCaptcha token.
 

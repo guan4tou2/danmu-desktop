@@ -277,6 +277,16 @@ def verify(presented: str) -> bool:
     return secrets.compare_digest(str(presented).encode("utf-8"), str(expected).encode("utf-8"))
 
 
+def reload() -> None:
+    """Forget the cached state so the next read comes from disk.
+
+    Called after a backup restore wrote fire_token.json.
+    """
+    global _state
+    with _lock:
+        _state = None
+
+
 def reset_for_tests() -> None:
     """Test helper — drop in-memory cache + audit log, leave state file alone."""
     global _state, _write_failure_logged

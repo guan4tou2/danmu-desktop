@@ -111,26 +111,21 @@ def get_public(now: Optional[float] = None) -> Dict[str, Any]:
     """``{report, age_sec, stale, token_rejected}``.
 
     ``report`` is None until the first valid one. ``token_rejected`` is True
-    while the latest heartbeat with a bad token is recent and newer than the
-    last valid report.
+    only while there is no fresh valid report and a bad-token heartbeat
+    arrived recently. Anyone can send a bad token, so it must never mask a
+    live extension's real status — a fresh valid report always wins.
     """
     now = time.time() if now is None else now
     with _lock:
         report = dict(_report) if _report else None
         rejected_at = _rejected_at
-    last_ok = report["received_at"] if report else None
-    token_rejected = (
-        rejected_at is not None
-        and now - rejected_at <= STALE_AFTER_SEC
-        and (last_ok is None or rejected_at > last_ok)
-    )
-    if report is None:
-        return {"report": None, "age_sec": None, "stale": True, "token_rejected": token_rejected}
-    age = max(0.0, now - report["received_at"])
+    age = max(0.0, now - report["received_at"]) if report else None
+    stale = age is None or age > STALE_AFTER_SEC
+    token_rejected = stale and rejected_at is not None and now - rejected_at <= STALE_AFTER_SEC
     return {
         "report": report,
-        "age_sec": round(age, 1),
-        "stale": age > STALE_AFTER_SEC,
+        "age_sec": round(age, 1) if age is not None else None,
+        "stale": stale,
         "token_rejected": token_rejected,
     }
 
@@ -147,10 +142,14 @@ def extension_info(directory: Optional[Path] = None) -> Optional[Dict[str, str]]
     static/ — so the card can never advertise a version it cannot serve.
     """
     folder = directory or _EXTENSIONS_DIR
-    zips = sorted(folder.glob(f"{_ZIP_PREFIX}*.zip"))
-    if not zips:
+    zips = list(folder.glob(f"{_ZIP_PREFIX}*.zip"))
+    if len(zips) != 1:
+        # The build script keeps exactly one; picking among several by name
+        # would get versions like 0.10.0 vs 0.9.0 wrong.
+        if zips:
+            logger.warning("[slido] %d extension zips in %s; expected one", len(zips), folder)
         return None
-    path = zips[-1]
+    path = zips[0]
     try:
         with zipfile.ZipFile(path) as zf:
             manifest = json.loads(zf.read("slido-extension/manifest.json").decode("utf-8"))

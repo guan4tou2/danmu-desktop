@@ -424,6 +424,98 @@ def test_env_token_unaffected_by_pre_upgrade_file(app, client, tmp_path):
     assert resp.status_code == 200
 
 
+def test_restoring_a_backup_reloads_the_token_immediately(tmp_path, monkeypatch):
+    """N9: the restored token state applies without a restart."""
+    from server.services import backup as backup_svc
+
+    old_host = tmp_path / "old_runtime"
+    new_host = tmp_path / "new_runtime"
+    old_host.mkdir()
+    new_host.mkdir()
+    monkeypatch.setattr(fire_token, "_STATE_FILE", old_host / "fire_token.json")
+    fire_token.reset_for_tests()
+    backed_up = fire_token.regenerate()["token"]
+    monkeypatch.setattr(backup_svc, "_INCLUDE_DIRS", [("runtime", old_host, "runtime", "*.json")])
+    blob = backup_svc.pack()
+
+    # The live server has since rotated to another token (and cached it).
+    monkeypatch.setattr(fire_token, "_STATE_FILE", new_host / "fire_token.json")
+    fire_token.reset_for_tests()
+    current = fire_token.regenerate()["token"]
+    assert fire_token.verify(current) is True
+
+    monkeypatch.setattr(backup_svc, "_INCLUDE_DIRS", [("runtime", new_host, "runtime", "*.json")])
+    backup_svc.unpack(blob, dry_run=False)
+    # No reset_for_tests() here: the restore itself must refresh the cache.
+    assert fire_token.verify(backed_up) is True
+    assert fire_token.verify(current) is False
+
+
+# ─── invalid tokens must not spend the viewers' budget (N1) ─────────────────
+
+
+def test_invalid_token_spends_its_own_bucket_not_the_viewers(app, client):
+    app.config["GLOBAL_FIRE_RATE_LIMIT"] = 5
+    with patch("server.routes.api.verify_captcha", side_effect=lambda t: t == "ok"):
+        attacker = [
+            client.post(
+                "/fire",
+                json={"text": "x"},
+                headers={"X-Fire-Token": "junk"},
+                environ_base={"REMOTE_ADDR": "9.9.9.9"},
+            ).status_code
+            for _ in range(6)
+        ]
+        # Still throttled on its own bucket (FIRE_RATE_LIMIT=2 in tests).
+        assert attacker == [401, 401, 429, 429, 429, 429]
+
+        # Another viewer is unaffected (global bucket untouched)...
+        viewer = client.post(
+            "/fire",
+            json={"text": "hi", "captcha_token": "ok"},
+            environ_base={"REMOTE_ADDR": "1.2.3.4"},
+        )
+        assert viewer.status_code == 200
+        # ...and so is a normal sender behind the attacker's own IP (shared NAT).
+        for _ in range(2):
+            same_nat = client.post(
+                "/fire",
+                json={"text": "hi", "captcha_token": "ok"},
+                environ_base={"REMOTE_ADDR": "9.9.9.9"},
+            )
+            assert same_nat.status_code == 200
+    # The 401s never reach the feed or history.
+    assert [e["data"]["text"] for e in live_feed_buffer.snapshot()] == ["hi", "hi", "hi"]
+
+
+# ─── integration dots only for verified senders (N6) ────────────────────────
+
+
+def test_source_is_only_recorded_for_a_valid_token(client):
+    client.post("/fire", json={"text": "a"}, headers={"X-Fire-Source": "slido"})
+    client.post(
+        "/fire", json={"text": "b"}, headers={"X-Fire-Source": "slido", "X-Fire-Token": "bad"}
+    )
+    assert {s["source"] for s in fire_sources.recent_sources()} == {"web"}
+    token = fire_token.regenerate()["token"]
+    client.post(
+        "/fire", json={"text": "c"}, headers={"X-Fire-Source": "slido", "X-Fire-Token": token}
+    )
+    assert {s["source"] for s in fire_sources.recent_sources()} == {"web", "slido"}
+    # The rejected request was not recorded at all.
+    assert sum(s["count"] for s in fire_sources.recent_sources()) == 2
+
+
+def test_extension_info_refuses_to_guess_between_several_zips(tmp_path):
+    import shutil
+
+    real = next((Path(slido_status._EXTENSIONS_DIR)).glob("danmu-slido-extension-*.zip"))
+    shutil.copy(real, tmp_path / "danmu-slido-extension-0.9.0.zip")
+    assert slido_status.extension_info(tmp_path)["download_url"].endswith("-0.9.0.zip")
+    shutil.copy(real, tmp_path / "danmu-slido-extension-0.10.0.zip")
+    assert slido_status.extension_info(tmp_path) is None
+
+
 # ─── status heartbeat ───────────────────────────────────────────────────────
 
 GOOD_REPORT = {
@@ -457,16 +549,31 @@ def test_status_report_accepts_env_and_generated_tokens(app, client):
     assert _report(client, GOOD_REPORT, token=generated).status_code == 200
 
 
-def test_rejected_heartbeat_flags_the_card_until_a_valid_one_arrives(client):
+def test_rejected_heartbeat_shows_only_when_no_fresh_valid_report(client):
+    # N2: anyone can send a bad token, so it must not mask a live extension.
     token = fire_token.regenerate()["token"]
     _report(client, GOOD_REPORT, token=token)
-    assert slido_status.get_public()["token_rejected"] is False
+    assert _report(client, GOOD_REPORT, token="forged-by-anyone").status_code == 401
+    status = slido_status.get_public()
+    assert status["stale"] is False and status["token_rejected"] is False
+
+    # The real extension's token was revoked: its reports stop arriving, the
+    # last valid one goes stale, and its rejected heartbeats now show.
     fire_token.revoke()
-    assert _report(client, GOOD_REPORT, token=token).status_code == 401
+    received = status["report"]["received_at"]
+    later = received + slido_status.STALE_AFTER_SEC + 5
+    slido_status.note_rejected(now=later - 1)
+    assert slido_status.get_public(now=later)["token_rejected"] is True
+    # ...until those rejections stop too.
+    assert (
+        slido_status.get_public(now=later + slido_status.STALE_AFTER_SEC + 1)["token_rejected"]
+        is False
+    )
+
+
+def test_rejected_heartbeat_without_any_report_flags_the_card(client):
+    assert _report(client, GOOD_REPORT, token="wrong").status_code == 401
     assert slido_status.get_public()["token_rejected"] is True
-    fresh = fire_token.regenerate()["token"]
-    _report(client, GOOD_REPORT, token=fresh)
-    assert slido_status.get_public()["token_rejected"] is False
     # No token at all is "not configured", not "rejected".
     slido_status.reset_for_tests()
     _report(client, GOOD_REPORT)

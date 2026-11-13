@@ -22,6 +22,7 @@ from ..services.plugin_manager import plugin_manager
 from ..services.poll import poll_service
 from ..services.security import (
     enforce_fire_rate_limits,
+    enforce_invalid_token_limit,
     fire_token_state,
     rate_limit,
     require_csrf,
@@ -268,30 +269,29 @@ def fire():
         client_ip = _extract_client_ip()
         user_agent = request.headers.get("User-Agent", "")
 
-        # Integration source tag — Slido / Discord / OBS / bookmarklet identify
-        # themselves via X-Fire-Source header (preferred) or UA prefix hint.
-        # Recorded into a 200-entry ring buffer so the admin Extensions catalog
-        # can light up status dots and the Fire Token page's IP list works.
         from ..services import fire_sources
-
-        explicit_source = request.headers.get("X-Fire-Source", "")
-        source_label = fire_sources.detect(user_agent, explicit_source)
-        fire_sources.record(source_label, fingerprint, client_ip, user_agent)
 
         token_state = fire_token_state()
         admin_client = token_state == "valid"
         if token_state == "invalid":
             # A token was sent but is wrong, revoked or disabled. Refuse
             # instead of silently downgrading to the public lane, so revoking
-            # really stops an extension and it can tell why. Charge the public
-            # limits first: this must not become an unthrottled token oracle.
-            enforce_fire_rate_limits(fingerprint, False)
+            # really stops an extension and it can tell why. Throttled on its
+            # own bucket: charging the viewers' per-IP / global buckets here
+            # (before captcha) let junk tokens lock out a whole venue.
+            enforce_invalid_token_limit()
             return _json_response({"error": "Invalid fire token"}, 401)
 
-        # Stamped on the message for the admin feed and history only (the
-        # overlay never sees "integration"). Requires a valid token and a
-        # known integration name; the header alone is caller-controlled.
-        integration = fire_sources.trusted_integration(source_label, admin_client)
+        # Integration (Slido / Discord / OBS / bookmarklet) is only believed
+        # with a valid token and a known name: X-Fire-Source and the UA are
+        # caller-controlled. It labels the admin feed / history (never the
+        # overlay) and lights the Extensions catalog dots via fire_sources,
+        # which also feeds the Fire Token page's IP list.
+        explicit_source = request.headers.get("X-Fire-Source", "")
+        integration = fire_sources.trusted_integration(
+            fire_sources.detect(user_agent, explicit_source), admin_client
+        )
+        fire_sources.record(integration or "web", fingerprint, client_ip, user_agent)
         if integration:
             data["integration"] = integration
 

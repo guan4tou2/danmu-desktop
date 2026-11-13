@@ -279,6 +279,7 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
         return out
 
     # Apply phase — atomic per-file via tmp + replace.
+    wrote_fire_token = False
     for target, data in safe_writes:
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -286,8 +287,17 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
             tmp.write_bytes(data)
             tmp.replace(target)
             out["applied"] += 1
+            wrote_fire_token = wrote_fire_token or target.name == "fire_token.json"
         except OSError as exc:
             out["errors"].append(f"write {target}: {exc}")
+
+    # fire_token caches its state; without this the restored token (or the
+    # restored "no token") only took effect after a restart, so /fire kept
+    # honouring the pre-restore credential.
+    if wrote_fire_token:
+        from . import fire_token
+
+        fire_token.reload()
 
     out["ok"] = len(out["errors"]) == 0
     return out
