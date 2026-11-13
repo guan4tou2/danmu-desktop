@@ -209,7 +209,9 @@ def _open_section(page, section_id: str):
         page.wait_for_selector(
             '#sec-viewer-config-defaults[data-dsp-mode="values"]', state="visible", timeout=5000
         )
-        fold = page.locator("#sec-viewer-config-defaults details[data-dsp-fold]:not([open]) > summary")
+        fold = page.locator(
+            "#sec-viewer-config-defaults details[data-dsp-fold]:not([open]) > summary"
+        )
         if fold.count() > 0:
             fold.click()
         return
