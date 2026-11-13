@@ -519,15 +519,16 @@
 
   // ── 控制台的顯示層卡（設計稿 06 · K1）────────────────────────────
   //
-  // 全頁唯一的狀態顯示。狀態有兩個來源，缺一不可：
-  //   · /overlay_status → 有幾台顯示層連著（沒有裝置就沒東西可顯示）
-  //   · /admin/broadcast/status → 主持人有沒有把渲染打開
-  // 兩者都成立才算「顯示中」。
+  // 全頁唯一的狀態顯示。兩個來源各說一件事，不合併成一個開關：
+  //   · /admin/broadcast/status → 顯示開著還是暫停（按鈕、色點、文字都跟它）
+  //   · /overlay_status → 有幾個顯示端連著（0 也照實寫出來）
+  // 字樣由 AdminOverlayControl.statusText / toggleKey 決定，與顯示層頁同一份。
   let _cockpitTimer = null;
 
   async function refreshCockpitOverlay() {
     const card = document.querySelector("[data-cockpit-overlay]");
-    if (!card || card.offsetParent === null) return;
+    const ctl = window.AdminOverlayControl;
+    if (!card || !ctl || card.offsetParent === null) return;
     let count = 0;
     let live = false;
     try {
@@ -539,25 +540,16 @@
       if (r.ok) live = (await r.json()).mode === "live";
     } catch (_) {}
 
-    const on = count > 0 && live;
-    card.classList.toggle("is-on", on);
+    card.classList.toggle("is-on", live);
     const status = card.querySelector("[data-cockpit-status]");
-    if (status) {
-      status.textContent = on
-        ? ServerI18n.t("adminCockpitOn", { n: count })
-        : ServerI18n.t("adminCockpitOff");
-    }
-    // 按鈕跟著渲染開關走（不是裝置數）：沒有裝置連著時照樣能暫停，
-    // 訊息會排隊。data-i18n 一起換，切換語言時才不會跳回舊字。
+    if (status) status.textContent = ctl.statusText(live, count);
+    // data-i18n 一起換，切換語言時才不會跳回舊字。
     const toggle = card.querySelector('[data-cockpit-action="toggle"]');
     if (toggle) {
-      toggle.dataset.i18n = live ? "broadcastBigPause" : "broadcastBigResume";
+      toggle.dataset.i18n = ctl.toggleKey(live);
       toggle.textContent = ServerI18n.t(toggle.dataset.i18n);
       toggle.dataset.next = live ? "standby" : "live";
     }
-    // 沒有裝置連著時，「清空畫面」沒有作用對象
-    const clear = card.querySelector('[data-cockpit-action="clear"]');
-    if (clear) clear.disabled = count === 0;
   }
 
   function bindCockpit() {

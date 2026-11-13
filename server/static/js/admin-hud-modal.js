@@ -159,9 +159,12 @@
       document.body.appendChild(root);
       document.addEventListener("keydown", _onKey);
       // Danger dialogs start on Cancel so a stray Enter never destroys data.
+      // focusVisible: the dialog is usually opened by a mouse click, which
+      // would otherwise leave the default button without the shared focus
+      // ring (tokens.css :focus-visible) — the user must see where Enter goes.
       const initial = severity === "danger" ? "cancel" : "confirm";
       requestAnimationFrame(() => {
-        root.querySelector(`.admin-hud-modal__btn--${initial}`)?.focus();
+        root.querySelector(`.admin-hud-modal__btn--${initial}`)?.focus({ focusVisible: true });
       });
     });
   }

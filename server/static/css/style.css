@@ -15054,9 +15054,29 @@ body.is-light .admin-login-wordmark.is-on-light,
  * sec-fontfamily / sec-layout cards (hidden via [data-admin-ui-replaced]).
  * ──────────────────────────────────────────────────────────────────────── */
 .admin-dsp2-page { display: flex; flex-direction: column; gap: var(--space-3); }
-/* 顯示層頁的「彈幕外觀」收合區（觀眾頁上 summary 隱藏、永遠展開） */
-.admin-dsp2-fold > summary { cursor: pointer; }
+/* 顯示層頁的「彈幕外觀」收合區（觀眾頁上 summary 隱藏、永遠展開）。
+   分隔線 + 間距照觀眾頁的 .viewer-sheet-more，指示符照小工具列的
+   .admin-widget-summary-chev（› 展開時轉 90°）；與上方控制區同一個版心。 */
+.admin-dsp2-fold > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--hud-line);
+  list-style: none;
+}
+.admin-dsp2-fold > summary::-webkit-details-marker { display: none; }
+.admin-dsp2-fold > summary::after {
+  content: "›";
+  color: var(--color-text-secondary);
+  transition: transform var(--motion-fast) ease;
+}
+.admin-dsp2-fold[open] > summary::after { transform: rotate(90deg); }
 .admin-dsp2-fold[open] > summary { margin-bottom: var(--space-4); }
+@media (prefers-reduced-motion: reduce) {
+  .admin-dsp2-fold > summary::after { transition: none; }
+}
 
 
 .admin-dsp2-grid {
@@ -16473,129 +16493,57 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 
 /* ──────────────────────────────────────────────────────────────────────────
- * Admin · Broadcast (P2 · admin-broadcast.js)
- *   2-column grid of cards: LIVE state strip + END BROADCAST confirm.
- *   Mirrors priority-2-pieces.jsx BroadcastToggle prototype.
+ * Admin · 顯示層頁上半部（admin-broadcast.js · admin-broadcast-v2-page）
+ *   狀態列 → 主動作 → 分隔線 → 清空畫面 → 所屬場次。版心與下方的
+ *   「彈幕外觀」收合區一致：滿寬、靠左。
  * ────────────────────────────────────────────────────────────────────── */
 .admin-broadcast-page { display: flex; flex-direction: column; gap: var(--space-3); }
 
+.admin-bc-v4__body { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); }
 
-/* ──────────────────────────────────────────────────────────────────────
- * Admin Broadcast — design v4 (2026-05-17)
- *   4-state (standby/live/paused/ended) · big-button hero · stats strip
- *   · scheduled countdown · secondary controls · ended-state card.
- *   Hooked from admin-broadcast.js (PAGE_ID admin-broadcast-v2-page).
- * ────────────────────────────────────────────────────────────────────── */
-.admin-bc-v4__body { display: flex; flex-direction: column; gap: var(--space-5); align-items: center; padding: var(--space-5) 0; }
-
+/* 色點與狀態文字同一個語意色（同控制台的 .admin-cockpit-dot） */
 .admin-bc-v4__statedot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: var(--hud-cyan);
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--admin-text-dim);
+  flex: 0 0 auto;
 }
 
-.admin-bc-v4__statedot[data-state="live"]   { background: var(--hud-crimson); animation: bc-v4-pulse 1.4s ease-in-out infinite; }
-
+.admin-bc-v4__statedot[data-state="live"] { background: var(--color-success); animation: bc-v4-pulse 1.4s ease-in-out infinite; }
 
 @keyframes bc-v4-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 
-
-.admin-bc-v4__stats {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-3); width: 100%; max-width: 800px;
-}
-
-.admin-bc-v4__stat {
-  background: var(--hud-bg1);
-  border: 1px solid var(--hud-line);
-  border-radius: var(--radius-md-sm); padding: var(--space-4); text-align: center;
-}
-
-.admin-bc-v4__stat-v {
-  font-family: var(--hud-font-display, ui-monospace, monospace);
-  font-size: var(--text-large); font-weight: 600; letter-spacing: -0.5px;
-  color: var(--hud-text); margin-top: var(--space-1);
-}
-
-.admin-bc-v4[data-bc-state="standby"] .admin-bc-v4__stat-v {
-  color: var(--hud-textDim);
-}
-
-
-.admin-bc-v4__big-wrap { margin: var(--space-2) 0; }
-
-.admin-bc-v4__big {
-  width: 320px; height: 76px; border-radius: var(--radius-md); border: none; cursor: pointer;
-  font-family: var(--hud-font-mono);
-  font-size: var(--text-title1); font-weight: 700; letter-spacing: 4px;
-  display: flex; align-items: center; justify-content: center; gap: var(--space-3);
-  transition: transform var(--motion-fast), box-shadow var(--motion-fast);
-}
-
-.admin-bc-v4__big:hover { transform: translateY(-1px); }
-
-/* 清空畫面不可復原：與主按鈕隔一條分隔線 */
-.admin-bc-v4__secondary {
-  display: flex; justify-content: center; width: 100%; max-width: 800px;
-  padding-top: var(--space-5); border-top: 1px solid var(--hud-line);
-}
-
-/* Mobile RWD */
-@media (max-width: 720px) {
-  .admin-bc-v4__stats     { gap: var(--space-2); }
-  .admin-bc-v4__stat      { padding: var(--space-3); }
-  .admin-bc-v4__stat-v    { font-size: var(--text-title1); }
-  .admin-bc-v4__big       { width: 260px; height: 60px; font-size: var(--text-title2); }
-}
-
-
 @media (prefers-reduced-motion: reduce) {
   .admin-bc-v4__statedot { animation: none; }
-  .admin-bc-v4__big:hover { transform: none; }
 }
 
+/* 主動作：既有的 primary 階層，只放大尺寸 */
+.admin-ui-action.admin-bc-v4__big {
+  min-width: 240px;
+  min-height: 56px;
+  justify-content: center;
+  font-size: var(--text-title2);
+}
 
-/* ──────────────────────────────────────────────────────────────────────
- * Admin Broadcast — design v4-r7 polestar pivot (2026-05-18)
- *   Calmer 2-state framing: OFF / ON + paused sub-state. Drops the
- *   dramatic GO LIVE button. Adds SESSION CONTEXT footer card.
- *   .admin-bc-v5__* selectors layer ON TOP of .admin-bc-v4__* (kept
- *   for backward compat — same DOM nodes still have v4 classes).
- * ────────────────────────────────────────────────────────────────────── */
+/* 清空畫面不可復原：與主動作隔一條分隔線 */
+.admin-bc-v4__secondary {
+  width: 100%;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--hud-line);
+}
+
 .admin-bc-v5__status-row {
-  display: flex; align-items: center; gap: var(--space-3);
+  display: flex; align-items: center; gap: var(--space-2);
 }
 
 .admin-bc-v5__status-label {
-  font-family: var(--hud-font-mono);
-  font-size: var(--text-footnote); letter-spacing: 2px; font-weight: 700;
-  color: var(--hud-text-dim);
+  font-size: var(--text-footnote); font-weight: 600;
+  color: var(--admin-text-dim);
 }
 
-.admin-bc-v5__status-label[data-state="live"]   { color: var(--color-ink-success); }
-
-
-/* Big toggle — soft when ON (de-dramatize), cyan when OFF (primary CTA). */
-.admin-bc-v5__big.is-off {
-  background: var(--hud-cyan); color: #000;
-  box-shadow: 0 0 32px color-mix(in srgb, var(--color-primary) 27%, transparent);
-  font-size: var(--text-title2); letter-spacing: 2px;
-}
-
-.admin-bc-v5__big.is-on {
-  background: var(--hud-bg2);
-  color: var(--hud-text-dim);
-  border: 1.5px solid var(--hud-line);
-  box-shadow: none;
-  font-size: var(--text-title2); letter-spacing: 2px;
-}
-
-@media (max-width: 720px) {
-  .admin-bc-v5__big { font-size: var(--text-footnote) !important; height: 54px !important; width: 240px !important; }
-}
-
+.admin-bc-v5__status-label[data-state="live"] { color: var(--color-ink-success); }
 
 .admin-bc-v5__session-ctx {
-  width: 100%; max-width: 800px;
+  width: 100%;
   padding: var(--space-3) var(--space-4); border-radius: var(--radius-md-sm);
   background: var(--hud-bg1);
   border: 1px solid var(--hud-line);
@@ -16612,12 +16560,6 @@ body.is-light .admin-login-wordmark.is-on-light,
   font-family: var(--hud-font-mono);
   font-size: var(--text-caption);
   color: var(--hud-text);
-}
-
-.admin-bc-v5__session-meta {
-  font-family: var(--hud-font-mono);
-  font-size: var(--text-caption);
-  color: var(--hud-text-dim);
 }
 
 .admin-bc-v5__spacer { flex: 1; }

@@ -252,7 +252,7 @@
       icon: "⚠",
       title: ServerI18n.t("backupApplySettingsConfirmTitle"),
       subtitle: ServerI18n.t("cfmSubRestoreSettings"),
-      severity: "warn",
+      severity: "danger",
       body: ServerI18n.t("backupApplySettingsConfirmBody"),
       confirmLabel: ServerI18n.t("backupApplyBtn"),
     });
@@ -626,7 +626,7 @@
       icon: "⚠",
       title: ServerI18n.t("backupApplyAssetPackConfirmTitle"),
       subtitle: ServerI18n.t("cfmSubRestoreAssets"),
-      severity: "warn",
+      severity: "danger",
       body: ServerI18n.t("backupApplyAssetPackConfirmBody"),
       confirmLabel: ServerI18n.t("backupApplyAssetPackConfirmTitle"),
     });

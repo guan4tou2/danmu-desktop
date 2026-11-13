@@ -132,10 +132,10 @@
              收合的 details，summary 就是標題；觀眾頁 (audience) 上它是主體，
              syncVisibility 把它展開、summary 藏起來。 -->
         <details class="admin-dsp2-fold" data-dsp-fold>
-        <summary class="admin-ui-page-title" data-dsp-only="values">${escapeHtml(t("displayValuesTitle"))}</summary>
+        <summary class="admin-ui-page-title" data-dsp-only="values" data-i18n="displayValuesTitle">${escapeHtml(t("displayValuesTitle"))}</summary>
         <div class="admin-dsp2-page hud-page-stack">
         <div class="admin-ui-page-head" data-dsp-only="audience">
-          <h2 class="admin-ui-page-title">${escapeHtml(t("viewerGroupAudience"))}</h2>
+          <h2 class="admin-ui-page-title" data-i18n="viewerGroupAudience">${escapeHtml(t("viewerGroupAudience"))}</h2>
           <p class="admin-ui-page-note">${t("displayViewerDefaultsNote")}</p>
         </div>
 
@@ -305,10 +305,10 @@
                 <span>${escapeHtml(t("displayAdminControlledTitle"))}</span>
               </div>
               <div style="display:grid;grid-template-columns:auto 1fr;gap:7px 12px;align-items:start;font-size:11px;line-height:1.45">
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">UI language</span><span>Auto (follow browser)</span>
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">Placeholder</span><span>${escapeHtml(t("displayPlaceholderExample"))}</span>
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">Submit button</span><span>${ServerI18n.t("fireDanmu")}</span>
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">Poll prompt</span><span>${escapeHtml(t("displayPollPromptExample"))}</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="language">${escapeHtml(t("language"))}</span><span data-i18n="viewerThemeFollowBrowser">${escapeHtml(t("viewerThemeFollowBrowser"))}</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="displayAdminCtlPlaceholder">${escapeHtml(t("displayAdminCtlPlaceholder"))}</span><span data-i18n="displayPlaceholderExample">${escapeHtml(t("displayPlaceholderExample"))}</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="displayAdminCtlSubmit">${escapeHtml(t("displayAdminCtlSubmit"))}</span><span data-i18n="fireDanmu">${escapeHtml(t("fireDanmu"))}</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="displayAdminCtlPollPrompt">${escapeHtml(t("displayAdminCtlPollPrompt"))}</span><span data-i18n="displayPollPromptExample">${escapeHtml(t("displayPollPromptExample"))}</span>
               </div>
               <div style="padding-top:8px;border-top:1px solid var(--hud-line);font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);line-height:1.6">
                 ${escapeHtml(t("displayAdminControlledNote"))}
@@ -1050,7 +1050,7 @@
       icon: "↩",
       title: t("displayRevertConfirmTitle"),
       subtitle: ServerI18n.t("cfmSubRevertDefaults"),
-      severity: "warn",
+      severity: "danger",
       body: t("displayRevertConfirm"),
       confirmLabel: t("displayDeployRevert"),
     });
