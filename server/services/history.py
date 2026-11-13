@@ -202,6 +202,8 @@ class DanmuHistory:
             "fontInfo": danmu_data.get("fontInfo"),
             "clientIp": danmu_data.get("clientIp"),
             "fingerprint": danmu_data.get("fingerprint"),
+            # 整合來源（例如 "slido"）；觀眾自己送的是空字串。
+            "source": str(danmu_data.get("source") or "")[:32],
         }
 
         with self._lock:

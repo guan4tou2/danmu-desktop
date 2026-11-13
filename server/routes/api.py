@@ -277,6 +277,10 @@ def fire():
         explicit_source = request.headers.get("X-Fire-Source", "")
         source_label = fire_sources.detect(user_agent, explicit_source)
         fire_sources.record(source_label, fingerprint, client_ip, user_agent)
+        # Carried on the message itself so the admin feed and history can
+        # say where a danmu came from. Plain viewer fires stay untagged.
+        if source_label != "web":
+            data["source"] = source_label
 
         admin_client = is_fire_admin()
 
@@ -747,3 +751,20 @@ def check_blacklist():
         )
     except Exception as exc:
         return _log_and_internal_error("Error checking blacklist", exc, as_json=True)
+
+
+# The Slido extension's status heartbeat. Same credential as its /fire
+# calls (X-Fire-Token), so only an extension the operator configured can
+# write the status line shown on the Extensions page.
+@api_bp.route("/integrations/slido/status", methods=["POST"])
+@rate_limit("slido_status", "API_RATE_LIMIT", "API_RATE_WINDOW")
+def slido_status_report():
+    from ..services import slido_status
+
+    if not is_fire_admin():
+        return _json_response({"error": "Fire token required"}, 401)
+    try:
+        report = slido_status.record(request.get_json(silent=True))
+    except ValueError:
+        return _json_response({"error": "Invalid status report"}, 400)
+    return _json_response({"status": "OK", "state": report["state"]}, 200)

@@ -482,21 +482,27 @@ def rate_limit(
 def is_fire_admin() -> bool:
     """Return True when the request carries a matching X-Fire-Token header.
 
-    Admin requests bypass public /fire rate limits and captcha. Returns
-    False (public client) when no admin token is configured or the header
-    is missing/mismatched. Uses secrets.compare_digest to resist timing
-    attacks.
+    Matches either ``FIRE_ADMIN_TOKEN`` (env) or the enabled token from
+    ``services.fire_token`` (admin UI). Admin requests bypass public /fire
+    rate limits and captcha. Returns False (public client) when neither is
+    configured or the header is missing/mismatched. Uses
+    secrets.compare_digest to resist timing attacks.
     """
-    expected = (current_app.config.get("FIRE_ADMIN_TOKEN") or "").strip()
-    if not expected:
-        return False
     provided = (request.headers.get("X-Fire-Token") or "").strip()
     if not provided:
         return False
+    expected = (current_app.config.get("FIRE_ADMIN_TOKEN") or "").strip()
     try:
-        return secrets.compare_digest(expected, provided)
+        if expected and secrets.compare_digest(expected, provided):
+            return True
     except Exception:
         return False
+    # The token the operator generates on the Extensions page. Before this
+    # check /fire only knew the env var, so the token the admin UI told
+    # people to paste into the Slido extension was silently ignored.
+    from . import fire_token
+
+    return fire_token.verify(provided)
 
 
 def enforce_fire_rate_limits(fingerprint: str | None, is_admin: bool) -> None:
