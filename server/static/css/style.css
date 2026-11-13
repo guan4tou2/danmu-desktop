@@ -3782,6 +3782,13 @@ summary:focus-visible {
   font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 0.04em;
 }
 .admin-ext-step-link:hover { text-decoration: underline; }
+/* 擴充功能 popup 要填的 Server URL：直接給出本站網址，可選取複製 */
+.admin-ext-step-code {
+  font-family: var(--font-mono); font-size: var(--text-caption);
+  color: var(--color-ink-accent);
+  user-select: all;
+  overflow-wrap: anywhere;
+}
 
 .admin-ext-token {
   padding: var(--space-3);

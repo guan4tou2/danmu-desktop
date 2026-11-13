@@ -16,8 +16,8 @@
   const TEXT_PREVIEW_LEN = 80;
   const FP_DISPLAY_LEN = 8;
   const SECTION_ID = "sec-live-feed";
-  // services/fire_sources labels → brand names shown on the source chip.
-  const SOURCE_LABELS = { slido: "Slido", discord: "Discord", obs: "OBS", bookmarklet: "Bookmarklet" };
+  // fire_sources.KNOWN_INTEGRATIONS → brand names shown on the chip.
+  const INTEGRATION_LABELS = { slido: "Slido", discord: "Discord", obs: "OBS", bookmarklet: "Bookmarklet" };
 
   /** @type {{ ts: number, data: object, muted?: boolean, id: string }[]} */
   let entries = [];
@@ -154,12 +154,14 @@
       row.appendChild(badge);
     }
 
-    // Integration source (e.g. Slido) — only for non-viewer danmu, same
-    // chip as the layout tag. Brand names stay in English, not i18n.
-    if (d.source) {
+    // Integration (e.g. Slido) — server only sets it for token-verified
+    // senders. Same chip as the layout tag; brand names stay in English.
+    // Anything not in the list gets no chip rather than a raw code.
+    const integrationLabel = INTEGRATION_LABELS[d.integration];
+    if (integrationLabel) {
       const src = document.createElement("span");
       src.className = "admin-ui-chip admin-live-feed-tag";
-      src.textContent = SOURCE_LABELS[d.source] || d.source;
+      src.textContent = integrationLabel;
       row.appendChild(src);
     }
 
