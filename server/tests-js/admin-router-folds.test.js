@@ -64,6 +64,15 @@ beforeAll(() => {
     return [{}];
   };
   Element.prototype.scrollIntoView = function () { scrolled.push(this.id); };
+  // jsdom 的 offsetParent 永遠是 null；_dedupSectionTitles 靠它判斷「這一屏
+  // 真正可見的頁首」。照瀏覽器的語意：自己或祖先 display:none 時為 null。
+  Object.defineProperty(HTMLElement.prototype, "offsetParent", {
+    configurable: true,
+    get() {
+      for (let n = this; n; n = n.parentElement) if (n.style && n.style.display === "none") return null;
+      return this.parentElement;
+    },
+  });
 });
 
 beforeEach(() => {
@@ -240,5 +249,96 @@ describe("a module that re-renders on every sync does not multiply the syncs", (
     expect(syncs).toBeGreaterThan(0);
     // 每一輪只會有一個回呼真的執行；rAF 先到，所以同步次數不會超過畫格數。
     expect(syncs).toBeLessThanOrEqual(frames + 1);
+  });
+});
+
+// 2026-11-14 第四輪：頁首併進頂欄的那一步（_dedupSectionTitles）每次同步都重寫
+// [data-route-note] 的內容、把借來的動作搬回原處再搬過來——即使什麼都沒變。
+// 這些都是 MutationObserver 看得到的變動，於是同步 → 變動 → 再排一輪同步，
+// 前景分頁每個畫格跑一次、永不停止。同步必須冪等：沒變就不動 DOM。
+describe("merging a section header into the top bar settles", () => {
+  const quietWindow = () => new Promise((r) => setTimeout(r, 400));
+
+  function injectOverviewWithHeader(note) {
+    document.getElementById("settings-grid").insertAdjacentHTML("beforeend",
+      `<div id="sec-extensions-overview">
+         <div class="admin-ui-page-head">
+           <h2 class="admin-ui-page-title">${zh.adminNavIntegrations}</h2>
+           <p class="admin-ui-page-note">${note}</p>
+           <div class="admin-ui-page-actions"><button type="button" id="ext-primary">+</button></div>
+         </div>
+         <div>body</div>
+       </div>`);
+  }
+
+  async function countRouteApplied(during) {
+    let applied = 0;
+    const count = () => { applied += 1; };
+    document.addEventListener("admin-route-applied", count);
+    try { await during(); } finally { document.removeEventListener("admin-route-applied", count); }
+    return applied;
+  }
+
+  async function bootWithHeader() {
+    boot("#/system/integrations");
+    await settle();
+    injectOverviewWithHeader('Connect <a href="#/system/webhooks">Webhook</a> &amp; more');
+    await settle(); await settle(); await settle();
+    const shell = document.querySelector(".admin-dash-grid");
+    return {
+      note: shell.querySelector("[data-route-note]"),
+      actionSlot: shell.querySelector("[data-route-action]"),
+      head: document.querySelector("#sec-extensions-overview .admin-ui-page-head"),
+    };
+  }
+
+  test("once settled, no further syncs run while nothing changes", async () => {
+    const { note, actionSlot } = await bootWithHeader();
+    expect(note.hidden).toBe(false);
+    expect(note.textContent).toBe("Connect Webhook & more");
+    expect(actionSlot.querySelector("#ext-primary")).not.toBeNull();
+    expect(await countRouteApplied(quietWindow)).toBe(0);
+  });
+
+  test("the borrowed action keeps its listener", async () => {
+    const { actionSlot } = await bootWithHeader();
+    let clicks = 0;
+    document.getElementById("ext-primary").addEventListener("click", () => { clicks += 1; });
+    await quietWindow();
+    actionSlot.querySelector("#ext-primary").click();
+    expect(clicks).toBe(1);
+  });
+
+  test("a real content change still updates the top bar, then settles again", async () => {
+    const { note, head } = await bootWithHeader();
+    head.querySelector(".admin-ui-page-note").textContent = "Updated note";
+    await settle(); await settle();
+    expect(note.textContent).toBe("Updated note");
+    expect(await countRouteApplied(quietWindow)).toBe(0);
+  });
+
+  test("leaving the tab returns the action home; coming back borrows it again", async () => {
+    const { note, actionSlot, head } = await bootWithHeader();
+    document.querySelector('.admin-tabs-btn[data-tab="security"]').click();
+    await settle(); await settle();
+    expect(actionSlot.children.length).toBe(0);
+    expect(head.querySelector("#ext-primary")).not.toBeNull();
+    expect(note.hidden).toBe(true);
+    expect(await countRouteApplied(quietWindow)).toBe(0);
+
+    document.querySelector('.admin-tabs-btn[data-tab="integrations"]').click();
+    await settle(); await settle();
+    expect(actionSlot.querySelector("#ext-primary")).not.toBeNull();
+    expect(note.textContent).toBe("Connect Webhook & more");
+    expect(await countRouteApplied(quietWindow)).toBe(0);
+  });
+
+  test("switching language keeps the merged header and settles", async () => {
+    const { note, actionSlot } = await bootWithHeader();
+    window.ServerI18n.setLang("en");
+    await settle(); await settle();
+    expect(note.textContent).toBe("Connect Webhook & more");
+    expect(actionSlot.querySelector("#ext-primary")).not.toBeNull();
+    expect(await countRouteApplied(quietWindow)).toBe(0);
   });
 });
