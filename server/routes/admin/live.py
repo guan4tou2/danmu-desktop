@@ -3,7 +3,8 @@
 from flask import request
 
 from ...services import live_feed_buffer
-from ...services.blacklist import add_keyword
+from ...services.blacklist import block_keyword
+from ...services.filter_engine import RuleSaveError
 from ...services.security import rate_limit
 from ...services.validation import BlacklistKeywordSchema, validate_request
 from . import _json_response, admin_bp, require_csrf, require_login
@@ -53,19 +54,32 @@ def live_block():
     value = validated["keyword"]
 
     if block_type == "keyword":
-        add_keyword(value)
-        return _json_response({"message": f"Keyword '{value}' blocked"})
+        try:
+            status = block_keyword(value)
+        except RuleSaveError as e:
+            return _json_response({"error": str(e), "code": e.code}, 500)
+        # 回的訊息要反映實際結果：同一個字已經在清單上但被停用時，這裡會重新啟用它
+        # （5.8 以前回 200「blocked」，那個字其實還是停用的）。
+        messages = {
+            "added": f"Keyword '{value}' blocked",
+            "enabled": f"Keyword '{value}' was disabled and is blocked again",
+            "exists": f"Keyword '{value}' is already blocked",
+        }
+        return _json_response({"message": messages[status], "status": status})
     elif block_type == "fingerprint":
         from ...services.filter_engine import filter_engine
 
-        filter_engine.add_rule(
-            {
-                "type": "fingerprint",
-                "pattern": value,
-                "action": "block",
-                "priority": 0,
-                "enabled": True,
-            }
-        )
+        try:
+            filter_engine.add_rule(
+                {
+                    "type": "fingerprint",
+                    "pattern": value,
+                    "action": "block",
+                    "priority": 0,
+                    "enabled": True,
+                }
+            )
+        except RuleSaveError as e:
+            return _json_response({"error": str(e), "code": e.code}, 500)
         return _json_response({"message": "Fingerprint rule added"})
     return _json_response({"error": "Unknown block type"}, 400)

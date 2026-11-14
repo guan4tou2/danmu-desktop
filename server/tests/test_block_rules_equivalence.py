@@ -111,7 +111,7 @@ def unified_engine(tmp_path):
     engine = FilterEngine(path=str(path))
     # 舊黑名單沒有存檔；升級後重新加入的字走 /admin/blacklist/add → add_word
     for word in LEGACY_WORDS:
-        assert engine.add_word(word) is True
+        assert engine.add_word(word) == "added"
     yield engine
     FilterEngine._instance = None
 

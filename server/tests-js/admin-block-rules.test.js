@@ -7,6 +7,8 @@ describe("block rule list", () => {
   let calls;
   let rules;
   let events;
+  let respond; // 測試可以替某個端點換一個回應（回 undefined 就用預設）
+  let sessionLive;
 
   const flush = async () => {
     for (let i = 0; i < 6; i++) await new Promise((r) => setTimeout(r, 0));
@@ -19,9 +21,14 @@ describe("block rule list", () => {
     window.HudConfirm = { open: jest.fn(async () => true) };
     window.DANMU_CONFIG = { session: { logged_in: true } };
     window.csrfFetch = jest.fn(async (url, opts) => {
-      calls.push({ url, body: opts && opts.body ? JSON.parse(opts.body) : null });
-      if (url === "/admin/filters/list") return { ok: true, json: async () => ({ rules }) };
-      return { ok: true, json: async () => ({ rule_id: "new1" }) };
+      const body = opts && opts.body ? JSON.parse(opts.body) : null;
+      calls.push({ url, body });
+      const custom = respond && respond(url, body);
+      if (custom) return custom;
+      if (url === "/admin/filters/list") {
+        return { ok: true, json: async () => ({ rules, session_live: sessionLive }) };
+      }
+      return { ok: true, status: 200, json: async () => ({ rule_id: "new1" }) };
     });
     window.fetch = jest.fn(async () => ({
       ok: true,
@@ -37,6 +44,9 @@ describe("block rule list", () => {
   beforeEach(async () => {
     calls = [];
     events = [];
+    respond = null;
+    sessionLive = undefined;
+    window.showToast.mockClear();
     rules = [
       { id: "kw1", type: "keyword", pattern: "legacy", action: "block", priority: 0, enabled: true, lifetime: "permanent" },
       { id: "rx1", type: "regex", pattern: "https?://[^\\s]+", action: "block", priority: 50, enabled: true, lifetime: "session" },
@@ -166,5 +176,118 @@ describe("block rule list", () => {
     expect(document.querySelector("[data-block-list-group]").hidden).toBe(true);
     expect(document.querySelector("#blockRuleList .admin-empty")).toBeNull();
     delete window.AdminEmpty;
+  });
+
+  // ── 審查退回的三個前端問題（2026-11-14） ──────────────────────
+
+  const rerender = async () => {
+    // admin.js 的 renderControlPanel() 會重建整個 settings-grid；MutationObserver 重新 init()。
+    document.getElementById("settings-grid").innerHTML = "";
+    await flush();
+    expect(document.querySelectorAll("#sec-blacklist")).toHaveLength(1);
+    await window.AdminBlockRules.refresh();
+  };
+  const pressEnter = (value) => {
+    const input = document.getElementById("blockRuleInput");
+    if (value !== undefined) input.value = value;
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+  };
+
+  test("a full re-render mid-edit drops edit mode, so the next Enter adds instead of overwriting", async () => {
+    document.querySelector('[data-scope="regex"]').click();
+    document.querySelector('.block-rule-edit[data-rule-id="rx1"]').click();
+    expect(document.getElementById("blockRuleCancel").hidden).toBe(false);
+
+    await rerender();
+    expect(document.getElementById("blockRuleSubmit").textContent).toBe("modAddWordBtn");
+    // 分頁 chip 回到「全部」，清單也是全部
+    expect(document.querySelectorAll("#blockRuleList .admin-block-row")).toHaveLength(4);
+
+    calls = [];
+    pressEnter("brand-new-word");
+    await flush();
+    expect(calls.filter((c) => c.url === "/admin/filters/update")).toHaveLength(0);
+    expect(lastPost("/admin/filters/add").body).toMatchObject({ type: "word", pattern: "brand-new-word" });
+  });
+
+  test("an edit whose rule was deleted elsewhere leaves edit mode and refetches", async () => {
+    respond = (url) =>
+      url === "/admin/filters/update"
+        ? { ok: false, status: 404, json: async () => ({ error: "Rule not found" }) }
+        : undefined;
+    document.querySelector('.block-rule-edit[data-rule-id="kw1"]').click();
+    calls = [];
+    pressEnter("changed");
+    await flush();
+
+    expect(window.showToast).toHaveBeenLastCalledWith("blkErrGone", false);
+    expect(calls.filter((c) => c.url === "/admin/filters/list")).toHaveLength(1);
+    expect(document.getElementById("blockRuleCancel").hidden).toBe(true);
+    expect(document.getElementById("blockRuleInput").value).toBe("");
+
+    respond = null;
+    pressEnter("again");
+    await flush();
+    expect(lastPost("/admin/filters/add").body).toMatchObject({ pattern: "again" });
+  });
+
+  test("pressing Enter twice while the first save is in flight sends one request", async () => {
+    let release;
+    respond = (url) =>
+      url === "/admin/filters/add"
+        ? new Promise((resolve) => {
+            release = () => resolve({ ok: true, status: 200, json: async () => ({ rule_id: "n1" }) });
+          })
+        : undefined;
+    pressEnter("once");
+    await flush();
+    pressEnter();
+    pressEnter();
+    await flush();
+    expect(calls.filter((c) => c.url === "/admin/filters/add")).toHaveLength(1);
+    expect(document.getElementById("blockRuleSubmit").disabled).toBe(true);
+
+    release();
+    await flush();
+    expect(document.getElementById("blockRuleSubmit").disabled).toBe(false);
+    respond = null;
+    pressEnter("twice");
+    await flush();
+    expect(calls.filter((c) => c.url === "/admin/filters/add")).toHaveLength(2);
+  });
+
+  test("with no live session, until-session-end is not offered and quick rules are permanent", async () => {
+    sessionLive = false;
+    await window.AdminBlockRules.refresh();
+    const option = document.querySelector('#blockRuleLifetime option[value="session"]');
+    expect(option.hidden).toBe(true);
+    expect(option.disabled).toBe(true);
+
+    document.querySelector('[data-flt-quick-id="repeat"]').click();
+    await flush();
+    expect(lastPost("/admin/filters/add").body).toMatchObject({ type: "regex", lifetime: "permanent" });
+
+    sessionLive = true;
+    await window.AdminBlockRules.refresh();
+    expect(option.hidden).toBe(false);
+    expect(option.disabled).toBe(false);
+  });
+
+  test("server error codes get their own messages", async () => {
+    const codes = {
+      regex_timeout: "blkErrTimeout",
+      no_session: "blkErrNoSession",
+      save_failed: "blkErrNotSaved",
+      conflict: "blkErrConflict",
+    };
+    for (const [code, key] of Object.entries(codes)) {
+      respond = (url) =>
+        url === "/admin/filters/add"
+          ? { ok: false, status: code === "save_failed" ? 500 : 400, json: async () => ({ code }) }
+          : undefined;
+      pressEnter("x-" + code);
+      await flush();
+      expect(window.showToast).toHaveBeenLastCalledWith(key, false);
+    }
   });
 });

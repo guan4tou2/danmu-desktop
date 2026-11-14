@@ -25,11 +25,16 @@
 儲存格式維持一個 JSON 陣列（server/runtime/filter_rules.json，備份會帶走）。舊檔沒有
 lifetime 欄位，讀進來一律視為永久。第一次讀到需要轉換的檔案（缺 lifetime，或還有
 keyword＋block）時，先在旁邊留一份 ``filter_rules.json.pre-unified.bak``、再轉換並寫回；
-已經轉過的檔案不會再動，備份也不會被覆寫。原本的字串黑名單只存在記憶體裡（每次重啟
-就清空），沒有檔案可以搬。
+備份寫不成功就不寫回（只在記憶體轉換，記一筆警告）。已經轉過的檔案不會再動，備份也不會
+被覆寫。原本的字串黑名單只存在記憶體裡（每次重啟就清空），沒有檔案可以搬。
+
+主持人發動的改動（新增、修改、刪除、清除本場次）先寫檔、寫成功才生效；寫不進去丟
+RuleSaveError，API 回 500 ``save_failed``。
 """
 
+import dataclasses
 import json
+import logging
 import os
 import re
 import shutil
@@ -41,10 +46,19 @@ from typing import Any, Optional
 
 from . import rule_regex
 
+logger = logging.getLogger(__name__)
+
 # 舊版規則檔第一次被新版讀到時留下的備份（不會被備份功能的 *.json 打包帶走）
 LEGACY_BACKUP_SUFFIX = ".pre-unified.bak"
 
 _REGEX_TYPES = ("regex", "replace")
+
+# 只改這幾個欄位的更新不重跑 pattern 的安全檢查與重複檢查——停用、刪除、改期限
+# 永遠要做得到，即使那條規則的正規式是 5.8 存下來、現在會被判成危險的寫法。
+META_FIELDS = ("enabled", "priority", "lifetime", "duration_sec")
+
+# 客戶端不能直接指定到期時間：限時規則只收 duration_sec，由伺服器換算。
+_CLIENT_IGNORED_FIELDS = ("id", "expires_at")
 
 
 class RuleValidationError(ValueError):
@@ -54,6 +68,18 @@ class RuleValidationError(ValueError):
         super().__init__(message)
         self.code = code
         self.details = details if details is not None else {"_schema": [message]}
+
+
+class RuleSaveError(Exception):
+    """規則檔寫不進去。這次的改動沒有生效（記憶體裡的清單維持原樣）。"""
+
+    code = "save_failed"
+
+
+def _session_live() -> bool:
+    from . import session_service
+
+    return session_service.is_live()
 
 
 @dataclass
@@ -119,9 +145,69 @@ def _error_code(texts: list[str]) -> str:
     joined = " ".join(texts)
     if "Invalid regex" in joined:
         return "invalid_regex"
+    if "timed out" in joined:
+        return "regex_timeout"
     if "backtracking" in joined or "safety check" in joined:
         return "unsafe_regex"
     return "invalid"
+
+
+_MISSING = object()
+
+
+def _client_fields(data: dict[str, Any]) -> dict[str, Any]:
+    """拿掉客戶端不能指定的欄位（id、expires_at）。"""
+    return {k: v for k, v in data.items() if k not in _CLIENT_IGNORED_FIELDS}
+
+
+def _resolve_lifetime(
+    lifetime: str, duration_sec: Optional[int], existing: Optional[FilterRule]
+) -> tuple[str, Optional[float]]:
+    """把驗證過的期限換成要存的 (lifetime, expires_at)。
+
+    * timed：給了 duration_sec 就從現在起算；沒給時沿用原本那條限時規則的到期時間，
+      原本不是限時就是錯。
+    * session：沒有進行中的場次時不收——「到本場次結束」那時沒有場次可以結束，
+      規則會悄悄留到下一場結束（後台在沒有場次時不提供這個選項）。原本就是
+      session 的規則（場次中）照常可以改其他欄位。
+    """
+    if lifetime == "timed":
+        if duration_sec is not None:
+            return lifetime, time.time() + duration_sec
+        if existing is not None and existing.lifetime == "timed" and existing.expires_at:
+            return lifetime, existing.expires_at
+        msg = "A timed rule needs a duration."
+        raise RuleValidationError(msg, "invalid", {"duration_sec": [msg]})
+    if lifetime == "session":
+        already = existing is not None and existing.lifetime == "session"
+        if not already and not _session_live():
+            msg = "No session is live, so a rule cannot last until the session ends."
+            raise RuleValidationError(msg, "no_session", {"lifetime": [msg]})
+    return lifetime, None
+
+
+_REGEX_VERBS = {"block": "match", "allow": "allow", "review": "review"}
+
+
+def _regex_result(rule: FilterRule, text: str, count: int, new_text: str) -> Optional[FilterResult]:
+    """regex／replace 規則的比對次數換成結果（/fire 與規則測試共用）。"""
+    if rule.type == "replace":
+        if count > 0:
+            return FilterResult(
+                action="replace",
+                text=new_text,
+                reason=f"Replaced {count} match(es) via '{rule.pattern}'",
+                rule_id=rule.id,
+            )
+        return None
+    if count and rule.action in _REGEX_VERBS:
+        return FilterResult(
+            action=rule.action,
+            text=text,
+            reason=f"Regex {_REGEX_VERBS[rule.action]}: '{rule.pattern}'",
+            rule_id=rule.id,
+        )
+    return None
 
 
 class FilterEngine:
@@ -212,46 +298,61 @@ class FilterEngine:
     # ── 清單操作 ────────────────────────────────────────────────
 
     def add_rule(self, rule_data: dict[str, Any]) -> str:
-        """新增一條規則，回傳 id。沒通過驗證時丟 RuleValidationError（ValueError）。"""
+        """新增一條規則，回傳 id。
+
+        沒通過驗證時丟 RuleValidationError（ValueError）；寫檔失敗丟 RuleSaveError。
+        驗證在鎖外面做：正規式的安全檢查要等子行程（最多 PROBE_TIMEOUT_SEC），
+        不能讓 /fire 的比對排在後面等。
+        """
+        rule = self._validate(_client_fields(rule_data))
         with self._lock:
-            rule = self._validate(rule_data)
             self._reject_duplicate_word(rule)
             self._compile_if_regex(rule)
-            self._rules.append(rule)
-            self._save()
+            self._commit(self._rules + [rule])
             return rule.id
 
     def update_rule(self, rule_id: str, data: dict[str, Any]) -> bool:
         """修改一條規則。找到並更新回 True，找不到回 False。
 
-        把現有規則與 *data* 合併成完整的一筆，再走跟新增同一個 ``_validate``。
+        只改 META_FIELDS（啟用、優先序、期限）時只驗那幾個欄位；其他改動把現有規則
+        與 *data* 合併成完整的一筆，再走跟新增同一個 ``_validate``。
         """
+        data = _client_fields(data)
         with self._lock:
-            for i, rule in enumerate(self._rules):
-                if rule.id != rule_id:
-                    continue
-                merged = rule.to_dict()
-                merged.update({k: v for k, v in data.items() if k != "id"})
-                updated = self._validate(merged, rule_id=rule.id)
-                self._reject_duplicate_word(updated, ignore_id=rule.id)
-                self._compile_if_regex(updated)
-                if rule.pattern != updated.pattern:
-                    self._regex_cache.pop(rule.pattern, None)
-                self._rules[i] = updated
-                self._save()
+            rule = self._find(rule_id)
+            if rule is None:
+                return False
+            if self._changed_fields(rule, data) <= set(META_FIELDS):
+                updated = self._apply_meta(rule, data)
+                self._commit([updated if r.id == rule_id else r for r in self._rules])
                 return True
-        return False
+            snapshot = rule.to_dict()
+            merged = {**snapshot, **data}
+        updated = self._validate(merged, rule_id=rule_id, existing=rule)
+        with self._lock:
+            current = self._find(rule_id)
+            if current is None:
+                return False
+            if current.to_dict() != snapshot:
+                raise RuleValidationError(
+                    "The rule changed while this edit was being checked; try again.", "conflict"
+                )
+            self._reject_duplicate_word(updated, ignore_id=rule_id)
+            self._compile_if_regex(updated)
+            self._commit([updated if r.id == rule_id else r for r in self._rules])
+            if rule.pattern != updated.pattern:
+                self._regex_cache.pop(rule.pattern, None)
+            return True
 
     def remove_rule(self, rule_id: str) -> bool:
         """Remove a rule by id. Returns True if found and removed."""
         with self._lock:
-            for i, rule in enumerate(self._rules):
-                if rule.id == rule_id:
-                    removed = self._rules.pop(i)
-                    self._regex_cache.pop(removed.pattern, None)
-                    self._save()
-                    return True
-        return False
+            removed = self._find(rule_id)
+            if removed is None:
+                return False
+            self._commit([r for r in self._rules if r.id != rule_id])
+            self._regex_cache.pop(removed.pattern, None)
+            return True
 
     def get_rule(self, rule_id: str) -> Optional[dict[str, Any]]:
         with self._lock:
@@ -270,42 +371,85 @@ class FilterEngine:
     def clear_session_rules(self) -> int:
         """移除所有「到本場次結束」的規則，回傳移除幾條。場次結束時自動呼叫。"""
         with self._lock:
-            before = len(self._rules)
-            self._rules = [r for r in self._rules if r.lifetime != "session"]
-            removed = before - len(self._rules)
+            kept = [r for r in self._rules if r.lifetime != "session"]
+            removed = len(self._rules) - len(kept)
             if removed:
-                self._save()
+                self._commit(kept)
             return removed
 
     def test_rule(self, rule_data: dict[str, Any], sample_text: str) -> FilterResult:
         """Evaluate a rule definition against sample text without persisting.
 
-        Raises ValueError (RuleValidationError) if the rule is invalid.
+        Raises ValueError (RuleValidationError) if the rule is invalid. 正規式規則的
+        樣本比對也在子行程裡跑（rule_regex.vet_pattern）：跑不完就回 code
+        ``regex_timeout``，不會在伺服器行程裡卡住。期限與測試無關，不驗。
         """
-        rule = self._validate(rule_data)
-        self._compile_if_regex(rule, cache=False)
-        result = self._evaluate(rule, sample_text, fingerprint=None)
-        if result is not None:
-            return result
-        return FilterResult(action="pass", text=sample_text)
+        data = {
+            k: v
+            for k, v in _client_fields(rule_data).items()
+            if k not in ("lifetime", "duration_sec")
+        }
+        rule = self._validate(data)
+        if rule.type not in _REGEX_TYPES:
+            result = self._evaluate(rule, sample_text, fingerprint=None)
+            return result or FilterResult(action="pass", text=sample_text)
+        try:
+            count, new_text = rule_regex.vet_pattern(
+                rule.pattern,
+                sample=sample_text,
+                mode="replace" if rule.type == "replace" else "search",
+                replacement=rule.replacement,
+                probes=False,
+            )
+        except rule_regex.PatternTimeout as exc:
+            raise RuleValidationError(
+                "This rule timed out on the sample text.", "regex_timeout"
+            ) from exc
+        except rule_regex.PatternError as exc:
+            raise RuleValidationError(f"Invalid regex: {exc}", "invalid_regex") from exc
+        except rule_regex.PatternCheckUnavailable as exc:
+            raise RuleValidationError(
+                "Regex pattern failed safety check: could not run the check.", "unsafe_regex"
+            ) from exc
+        result = _regex_result(rule, sample_text, count, new_text)
+        return result or FilterResult(action="pass", text=sample_text)
 
     # ── 封鎖字（/admin/blacklist/* 與 /admin/live/block 的薄轉接） ──
 
-    def add_word(self, word: str) -> bool:
-        """加一個永久封鎖字。已經有同一個字（大小寫完全相同）時回 False。"""
+    def add_word(
+        self, word: str, lifetime: str = "permanent", duration_sec: Optional[int] = None
+    ) -> str:
+        """封鎖一個字，回傳實際發生的事：
+
+        added    新加了一條封鎖字
+        enabled  已經有同一個字（大小寫完全相同）但被停用，這次重新啟用，期限改成這次
+                 要求的 *lifetime*
+        exists   已經有、而且正在生效，沒有改動
+        """
+        meta: dict[str, Any] = {"enabled": True, "lifetime": lifetime}
+        if duration_sec is not None:
+            meta["duration_sec"] = duration_sec
         with self._lock:
-            if any(r.type == "word" and r.pattern == word for r in self._rules):
-                return False
-            self.add_rule({"type": "word", "pattern": word, "action": "block"})
-            return True
+            existing = next(
+                (r for r in self._rules if r.type == "word" and r.pattern == word), None
+            )
+            if existing is not None:
+                if existing.enabled:
+                    return "exists"
+                updated = self._apply_meta(existing, meta)
+                self._commit([updated if r.id == existing.id else r for r in self._rules])
+                return "enabled"
+            # 封鎖字不跑正規式，驗證不會起子行程，可以留在鎖裡做。
+            rule = self._validate({"type": "word", "pattern": word, "action": "block", **meta})
+            self._commit(self._rules + [rule])
+            return "added"
 
     def remove_word(self, word: str) -> bool:
         with self._lock:
-            before = len(self._rules)
-            self._rules = [r for r in self._rules if not (r.type == "word" and r.pattern == word)]
-            if len(self._rules) == before:
+            kept = [r for r in self._rules if not (r.type == "word" and r.pattern == word)]
+            if len(kept) == len(self._rules):
                 return False
-            self._save()
+            self._commit(kept)
             return True
 
     def list_words(self) -> list[str]:
@@ -329,8 +473,69 @@ class FilterEngine:
         """第 1 段的規則（不含封鎖字），依 priority 排序；sorted 是穩定排序。"""
         return sorted((r for r in self._rules if r.type != "word"), key=lambda r: r.priority)
 
-    def _validate(self, data: dict[str, Any], rule_id: Optional[str] = None) -> FilterRule:
-        """新增、更新、測試共用的唯一驗證：回傳一條可以直接存的 FilterRule。"""
+    def _find(self, rule_id: str) -> Optional[FilterRule]:
+        return next((r for r in self._rules if r.id == rule_id), None)
+
+    @staticmethod
+    def _changed_fields(rule: FilterRule, data: dict[str, Any]) -> set[str]:
+        """*data* 裡和 *rule* 現值不同的欄位。
+
+        後台的編輯表單會把整條規則送回來，所以不能只看送了哪些 key。跟這個型別無關
+        的欄位（非 replace 的 replacement、非 rate_limit 的次數與時間窗）不算改動；
+        keyword＋block 先換成 word 再比。
+        """
+        current = rule.to_dict()
+        new_type = data.get("type", rule.type)
+        if _is_legacy_keyword_block(new_type, data.get("action", rule.action)):
+            new_type = "word"
+        changed: set[str] = set()
+        for key, value in data.items():
+            if key == "type":
+                value = new_type
+            elif key == "replacement" and "replace" not in (rule.type, new_type):
+                continue
+            elif key in ("max_count", "window_sec") and "rate_limit" not in (rule.type, new_type):
+                continue
+            elif key == "duration_sec":
+                changed.add(key)
+                continue
+            if current.get(key, _MISSING) != value:
+                changed.add(key)
+        return changed
+
+    def _apply_meta(self, rule: FilterRule, data: dict[str, Any]) -> FilterRule:
+        """只改 META_FIELDS 的更新：只驗那幾個欄位，不碰 pattern。"""
+        from .validation import FilterRuleSchema, ValidationError
+
+        payload = {"enabled": rule.enabled, "priority": rule.priority, "lifetime": rule.lifetime}
+        payload.update({k: data[k] for k in META_FIELDS if k in data})
+        try:
+            clean = FilterRuleSchema(only=META_FIELDS).load(payload)
+        except ValidationError as err:
+            texts = _flatten_messages(err.messages)
+            raise RuleValidationError("; ".join(texts), _error_code(texts), err.messages) from err
+        lifetime, expires_at = _resolve_lifetime(
+            clean["lifetime"], clean.get("duration_sec"), existing=rule
+        )
+        return dataclasses.replace(
+            rule,
+            enabled=clean["enabled"],
+            priority=clean["priority"],
+            lifetime=lifetime,
+            expires_at=expires_at,
+        )
+
+    def _validate(
+        self,
+        data: dict[str, Any],
+        rule_id: Optional[str] = None,
+        existing: Optional[FilterRule] = None,
+    ) -> FilterRule:
+        """新增、更新、測試共用的唯一驗證：回傳一條可以直接存的 FilterRule。
+
+        *existing* 是更新前的那條規則（限時規則沒給新的 duration_sec 時沿用原本的
+        到期時間）。正規式的安全檢查會起子行程，呼叫端不要拿著 _lock 呼叫。
+        """
         from .validation import (
             FILTER_RULE_ACTIONS,
             FILTER_RULE_TYPES,
@@ -338,7 +543,11 @@ class FilterEngine:
             ValidationError,
         )
 
-        rule_type = data.get("type", "keyword")
+        if "type" not in data:
+            # 5.8 的 /admin/filters/add 沒給 type 回 400；不要默默當成 keyword。
+            msg = "Missing data for required field."
+            raise RuleValidationError(f"type: {msg}", "invalid", {"type": [msg]})
+        rule_type = data["type"]
         if rule_type not in FILTER_RULE_TYPES:
             raise RuleValidationError(f"Unknown rule type: {rule_type}")
         action = data.get("action", "block")
@@ -359,13 +568,9 @@ class FilterEngine:
             texts = _flatten_messages(err.messages)
             raise RuleValidationError("; ".join(texts), _error_code(texts), err.messages) from err
 
-        lifetime = clean["lifetime"]
-        expires_at = None
-        if lifetime == "timed":
-            if clean.get("duration_sec") is not None:
-                expires_at = time.time() + clean["duration_sec"]
-            else:
-                expires_at = clean["expires_at"]
+        lifetime, expires_at = _resolve_lifetime(
+            clean["lifetime"], clean.get("duration_sec"), existing=existing
+        )
 
         return FilterRule(
             id=rule_id or uuid.uuid4().hex[:8],
@@ -476,43 +681,14 @@ class FilterEngine:
         if rule.type == "regex":
             compiled = self._get_compiled(rule.pattern)
             hits, _ = rule_regex.run_pattern(compiled, text)
-            if hits:
-                if rule.action == "block":
-                    return FilterResult(
-                        action="block",
-                        text=text,
-                        reason=f"Regex match: '{rule.pattern}'",
-                        rule_id=rule.id,
-                    )
-                if rule.action == "allow":
-                    return FilterResult(
-                        action="allow",
-                        text=text,
-                        reason=f"Regex allow: '{rule.pattern}'",
-                        rule_id=rule.id,
-                    )
-                if rule.action == "review":
-                    return FilterResult(
-                        action="review",
-                        text=text,
-                        reason=f"Regex review: '{rule.pattern}'",
-                        rule_id=rule.id,
-                    )
-            return None
+            return _regex_result(rule, text, hits, text)
 
         if rule.type == "replace":
             compiled = self._get_compiled(rule.pattern)
             count, new_text = rule_regex.run_pattern(
                 compiled, text, mode="replace", replacement=rule.replacement
             )
-            if count > 0:
-                return FilterResult(
-                    action="replace",
-                    text=new_text,
-                    reason=f"Replaced {count} match(es) via '{rule.pattern}'",
-                    rule_id=rule.id,
-                )
-            return None
+            return _regex_result(rule, text, count, new_text)
 
         if rule.type == "rate_limit":
             if fingerprint is None:
@@ -581,7 +757,7 @@ class FilterEngine:
             if not isinstance(raw, list):
                 self._rules = []
                 return
-            self._keep_legacy_copy(raw)
+            backed_up = self._keep_legacy_copy(raw)
             rules: list[FilterRule] = []
             converted = False
             for entry in raw:
@@ -619,15 +795,27 @@ class FilterEngine:
                 rules.append(rule)
             self._rules = rules
             if converted:
-                self._save()
+                if backed_up:
+                    self._save()
+                else:
+                    # 原檔沒備份成功就不覆寫它：這次只在記憶體裡轉換。之後主持人真的
+                    # 改了清單才會寫檔（那時寫的是改過的清單，不寫就等於丟掉那次改動）。
+                    logger.warning(
+                        "Block rules: could not back up %s; converted in memory only, "
+                        "the file was left as it is",
+                        self._path,
+                    )
         except (json.JSONDecodeError, OSError):
             self._rules = []
 
-    def _keep_legacy_copy(self, raw: list) -> None:
+    def _keep_legacy_copy(self, raw: list) -> bool:
         """需要轉換的規則檔（5.8 以前的格式）第一次被讀到時，在旁邊留一份原檔。
 
         轉換會把 keyword＋block 改成 word、並多寫 lifetime 等欄位；留著原檔，降版、
         還原或對照都還找得到。已經有備份就不再動它，所以重複啟動是冪等的。
+        先複製成暫存檔再 os.replace，備份檔不會只寫了一半。
+
+        回傳原檔現在是否有備份（不需要備份時也回 True）。
         """
         if not any(
             isinstance(e, dict)
@@ -637,29 +825,52 @@ class FilterEngine:
             )
             for e in raw
         ):
-            return
+            return True
         backup = self._path + LEGACY_BACKUP_SUFFIX
         if os.path.exists(backup):
-            return
+            return True
+        tmp_path = backup + ".tmp"
         try:
-            shutil.copy2(self._path, backup)
-        except OSError:
-            pass
+            shutil.copy2(self._path, tmp_path)
+            os.replace(tmp_path, backup)
+            return True
+        except OSError as exc:
+            logger.warning("Block rules: could not back up %s: %s", self._path, exc)
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            return False
 
-    def _save(self) -> None:
-        """Persist current rules to the JSON file."""
-        data = [r.to_dict() for r in self._rules]
+    def _write(self, rules: list[FilterRule]) -> None:
+        """把 *rules* 原子地寫進規則檔；寫不進去時記警告並丟 RuleSaveError。"""
+        data = [r.to_dict() for r in rules]
         tmp_path = self._path + ".tmp"
         try:
             with open(tmp_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
             os.replace(tmp_path, self._path)
-        except OSError:
-            # Best-effort; don't crash if disk write fails
+        except OSError as exc:
+            logger.warning("Block rules: could not write %s: %s", self._path, exc)
             try:
                 os.unlink(tmp_path)
             except OSError:
                 pass
+            raise RuleSaveError(
+                "The block rules file could not be written; the change was not saved."
+            ) from exc
+
+    def _commit(self, rules: list[FilterRule]) -> None:
+        """先寫檔、寫成功才換掉記憶體裡的清單：寫失敗時這次改動整個不生效。"""
+        self._write(rules)
+        self._rules = rules
+
+    def _save(self) -> None:
+        """不是主持人發動的寫檔（到期清除、讀檔轉換）：寫不進去只記警告。"""
+        try:
+            self._write(self._rules)
+        except RuleSaveError:
+            pass
 
     def cleanup_rate_tracker(self, max_age: float = 600.0) -> int:
         """Remove stale fingerprint entries older than max_age seconds.

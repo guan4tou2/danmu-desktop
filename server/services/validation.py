@@ -316,22 +316,30 @@ class SchedulerCreateSchema(Schema):
 
 
 def _safe_compile_regex(pattern: str) -> None:
-    """Attempt to compile a regex; raise ValidationError if it's invalid or dangerous."""
+    """Attempt to compile a regex; raise ValidationError if it's invalid or dangerous.
+
+    編譯只在本行程做（不會卡住）；實際執行一律交給 rule_regex.vet_pattern，在有硬性
+    逾時的子行程裡跑——逾時就判定為危險。
+    """
     from . import rule_regex
 
     try:
-        compiled = rule_regex.compile_pattern(pattern)
+        rule_regex.compile_pattern(pattern)
     except _re.error as exc:
         raise ValidationError(f"Invalid regex: {exc}")
     # Heuristic ReDoS guard: reject patterns with nested quantifiers on groups/chars
     dangerous = _re.search(r"(\([^)]*\)[+*?{].*[+*?{]|\[[^\]]*\][+*?{].*[+*?{])", pattern)
     if dangerous:
         raise ValidationError("Regex pattern may cause catastrophic backtracking.")
-    # Test against a short safe input to catch simple ReDoS patterns
+    # 上面的啟發式抓不到的寫法（例如 (a+)+b），靠子行程實際跑探測輸入抓。
     try:
-        rule_regex.run_pattern(compiled, "a" * 50, mode="match")
-    except Exception:
-        raise ValidationError("Regex pattern failed safety check.")
+        rule_regex.vet_pattern(pattern)
+    except rule_regex.PatternTimeout:
+        raise ValidationError("Regex pattern timed out during the safety check.")
+    except rule_regex.PatternError as exc:
+        raise ValidationError(f"Invalid regex: {exc}")
+    except rule_regex.PatternCheckUnavailable:
+        raise ValidationError("Regex pattern failed safety check: could not run the check.")
 
 
 # 封鎖規則（services/filter_engine.py）的型別、動作與期限。
@@ -374,17 +382,22 @@ class FilterRuleSchema(Schema):
     max_count = fields.Int(load_default=5, validate=validate.Range(min=1, max=100))
     window_sec = fields.Float(load_default=60, validate=validate.Range(min=1, max=3600))
     # 期限：permanent 永久、session 到本場次結束、timed 限時（duration_sec 從現在起算；
-    # 已存在的限時規則更新時沒給 duration_sec 就沿用 expires_at）
+    # 已存在的限時規則更新時沒給 duration_sec 就沿用原本的到期時間）。到期時間只由伺服器
+    # 算，客戶端送的 expires_at 不收。「限時要有期限」「沒有場次時不收 session」在
+    # filter_engine._resolve_lifetime——它要看更新前的那條規則與目前的場次。
     lifetime = fields.Str(load_default="permanent", validate=validate.OneOf(FILTER_RULE_LIFETIMES))
     duration_sec = fields.Int(
         load_default=None,
         allow_none=True,
         validate=validate.Range(min=60, max=FILTER_RULE_MAX_DURATION_SEC),
     )
-    expires_at = fields.Float(load_default=None, allow_none=True)
 
     @validates_schema
     def validate_rule(self, data, **kwargs):
+        if "type" not in self.fields:
+            # FilterRuleSchema(only=META_FIELDS)：只改啟用／優先序／期限的更新，不碰
+            # pattern，所以 pattern 的檢查一條都不跑（見 FilterEngine._apply_meta）。
+            return
         rule_type = data.get("type")
         pattern = data.get("pattern") or ""
         if not pattern and rule_type != "rate_limit":
@@ -399,12 +412,6 @@ class FilterRuleSchema(Schema):
             raise ValidationError("Pattern cannot contain control characters.", "pattern")
         if rule_type == "word" and data.get("action") != "block":
             raise ValidationError("A blocked word can only block.", "action")
-        if (
-            data.get("lifetime") == "timed"
-            and data.get("duration_sec") is None
-            and data.get("expires_at") is None
-        ):
-            raise ValidationError("A timed rule needs a duration.", "duration_sec")
 
 
 class WebhookSchema(Schema):

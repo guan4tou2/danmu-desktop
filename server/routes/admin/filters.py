@@ -6,7 +6,7 @@
 
 from flask import request
 
-from ...services.filter_engine import RuleValidationError
+from ...services.filter_engine import RuleSaveError, RuleValidationError
 from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login
 
@@ -34,6 +34,11 @@ def _invalid(err: RuleValidationError, legacy_shape: bool = False):
     )
 
 
+def _not_saved(err: RuleSaveError):
+    # 規則檔寫不進去：這次的改動沒有生效，要讓後台知道，不能回 200。
+    return _json_response({"error": str(err), "code": err.code}, 500)
+
+
 @admin_bp.route("/filters/add", methods=["POST"])
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
@@ -47,6 +52,8 @@ def add_filter_rule():
         return _json_response({"rule_id": rule_id})
     except RuleValidationError as e:
         return _invalid(e)
+    except RuleSaveError as e:
+        return _not_saved(e)
     except ValueError as e:
         return _json_response({"error": str(e)}, 400)
 
@@ -58,7 +65,11 @@ def add_filter_rule():
 def remove_filter_rule():
     data = request.get_json(silent=True) or {}
     rule_id = data.get("rule_id", "") if isinstance(data, dict) else ""
-    if _engine().remove_rule(rule_id):
+    try:
+        removed = _engine().remove_rule(rule_id)
+    except RuleSaveError as e:
+        return _not_saved(e)
+    if removed:
         return _json_response({"message": "Rule removed"})
     return _json_response({"error": "Rule not found"}, 404)
 
@@ -80,6 +91,8 @@ def update_filter_rule():
         return _json_response({"error": "Rule not found"}, 404)
     except RuleValidationError as e:
         return _invalid(e, legacy_shape=True)
+    except RuleSaveError as e:
+        return _not_saved(e)
     except ValueError as e:
         return _json_response({"error": str(e)}, 400)
 
@@ -87,7 +100,12 @@ def update_filter_rule():
 @admin_bp.route("/filters/list", methods=["GET"])
 @require_login
 def list_filter_rules():
-    return _json_response({"rules": _engine().list_rules()})
+    from ...services import session_service
+
+    # session_live：沒有進行中的場次時，後台不提供「到本場次結束」這個期限。
+    return _json_response(
+        {"rules": _engine().list_rules(), "session_live": session_service.is_live()}
+    )
 
 
 @admin_bp.route("/filters/clear-session", methods=["POST"])
@@ -96,7 +114,10 @@ def list_filter_rules():
 @require_login
 def clear_session_filter_rules():
     """移除所有「到本場次結束」的規則（場次結束時也會自動做一次）。"""
-    return _json_response({"removed": _engine().clear_session_rules()})
+    try:
+        return _json_response({"removed": _engine().clear_session_rules()})
+    except RuleSaveError as e:
+        return _not_saved(e)
 
 
 @admin_bp.route("/filters/test", methods=["POST"])

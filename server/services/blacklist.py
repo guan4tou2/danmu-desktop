@@ -12,10 +12,16 @@ def _engine():
     return _engine_module.filter_engine
 
 
+def block_keyword(keyword: str) -> str:
+    """永久封鎖 *keyword*，回傳 added／enabled（原本停用，重新啟用）／exists。"""
+    return _engine().add_word(keyword)
+
+
 def add_keyword(keyword: str) -> bool:
+    """封鎖 *keyword*；這次呼叫之後它才開始生效（新加或重新啟用）時回 True。"""
     if not keyword:
         return False
-    return _engine().add_word(keyword)
+    return block_keyword(keyword) != "exists"
 
 
 def remove_keyword(keyword: str) -> bool:

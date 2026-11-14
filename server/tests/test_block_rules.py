@@ -51,9 +51,9 @@ def test_permanent_is_the_default_and_survives_a_reload():
 
 
 def test_session_rules_end_with_the_session():
+    session_service.open_session("測試場")
     filter_engine.add_rule({"type": "word", "pattern": "本場字", "lifetime": "session"})
     keep = filter_engine.add_rule({"type": "word", "pattern": "常駐字"})
-    session_service.open_session("測試場")
     assert filter_engine.match_word("本場字") == "本場字"
 
     session_service.close_session()
@@ -62,7 +62,31 @@ def test_session_rules_end_with_the_session():
     assert [r["id"] for r in filter_engine.list_rules()] == [keep]
 
 
+def test_session_lifetime_needs_a_live_session(client):
+    """沒有進行中的場次時，「到本場次結束」沒有場次可以結束——不收，而不是悄悄
+    留到下一場結束。後台從 /admin/filters/list 的 session_live 知道要不要提供這個選項。"""
+    assert client.get("/admin/filters/list").status_code in (302, 401)  # 未登入
+    _csrf(client)
+    assert client.get("/admin/filters/list").get_json()["session_live"] is False
+    res = _post(
+        client, "/admin/filters/add", {"type": "word", "pattern": "x", "lifetime": "session"}
+    )
+    assert res.status_code == 400
+    assert res.get_json()["code"] == "no_session"
+    rule_id = filter_engine.add_rule({"type": "word", "pattern": "y"})
+    with pytest.raises(RuleValidationError) as exc:
+        filter_engine.update_rule(rule_id, {"lifetime": "session"})
+    assert exc.value.code == "no_session"
+    assert filter_engine.list_rules()[0]["lifetime"] == "permanent"
+
+    session_service.open_session("測試場")
+    assert client.get("/admin/filters/list").get_json()["session_live"] is True
+    filter_engine.update_rule(rule_id, {"lifetime": "session"})
+    assert filter_engine.get_rule(rule_id)["lifetime"] == "session"
+
+
 def test_clear_session_route_is_the_manual_version(client):
+    session_service.open_session("測試場")
     filter_engine.add_rule({"type": "regex", "pattern": "a+b", "lifetime": "session"})
     filter_engine.add_rule({"type": "word", "pattern": "常駐字"})
     res = _post(client, "/admin/filters/clear-session", {})
@@ -179,7 +203,8 @@ def test_update_validates_the_merged_rule_not_just_the_changed_fields():
 
 
 def test_regex_runs_through_one_compile_and_one_match_function():
-    """之後要在正規式比對加逾時保護：所有編譯與比對都必須經過 rule_regex。"""
+    """所有編譯與比對都經過 rule_regex：/fire 走 run_pattern；新增、改 pattern、規則測試
+    拿使用者寫的正規式去跑時，一律走 vet_pattern（有硬性逾時的子行程）。"""
     engine_src = (SERVER / "services" / "filter_engine.py").read_text(encoding="utf-8")
     validation_src = (SERVER / "services" / "validation.py").read_text(encoding="utf-8")
     safe = validation_src[validation_src.index("def _safe_compile_regex") :]
@@ -188,7 +213,12 @@ def test_regex_runs_through_one_compile_and_one_match_function():
         assert not re.search(r"\bre\.compile\(|_re\.compile\(", src)
         assert not re.search(r"compiled\.(search|match|subn|sub|fullmatch)\(", src)
     assert "rule_regex.compile_pattern(" in engine_src and "rule_regex.run_pattern(" in engine_src
-    assert "rule_regex.compile_pattern(" in safe and "rule_regex.run_pattern(" in safe
+    # 驗證只在本行程編譯，執行交給子行程
+    assert "rule_regex.compile_pattern(" in safe and "rule_regex.vet_pattern(" in safe
+    assert "rule_regex.run_pattern(" not in safe
+    test_rule = engine_src[engine_src.index("def test_rule") :]
+    test_rule = test_rule[: test_rule.index("\n    def ")]
+    assert "rule_regex.vet_pattern(" in test_rule and "run_pattern" not in test_rule
 
 
 # ── 舊的 API 路徑仍可用，而且加進同一份清單 ────────────────

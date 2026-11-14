@@ -114,17 +114,39 @@
   }
 
   // 四個快捷規則。以前它們送出時多帶一個 name 欄位，後端一律 400，所以從來沒開成功過；
-  // 現在用「同樣的正規式＋動作」認出已開啟的那條。開啟時是本場次規則——它們原本的定位就是
-  // 「直播中臨時開、結束後清掉」。全大寫用 (?-i:…)：引擎一律不分大小寫比對，
-  // 不關掉的話「hello world」也算全大寫。
+  // 現在用「同樣的正規式＋動作」認出已開啟的那條。場次進行中開啟時是本場次規則——它們原本
+  // 的定位就是「直播中臨時開、結束後清掉」；沒有場次時是永久的，關掉才會消失。
+  // 寫法是 Python 的正規式（後端比對），每條都要通過後端的回溯檢查：同一條式子裡，加了
+  // 量詞的群組或字元類別後面不能再出現量詞，所以「至少 3 個連續大寫」寫成三個 [A-Z]。
+  // 判定釘在 server/tests/test_block_rules_hardening.py 的快捷規則那一段。
   const QUICK = [
     { id: "url", key: "fltPresetUrl", pattern: "https?://[^\\s]+", action: "block" },
-    { id: "allcaps", key: "fltPresetAllcaps", pattern: "^(?-i:[A-Z\\W\\s]){8,}$", action: "review" },
+    {
+      // 全大寫：沒有小寫字母、至少 8 個大寫字母、其中有一段 3 個以上連續的大寫。
+      // 純標點（!!!!!!!!）與短字重複（OK OK OK）不算。(?-i:…)：引擎一律不分大小寫，
+      // 不關掉的話「hello world」也算全大寫。
+      id: "allcaps",
+      key: "fltPresetAllcaps",
+      pattern: "^(?-i:(?!.*[a-z])(?=.*[A-Z][A-Z][A-Z])(?:.*?[A-Z]){8})",
+      action: "review",
+    },
     { id: "repeat", key: "fltPresetRepeat", pattern: "(.)\\1{6,}", action: "review" },
     {
+      // 只有表情：每個字都是表情（或表情之間的空白、連接字元），而且不能全是空白。
+      // 「表情」= U+1F000–1FAFF 的圖形、BMP 裡預設就以表情顯示的那些（✅ ⚡ ⭐ ❌…），
+      // 或其他符號後面接 U+FE0F（❤️ ✔️ ©️）。取捨：★、✔、→ 這類沒帶 FE0F 的文字符號
+      // 不算表情——寧可漏擋一則全是符號的訊息，也不封鎖用符號畫分隔線、打勾的人。
       id: "emojionly",
       key: "blkPresetEmojiOnly",
-      pattern: "^[\\U0001F000-\\U0001FAFF\\u2600-\\u27BF\\u2B00-\\u2BFF\\uFE0F\\u200D\\s]+$",
+      pattern:
+        "^(?!\\s*$)(?:[\\U0001F000-\\U0001FAFF]\\uFE0F?" +
+        "|[\\u231A\\u231B\\u23E9-\\u23EC\\u23F0\\u23F3\\u25FD\\u25FE\\u2614\\u2615\\u2648-\\u2653" +
+        "\\u267F\\u2693\\u26A1\\u26AA\\u26AB\\u26BD\\u26BE\\u26C4\\u26C5\\u26CE\\u26D4\\u26EA" +
+        "\\u26F2\\u26F3\\u26F5\\u26FA\\u26FD\\u2705\\u270A\\u270B\\u2728\\u274C\\u274E" +
+        "\\u2753-\\u2755\\u2757\\u2795-\\u2797\\u27B0\\u27BF\\u2B1B\\u2B1C\\u2B50\\u2B55]" +
+        "|[\\u00A9\\u00AE\\u203C\\u2049\\u2122\\u2139\\u2194-\\u21AA\\u2300-\\u23FF" +
+        "\\u25AA-\\u25FE\\u2600-\\u27BF\\u2B00-\\u2BFF\\u3030\\u303D\\u3297\\u3299]\\uFE0F" +
+        "|[0-9#*]\\uFE0F?\\u20E3|\\u200D|\\s)+$",
       action: "block",
     },
   ];
@@ -138,6 +160,10 @@
   let _rules = [];
   let _scope = "all";
   let _editing = null; // 正在編輯的規則（null = 新增）
+  let _submitting = false; // 送出中：連按 Enter 不會送第二次
+  // 有沒有進行中的場次（/admin/filters/list 的 session_live）。沒有時不提供「到本場次
+  // 結束」：那時沒有場次可以結束，後端也不收。
+  let _sessionLive = true;
 
   // ── 版面 ─────────────────────────────────────────────────────
 
@@ -316,11 +342,26 @@
       if (!resp.ok) throw new Error("HTTP " + resp.status);
       const data = await resp.json();
       _rules = Array.isArray(data.rules) ? data.rules : [];
+      _sessionLive = data.session_live !== false;
     } catch (err) {
       console.error("Failed to fetch block rules:", err);
       window.showToast(t("fetchFiltersFailed"), false);
     }
     renderList();
+    syncLifetime();
+  }
+
+  /** 沒有進行中的場次時藏起「到本場次結束」（正在編輯的那條本來就是時例外）。 */
+  function syncLifetime() {
+    const life = el("blockRuleLifetime");
+    if (!life) return;
+    const opt = life.querySelector('option[value="session"]');
+    const allowed = _sessionLive || !!(_editing && _editing.lifetime === "session");
+    if (opt) {
+      opt.hidden = !allowed;
+      opt.disabled = !allowed;
+    }
+    if (!allowed && life.value === "session") life.value = "permanent";
   }
 
   // ── 新增／編輯 ───────────────────────────────────────────────
@@ -361,6 +402,10 @@
     if (code === "duplicate") return t("blkErrDuplicate");
     if (code === "invalid_regex") return t("blkErrRegex");
     if (code === "unsafe_regex") return t("blkErrUnsafe");
+    if (code === "regex_timeout") return t("blkErrTimeout");
+    if (code === "no_session") return t("blkErrNoSession");
+    if (code === "save_failed") return t("blkErrNotSaved");
+    if (code === "conflict") return t("blkErrConflict");
     return t(fallbackKey);
   }
 
@@ -378,6 +423,7 @@
     el("blockRuleSubmit").textContent = t("modAddWordBtn");
     el("blockRuleCancel").hidden = true;
     syncOptions();
+    syncLifetime();
   }
 
   function startEdit(rule) {
@@ -404,12 +450,14 @@
       life.value = rule.lifetime === "session" ? "session" : "permanent";
     }
     syncOptions();
+    syncLifetime();
     el("blockRuleSubmit").textContent = t("blkSave");
     el("blockRuleCancel").hidden = false;
     el("blockRuleInput").focus();
   }
 
   async function submit() {
+    if (_submitting) return;
     const body = readForm();
     if (!body.pattern && body.type !== "rate_limit") {
       window.showToast(t("patternRequired"), false);
@@ -419,6 +467,9 @@
     const editing = _editing;
     const url = editing ? "/admin/filters/update" : "/admin/filters/add";
     const payload = editing ? { rule_id: editing.id, updates: body } : body;
+    const button = el("blockRuleSubmit");
+    _submitting = true;
+    if (button) button.disabled = true;
     try {
       const resp = await window.csrfFetch(url, {
         method: "POST",
@@ -426,6 +477,13 @@
         body: JSON.stringify(payload),
       });
       const data = await resp.json().catch(() => ({}));
+      if (editing && resp.status === 404) {
+        // 正在編輯的規則在別處被刪掉了：離開編輯模式、重抓清單，不要改成新增。
+        resetForm();
+        await refresh();
+        window.showToast(t("blkErrGone"), false);
+        return;
+      }
       if (!resp.ok) {
         window.showToast(errorMessage(data, editing ? "updateRuleFailed" : "addRuleFailed"), false);
         return;
@@ -451,6 +509,10 @@
     } catch (err) {
       console.error("Save block rule error:", err);
       window.showToast(t(editing ? "updateRuleFailed" : "addRuleFailed"), false);
+    } finally {
+      _submitting = false;
+      // 整頁重繪過的話，這顆按鈕已經不是畫面上那顆；畫面上那顆本來就沒被停用。
+      if (button) button.disabled = false;
     }
   }
 
@@ -556,7 +618,7 @@
           pattern: q.pattern,
           action: q.action,
           priority: 50,
-          lifetime: "session",
+          lifetime: _sessionLive ? "session" : "permanent",
         }),
       });
       if (!resp.ok) {
@@ -744,6 +806,11 @@
   function init() {
     const settingsGrid = document.getElementById("settings-grid");
     if (!settingsGrid) return;
+    // 整頁重繪後重建的表單是「新增」模式、分頁回到「全部」——模組狀態要跟著回去，
+    // 否則按下新增會把剛才編輯中的那條規則覆寫掉。
+    _editing = null;
+    _scope = "all";
+    _submitting = false;
     settingsGrid.insertAdjacentHTML("beforeend", buildSectionHtml());
     const section = document.getElementById("sec-blacklist");
     wire(section);
