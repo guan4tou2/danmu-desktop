@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from . import ws_queue
+from . import viewer_images, ws_queue
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +120,7 @@ class ReplayService:
     @staticmethod
     def _build_message(record: Dict[str, Any]) -> Dict[str, Any]:
         """將歷史記錄轉換為 overlay WS 訊息格式"""
-        return {
+        msg = {
             "text": record.get("text", ""),
             "color": record.get("color", "FFFFFF"),
             "size": record.get("size", 50),
@@ -133,6 +133,9 @@ class ReplayService:
             "displayArea": dict(_DEFAULT_DISPLAY_AREA),
             "effectCss": None,
         }
+        # 沒有圖片標示的圖片網址文字照現在的外部圖片政策處理：舊紀錄可能是
+        # 政策上線前收下的，回放時不該讓顯示端把它們轉成圖片。
+        return viewer_images.apply_to_payload(msg)
 
     def pause(self):
         """暫停回放"""

@@ -235,5 +235,9 @@ def incoming_webhook(hook_id):
         "speed": speed,
         "opacity": opacity,
     }
+    # 外部系統轉進來的文字套用與觀眾相同的外部圖片政策（不合格的中和成文字）。
+    from ...services import viewer_images
+
+    viewer_images.apply_to_payload(msg)
     messaging.forward_to_ws_server(msg)
     return _json_response({"status": "OK"})
