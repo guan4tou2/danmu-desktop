@@ -587,6 +587,9 @@
           lines.push("✓ " + ServerI18n.t("backupApplyCompleteHeader"));
           lines.push("");
           lines.push("Applied " + (result.applied || 0) + " files");
+          // 寫進去了但執行中的伺服器還握著啟動時讀的那份：不重啟的話，之後在後台
+          // 改同一項設定會把還原前的內容寫回去。成功時也要講。
+          if (result.restart_required) lines.push("⚠ " + ServerI18n.t("backupRestartRequired"));
           if (result.skipped?.length) {
             lines.push("Skipped " + result.skipped.length + " entries:");
             lines.push(...skippedLines(result.skipped));
@@ -600,7 +603,8 @@
         out.textContent = lines.join("\n");
       }
       if (result.ok) {
-        window.showToast?.(ServerI18n.t("backupPackAppliedRestartHint", { n: result.applied }), true);
+        const toastKey = result.restart_required ? "backupPackAppliedRestartHint" : "backupPackApplied";
+        window.showToast?.(ServerI18n.t(toastKey, { n: result.applied }), true);
         _pendingPackFile = null;
         const applyBtn = document.getElementById("bk2-pack-apply");
         if (applyBtn) applyBtn.disabled = true;

@@ -640,3 +640,19 @@ def test_a_name_differing_only_by_case_from_a_store_that_does_not_exist_yet(runt
     # Never written out as an ordinary file with its secret in it.
     for path in runtime.iterdir():
         assert "sec-c" not in path.read_text(encoding="utf-8"), path.name
+
+
+@pytest.mark.parametrize(
+    "member, needs_restart",
+    [
+        ("runtime/settings.json", True),
+        ("user_plugins/extra.py", True),
+        ("plugins/builtin.py", True),
+        ("effects/sparkle.dme", False),  # reloaded when the file changes
+    ],
+)
+def test_which_restored_areas_need_a_restart(runtime, member, needs_restart):
+    body = b"{}" if member.endswith(".json") else b"# restored\n"
+    result = backup_svc.unpack(_tar({member: body}, OMITTED_MANIFEST), dry_run=False)
+    assert result["applied"] == 1, result
+    assert result["restart_required"] is needs_restart

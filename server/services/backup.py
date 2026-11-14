@@ -724,8 +724,10 @@ def _restore_credential(kind: str, incoming: Any, path: str, omitted: bool, targ
 _RELOAD_AFTER_RESTORE: Dict[str, Callable[[], None]] = {}
 
 # Archive areas whose files a running server has already read into memory:
-# runtime state (settings, rules, layers, widgets, …) and plugin code.
-_CACHED_UNTIL_RESTART = ("runtime/", "user_plugins/")
+# runtime state (settings, rules, layers, widgets, …) and plugin code, both
+# the built-in and the uploaded directory. Effects are not listed: they are
+# reloaded when their file changes.
+_CACHED_UNTIL_RESTART = ("runtime/", "plugins/", "user_plugins/")
 
 
 def _add_member(tar: tarfile.TarFile, name: str, data: bytes, mtime: int) -> None:
@@ -830,7 +832,11 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
                                      "reload …": written, but the running
                                      service did not pick it up
         reload_failed: [str]       — archive paths written but not reloaded
-        restart_required: bool     — true when reload_failed is not empty
+        restart_required: bool     — true when the running server still
+                                     holds a pre-restore copy of something
+                                     that was written: a file under
+                                     _CACHED_UNTIL_RESTART with no reload
+                                     hook, or a reload that failed
 
     Safety rules enforced:
       - total size ≤ 16 MB, file count ≤ 2000
