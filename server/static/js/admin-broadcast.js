@@ -35,16 +35,23 @@
   let _overlayCount = 0;
   let _countKnown = false; // 還沒問過 /overlay_status 時不要拿 0 當真
 
-  async function fetchStatus() {
+  // 兩件事分開問：顯示開或暫停（mode）與連了幾個顯示端（count）是兩支
+  // API。快速鍵切換只需要 mode——連線數那支卡住時不能拖住暫停。
+  async function fetchMode() {
     try {
       const r = await fetch(STATUS_URL, { credentials: "same-origin" });
-      if (!r.ok) return;
+      if (!r.ok) return false;
       const data = await r.json();
       if (data && (data.mode === "live" || data.mode === "standby")) {
         _sessionState = data.session || null;
         _serverState = data;
+        return true;
       }
     } catch (_) {}
+    return false;
+  }
+
+  async function fetchCount() {
     try {
       const r = await fetch("/overlay_status", { credentials: "same-origin" });
       if (r.ok) {
@@ -52,6 +59,10 @@
         _countKnown = true;
       }
     } catch (_) {}
+  }
+
+  async function fetchStatus() {
+    await Promise.all([fetchMode(), fetchCount()]);
     publish();
   }
 
@@ -110,7 +121,8 @@
 
   // 不知道目前狀態的入口（快速鍵）：先問一次後端，再走同一條路。
   async function toggleDisplay() {
-    await fetchStatus();
+    await fetchMode();
+    fetchCount().then(publish);
     return setDisplay(_serverState.mode !== "live");
   }
 

@@ -65,6 +65,62 @@ describe("cockpit display card follows the shared display state", () => {
     expect(status()).toBe('uiDisplayOff · setupWizardReadyDisplayOk:{"n":1}');
   });
 
+  const showCard = () => jest.spyOn(HTMLElement.prototype, "offsetParent", "get")
+    .mockImplementation(function () { return this.parentElement; });
+
+  test("a poll that started before a pause does not put the old state back", async () => {
+    showCard();
+    document.dispatchEvent(new CustomEvent("admin-overlay-state", { detail: { live: true, count: 2 } }));
+
+    // The poll reads "live" but its response is still in flight...
+    let answerPoll;
+    window.fetch.mockImplementation((url) => (String(url).includes("/overlay_status")
+      ? Promise.resolve({ ok: true, json: async () => ({ overlay_count: 2 }) })
+      : new Promise((resolve) => {
+        answerPoll = () => resolve({ ok: true, json: async () => ({ mode: "live" }) });
+      })));
+    document.dispatchEvent(new CustomEvent("admin-route-applied", { detail: { route: "live" } }));
+    await flush();
+
+    // ...when the host pauses. The pause is the newer fact.
+    document.dispatchEvent(new CustomEvent("admin-overlay-state", { detail: { live: false, count: 2 } }));
+    answerPoll();
+    await flush();
+    await flush();
+
+    expect(status()).toBe('uiDisplayOff · setupWizardReadyDisplayOk:{"n":2}');
+    expect(toggle().dataset.next).toBe("live");
+  });
+
+  test("a poll that could not reach the server keeps the known state", async () => {
+    showCard();
+    document.dispatchEvent(new CustomEvent("admin-overlay-state", { detail: { live: true, count: 2 } }));
+    window.fetch.mockImplementation(async () => ({ ok: false, json: async () => ({}) }));
+    document.dispatchEvent(new CustomEvent("admin-route-applied", { detail: { route: "live" } }));
+    await flush();
+    await flush();
+    expect(status()).toBe('uiDisplayOn · setupWizardReadyDisplayOk:{"n":2}');
+  });
+
+  test("the shortcut pauses as soon as the mode is known, without waiting for the display count", async () => {
+    window.fetch.mockImplementation((url) => (String(url).includes("/overlay_status")
+      ? new Promise(() => {}) // never answers
+      : Promise.resolve({ ok: true, json: async () => ({ mode: "live" }) })));
+    window.csrfFetch.mockClear();
+
+    await window.AdminOverlayControl.toggleDisplay();
+
+    expect(window.csrfFetch).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(window.csrfFetch.mock.calls[0][1].body)).toEqual({ mode: "standby" });
+  });
+
+  test("repainting with nothing new does not touch the DOM", () => {
+    document.dispatchEvent(new CustomEvent("admin-overlay-state", { detail: { live: true, count: 2 } }));
+    const node = document.querySelector("[data-cockpit-status]").firstChild;
+    document.dispatchEvent(new CustomEvent("admin-overlay-state", { detail: { live: true, count: 2 } }));
+    expect(document.querySelector("[data-cockpit-status]").firstChild).toBe(node);
+  });
+
   test("leaving for another route does not touch the card", () => {
     document.dispatchEvent(new CustomEvent("admin-overlay-state", { detail: { live: true, count: 3 } }));
     document.dispatchEvent(new CustomEvent("admin-route-applied", { detail: { route: "overlay" } }));

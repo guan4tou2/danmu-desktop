@@ -531,6 +531,9 @@
   //   · admin-route-applied 進到控制台的那一刻，先用快取畫、再補問一次
   let _cockpitTimer = null;
   let _cockpitState = null;
+  // 每次事件更新顯示狀態就 +1。輪詢開始時記下當時的值；回來時若已不同，
+  // 代表期間有更新的事件（例如剛按了暫停），輪詢讀到的 mode 是舊的，不採用。
+  let _cockpitRev = 0;
 
   function renderCockpitOverlay() {
     const card = document.querySelector("[data-cockpit-overlay]");
@@ -538,13 +541,16 @@
     const st = _cockpitState;
     if (!card || !ctl || !st) return;
     card.classList.toggle("is-on", st.live);
+    // 只在內容真的變了才寫入：每次寫 textContent 都是一次 DOM 變動，路由的
+    // MutationObserver 會看到，沒有必要讓每次輪詢都驚動它。
+    const setText = (el, text) => { if (el.textContent !== text) el.textContent = text; };
     const status = card.querySelector("[data-cockpit-status]");
-    if (status) status.textContent = ctl.statusText(st.live, st.count);
+    if (status) setText(status, ctl.statusText(st.live, st.count));
     // data-i18n 一起換，切換語言時才不會跳回舊字。
     const toggle = card.querySelector('[data-cockpit-action="toggle"]');
     if (toggle) {
       toggle.dataset.i18n = ctl.toggleKey(st.live);
-      toggle.textContent = ServerI18n.t(toggle.dataset.i18n);
+      setText(toggle, ServerI18n.t(toggle.dataset.i18n));
       toggle.dataset.next = st.live ? "standby" : "live";
     }
   }
@@ -552,8 +558,11 @@
   async function refreshCockpitOverlay() {
     const card = document.querySelector("[data-cockpit-overlay]");
     if (!card || card.offsetParent === null) return;
-    let count = 0;
-    let live = false;
+    const rev = _cockpitRev;
+    // null = 這次沒問到。問不到就沿用已知的值，不要把「不知道」畫成
+    // 「已暫停、0 個顯示端」。
+    let count = null;
+    let live = null;
     try {
       const r = await fetch("/overlay_status", { credentials: "same-origin" });
       if (r.ok) count = (await r.json()).overlay_count || 0;
@@ -562,12 +571,19 @@
       const r = await fetch("/admin/broadcast/status", { credentials: "same-origin" });
       if (r.ok) live = (await r.json()).mode === "live";
     } catch (_) {}
-    _cockpitState = { live, count };
+    const prev = _cockpitState;
+    if (!prev && live === null) return;
+    const fresh = live !== null && rev === _cockpitRev;
+    _cockpitState = {
+      live: fresh ? live : (prev ? prev.live : live),
+      count: count !== null ? count : (prev ? prev.count : 0),
+    };
     renderCockpitOverlay();
   }
 
   document.addEventListener("admin-overlay-state", (e) => {
     const d = (e && e.detail) || {};
+    _cockpitRev += 1;
     _cockpitState = {
       live: !!d.live,
       count: typeof d.count === "number" ? d.count : (_cockpitState ? _cockpitState.count : 0),
