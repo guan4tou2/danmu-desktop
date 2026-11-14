@@ -502,7 +502,9 @@ def test_theme_cards_show_a_danmu_sample(zh):
     meta＋BUILT-IN 標籤——那是在描述主題的規格。使用者要決定的是「這個主題
     長什麼樣」，而那件事只有直接畫一行彈幕能回答。
     """
-    assert "決定所有彈幕的字型、描邊與陰影" in zh["themesSectionDesc"]
+    # 2026-11-14 彈幕樣式合一：頁首說明（themesSectionDesc）隨主題頁一起退場——
+    # 主題現在是彈幕樣式頁的一塊，卡片本身就是說明。
+    assert "themesSectionDesc" not in zh
     assert zh["themesActiveChip"] == "使用中"
     assert zh["themesActivateBtn"] == "套用"  # 「啟用 ▶」的 ▶ 是設計稿 14 禁用的圖示
     assert not re.search(r"[⌫▶■⚡◱]", zh["themesActivateBtn"])
@@ -1152,13 +1154,15 @@ def test_theme_detail_group_and_new_theme_exist(zh):
     assert zh["themeDetailColor"] == "觀眾預設顏色"
     assert zh["themesNewBtn"] == "新主題"
 
-    admin = _strip_comments(_read("server/static/js/admin.js"))
-    assert 'data-theme-seg="stroke"' in admin and 'data-theme-seg="shadow"' in admin
-    assert 'data-theme-ov="color"' in admin and 'id="themeOvFont"' in admin
-    assert 'id="themeNewBtn"' in admin
-    # 頁首動作插槽的規矩：那顆鈕要自己綁 listener（style-contract §5.4d）
+    # 2026-11-14 彈幕樣式合一：主題區塊的版面搬進 admin-themes.js；描邊與陰影
+    # 是彈幕樣式表（admin-display.js）的兩列，透過 AdminThemes.setSeg 寫同一層覆寫。
     themes_js = _strip_comments(_read("server/static/js/admin-themes.js"))
+    assert 'data-theme-ov="color"' in themes_js and 'id="themeOvFont"' in themes_js
+    assert 'id="themeNewBtn"' in themes_js
     assert 'getElementById("themeNewBtn")' in themes_js
+    display_js = _strip_comments(_read("server/static/js/admin-display.js"))
+    assert "data-theme-seg=" in display_js and 'key: "stroke"' in display_js
+    assert 'key: "shadow"' in display_js and "AdminThemes.setSeg" in display_js
 
     svc = _read("server/services/theme_overrides.py")
     assert 'STROKE_MODES = ("none", "thin", "thick")' in svc

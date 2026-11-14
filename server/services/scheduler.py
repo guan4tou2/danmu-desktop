@@ -10,6 +10,8 @@ import time
 import uuid
 from typing import Any, Dict, List
 
+from flask import current_app, has_app_context
+
 logger = logging.getLogger(__name__)
 
 
@@ -19,6 +21,9 @@ class SchedulerService:
         self._jobs: Dict[str, Dict[str, Any]] = {}
         self._timers: Dict[str, threading.Timer] = {}
         self._max_jobs = max_jobs
+        # 排程在背景執行緒送出，沒有 request context；主題字型的 payload 要組
+        # /user_fonts 的網址，所以建立工作時（admin 請求內）記下 app。
+        self._app = None
 
     def create(
         self,
@@ -47,6 +52,8 @@ class SchedulerService:
             raise ValueError("repeat_count must be -1 (infinite) or a positive integer")
         if start_delay < 0:
             raise ValueError("start_delay must be non-negative")
+        if has_app_context():
+            self._app = current_app._get_current_object()
 
         with self._lock:
             active_count = sum(1 for j in self._jobs.values() if j["state"] != "cancelled")
@@ -177,7 +184,7 @@ class SchedulerService:
             interval = job["interval_sec"]
 
         # Send outside the lock to avoid holding it during I/O
-        self._send_message(msg)
+        self._send_message(msg, self._app)
 
         with self._lock:
             job = self._jobs.get(job_id)
@@ -198,15 +205,17 @@ class SchedulerService:
             timer.start()
 
     @staticmethod
-    def _send_message(msg: Dict[str, Any]):
+    def _send_message(msg: Dict[str, Any], app=None):
         """Send a single danmu message via the ws queue."""
         try:
-            from . import ws_queue
+            from . import danmu_style, ws_queue
 
             data: Dict[str, Any] = {"text": msg.get("text", "")}
             for key in ("color", "size", "speed", "opacity"):
                 if key in msg:
                     data[key] = msg[key]
+            # 沒指定顏色／字型時用使用中主題的覆寫（沒有覆寫就什麼都不加）
+            danmu_style.apply_theme_defaults(data, app=app)
             ws_queue.enqueue_message(data)
         except Exception:
             logger.exception("Scheduler failed to send message")

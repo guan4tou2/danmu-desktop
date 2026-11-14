@@ -1,0 +1,510 @@
+{
+ "factory/default": {
+  "fire": [
+   {
+    "color": "FFFFFF",
+    "effectCss": null,
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "scroll",
+    "layoutConfig": {
+     "animation": "danmu-scroll",
+     "direction": "rtl",
+     "fixed": false,
+     "speed_based_duration": true
+    },
+    "opacity": 100,
+    "size": 32,
+    "speed": 1.0,
+    "text": "a",
+    "textStyles": {
+     "shadowBlur": 4,
+     "strokeColor": "#000000",
+     "strokeWidth": 2,
+     "textShadow": false,
+     "textStroke": true
+    }
+   },
+   {
+    "color": "00FF88",
+    "effectCss": null,
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "scroll",
+    "layoutConfig": {
+     "animation": "danmu-scroll",
+     "direction": "rtl",
+     "fixed": false,
+     "speed_based_duration": true
+    },
+    "opacity": 50,
+    "size": 30,
+    "speed": 2.0,
+    "text": "b",
+    "textStyles": {
+     "shadowBlur": 4,
+     "strokeColor": "#000000",
+     "strokeWidth": 2,
+     "textShadow": false,
+     "textStroke": true
+    }
+   },
+   {
+    "color": "38BDF8",
+    "effectCss": null,
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "scroll",
+    "layoutConfig": {
+     "animation": "danmu-scroll",
+     "direction": "rtl",
+     "fixed": false,
+     "speed_based_duration": true
+    },
+    "opacity": 100,
+    "size": 32,
+    "speed": 1.0,
+    "text": "c",
+    "textStyles": {
+     "shadowBlur": 4,
+     "strokeColor": "#000000",
+     "strokeWidth": 2,
+     "textShadow": false,
+     "textStroke": true
+    }
+   },
+   {
+    "color": "FFFFFF",
+    "effectCss": null,
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "scroll",
+    "layoutConfig": {
+     "animation": "danmu-scroll",
+     "direction": "rtl",
+     "fixed": false,
+     "speed_based_duration": true
+    },
+    "opacity": 100,
+    "size": 32,
+    "speed": 1.0,
+    "text": "d",
+    "textStyles": {
+     "shadowBlur": 4,
+     "strokeColor": "#000000",
+     "strokeWidth": 2,
+     "textShadow": false,
+     "textStroke": true
+    }
+   }
+  ],
+  "viewer_initial": [
+   "#ffffff",
+   "NotoSansTC"
+  ]
+ },
+ "factory/neon": {
+  "fire": [
+   {
+    "color": "FFFFFF",
+    "effectCss": {
+     "animation": "dme-glow-high 1.2s ease-in-out infinite",
+     "animationComposition": "add",
+     "keyframes": "@keyframes dme-glow-low {\n  0%, 100% { filter: brightness(1) drop-shadow(0 0 2px currentColor); }\n  50%       { filter: brightness(1.1) drop-shadow(0 0 8px currentColor); }\n}\n@keyframes dme-glow-medium {\n  0%, 100% { filter: brightness(1) drop-shadow(0 0 4px currentColor); }\n  50%       { filter: brightness(1.2) drop-shadow(0 0 16px currentColor); }\n}\n@keyframes dme-glow-high {\n  0%, 100% { filter: brightness(1) drop-shadow(0 0 8px currentColor); }\n  50%       { filter: brightness(1.4) drop-shadow(0 0 30px currentColor); }\n}\n",
+     "styleId": "edfa8d667e"
+    },
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "scroll",
+    "layoutConfig": {
+     "animation": "danmu-scroll",
+     "direction": "rtl",
+     "fixed": false,
+     "speed_based_duration": true
+    },
+    "opacity": 100,
+    "size": 32,
+    "speed": 1.0,
+    "text": "a",
+    "textStyles": {
+     "shadowBlur": 15,
+     "strokeColor": "#001122",
+     "strokeWidth": 1,
+     "textShadow": true,
+     "textStroke": true
+    }
+   },
+   {
+    "color": "00FF88",
+    "effectCss": {
+     "animation": "dme-glow-high 1.2s ease-in-out infinite",
+     "animationComposition": "add",
+     "keyframes": "@keyframes dme-glow-low {\n  0%, 100% { filter: brightness(1) drop-shadow(0 0 2px currentColor); }\n  50%       { filter: brightness(1.1) drop-shadow(0 0 8px currentColor); }\n}\n@keyframes dme-glow-medium {\n  0%, 100% { filter: brightness(1) drop-shadow(0 0 4px currentColor); }\n  50%       { filter: brightness(1.2) drop-shadow(0 0 16px currentColor); }\n}\n@keyframes dme-glow-high {\n  0%, 100% { filter: brightness(1) drop-shadow(0 0 8px currentColor); }\n  50%       { filter: brightness(1.4) drop-shadow(0 0 30px currentColor); }\n}\n",
+     "styleId": "edfa8d667e"
+    },
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "scroll",
+    "layoutConfig": {
+     "animation": "danmu-scroll",
+     "direction": "rtl",
+     "fixed": false,
+     "speed_based_duration": true
+    },
+    "opacity": 50,
+    "size": 30,
+    "speed": 2.0,
+    "text": "b",
+    "textStyles": {
+     "shadowBlur": 15,
+     "strokeColor": "#001122",
+     "strokeWidth": 1,
+     "textShadow": true,
+     "textStroke": true
+    }
+   },
+   {
+    "color": "38BDF8",
+    "effectCss": {
+     "animation": "dme-glow-high 1.2s ease-in-out infinite",
+     "animationComposition": "add",
+     "keyframes": "@keyframes dme-glow-low {\n  0%, 100% { filter: brightness(1) drop-shadow(0 0 2px currentColor); }\n  50%       { filter: brightness(1.1) drop-shadow(0 0 8px currentColor); }\n}\n@keyframes dme-glow-medium {\n  0%, 100% { filter: brightness(1) drop-shadow(0 0 4px currentColor); }\n  50%       { filter: brightness(1.2) drop-shadow(0 0 16px currentColor); }\n}\n@keyframes dme-glow-high {\n  0%, 100% { filter: brightness(1) drop-shadow(0 0 8px currentColor); }\n  50%       { filter: brightness(1.4) drop-shadow(0 0 30px currentColor); }\n}\n",
+     "styleId": "edfa8d667e"
+    },
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "scroll",
+    "layoutConfig": {
+     "animation": "danmu-scroll",
+     "direction": "rtl",
+     "fixed": false,
+     "speed_based_duration": true
+    },
+    "opacity": 100,
+    "size": 32,
+    "speed": 1.0,
+    "text": "c",
+    "textStyles": {
+     "shadowBlur": 15,
+     "strokeColor": "#001122",
+     "strokeWidth": 1,
+     "textShadow": true,
+     "textStroke": true
+    }
+   },
+   {
+    "color": "FFFFFF",
+    "effectCss": {
+     "animation": "dme-glow-high 1.2s ease-in-out infinite",
+     "animationComposition": "add",
+     "keyframes": "@keyframes dme-glow-low {\n  0%, 100% { filter: brightness(1) drop-shadow(0 0 2px currentColor); }\n  50%       { filter: brightness(1.1) drop-shadow(0 0 8px currentColor); }\n}\n@keyframes dme-glow-medium {\n  0%, 100% { filter: brightness(1) drop-shadow(0 0 4px currentColor); }\n  50%       { filter: brightness(1.2) drop-shadow(0 0 16px currentColor); }\n}\n@keyframes dme-glow-high {\n  0%, 100% { filter: brightness(1) drop-shadow(0 0 8px currentColor); }\n  50%       { filter: brightness(1.4) drop-shadow(0 0 30px currentColor); }\n}\n",
+     "styleId": "edfa8d667e"
+    },
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "scroll",
+    "layoutConfig": {
+     "animation": "danmu-scroll",
+     "direction": "rtl",
+     "fixed": false,
+     "speed_based_duration": true
+    },
+    "opacity": 100,
+    "size": 32,
+    "speed": 1.0,
+    "text": "d",
+    "textStyles": {
+     "shadowBlur": 15,
+     "strokeColor": "#001122",
+     "strokeWidth": 1,
+     "textShadow": true,
+     "textStroke": true
+    }
+   }
+  ],
+  "viewer_initial": [
+   "#ffffff",
+   "NotoSansTC"
+  ]
+ },
+ "upgraded/default": {
+  "fire": [
+   {
+    "color": "123ABC",
+    "effectCss": null,
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "top_fixed",
+    "layoutConfig": {
+     "duration": 3000,
+     "fade_out": true,
+     "fixed": true,
+     "position": "top"
+    },
+    "layoutCss": "@keyframes danmu-fixed { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }",
+    "opacity": 80,
+    "size": 40,
+    "speed": 1.5,
+    "text": "a",
+    "textStyles": {
+     "shadowBlur": 4,
+     "strokeColor": "#000000",
+     "strokeWidth": 2,
+     "textShadow": false,
+     "textStroke": true
+    }
+   },
+   {
+    "color": "123ABC",
+    "effectCss": null,
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "top_fixed",
+    "layoutConfig": {
+     "duration": 3000,
+     "fade_out": true,
+     "fixed": true,
+     "position": "top"
+    },
+    "layoutCss": "@keyframes danmu-fixed { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }",
+    "opacity": 50,
+    "size": 40,
+    "speed": 2.0,
+    "text": "b",
+    "textStyles": {
+     "shadowBlur": 4,
+     "strokeColor": "#000000",
+     "strokeWidth": 2,
+     "textShadow": false,
+     "textStroke": true
+    }
+   },
+   {
+    "color": "123ABC",
+    "effectCss": null,
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "top_fixed",
+    "layoutConfig": {
+     "duration": 3000,
+     "fade_out": true,
+     "fixed": true,
+     "position": "top"
+    },
+    "layoutCss": "@keyframes danmu-fixed { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }",
+    "opacity": 80,
+    "size": 40,
+    "speed": 1.5,
+    "text": "c",
+    "textStyles": {
+     "shadowBlur": 4,
+     "strokeColor": "#000000",
+     "strokeWidth": 2,
+     "textShadow": false,
+     "textStroke": true
+    }
+   },
+   {
+    "color": "123ABC",
+    "effectCss": null,
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "top_fixed",
+    "layoutConfig": {
+     "duration": 3000,
+     "fade_out": true,
+     "fixed": true,
+     "position": "top"
+    },
+    "layoutCss": "@keyframes danmu-fixed { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }",
+    "opacity": 80,
+    "size": 40,
+    "speed": 1.5,
+    "text": "d",
+    "textStyles": {
+     "shadowBlur": 4,
+     "strokeColor": "#000000",
+     "strokeWidth": 2,
+     "textShadow": false,
+     "textStroke": true
+    }
+   }
+  ],
+  "viewer_initial": [
+   "#123abc",
+   "NotoSansTC"
+  ]
+ },
+ "upgraded/neon": {
+  "fire": [
+   {
+    "color": "123ABC",
+    "effectCss": null,
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "top_fixed",
+    "layoutConfig": {
+     "duration": 3000,
+     "fade_out": true,
+     "fixed": true,
+     "position": "top"
+    },
+    "layoutCss": "@keyframes danmu-fixed { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }",
+    "opacity": 80,
+    "size": 40,
+    "speed": 1.5,
+    "text": "a",
+    "textStyles": {
+     "shadowBlur": 15,
+     "strokeColor": "#001122",
+     "strokeWidth": 1,
+     "textShadow": true,
+     "textStroke": true
+    }
+   },
+   {
+    "color": "123ABC",
+    "effectCss": null,
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "top_fixed",
+    "layoutConfig": {
+     "duration": 3000,
+     "fade_out": true,
+     "fixed": true,
+     "position": "top"
+    },
+    "layoutCss": "@keyframes danmu-fixed { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }",
+    "opacity": 50,
+    "size": 40,
+    "speed": 2.0,
+    "text": "b",
+    "textStyles": {
+     "shadowBlur": 15,
+     "strokeColor": "#001122",
+     "strokeWidth": 1,
+     "textShadow": true,
+     "textStroke": true
+    }
+   },
+   {
+    "color": "123ABC",
+    "effectCss": null,
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "top_fixed",
+    "layoutConfig": {
+     "duration": 3000,
+     "fade_out": true,
+     "fixed": true,
+     "position": "top"
+    },
+    "layoutCss": "@keyframes danmu-fixed { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }",
+    "opacity": 80,
+    "size": 40,
+    "speed": 1.5,
+    "text": "c",
+    "textStyles": {
+     "shadowBlur": 15,
+     "strokeColor": "#001122",
+     "strokeWidth": 1,
+     "textShadow": true,
+     "textStroke": true
+    }
+   },
+   {
+    "color": "123ABC",
+    "effectCss": null,
+    "fontInfo": {
+     "name": "NotoSansTC",
+     "type": "default",
+     "url": null
+    },
+    "isImage": false,
+    "layout": "top_fixed",
+    "layoutConfig": {
+     "duration": 3000,
+     "fade_out": true,
+     "fixed": true,
+     "position": "top"
+    },
+    "layoutCss": "@keyframes danmu-fixed { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }",
+    "opacity": 80,
+    "size": 40,
+    "speed": 1.5,
+    "text": "d",
+    "textStyles": {
+     "shadowBlur": 15,
+     "strokeColor": "#001122",
+     "strokeWidth": 1,
+     "textShadow": true,
+     "textStroke": true
+    }
+   }
+  ],
+  "viewer_initial": [
+   "#123abc",
+   "NotoSansTC"
+  ]
+ }
+}

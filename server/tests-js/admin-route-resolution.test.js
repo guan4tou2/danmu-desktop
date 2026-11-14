@@ -73,11 +73,33 @@ describe("admin hash routes", () => {
     ["#/audit", "history", "audit", null],
     ["#/fonts", "assets", "fonts", null],
     ["#/broadcast", "overlay", null, null],
+    // 2026-11-14 彈幕樣式合一：顯示層的外觀、主題頁、觀眾頁三處併成 #/viewer。
+    // 舊網址都落在這一頁，第二段指出要捲到（並展開）哪一塊。
+    ["#/viewer", "viewer", null, null],
     ["#/viewer-config", "viewer", null, null],
-    ["#/display", "viewer", null, null],
-    ["#/appearance", "themes", null, null],
+    ["#/display", "viewer", null, "sec-viewer-config-defaults"],
+    ["#/themes", "viewer", null, "sec-themes"],
+    ["#/appearance", "viewer", null, "sec-themes"],
+    ["#/appearance/themes", "viewer", null, "sec-themes"],
+    ["#/viewer/themes", "viewer", null, "sec-themes"],
+    ["#/viewer/defaults", "viewer", null, "sec-viewer-config-defaults"],
+    ["#/viewer/fields", "viewer", null, "sec-viewer-config-defaults"],
+    ["#/viewer/page", "viewer", null, "sec-viewer-theme"],
+    ["#/viewer/limits", "viewer", null, "sec-viewer-config-limits"],
+    ["#/viewer-config/limits", "viewer", null, "sec-viewer-config-limits"],
+    ["#/viewer/unknown", "viewer", null, null],
+    ["#/overlay", "overlay", null, null],
   ])("%s → %s / %s / %s", (hash, route, tab, fold) => {
     expect(resolve(hash)).toEqual([route, tab, fold]);
+  });
+
+  test("the merged style page owns every old style section, in page order", () => {
+    expect(window.ADMIN_ROUTES.viewer.sections).toEqual([
+      "sec-themes", "sec-viewer-config-defaults", "sec-viewer-theme", "sec-viewer-config-limits",
+    ]);
+    expect(window.ADMIN_ROUTES.themes).toBeUndefined();
+    // 顯示層頁只剩場中控制與大螢幕排版
+    expect(window.ADMIN_ROUTES.overlay.sections).toEqual(["admin-broadcast-v2-page", "sec-overlay-layout"]);
   });
 
   test("the remembered tab never overrides an explicit fold link", () => {

@@ -84,7 +84,7 @@ def test_font_field_converted_to_fontinfo():
         "FontFamily": [True, "", "", "NotoSansTC"],
         "Effects": [True, "", "", ""],
     }
-    with patch("server.routes.api.is_allowed_font", return_value=True):
+    with patch("server.services.danmu_style.is_allowed_font", return_value=True):
         result, mock_font, _ = _resolve(
             {"text": "hello", "font": "MyFont"},
             options=options,
@@ -108,7 +108,7 @@ def test_fontinfo_passed_through_when_font_absent():
         "FontFamily": [True, "", "", "NotoSansTC"],
         "Effects": [True, "", "", ""],
     }
-    with patch("server.routes.api.is_allowed_font", return_value=True):
+    with patch("server.services.danmu_style.is_allowed_font", return_value=True):
         result, mock_font, _ = _resolve(
             {"text": "hello", "fontInfo": {"name": "MyFont"}},
             options=options,

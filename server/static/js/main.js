@@ -155,7 +155,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const FONT_CACHE_STORAGE_KEY = "danmu-fonts-cache";
   const clientFingerprint = getOrCreateFingerprint();
 
+  // 使用中主題的字型／預設顏色覆寫有效時，伺服器把它寫在頁面上
+  // （data-theme-default-*，與 /fire 同一份解析）——那才是「觀眾沒選時」
+  // 實際用的值。沒有這個屬性時照舊讀設定列的全域預設。主題改了要重新
+  // 整理頁面才會換（/get_settings 不帶主題資訊）。
   function getDefaultFontName() {
+    const themed = elements.userFontSelect && elements.userFontSelect.dataset.themeDefaultFont;
+    if (themed) return String(themed);
     const configured = currentSettings && currentSettings.FontFamily && currentSettings.FontFamily[3];
     return configured ? String(configured) : "NotoSansTC";
   }
@@ -1039,10 +1045,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const configured = Array.isArray(row[1]) ? row[1].map(normalize).filter(Boolean) : [];
     const palette = [...new Set(configured.length ? configured : defaults.map(preset => preset.color))];
     const allowCustom = (settings.ViewerColorPicker || [true])[0] !== false;
-    const defaultColor = normalize(row[3]) || "#ffffff";
+    const globalColor = normalize(row[3]) || "#ffffff";
+    const themeColor = normalize(elements.colorControl.dataset.themeDefaultColor);
     let chosen = elements.colorInput.value;
-    if (!row[0]) chosen = defaultColor;
-    else if (!allowCustom && !palette.includes(chosen)) chosen = palette.includes(defaultColor) ? defaultColor : palette[0];
+    if (!row[0]) chosen = themeColor || globalColor;
+    else if (!allowCustom && !palette.includes(chosen)) {
+      chosen = [themeColor, globalColor].find(c => c && palette.includes(c)) || palette[0];
+    }
     elements.colorControl.hidden = !row[0];
     const presets = elements.colorControl.querySelector("[data-viewer-color-presets]");
     if (presets) {

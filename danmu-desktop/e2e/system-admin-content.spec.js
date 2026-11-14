@@ -218,6 +218,7 @@ test.describe("場前佈置 · 內容管理（真 UI 操作）", () => {
   });
 
   // ─── 主題包 #/themes ─────────────────────────────────────────────────
+  // 2026-11-14 彈幕樣式合一：#/themes 落在 #/viewer/themes（彈幕樣式頁的主題區塊）。
 
   test("主題包：點『啟用』切換 active 主題 → /themes 反映 → 切回 default", async () => {
     await gotoRoute("#/themes", "#themesList");
@@ -424,7 +425,8 @@ test.describe("場前佈置 · 內容管理（真 UI 操作）", () => {
     expect(await listIds()).toEqual(before);
   });
 
-  // ─── 觀眾頁 #/viewer（送出預設） ─────────────────────────────────────
+  // ─── 彈幕樣式 #/viewer（送出預設） ───────────────────────────────────
+  // 2026-11-14：值與「觀眾可改」開關在同一列；#/viewer/defaults 捲到樣式表。
 
   test("觀眾頁 · 送出預設：改字級 chip → viewer 端 /get_settings 反映 → 改回", async () => {
     await gotoRoute("#/viewer/defaults", "#sec-viewer-config-defaults");

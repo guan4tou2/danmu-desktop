@@ -13,6 +13,7 @@ from flask import (
 )
 
 from ..config import save_runtime_hash
+from ..services import danmu_style
 from ..services.admin_session import start_admin_session
 from ..services.security import (
     hash_password,
@@ -27,7 +28,6 @@ from ..services.viewer_colors import (
     DEFAULT_COLOR_PRESETS,
     allows_color_picker,
     get_color_palette,
-    resolve_viewer_color,
 )
 from ..utils import json_response as _json_response
 from ..utils import sanitize_log_string
@@ -51,13 +51,17 @@ def poll_media(rel_path: str):
 @main_bp.route("/")
 def index():
     options = get_options()
+    defaults = danmu_style.effective_defaults(options)
     return render_template(
         "index.html",
         options=options,
         color_presets=DEFAULT_COLOR_PRESETS,
         color_palette=get_color_palette(options),
         color_picker_allowed=allows_color_picker(options),
-        selected_color=resolve_viewer_color(None, options),
+        # 觀眾什麼都沒選時實際會用的顏色與字型——使用中主題的覆寫有效時就是
+        # 主題值（danmu_style.resolve，與 /fire 同一份優先序）。
+        selected_color=defaults["Color"]["value"],
+        style_defaults=defaults,
     )
 
 

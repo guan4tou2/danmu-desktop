@@ -1,39 +1,38 @@
 /**
- * Admin Display Settings — 2026-04-25 prototype rewrite.
+ * 彈幕樣式（#/viewer）與顯示層的大螢幕設定（#/overlay 收合區）。
  *
- * Replaces the legacy 6 setting cards (sec-color · sec-opacity · sec-fontsize
- * · sec-speed · sec-fontfamily · sec-layout) with a single Soft Holo HUD page
- * matching docs/designs/design-v2/components/admin-display-settings.jsx:
+ * 2026-11-14 合併與摺疊第四批「彈幕樣式合一」：以前同一個屬性散在三頁——
+ * 顯示層收合區設預設值與範圍、觀眾頁設「觀眾可不可以改」、主題頁設描邊與
+ * 陰影。現在一頁一張表，一列一個屬性：
  *
- *   ┌─ 1fr ──────────────────────────────────┐  ┌─ 340px ────────┐
- *   │ TABLE HEAD (param · default · audience) │  │ PreviewCard    │
- *   │ ROW · OPACITY                           │  │ (180px stage)  │
- *   │ ROW · FONT SIZE                         │  ├────────────────┤
- *   │ ROW · SPEED                             │  │ DeployCard     │
- *   │ ROW · COLOR                             │  ├────────────────┤
- *   │ ROW · FONT FAMILY                       │  │ SummaryCard    │
- *   │ ROW · LAYOUT                            │  │ (6 rows)       │
- *   └─────────────────────────────────────────┘  └────────────────┘
+ *   [屬性名＋目前值] [預設值控制（觀眾可改時露出範圍／可選清單）] [觀眾可改]
  *
- * Each row is one tabular line: [label + value-badge | default-picker
- * (+ dashed range band when audience ON) | audience pill toggle].
+ * 主題卡片（admin-themes.js）是同一頁最上面的一塊，套用主題會改掉「描邊」
+ * 「陰影」兩列的值；兩列透過 window.AdminThemes 讀寫，聽 admin-themes-changed
+ * 重畫。顯示層頁只留大螢幕本身的排版（行數、範圍、安全區、描邊模式、投票
+ * 調暗），那些觀眾永遠碰不到，也不是單則彈幕的樣子。
  *
- * Endpoints used (existing — no backend changes):
- *   GET  /get_settings   → options snapshot, shape options[Key] = [bool, min, max, default]
- *   GET  /fonts          → font catalog
- *   POST /admin/Set      → toggle index 0
- *   POST /admin/update   → update value at index { type, value, index }
- *   GET  /admin/metrics  → ws_clients gauge for SummaryCard / DeployCard banner
+ * 這一頁不改任何資料模型，端點全是既有的：
+ *   GET  /get_settings   → options[Key] = [觀眾可改, min|清單, max, 預設值]
+ *   GET  /fonts          → 字型清單
+ *   POST /admin/Set      → slot 0（觀眾可改）
+ *   POST /admin/update   → { type, value, index }
+ *   POST /admin/options/<Key>/allowlist → 可選清單（Color 的色票也是它）
+ *   PATCH /admin/display-layer、/admin/viewer-images
+ *
+ * 後端沒有旗標的屬性（效果的總開關在動畫效果頁、描邊與陰影觀眾不能改）
+ * 照現況呈現：開關是固定狀態，按不動。
  */
 (function () {
   "use strict";
 
-  // This full compound-row surface is the canonical Viewer Defaults tab.
-  // Keep the ID aligned with admin.js/admin-tabs.js section registries so
-  // routing and tab visibility point at the same surface.
   const PAGE_ID = "sec-viewer-config-defaults";
+  const LAYOUT_ID = "sec-overlay-layout";
+  const LIMITS_ID = "sec-viewer-config-limits";
+  // 彈幕樣式頁的畫面順序（與 ADMIN_ROUTES.viewer.sections 相同）。各區塊由
+  // 不同模組在不同時間注入，這裡負責排成這個順序。
+  const VIEWER_ORDER = ["sec-themes", PAGE_ID, "sec-viewer-theme", LIMITS_ID];
   const LEGACY_IDS = ["sec-color", "sec-opacity", "sec-fontsize", "sec-speed", "sec-fontfamily", "sec-layout"];
-  const METRICS_INTERVAL_MS = 5000;
 
   const escapeHtml = (window.AdminUtils && window.AdminUtils.escapeHtml) || function (s) {
     return String(s).replace(/[&<>"']/g, function (c) {
@@ -43,16 +42,24 @@
 
   // Server stores [bool, min, max, default]. Prototype's `step` is a UI hint
   // only — kept in client-side state, not persisted.
-  const DEFAULT_RANGES = {
-    Opacity:  { min: 0,  max: 100, step: 1, unit: "%" },
-    FontSize: { min: 12, max: 100, step: 2, unit: "px" },
+  // min／max 以伺服器驗證的範圍為準（DANMU_CONFIG.settingRanges，來自
+  // managers/settings.py 的 _RANGES）；這裡只補步進與單位這種顯示用的值。
+  const SERVER_RANGES = window.DANMU_CONFIG?.settingRanges || {};
+  const DEFAULT_RANGES = Object.fromEntries(Object.entries({
+    Opacity:  { min: 20, max: 100, step: 1, unit: "%" },
+    FontSize: { min: 16, max: 64, step: 2, unit: "px" },
     Speed:    { min: 0.5, max: 3, step: 0.1, unit: "×" },
-  };
+  }).map(([k, r]) => {
+    const srv = SERVER_RANGES[k] || {};
+    return [k, {
+      ...r,
+      min: Number.isFinite(Number(srv.min)) ? Number(srv.min) : r.min,
+      max: Number.isFinite(Number(srv.max)) ? Number(srv.max) : r.max,
+    }];
+  }));
 
   const FONT_SIZE_PRESETS = [14, 20, 32, 44, 64];
   const COLOR_PRESETS = window.DANMU_CONFIG?.defaultColorPalette || [];
-  // v8（2026-08-19 設計稿 07）：排版預設的標籤改吃 i18n。原本是大寫英文
-  // 字面量（SCROLL / TOP / …），對中文使用者而言是要猜的。與 ROWS 同慣例：
   // 頂層常數 parse 時 ServerI18n 尚未 init，所以存 key、渲染時才 t()。
   const LAYOUT_PRESETS = [
     { value: "scroll",       labelKey: "layoutPresetScroll", icon: "→" },
@@ -61,10 +68,22 @@
     { value: "float",        labelKey: "layoutPresetCenter", icon: "■" },
     { value: "rise",         labelKey: "layoutPresetSide",   icon: "▌" },
   ];
+  // 描邊與陰影是主題覆寫的分段（services/theme_overrides.py 的 STROKE_MODES /
+  // SHADOW_MODES）。
+  const THEME_SEGS = {
+    stroke: [
+      { value: "none", labelKey: "themeStrokeNone" },
+      { value: "thin", labelKey: "themeStrokeThin" },
+      { value: "thick", labelKey: "themeStrokeThick" },
+    ],
+    shadow: [
+      { value: "none", labelKey: "themeShadowNone" },
+      { value: "soft", labelKey: "themeShadowSoft" },
+      { value: "strong", labelKey: "themeShadowStrong" },
+    ],
+  };
 
-  // D-4 (2026-08-02)：拿掉逐呼叫點的中文 fallback 字面量——那些字面量本身
-  // 會讓「grep 中文自檢」誤判成殘留硬編字串。key 未收錄時退回 key 字串本身
-  // （i18next 標準行為），第二參數改傳 vars 物件給插值。
+  // key 未收錄時退回 key 字串本身（i18next 標準行為），第二參數是插值 vars。
   function t(key, vars) {
     if (window.ServerI18n && typeof window.ServerI18n.t === "function") {
       const v = window.ServerI18n.t(key, vars);
@@ -87,16 +106,13 @@
   const _state = {
     options: null,
     fonts: [],
-    metricsTimer: null,
-    viewerCount: 0,
     // key → Set<string> of admin-toggled allowlist entries (mirrors options[key][1]).
     // null = not in edit mode for this row.
     allowlistEdit: {},
     paletteBusy: false,
     paletteDraft: "#38BDF8",
-    // 輸入框的「格式錯誤」標記要跟草稿、回饋訊息一樣存在 state：色票區塊
-    // 會被 renderRows() 整段重繪（設定載回、存檔完成時），只寫在 DOM 上的
-    // aria-invalid 會在重繪時消失，畫面上值還是錯的、輔助科技卻讀不到。
+    // 色票區塊會被 renderRows() 整段重繪，只寫在 DOM 上的 aria-invalid 會在
+    // 重繪時消失，所以「格式錯誤」標記跟草稿一樣存在 state。
     paletteInvalid: false,
     palettePreview: null,
     paletteNotice: null,
@@ -136,26 +152,97 @@
     return String(value || "");
   }
 
-  // ─── HTML shell ─────────────────────────────────────────────────────
+  // ─── HTML shells ────────────────────────────────────────────────────
 
+  // 彈幕樣式頁的樣式表。頁面標題由頂欄負責，這裡不再放頁首。
   function pageTemplate() {
     return `
-      <div id="${PAGE_ID}" class="lg:col-span-2" data-tpl="C">
-        <!-- 同一份面板服務兩條路由。顯示層 (values) 上它是次要設定，收進預設
-             收合的 details，summary 就是標題；觀眾頁 (audience) 上它是主體，
-             syncVisibility 把它展開、summary 藏起來。 -->
-        <details class="admin-dsp2-fold" data-dsp-fold>
-        <summary class="admin-ui-page-title" data-dsp-only="values" data-i18n="displayValuesTitle">${escapeHtml(t("displayValuesTitle"))}</summary>
-        <div class="admin-dsp2-page hud-page-stack">
-        <div class="admin-ui-page-head" data-dsp-only="audience">
-          <h2 class="admin-ui-page-title" data-i18n="viewerGroupAudience">${escapeHtml(t("viewerGroupAudience"))}</h2>
-          <p class="admin-ui-page-note">${t("displayViewerDefaultsNote")}</p>
+      <div id="${PAGE_ID}" class="admin-dsp2-page hud-page-stack lg:col-span-2" data-tpl="C">
+        <div class="admin-dsp2-grid">
+          <div class="admin-dsp2-list" id="dsp2-list">
+            <div class="admin-dsp2-list-head" aria-hidden="true">
+              <span>${escapeHtml(t("displayColParam"))}</span>
+              <span>${escapeHtml(t("displayColValue"))}</span>
+              <span class="admin-dsp2-list-head-right">${escapeHtml(t("displayColAudience"))}</span>
+            </div>
+            <div id="dsp2-rows">
+              ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : escapeHtml(t("loading"))}
+            </div>
+          </div>
+
+          <div class="admin-dsp2-rail">
+            <div class="admin-dsp2-card admin-dsp2-preview" id="dsp2-preview">
+              <div class="admin-dsp2-preview-head">
+                <span class="admin-ui-monolabel">${escapeHtml(t("mlLivePreview"))}</span>
+              </div>
+              <div class="admin-dsp2-preview-stage" data-preview-stage>
+                <div class="admin-dsp2-preview-pill admin-dsp2-preview-pill-1" data-preview-pill="1">
+                  <span class="admin-dsp2-preview-tag">@guest#1284</span>
+                  <span data-preview-text>${escapeHtml(t("displayPreviewSample1"))}</span>
+                </div>
+                <div class="admin-dsp2-preview-pill admin-dsp2-preview-pill-2" data-preview-pill="2">
+                  <span class="admin-dsp2-preview-tag">@annie</span>
+                  <span>${escapeHtml(t("displayPreviewSample2"))}</span>
+                </div>
+              </div>
+              <div class="admin-dsp2-preview-foot">
+                <span data-preview-foot-l>—</span>
+                <span data-preview-foot-r>—</span>
+              </div>
+            </div>
+            <!-- 每一次變更都直接存，沒有「套用」鈕；這裡只剩還原與匯出。 -->
+            <div class="admin-dsp2-actions">
+              <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-revert">
+                ↺ ${escapeHtml(t("displayDeployRevert"))}
+              </button>
+              <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-export">
+                ↗ ${escapeHtml(t("displayExportJson"))}
+              </button>
+            </div>
+          </div>
         </div>
 
-        <!-- 顯示層專屬：大螢幕怎麼排（2026-08-19 設計稿 07 · R1）。
-             這四個和上面那組不同種類——上面是「觀眾端的值」，這裡是
-             「大螢幕本身的排版」，觀眾永遠碰不到，所以不進 ROWS 那張表。 -->
-        <div data-dsp-only="values">
+        <!-- 觀眾外部圖片（5.8.0）。預設關閉；判斷在伺服器（/fire），這裡只讀寫
+             /admin/viewer-images。關閉時網站與格式兩列收起來。 -->
+        <div id="viewer-images-group">
+          <div class="admin-ui-group-label">${escapeHtml(t("viGroupLabel"))}</div>
+          <div class="admin-ui-group">
+            <label class="admin-ui-group-row" for="viewer-images-enabled">
+              <span class="lbl">${escapeHtml(t("viAllowExternal"))}</span>
+              <span class="val">
+                <input type="checkbox" class="admin-ui-checkbox" id="viewer-images-enabled" data-vi-toggle />
+              </span>
+            </label>
+            <div class="admin-ui-group-row is-tall admin-vi-row" data-vi-row style="display:none">
+              <label class="lbl" for="viewer-images-hosts">${escapeHtml(t("viHosts"))}</label>
+              <span class="val admin-vi-hosts">
+                <textarea id="viewer-images-hosts" class="admin-ui-input" rows="3" spellcheck="false"
+                  autocapitalize="off" autocomplete="off"
+                  placeholder="${escapeHtml(t("viHostsPlaceholder"))}"></textarea>
+              </span>
+            </div>
+            <div class="admin-ui-group-row admin-vi-row" data-vi-row style="display:none" role="group"
+                 aria-labelledby="viewer-images-ext-label">
+              <span class="lbl" id="viewer-images-ext-label">${escapeHtml(t("viExtensions"))}</span>
+              <span class="val admin-vi-exts" id="viewer-images-extensions">
+                ${VI_EXTENSIONS.map((ext) => `
+                <label class="admin-vi-ext">
+                  <input type="checkbox" class="admin-ui-checkbox" data-vi-ext="${ext.value}" />
+                  <span>${ext.label}</span>
+                </label>`).join("")}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // 顯示層頁的收合區：大螢幕本身怎麼排。觀眾永遠碰不到，所以不進樣式表。
+  function layoutTemplate() {
+    return `
+      <details id="${LAYOUT_ID}" class="admin-dsp2-fold lg:col-span-2" data-dsp-fold>
+        <summary class="admin-ui-page-title">${escapeHtml(t("overlayLayoutFoldTitle"))}</summary>
+        <div class="admin-dsp2-page hud-page-stack">
           <div class="admin-ui-group-label">${escapeHtml(t("dlGroupLayout"))}</div>
           <div class="admin-ui-group">
             <div class="admin-ui-group-row is-tall">
@@ -196,9 +283,7 @@
             </div>
           </div>
 
-          <!-- 投影安全區與淺底描邊（設計稿 16 · OS1／OS2）。顯示層那半早就
-               寫好了（child.css 的 --overlay-safe、stage-luminance 的 setForced），
-               缺的一直是這兩列——安全區永遠停在寫死的 5%，描邊模式沒有入口。 -->
+          <!-- 投影安全區與淺底描邊（設計稿 16 · OS1／OS2）。 -->
           <div class="admin-ui-group-label">${escapeHtml(t("dlGroupStage"))}</div>
           <div class="admin-ui-group">
             <div class="admin-ui-group-row is-tall">
@@ -221,11 +306,8 @@
                 <button type="button" data-dl-opt="never">${escapeHtml(t("dlStrokeNever"))}</button>
               </span>
             </div>
-
-            <!-- 2026-09-08：投票是用「送出選項代號當彈幕」實作的，所以打字投票
-                 的人會讓大螢幕出現一整片 A / B / C / D。不藏起來——看得到大家在
-                 投票本身就是氣氛——而是調暗，讓真正的留言仍然讀得到。
-                 一次按下即投票（POST /poll/vote）根本不產生彈幕，不受這裡影響。 -->
+            <!-- 2026-09-08：打字投票會讓大螢幕出現一整片 A / B / C / D。不藏起來，
+                 而是調暗。一次按下即投票（POST /poll/vote）不產生彈幕，不受影響。 -->
             <div class="admin-ui-group-row">
               <span class="lbl">${escapeHtml(t("dlDimPollVotes"))}
                 <span class="sub">${escapeHtml(t("dlDimPollVotesHint"))}</span>
@@ -246,147 +328,26 @@
             </div>
           </div>
         </div>
-
-        <!-- 2026-11-14：觀眾外部圖片。預設關閉；判斷在伺服器（/fire），
-             這裡只讀寫 /admin/viewer-images。關閉時網站與格式兩列收起來。 -->
-        <div data-dsp-only="audience" id="viewer-images-group">
-          <div class="admin-ui-group-label">${escapeHtml(t("viGroupLabel"))}</div>
-          <div class="admin-ui-group">
-            <label class="admin-ui-group-row" for="viewer-images-enabled">
-              <span class="lbl">${escapeHtml(t("viAllowExternal"))}</span>
-              <span class="val">
-                <input type="checkbox" class="admin-ui-checkbox" id="viewer-images-enabled" data-vi-toggle />
-              </span>
-            </label>
-            <div class="admin-ui-group-row is-tall" data-vi-row style="display:none;flex-wrap:wrap">
-              <label class="lbl" for="viewer-images-hosts">${escapeHtml(t("viHosts"))}</label>
-              <span class="val" style="flex:1 1 240px;min-width:0">
-                <textarea id="viewer-images-hosts" class="admin-ui-input" rows="3" spellcheck="false"
-                  autocapitalize="off" autocomplete="off" style="resize:vertical;min-height:64px"
-                  placeholder="${escapeHtml(t("viHostsPlaceholder"))}"></textarea>
-              </span>
-            </div>
-            <div class="admin-ui-group-row" data-vi-row style="display:none;flex-wrap:wrap" role="group"
-                 aria-labelledby="viewer-images-ext-label">
-              <span class="lbl" id="viewer-images-ext-label">${escapeHtml(t("viExtensions"))}</span>
-              <span class="val" id="viewer-images-extensions" style="flex-wrap:wrap;gap:12px">
-                ${VI_EXTENSIONS.map((ext) => `
-                <label style="display:inline-flex;align-items:center;gap:6px;min-height:44px">
-                  <input type="checkbox" class="admin-ui-checkbox" data-vi-ext="${ext.value}" />
-                  <span>${ext.label}</span>
-                </label>`).join("")}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="admin-color-palette" data-dsp-only="audience" data-admin-color-palette></div>
-
-        <div class="admin-dsp2-grid">
-          <!-- Left · row list -->
-          <div class="admin-dsp2-list" id="dsp2-list">
-            <div class="admin-dsp2-list-head">
-              <span>${escapeHtml(t("displayColParam"))}</span>
-              <span data-dsp-only="values">${escapeHtml(t("displayColValue"))}</span>
-              <span class="admin-dsp2-list-head-right" data-dsp-only="audience">${escapeHtml(t("displayColAudience"))}</span>
-            </div>
-            <div id="dsp2-rows">
-              ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : escapeHtml(t("loading"))}
-            </div>
-          </div>
-
-          <!-- Right rail -->
-          <div class="admin-dsp2-rail">
-            <div class="admin-dsp2-card admin-dsp2-preview" id="dsp2-preview">
-              <div class="admin-dsp2-preview-head">
-                <span class="admin-ui-monolabel">${ServerI18n.t("mlLivePreview")}</span>
-                <span class="admin-dsp2-preview-sync">
-                  <span class="admin-dsp2-dot"></span>
-                  ${escapeHtml(t("displayPreviewSync"))}
-                </span>
-              </div>
-              <div class="admin-dsp2-preview-stage" data-preview-stage>
-                <div class="admin-dsp2-preview-pill admin-dsp2-preview-pill-1" data-preview-pill="1">
-                  <span class="admin-dsp2-preview-tag">@guest#1284</span>
-                  <span data-preview-text>${escapeHtml(t("displayPreviewSample1"))}</span>
-                </div>
-                <div class="admin-dsp2-preview-pill admin-dsp2-preview-pill-2" data-preview-pill="2">
-                  <span class="admin-dsp2-preview-tag">@annie</span>
-                  <span>${escapeHtml(t("displayPreviewSample2"))}</span>
-                </div>
-              </div>
-              <div class="admin-dsp2-preview-foot">
-                <span data-preview-foot-l>—</span>
-                <span data-preview-foot-r>—</span>
-              </div>
-            </div>
-
-            <!-- AutoSyncCard — prototype admin-display-settings.jsx:379+ replaces
-                 the legacy DeployCard. Display Settings uses implicit deploy:
-                 every postUpdate() ships immediately, no apply button. This
-                 card is just the status indicator + revert + export JSON. -->
-            <div class="admin-dsp2-card admin-dsp2-autosync" style="padding:14px;background:var(--admin-panel,var(--color-bg-base));border:1px solid var(--hud-line);border-radius:6px;display:flex;flex-direction:column;gap:10px">
-              <div class="admin-ui-monolabel admin-dsp2-card-head">
-                <span>${escapeHtml(t("displayAutoSyncTitle"))}</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:4px;background:var(--hud-cyan-soft);border:1px solid var(--color-primary)">
-                <span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:var(--color-primary);box-shadow:0 0 6px var(--color-primary);animation:hud-pulse 2s ease-in-out infinite"></span>
-                <div style="flex:1;min-width:0">
-                  <div style="font-family:var(--font-mono);font-size:11px;color: var(--color-ink-accent);letter-spacing:0.1em;font-weight:700">${escapeHtml(t("displayAutoSyncLive"))}</div>
-                  <div style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);margin-top:2px;letter-spacing:0.04em">${escapeHtml(t("displayAutoSyncNote"))}</div>
-                </div>
-              </div>
-              <div style="display:flex;gap:8px">
-                <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-revert" style="flex:1">
-                  ↺ ${escapeHtml(t("displayDeployRevert"))}
-                </button>
-                <button type="button" class="admin-dsp2-btn admin-dsp2-btn-ghost" id="dsp2-export" style="flex:1">
-                  ↗ ${escapeHtml(t("displayExportJson"))}
-                </button>
-              </div>
-            </div>
-
-            <div class="admin-dsp2-card admin-dsp2-admin-controlled" style="padding:14px;background:var(--admin-panel,var(--color-bg-base));border:1px solid var(--hud-line);border-radius:6px;display:flex;flex-direction:column;gap:10px">
-              <div class="admin-ui-monolabel admin-dsp2-card-head">
-                <span data-i18n="displayAdminControlledTitle">${escapeHtml(t("displayAdminControlledTitle"))}</span>
-              </div>
-              <div style="display:grid;grid-template-columns:auto 1fr;gap:7px 12px;align-items:start;font-size:11px;line-height:1.45">
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="language">${escapeHtml(t("language"))}</span><span data-i18n="viewerThemeFollowBrowser">${escapeHtml(t("viewerThemeFollowBrowser"))}</span>
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="displayAdminCtlPlaceholder">${escapeHtml(t("displayAdminCtlPlaceholder"))}</span><span data-i18n="displayPlaceholderExample">${escapeHtml(t("displayPlaceholderExample"))}</span>
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="displayAdminCtlSubmit">${escapeHtml(t("displayAdminCtlSubmit"))}</span><span data-i18n="fireDanmu">${escapeHtml(t("fireDanmu"))}</span>
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="displayAdminCtlPollPrompt">${escapeHtml(t("displayAdminCtlPollPrompt"))}</span><span data-i18n="displayPollPromptExample">${escapeHtml(t("displayPollPromptExample"))}</span>
-              </div>
-              <div style="padding-top:8px;border-top:1px solid var(--hud-line);font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);line-height:1.6"
-                   data-i18n="displayAdminControlledNote">${escapeHtml(t("displayAdminControlledNote"))}</div>
-            </div>
-
-            <div class="admin-dsp2-card admin-dsp2-summary" id="dsp2-summary">
-              <div class="admin-ui-monolabel admin-dsp2-card-head">
-                <span>${escapeHtml(t("displaySummaryTitle"))}</span>
-              </div>
-              <div class="admin-dsp2-summary-list" data-summary-list></div>
-            </div>
-          </div>
-        </div>
-        </div>
-        </details>
-      </div>`;
+      </details>`;
   }
 
   // ─── Row rendering ──────────────────────────────────────────────────
 
-  // D-4：label 中文全數需要翻譯，模組頂層常數 parse 時 ServerI18n 未 init，
-  // 一律存 labelKey、渲染時才 t()。
-  // v8（2026-08-19）：原本每列還帶一個 en 大寫欄位，渲染成中文標籤旁的
-  // 第二行（透明度 / OPACITY）。設計稿把這層對照拿掉後 en 已無消費者，
-  // 欄位一併刪除，免得下次有人以為它還在用。
+  // kind：
+  //   slider / size / color / pick → 後端有 slot 0 旗標，開關是真的
+  //   effects                      → 旗標是動畫效果頁的總開關（關掉時連主題
+  //                                  內建的效果也不送），這裡只顯示、不改
+  //   theme                        → 主題覆寫；觀眾沒有任何入口能改
   const ROWS = [
-    { key: "Opacity",    labelKey: "displayLabelOpacity",     fmt: (v) => `${Math.round(v)}%` },
-    { key: "FontSize",   labelKey: "displayLabelFontSize",   fmt: (v) => `${v}px` },
-    { key: "Speed",      labelKey: "displayLabelSpeed",       fmt: (v) => `${(+v).toFixed(1)}×` },
-    { key: "Color",      labelKey: "displayLabelColor",       fmt: (v) => `#${String(v || "").replace(/^#/, "").toUpperCase() || "—"}`, noRange: true },
-    { key: "FontFamily", labelKey: "displayLabelFontFamily", fmt: (v) => v || "—",                       noRange: true },
-    { key: "Layout",     labelKey: "displayLabelLayout",      fmt: (v) => layoutLabel(v),                  noRange: true },
+    { key: "Opacity",    labelKey: "displayLabelOpacity",    kind: "slider", fmt: (v) => `${Math.round(v)}%` },
+    { key: "FontSize",   labelKey: "displayLabelFontSize",   kind: "size",   fmt: (v) => `${v}px` },
+    { key: "Speed",      labelKey: "displayLabelSpeed",      kind: "slider", fmt: (v) => `${(+v).toFixed(1)}×` },
+    { key: "Color",      labelKey: "displayLabelColor",      kind: "color",  fmt: (v) => `#${String(v || "").replace(/^#/, "").toUpperCase() || "—"}` },
+    { key: "FontFamily", labelKey: "displayLabelFontFamily", kind: "pick",   fmt: (v) => v || "—" },
+    { key: "Layout",     labelKey: "displayLabelLayout",     kind: "pick",   fmt: (v) => layoutLabel(v) },
+    { key: "Effects",    labelKey: "displayLabelEffect",     kind: "effects", fixed: true },
+    { key: "stroke",     labelKey: "themeDetailStroke",      kind: "theme",  fixed: true },
+    { key: "shadow",     labelKey: "themeDetailShadow",      kind: "theme",  fixed: true },
   ];
 
   function layoutLabel(v) {
@@ -394,26 +355,95 @@
     return m ? t(m.labelKey) : (v || "—");
   }
 
+  function themeSeg(kind) {
+    const api = window.AdminThemes;
+    return api && typeof api.segOf === "function" ? api.segOf(kind) : null;
+  }
+
+  // 一列的「觀眾可改」。effects 讀 Effects[0]（缺省＝開，與 main.js 同），
+  // theme 永遠是不可改。
+  function rowEnabled(row) {
+    const opts = _state.options || {};
+    if (row.kind === "theme") return false;
+    if (row.kind === "effects") return !opts.Effects || opts.Effects[0] !== false;
+    const opt = opts[row.key];
+    return !!(opt && opt[0] !== false);
+  }
+
+  // 預設顏色／字型可能來自使用中主題的覆寫（services/danmu_style.py）。
+  // 來源資訊由 admin-themes.js 從後端拿（style_defaults）；還沒載入時是 null。
+  function themeDefault(key) {
+    const api = window.AdminThemes;
+    const d = api && typeof api.styleDefaults === "function" ? api.styleDefaults() : null;
+    return (d && d[key]) || null;
+  }
+
+  // 觀眾沒選時實際用的值：主題值有被採用就是它，否則是這一列的全域預設。
+  function effectiveDefault(key) {
+    const d = themeDefault(key);
+    if (d && d.source === "theme") return d.value;
+    const opt = (_state.options && _state.options[key]) || [];
+    return opt[3];
+  }
+
+  // 標籤欄的來源標記：預設值來自主題時標「來自主題」；主題有設值但沒被
+  // 採用（字型停用／刪除、顏色不在色盤上）時標「主題值未採用」。
+  function sourceChipHtml(row) {
+    if (row.key !== "Color" && row.key !== "FontFamily") return "";
+    const d = themeDefault(row.key);
+    if (!d) return "";
+    if (d.source === "theme") {
+      return `<span class="admin-ui-chip" data-source-chip="theme">${escapeHtml(t("styleFromTheme"))}</span>`;
+    }
+    if (d.rejected) {
+      return `<span class="admin-ui-chip is-warn" data-source-chip="rejected"
+        title="${escapeHtml(String(d.theme_value || ""))}">${escapeHtml(t("styleThemeValueUnused"))}</span>`;
+    }
+    return "";
+  }
+
+  function labelBadgesHtml(row) {
+    const enabled = rowEnabled(row);
+    const valStr = rowValueText(row);
+    return (valStr ? `<div class="admin-dsp2-value-badge ${enabled ? "is-on" : ""}" data-value-badge>${escapeHtml(valStr)}</div>` : "")
+      + sourceChipHtml(row);
+  }
+
+  function rowValueText(row) {
+    if (row.key === "Color" || row.key === "FontFamily") return row.fmt(effectiveDefault(row.key));
+    if (row.kind === "theme") {
+      const seg = themeSeg(row.key);
+      const m = THEME_SEGS[row.key].find((s) => s.value === seg);
+      return m ? t(m.labelKey) : "—";
+    }
+    if (row.kind === "effects") return "";
+    const opt = (_state.options && _state.options[row.key]) || [];
+    const def = opt[3];
+    return row.fmt ? row.fmt(def) : (def != null ? String(def) : "—");
+  }
+
   function pickerHtml(row, opt) {
-    const enabled = opt[0] !== false;
     const def = opt[3];
     const range = DEFAULT_RANGES[row.key];
+    const enabled = rowEnabled(row);
 
-    if (row.key === "Opacity" || row.key === "Speed") {
+    if (row.kind === "slider") {
       const r = range;
       const cur = def != null ? Number(def) : r.min;
       const safeCur = isFinite(cur) ? cur : r.min;
       const pct = ((safeCur - r.min) / Math.max(1e-6, r.max - r.min)) * 100;
+      const label = escapeHtml(t(row.labelKey));
       return `
         <div class="admin-dsp2-track" data-track="${row.key}">
           <input type="number" class="admin-dsp2-num" data-num-key="${row.key}" data-num-index="3"
+            aria-label="${label}"
             min="${r.min}" max="${r.max}" step="${getStep(row.key)}" value="${escapeHtml(String(safeCur))}" />
           <div class="admin-dsp2-slider">
             <div class="admin-dsp2-slider-track">
               <div class="admin-dsp2-slider-fill" style="width:${pct.toFixed(2)}%"></div>
               <div class="admin-dsp2-slider-thumb" style="left:calc(${pct.toFixed(2)}% - 8px)"></div>
             </div>
-            <input type="range" class="admin-dsp2-range" data-range-key="${row.key}"
+            <input type="range" class="admin-dsp2-range" data-range-key="${row.key}" aria-label="${label}"
               min="${r.min}" max="${r.max}" step="${getStep(row.key)}" value="${escapeHtml(String(safeCur))}" />
             <div class="admin-dsp2-slider-axis">
               <span>${r.min}${r.unit}</span><span>${r.max}${r.unit}</span>
@@ -422,19 +452,19 @@
         </div>`;
     }
 
-    if (row.key === "FontSize") {
+    if (row.kind === "size") {
       const cur = Number(def);
       return `
-        <div class="admin-dsp2-chiprow">
+        <div class="admin-dsp2-chiprow admin-dsp2-chiprow-wrap">
           ${FONT_SIZE_PRESETS.map((s) => {
             const on = cur === s;
             return `<button type="button" class="admin-dsp2-fchip ${on ? "is-active" : ""}"
-              data-chip-key="FontSize" data-chip-value="${s}">${s}</button>`;
+              data-chip-key="FontSize" data-chip-value="${s}" aria-pressed="${on}">${s}</button>`;
           }).join("")}
         </div>`;
     }
 
-    if (row.key === "Color") {
+    if (row.kind === "color") {
       const cur = "#" + String(def || "FFFFFF").replace(/^#/, "").toUpperCase();
       return `
         <div class="admin-dsp2-swatches">
@@ -446,6 +476,7 @@
               style="background:${c}" aria-label="${c}" aria-pressed="${on}"></button>`;
           }).join("")}
           <label class="admin-dsp2-swatch-custom" title="${escapeHtml(t("specificColor"))}">
+            <span class="sr-only">${escapeHtml(t("specificColor"))}</span>
             <input type="color" data-num-key="Color" data-num-index="3"
               value="${escapeHtml(cur)}" />
           </label>
@@ -460,7 +491,7 @@
         return { value: v, label: l };
       }).filter((c) => c.value);
       const cur = String(def || "");
-      const editing = !!_state.allowlistEdit.FontFamily;
+      const editing = enabled && !!_state.allowlistEdit.FontFamily;
       const allowSet = editing
         ? _state.allowlistEdit.FontFamily
         : new Set(readAllowlist("FontFamily").map((v) => normalizeAllowValue("FontFamily", v)));
@@ -474,16 +505,17 @@
               "admin-dsp2-tchip",
               on ? "is-active" : "",
               editing ? "is-editing" : "",
-              !inAllow ? "is-blocked" : "",
+              enabled && !inAllow ? "is-blocked" : "",
             ].filter(Boolean).join(" ");
             const dataAttrs = editing
               ? `data-allow-key="FontFamily" data-allow-value="${escapeHtml(f.value)}"`
               : `data-chip-key="FontFamily" data-chip-value="${escapeHtml(f.value)}"`;
             return `<button type="button" class="${cls}" ${dataAttrs}
-              aria-pressed="${inAllow ? "true" : "false"}">
+              aria-pressed="${editing ? (inAllow ? "true" : "false") : (on ? "true" : "false")}">
               ${editing ? `<span class="admin-dsp2-allow-mark">${inAllow ? "✓ " : ""}</span>` : ""}${escapeHtml(f.label)}
             </button>`;
           }).join("")}
+          <a class="admin-dsp2-link" href="#/assets/fonts">${escapeHtml(t("adminRouteTitle_fonts"))} ›</a>
         </div>
         ${allowlistControlsHtml(row)}
       `;
@@ -491,7 +523,7 @@
 
     if (row.key === "Layout") {
       const cur = String(def || "scroll");
-      const editing = !!_state.allowlistEdit.Layout;
+      const editing = enabled && !!_state.allowlistEdit.Layout;
       const allowSet = editing
         ? _state.allowlistEdit.Layout
         : new Set(readAllowlist("Layout").map((v) => normalizeAllowValue("Layout", v)));
@@ -505,14 +537,14 @@
               "admin-dsp2-tile",
               on ? "is-active" : "",
               editing ? "is-editing" : "",
-              !inAllow ? "is-blocked" : "",
+              enabled && !inAllow ? "is-blocked" : "",
             ].filter(Boolean).join(" ");
             const dataAttrs = editing
               ? `data-allow-key="Layout" data-allow-value="${l.value}"`
               : `data-chip-key="Layout" data-chip-value="${l.value}"`;
             return `<button type="button" class="${cls}" ${dataAttrs}
-              aria-pressed="${inAllow ? "true" : "false"}">
-              <span class="admin-dsp2-tile-icon">${l.icon}</span>
+              aria-pressed="${editing ? (inAllow ? "true" : "false") : (on ? "true" : "false")}">
+              <span class="admin-dsp2-tile-icon" aria-hidden="true">${l.icon}</span>
               <span class="admin-dsp2-tile-label">${t(l.labelKey)}</span>
               ${editing ? `<span class="admin-dsp2-allow-mark">${inAllow ? "✓" : ""}</span>` : ""}
             </button>`;
@@ -521,11 +553,30 @@
         ${allowlistControlsHtml(row)}
       `;
     }
+
+    if (row.kind === "effects") {
+      return `<a class="admin-dsp2-link" href="#/effects">${escapeHtml(t("adminNavEffects"))} ›</a>`;
+    }
+
+    if (row.kind === "theme") {
+      const cur = themeSeg(row.key);
+      return `
+        <span class="admin-ui-seg admin-dsp2-seg" data-theme-seg="${row.key}" role="group"
+              aria-label="${escapeHtml(t(row.labelKey))}">
+          ${THEME_SEGS[row.key].map((s) => {
+            const on = s.value === cur;
+            return `<button type="button" data-theme-opt="${s.value}" class="${on ? "is-active" : ""}"
+              aria-pressed="${on ? "true" : "false"}">${escapeHtml(t(s.labelKey))}</button>`;
+          }).join("")}
+        </span>`;
+    }
     return "";
   }
 
+  // 可選清單只有在「觀眾可改」開著時才有意義（關著時觀眾根本看不到選項），
+  // 所以和數值列的範圍一樣，開關打開才露出。
   function allowlistControlsHtml(row) {
-    if (!isAllowlistKey(row.key)) return "";
+    if (!isAllowlistKey(row.key) || !rowEnabled(row)) return "";
     const editing = !!_state.allowlistEdit[row.key];
     const list = readAllowlist(row.key);
     const total = presetValuesFor(row.key).length || 0;
@@ -540,7 +591,7 @@
           <button type="button" class="admin-dsp2-allow-btn is-cancel" data-allow-action="cancel" data-allow-key="${row.key}">${escapeHtml(t("cancel"))}</button>
           <button type="button" class="admin-dsp2-allow-btn is-clear" data-allow-action="clear" data-allow-key="${row.key}">${escapeHtml(t("displayAllowAllBtn"))}</button>
         ` : `
-          <button type="button" class="admin-dsp2-allow-btn" data-allow-action="edit" data-allow-key="${row.key}" title="${escapeHtml(t("displayEditAllowlistTitle"))}">[${escapeHtml(t("displayEditAllowlistTitle"))}]</button>
+          <button type="button" class="admin-dsp2-allow-btn" data-allow-action="edit" data-allow-key="${row.key}">${escapeHtml(t("displayEditAllowlistTitle"))}</button>
         `}
       </div>`;
   }
@@ -552,85 +603,65 @@
     return t("displayLabelOption");
   }
 
+  // 數值列的觀眾範圍（slot 1／2）與只存在前端的步進值。
   function rangeBandHtml(row, opt) {
-    if (row.noRange) return "";
-    const enabled = opt[0] !== false;
-    if (!enabled) return "";
+    if (row.kind !== "slider" && row.kind !== "size") return "";
+    if (!rowEnabled(row)) return "";
     const r = DEFAULT_RANGES[row.key];
     const lo = opt[1] != null ? opt[1] : r.min;
     const hi = opt[2] != null ? opt[2] : r.max;
     const step = getStep(row.key);
+    const cell = (labelKey, index, value, extra) => `
+        <label class="admin-dsp2-band-cell">
+          <span class="admin-ui-monolabel">${escapeHtml(t(labelKey))}</span>
+          <span class="admin-dsp2-band-input">
+            <input type="number" data-num-key="${row.key}" data-num-index="${index}" ${extra}
+              value="${escapeHtml(String(value))}" />
+            ${r.unit ? `<span>${r.unit}</span>` : ""}
+          </span>
+        </label>`;
     return `
       <div class="admin-dsp2-band">
-        <div class="admin-dsp2-band-cell">
-          <span class="admin-ui-monolabel">${escapeHtml(t("displayMinAudience"))}</span>
-          <div class="admin-dsp2-band-input">
-            <input type="number" data-num-key="${row.key}" data-num-index="1"
-              min="${r.min}" max="${r.max}" step="${step}" value="${escapeHtml(String(lo))}" />
-            ${r.unit ? `<span>${r.unit}</span>` : ""}
-          </div>
-        </div>
-        <div class="admin-dsp2-band-cell">
-          <span class="admin-ui-monolabel">${escapeHtml(t("displayMaxAudience"))}</span>
-          <div class="admin-dsp2-band-input">
-            <input type="number" data-num-key="${row.key}" data-num-index="2"
-              min="${r.min}" max="${r.max}" step="${step}" value="${escapeHtml(String(hi))}" />
-            ${r.unit ? `<span>${r.unit}</span>` : ""}
-          </div>
-        </div>
-        <div class="admin-dsp2-band-cell">
-          <span class="admin-ui-monolabel">${ServerI18n.t("mlStep")}</span>
-          <div class="admin-dsp2-band-input">
-            <input type="number" data-num-key="${row.key}" data-num-index="step"
-              min="0.1" step="0.1" value="${escapeHtml(String(step))}" />
-            ${r.unit ? `<span>${r.unit}</span>` : ""}
-          </div>
-        </div>
+        ${cell("displayMinAudience", 1, lo, `min="${r.min}" max="${r.max}" step="${step}"`)}
+        ${cell("displayMaxAudience", 2, hi, `min="${r.min}" max="${r.max}" step="${step}"`)}
+        ${cell("mlStep", "step", step, `min="0.1" step="0.1"`)}
       </div>`;
   }
 
-  function rowHtml(row, opt) {
-    const enabled = opt[0] !== false;
-    const def = opt[3];
-    const valStr = row.fmt ? row.fmt(def) : (def != null ? String(def) : "—");
-    const isLast = row.key === "Layout";
+  function pillHtml(row) {
+    const enabled = rowEnabled(row);
+    const label = escapeHtml(t(row.labelKey) + " · " + t("displayColAudience"));
+    const text = escapeHtml(enabled ? t("displayCustomizable") : t("displayLocked"));
+    // 後端沒有對應旗標的列：開關照現況顯示，但按不動（不偷偷改觀眾端行為）。
+    const attrs = row.fixed
+      ? `disabled aria-disabled="true" data-fixed-toggle="${row.key}"`
+      : `data-toggle-key="${row.key}"`;
     return `
-      <div class="admin-dsp2-row ${enabled ? "is-on" : "is-off"} ${isLast ? "is-last" : ""}" data-row-key="${row.key}">
+      <button type="button" class="admin-dsp2-pill ${enabled ? "is-on" : ""}" ${attrs}
+        aria-pressed="${enabled ? "true" : "false"}" aria-label="${label}">
+        <span class="admin-dsp2-pill-track" aria-hidden="true"><span class="admin-dsp2-pill-thumb"></span></span>
+        <span class="admin-dsp2-pill-label">${text}</span>
+      </button>`;
+  }
+
+  function rowHtml(row) {
+    const opt = (_state.options && _state.options[row.key]) || [false, "", "", ""];
+    const enabled = rowEnabled(row);
+    const ext = row.kind === "color" && enabled
+      ? `<div class="admin-dsp2-row-ext admin-color-palette" data-row-ext="Color" data-admin-color-palette></div>`
+      : "";
+    return `
+      <div class="admin-dsp2-row ${enabled ? "is-on" : "is-off"} ${row.fixed ? "is-fixed" : ""}" data-row-key="${row.key}">
         <div class="admin-dsp2-cell-label">
           <div class="admin-dsp2-cell-label-name">${escapeHtml(t(row.labelKey))}</div>
-          <div class="admin-dsp2-value-badge ${enabled ? "is-on" : ""}" data-value-badge>${escapeHtml(valStr)}</div>
+          <div class="admin-dsp2-cell-badges" data-row-badges>${labelBadgesHtml(row)}</div>
         </div>
         <div class="admin-dsp2-cell-center">
-          <!-- 提示兩套並存，CSS 依 data-dsp-mode 擇一。顯示層講的是「大螢幕
-               上就是這個值」；觀眾頁講的是「觀眾拖滑桿時從哪裡開始」。 -->
-          <div class="admin-dsp2-cell-hint" data-dsp-only="values">
-            <span class="admin-dsp2-cell-hint-arrow">▸</span>
-            ${escapeHtml(t("displayHintBigScreen"))}
-          </div>
-          <div class="admin-dsp2-cell-hint" data-dsp-only="audience">
-            <span class="admin-dsp2-cell-hint-arrow">▸</span>
-            ${escapeHtml(enabled
-              ? t("displayHintAudienceOn")
-              : t("displayHintAudienceOff"))}
-          </div>
           <div class="admin-dsp2-picker" data-picker-host>${pickerHtml(row, opt)}</div>
           <div class="admin-dsp2-band-host" data-band-host>${rangeBandHtml(row, opt)}</div>
         </div>
-        <div class="admin-dsp2-cell-toggle">
-          <button type="button" class="admin-dsp2-pill ${enabled ? "is-on" : ""}"
-            data-toggle-key="${row.key}" aria-pressed="${enabled ? "true" : "false"}">
-            <span class="admin-dsp2-pill-track"><span class="admin-dsp2-pill-thumb"></span></span>
-            <span class="admin-dsp2-pill-label">${escapeHtml(enabled ? t("displayCustomizable") : t("displayLocked"))}</span>
-          </button>
-          <div class="admin-dsp2-toggle-hint">
-            ${escapeHtml(enabled
-              ? t("displayToggleHintOn")
-              : (row.noRange
-                  ? t("displayToggleHintOffPick")
-                  : t("displayToggleHintOffSlider")))}
-          </div>
-        </div>
-      </div>`;
+        <div class="admin-dsp2-cell-toggle">${pillHtml(row)}</div>
+      </div>${ext}`;
   }
 
   function renderRows() {
@@ -640,12 +671,9 @@
       host.innerHTML = `${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : escapeHtml(t("loading"))}`;
       return;
     }
-    host.innerHTML = ROWS
-      .map((row) => rowHtml(row, _state.options[row.key] || [false, "", "", ""]))
-      .join("");
+    host.innerHTML = ROWS.map(rowHtml).join("");
     renderColorPalette();
     renderPreview();
-    renderSummary();
   }
 
   function paletteColors() {
@@ -786,7 +814,7 @@
     focus?.focus({ preventScroll: true });
   }
 
-  // ─── Preview / Summary ──────────────────────────────────────────────
+  // ─── Preview ────────────────────────────────────────────────────────
 
   function previewVal(key, fallback) {
     const opt = _state.options && _state.options[key];
@@ -805,19 +833,27 @@
     const fontSize = Number(previewVal("FontSize", 32));
     const opacity  = Number(previewVal("Opacity", 92));
     const speed    = Number(previewVal("Speed", 1));
-    const color    = "#" + String(previewVal("Color", "7DD3FC")).replace(/^#/, "");
-    const family   = String(previewVal("FontFamily", "NotoSansTC"));
+    const color    = "#" + String(effectiveDefault("Color") || previewVal("Color", "7DD3FC")).replace(/^#/, "");
+    const family   = String(effectiveDefault("FontFamily") || previewVal("FontFamily", "NotoSansTC"));
     const layout   = String(previewVal("Layout", "scroll"));
 
     // Cap visual font-size so the stage doesn't blow up.
     const capped = Math.min(fontSize, 36);
     const op = Math.max(0, Math.min(100, opacity)) / 100;
 
+    // 描邊與陰影來自使用中的主題（套用主題、改那兩列都會重畫這裡）。
+    const styles = (window.AdminThemes && window.AdminThemes.activeStyles && window.AdminThemes.activeStyles()) || {};
+    const strokeW = styles.textStroke ? Math.max(0, Math.min(6, Number(styles.strokeWidth) || 0)) : 0;
+    const strokeColor = /^#[0-9a-fA-F]{3,8}$/.test(String(styles.strokeColor || "")) ? styles.strokeColor : "#000000";
+    const blur = styles.textShadow ? Math.max(0, Math.min(40, Number(styles.shadowBlur) || 0)) : 0;
+
     pill1.style.fontSize = capped + "px";
     pill1.style.color = color;
     pill1.style.opacity = op.toFixed(2);
     pill1.style.fontFamily = family + ", system-ui, sans-serif";
-    pill1.style.textShadow = `0 0 14px ${color}66`;
+    pill1.style.webkitTextStroke = strokeW ? `${strokeW}px ${strokeColor}` : "";
+    pill1.style.paintOrder = strokeW ? "stroke fill" : "";
+    pill1.style.textShadow = blur ? `0 0 ${blur}px ${color}` : "none";
 
     pill2.style.fontSize = (capped * 0.78).toFixed(0) + "px";
     pill2.style.opacity = (op * 0.9).toFixed(2);
@@ -829,23 +865,15 @@
     if (footR) footR.textContent = t("displayOpacitySuffix", { n: Math.round(opacity) });
   }
 
-  function renderSummary() {
-    const list = document.querySelector("[data-summary-list]");
-    const headEn = document.querySelector("[data-summary-count]");
-    if (!list || !_state.options) return;
-    const opens = ROWS.filter((r) => (_state.options[r.key] || [])[0]).length;
-    if (headEn) headEn.textContent = `AUDIENCE · ${opens}/6 OPEN`;
-    list.innerHTML = ROWS.map((r) => {
-      const open = !!(_state.options[r.key] || [])[0];
-      return `<div class="admin-dsp2-srow ${open ? "is-on" : ""}">
-        <span class="admin-dsp2-srow-dot"></span>
-        <span class="admin-dsp2-srow-label">${escapeHtml(t(r.labelKey))}</span>
-        <span class="admin-dsp2-srow-tag">${escapeHtml(open ? t("displayAudienceChangeable") : t("displayLocked"))}</span>
-      </div>`;
-    }).join("");
-  }
-
   // ─── Backend calls ──────────────────────────────────────────────────
+
+  // 顏色／字型列的「來自主題／主題值未採用」取決於這幾個設定（可改與否、
+  // 色盤、只准色盤、字型清單），改完請主題模組重算一次（它會發事件重畫列）。
+  const STYLE_SOURCE_KEYS = ["Color", "ViewerColorPicker", "FontFamily"];
+  function refreshStyleSource(key) {
+    if (!STYLE_SOURCE_KEYS.includes(key)) return;
+    if (window.AdminThemes && window.AdminThemes.refresh) window.AdminThemes.refresh();
+  }
 
   async function postToggle(key, enabled) {
     try {
@@ -857,9 +885,13 @@
       if (!res.ok) throw new Error("toggle " + res.status);
       if (!Array.isArray(_state.options[key])) _state.options[key] = [false, "", "", ""];
       _state.options[key][0] = !!enabled;
+      if (!enabled) delete _state.allowlistEdit[key];
       renderRows();
+      refreshStyleSource(key);
       if (key === "ViewerColorPicker") document.querySelector("[data-viewer-color-picker]")?.focus({ preventScroll: true });
-      const label = key === "ViewerColorPicker" ? t("viewerPaletteAllowPicker") : key;
+      else document.querySelector(`[data-toggle-key="${key}"]`)?.focus({ preventScroll: true });
+      const row = ROWS.find((r) => r.key === key);
+      const label = key === "ViewerColorPicker" ? t("viewerPaletteAllowPicker") : (row ? t(row.labelKey) : key);
       window.showToast && window.showToast(`${label} ${t("settingsUpdated")}`, true);
     } catch (e) {
       console.warn("[admin-display] toggle failed:", e);
@@ -895,11 +927,11 @@
       if (!res.ok) throw new Error("update " + res.status);
       if (!Array.isArray(_state.options[key])) _state.options[key] = [false, "", "", ""];
       _state.options[key][index] = v;
-      // Light update: refresh the row + preview/summary without full re-render
+      // Light update: refresh the row + preview without full re-render
       // so the open <input> doesn't lose focus.
       refreshRow(key);
       renderPreview();
-      renderSummary();
+      refreshStyleSource(key);
     } catch (e) {
       console.warn("[admin-display] update failed:", e);
       window.showToast && window.showToast(t("updateFailed"), false);
@@ -922,7 +954,7 @@
       }
       refreshRow(key);
       renderPreview();
-      renderSummary();
+      refreshStyleSource(key);
       const total = presetValuesFor(key).length || 0;
       const msg = key === "Color" ? t("settingsUpdated") : list.length > 0
         ? t("displayAllowlistToastPartial", { key: key, n: list.length, total: total })
@@ -936,39 +968,35 @@
     }
   }
 
-  // Re-render only the value-badge / picker chip-active state for one row.
+  // Re-render only the value-badge / picker state for one row.
   function refreshRow(key) {
-    const row = document.querySelector(`[data-row-key="${key}"]`);
+    const row = document.querySelector(`#${PAGE_ID} [data-row-key="${key}"]`);
     if (!row || !_state.options) return;
     const meta = ROWS.find((r) => r.key === key);
     if (!meta) return;
     const opt = _state.options[key] || [false, "", "", ""];
     const def = opt[3];
-    const badge = row.querySelector("[data-value-badge]");
-    if (badge) badge.textContent = meta.fmt ? meta.fmt(def) : (def != null ? String(def) : "—");
+    const badges = row.querySelector("[data-row-badges]");
+    if (badges) badges.innerHTML = labelBadgesHtml(meta);
 
-    // For pick-set keys, re-render the picker entirely so the allowlist
-    // edit-mode chips / [編輯] / [套用] controls stay in sync. The slider
-    // path below skips this branch (uses class toggles to avoid stealing
-    // focus from <input type="number">).
-    if (isAllowlistKey(key)) {
+    // 清單類與主題類整個 picker 重畫（編輯模式的勾選、[編輯]／[套用] 才會同步）；
+    // 滑桿走下面的 class 切換，才不會搶走 <input type="number"> 的焦點。
+    if (isAllowlistKey(key) || meta.kind === "theme") {
       const pickerHost = row.querySelector("[data-picker-host]");
       if (pickerHost) pickerHost.innerHTML = pickerHtml(meta, opt);
       return;
     }
 
-    // Sync chip active states (FontSize / Color / FontFamily / Layout)
-    if (key === "FontSize" || key === "Color" || key === "FontFamily" || key === "Layout") {
+    if (key === "FontSize") {
       row.querySelectorAll(`[data-chip-key="${key}"]`).forEach((el) => {
-        const v = el.getAttribute("data-chip-value");
-        const cur = key === "Color"
-          ? String(def || "").replace(/^#/, "").toUpperCase()
-          : String(def != null ? def : "");
-        el.classList.toggle("is-active", String(v) === cur);
+        const on = String(el.getAttribute("data-chip-value")) === String(def != null ? def : "");
+        el.classList.toggle("is-active", on);
+        el.setAttribute("aria-pressed", on ? "true" : "false");
       });
+      const bandHost = row.querySelector("[data-band-host]");
+      if (bandHost && !bandHost.contains(document.activeElement)) bandHost.innerHTML = rangeBandHtml(meta, opt);
     }
-    // Sync slider visual fill for Opacity / Speed
-    if (key === "Opacity" || key === "Speed") {
+    if (meta.kind === "slider") {
       const r = DEFAULT_RANGES[key];
       const cur = Number(def != null ? def : r.min);
       const pct = ((cur - r.min) / Math.max(1e-6, r.max - r.min)) * 100;
@@ -980,6 +1008,8 @@
       if (range && document.activeElement !== range) range.value = String(cur);
       const num = row.querySelector(".admin-dsp2-num");
       if (num && document.activeElement !== num) num.value = String(cur);
+      const bandHost = row.querySelector("[data-band-host]");
+      if (bandHost && !bandHost.contains(document.activeElement)) bandHost.innerHTML = rangeBandHtml(meta, opt);
     }
   }
 
@@ -1005,28 +1035,7 @@
     }
   }
 
-  async function fetchMetrics() {
-    try {
-      const res = await fetch("/admin/metrics", { credentials: "same-origin" });
-      if (!res.ok) return;
-      const data = await res.json();
-      _state.viewerCount = data.ws_clients ?? 0;
-    } catch (e) { /* silent */ }
-  }
-
-  function startMetricsPoll() {
-    stopMetricsPoll();
-    fetchMetrics();
-    _state.metricsTimer = setInterval(fetchMetrics, METRICS_INTERVAL_MS);
-  }
-  function stopMetricsPoll() {
-    if (_state.metricsTimer) {
-      clearInterval(_state.metricsTimer);
-      _state.metricsTimer = null;
-    }
-  }
-
-  // ─── Apply-to-all / revert / export ─────────────────────────────────
+  // ─── Revert / export ────────────────────────────────────────────────
 
   function exportSettingsJson() {
     if (!_state.options) {
@@ -1050,91 +1059,74 @@
     window.showToast && window.showToast(t("displayExportDone"), true);
   }
 
-  async function deployAll() {
-    if (!_state.options) return;
-    const btn = document.getElementById("dsp2-deploy");
-    if (btn) { btn.disabled = true; btn.classList.add("is-pending"); }
-    try {
-      // Re-post each toggle to force a fresh `settings_changed` push to all
-      // /ws/settings clients. The endpoint already broadcasts on every
-      // set_toggle call, so this acts as the explicit "apply now".
-      for (const r of ROWS) {
-        const opt = _state.options[r.key];
-        if (!Array.isArray(opt)) continue;
-        await window.csrfFetch("/admin/Set", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: r.key, enabled: !!opt[0] }),
-        });
+  // 只還原六個有後端旗標的屬性；主題的描邊／陰影由主題自己決定。
+  // 目標值是伺服器的出廠預設（DANMU_CONFIG.settingDefaults），數值列的觀眾
+  // 範圍是伺服器驗證用的範圍（settingRanges）——兩者都不在前端寫死，送出去
+  // 一定落在 /admin/update 接受的範圍內。任何一個請求失敗都停下來報錯，
+  // 再重抓一次設定，畫面顯示伺服器上真正的狀態。
+  const REVERT_KEYS = ["Opacity", "FontSize", "Speed", "Color", "FontFamily", "Layout"];
+  const PICK_KEYS = ["Color", "FontFamily", "Layout"];
+
+  function revertPlan() {
+    const defaults = window.DANMU_CONFIG?.settingDefaults || {};
+    const ranges = window.DANMU_CONFIG?.settingRanges || {};
+    const steps = [];
+    for (const key of REVERT_KEYS) {
+      const row = defaults[key];
+      if (!Array.isArray(row) || row.length < 4) return null;
+      steps.push({ url: "/admin/Set", body: { key, enabled: !!row[0] } });
+      if (!PICK_KEYS.includes(key)) {
+        const r = ranges[key];
+        if (!r) return null;
+        const clamp = (v) => Math.min(r.max, Math.max(r.min, Number(v)));
+        steps.push({ url: "/admin/update", body: { type: key, value: r.min, index: 1 } });
+        steps.push({ url: "/admin/update", body: { type: key, value: r.max, index: 2 } });
+        steps.push({ url: "/admin/update", body: { type: key, value: clamp(row[3]), index: 3 } });
+      } else if (row[3] !== "" && row[3] != null) {
+        const value = key === "Color" ? String(row[3]).replace(/^#/, "").toUpperCase() : row[3];
+        steps.push({ url: "/admin/update", body: { type: key, value, index: 3 } });
       }
-      await fetchMetrics();
-      window.showToast && window.showToast(
-        t("displayBroadcastDone") + ` ${_state.viewerCount} ${t("displayViewersReceivedSuffix")}`,
-        true,
-      );
-    } catch (e) {
-      console.warn("[admin-display] deploy failed:", e);
-      window.showToast && window.showToast(t("updateFailed"), false);
-    } finally {
-      if (btn) { btn.disabled = false; btn.classList.remove("is-pending"); }
     }
+    return steps;
   }
 
   async function revertDefaults() {
-    const presets = {
-      Opacity:    [true, 0,  100, 70],
-      FontSize:   [true, 20, 100, 50],
-      Speed:      [true, 0.5, 3, 1],
-      Color:      [true, 0,  0,   "FFFFFF"],
-      // 2026-11-03：還原預設值原本把 FontFamily[0] 寫成 false——和 Server
-      // 端預設（routes/api.py: [true, "", "", "NotoSansTC"]）相反，按一次
-      // 「還原預設值」反而關掉觀眾端字型選擇。對齊 Server 預設值。
-      FontFamily: [true, "", "", "NotoSansTC"],
-      Layout:     [true, "", "", "scroll"],
-    };
     const ok = await window.HudConfirm?.open({
       icon: "↩",
       title: t("displayRevertConfirmTitle"),
-      subtitle: ServerI18n.t("cfmSubRevertDefaults"),
+      subtitle: t("cfmSubRevertDefaults"),
       severity: "danger",
       body: t("displayRevertConfirm"),
       confirmLabel: t("displayDeployRevert"),
     });
     if (!ok) return;
+    let failed = false;
     try {
-      for (const [k, target] of Object.entries(presets)) {
-        await window.csrfFetch("/admin/Set", {
+      const steps = revertPlan();
+      if (!steps) throw new Error("server defaults unavailable");
+      for (const step of steps) {
+        const res = await window.csrfFetch(step.url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: k, enabled: !!target[0] }),
+          body: JSON.stringify(step.body),
         });
-        for (let i = 1; i <= 3; i++) {
-          // Skip min/max for non-numeric rows
-          if (i < 3 && (k === "Color" || k === "FontFamily" || k === "Layout")) continue;
-          if (target[i] === "" || target[i] == null) continue;
-          await window.csrfFetch("/admin/update", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: k, value: target[i], index: i }),
-          });
-        }
+        if (!res || !res.ok) throw new Error(`${step.url} ${res ? res.status : "?"}`);
       }
-      await fetchSettings();
-      renderRows();
-      window.showToast && window.showToast(t("displayRevertDone"), true);
     } catch (e) {
+      failed = true;
       console.warn("[admin-display] revert failed:", e);
-      window.showToast && window.showToast(t("updateFailed"), false);
     }
+    await fetchSettings();
+    renderRows();
+    if (window.AdminThemes && window.AdminThemes.refresh) window.AdminThemes.refresh();
+    window.showToast && window.showToast(t(failed ? "updateFailed" : "displayRevertDone"), !failed);
   }
 
   // ─── Event delegation ───────────────────────────────────────────────
+  //
+  // 全部委派在區塊外殼上：換語言時內容整份重畫也不會掉 listener。
 
-  function bind() {
-    const page = document.getElementById(PAGE_ID);
-    if (!page) return;
-
-    // Pill toggle (audience on/off)
+  function bindPage(page) {
     page.addEventListener("click", (e) => {
       const previewColor = e.target.closest("[data-palette-preview]");
       if (previewColor) { previewPaletteColor(previewColor.dataset.palettePreview); return; }
@@ -1169,6 +1161,16 @@
         return;
       }
 
+      // 描邊／陰影：使用中主題的覆寫（admin-themes.js 存檔後重抓主題、發事件重畫這兩列）
+      const themeOpt = e.target.closest("[data-theme-opt]");
+      if (themeOpt) {
+        const seg = themeOpt.closest("[data-theme-seg]");
+        if (seg && window.AdminThemes && window.AdminThemes.setSeg) {
+          window.AdminThemes.setSeg(seg.getAttribute("data-theme-seg"), themeOpt.getAttribute("data-theme-opt"));
+        }
+        return;
+      }
+
       // Allowlist edit-mode action buttons (edit / apply / cancel / clear).
       const allowBtn = e.target.closest("[data-allow-action]");
       if (allowBtn) {
@@ -1178,11 +1180,7 @@
         if (action === "edit") {
           // Seed edit set from current persisted allowlist (or all-on if empty).
           const cur = readAllowlist(key).map((v) => normalizeAllowValue(key, v));
-          if (cur.length) {
-            _state.allowlistEdit[key] = new Set(cur);
-          } else {
-            _state.allowlistEdit[key] = new Set(presetValuesFor(key));
-          }
+          _state.allowlistEdit[key] = new Set(cur.length ? cur : presetValuesFor(key));
           refreshRow(key);
           return;
         }
@@ -1192,22 +1190,20 @@
           return;
         }
         if (action === "clear") {
-          _state.allowlistEdit[key] = new Set();
           // "Clear" semantically means "allow all" → POST empty list.
-          postAllowlist(key, []);
           delete _state.allowlistEdit[key];
+          postAllowlist(key, []);
           return;
         }
         if (action === "apply") {
           const set = _state.allowlistEdit[key] || new Set();
-          // If admin checked everything, send empty list (= allow all) to keep
-          // the persisted form minimal and forward-compatible.
+          // If admin checked everything, send empty list (= allow all).
           const presets = presetValuesFor(key);
           const list = Array.from(set);
           const allChecked = presets.length > 0 && list.length === presets.length
             && presets.every((v) => set.has(v));
-          postAllowlist(key, allChecked ? [] : list);
           delete _state.allowlistEdit[key];
+          postAllowlist(key, allChecked ? [] : list);
           return;
         }
       }
@@ -1216,10 +1212,9 @@
       const allowChip = e.target.closest("[data-allow-key][data-allow-value]");
       if (allowChip) {
         const key = allowChip.getAttribute("data-allow-key");
-        const val = allowChip.getAttribute("data-allow-value");
         const set = _state.allowlistEdit[key];
         if (set) {
-          const norm = normalizeAllowValue(key, val);
+          const norm = normalizeAllowValue(key, allowChip.getAttribute("data-allow-value"));
           if (set.has(norm)) set.delete(norm);
           else set.add(norm);
           refreshRow(key);
@@ -1231,13 +1226,13 @@
       if (chip) {
         const key = chip.getAttribute("data-chip-key");
         const val = chip.getAttribute("data-chip-value");
-        document.querySelectorAll(`[data-chip-key="${key}"]`).forEach((c) => c.classList.remove("is-active"));
+        page.querySelectorAll(`[data-chip-key="${key}"]`).forEach((c) => c.classList.remove("is-active"));
         chip.classList.add("is-active");
         postUpdate(key, 3, val);
         return;
       }
-      if (e.target && e.target.id === "dsp2-revert") { revertDefaults(); return; }
-      if (e.target && e.target.id === "dsp2-export") { exportSettingsJson(); return; }
+      if (e.target.closest("#dsp2-revert")) { revertDefaults(); return; }
+      if (e.target.closest("#dsp2-export")) { exportSettingsJson(); return; }
     });
 
     page.addEventListener("keydown", event => {
@@ -1256,12 +1251,34 @@
         postToggle("ViewerColorPicker", t1.checked);
         return;
       }
+      // 觀眾外部圖片 — 走 /admin/viewer-images
+      if (t1.closest("[data-vi-toggle]")) { postViewerImages({ enabled: t1.checked }); return; }
+      if (t1.closest("[data-vi-ext]")) {
+        const picked = Array.from(page.querySelectorAll("[data-vi-ext]"))
+          .filter((el) => el.checked)
+          .map((el) => el.getAttribute("data-vi-ext"));
+        postViewerImages({ extensions: picked });
+        return;
+      }
+      if (t1.id === "viewer-images-hosts") {
+        postViewerImages({ hosts: t1.value.split(/[\s,]+/).filter(Boolean) });
+        return;
+      }
+      // Slider commit — POST on `change`
+      if (t1.classList && t1.classList.contains("admin-dsp2-range")) {
+        postUpdate(t1.getAttribute("data-range-key"), 3, t1.value);
+        return;
+      }
       const key = t1.getAttribute("data-num-key");
       if (!key) return;
       const idxAttr = t1.getAttribute("data-num-index");
       if (idxAttr === "step") {
         setStep(key, t1.value);
         // Step is client-only — re-render the band so step propagates to siblings.
+        const row = t1.closest("[data-row-key]");
+        const meta = ROWS.find((r) => r.key === key);
+        const host = row && row.querySelector("[data-band-host]");
+        if (host && meta) host.innerHTML = rangeBandHtml(meta, _state.options[key] || []);
         refreshRow(key);
         return;
       }
@@ -1298,7 +1315,6 @@
         }
         return;
       }
-      // Slider drag
       if (t1.classList && t1.classList.contains("admin-dsp2-range")) {
         const key = t1.getAttribute("data-range-key");
         const r = DEFAULT_RANGES[key];
@@ -1323,34 +1339,22 @@
         const key = t1.getAttribute("data-num-key");
         const idx = parseInt(t1.getAttribute("data-num-index"), 10);
         if (Number.isNaN(idx) || !Array.isArray(_state.options[key])) return;
-        let v = t1.value;
-        if (t1.type === "number") v = Number(v);
-        _state.options[key][idx] = v;
+        _state.options[key][idx] = t1.type === "number" ? Number(t1.value) : t1.value;
         renderPreview();
       }
     });
+  }
 
-    // Slider commit — POST on `change`
-    page.addEventListener("change", (e) => {
-      const t1 = e.target;
-      if (!t1) return;
-      if (t1.classList && t1.classList.contains("admin-dsp2-range")) {
-        const key = t1.getAttribute("data-range-key");
-        postUpdate(key, 3, t1.value);
-      }
-    });
-
-    // ── 顯示層排版（2026-08-19 設計稿 07 · R1）────────────────────────
-    // 走 /admin/display-layer，與 /admin/update 那組觀眾端設定分開。
-    page.addEventListener("click", (e) => {
+  // ── 顯示層的大螢幕設定 ── 走 /admin/display-layer，與 /admin/update 那組分開。
+  function bindLayout(root) {
+    root.addEventListener("click", (e) => {
       const step = e.target.closest("[data-dl-step]");
       if (step) {
         const wrap = step.closest("[data-dl-stepper]");
         if (!wrap) return;
         const key = wrap.getAttribute("data-dl-stepper");
         const cur = Number(_dlState[key] ?? 0);
-        const next = cur + Number(step.getAttribute("data-dl-step"));
-        postDisplayLayer(key, next);
+        postDisplayLayer(key, cur + Number(step.getAttribute("data-dl-step")));
         return;
       }
       const opt = e.target.closest("[data-dl-opt]");
@@ -1359,14 +1363,13 @@
         if (!wrap) return;
         const key = wrap.getAttribute("data-dl-seg");
         const raw = opt.getAttribute("data-dl-opt");
-        // safe_area / poll_vote_opacity 是數字、stroke_mode 是字串
-        // ——後端會擋型別，這裡照鍵送對的
+        // safe_area / poll_vote_opacity 是數字、stroke_mode 是字串——後端會擋型別
         const numericSegs = ["safe_area", "poll_vote_opacity"];
         postDisplayLayer(key, numericSegs.indexOf(key) !== -1 ? Number(raw) : raw);
       }
     });
 
-    page.addEventListener("change", (e) => {
+    root.addEventListener("change", (e) => {
       const tg = e.target.closest("[data-dl-toggle]");
       if (tg) { postDisplayLayer(tg.getAttribute("data-dl-toggle"), tg.checked); return; }
       const rg = e.target.closest("[data-dl-range]");
@@ -1374,31 +1377,12 @@
     });
 
     // 拖動時先更新數字，放開才送出——不然每一格都打一次 API
-    page.addEventListener("input", (e) => {
+    root.addEventListener("input", (e) => {
       const rg = e.target.closest("[data-dl-range]");
       if (!rg) return;
       const key = rg.getAttribute("data-dl-range");
-      const out = page.querySelector(`[data-dl-value="${key}"]`);
+      const out = root.querySelector(`[data-dl-value="${key}"]`);
       if (out) out.textContent = rg.value + "%";
-    });
-
-    // ── 觀眾外部圖片（2026-11-14）── 走 /admin/viewer-images
-    page.addEventListener("change", (e) => {
-      if (e.target.closest("[data-vi-toggle]")) {
-        postViewerImages({ enabled: e.target.checked });
-        return;
-      }
-      if (e.target.closest("[data-vi-ext]")) {
-        const picked = Array.from(page.querySelectorAll("[data-vi-ext]"))
-          .filter((el) => el.checked)
-          .map((el) => el.getAttribute("data-vi-ext"));
-        postViewerImages({ extensions: picked });
-        return;
-      }
-      if (e.target.id === "viewer-images-hosts") {
-        const hosts = e.target.value.split(/[\s,]+/).filter(Boolean);
-        postViewerImages({ hosts });
-      }
     });
   }
 
@@ -1528,7 +1512,7 @@
   let _dlState = {};
 
   function renderDisplayLayer() {
-    const page = document.getElementById(PAGE_ID);
+    const page = document.getElementById(LAYOUT_ID);
     if (!page) return;
     Object.entries(_dlState).forEach(([key, val]) => {
       const out = page.querySelector(`[data-dl-value="${key}"]`);
@@ -1584,70 +1568,10 @@
     }
   }
 
-  // ─── Visibility / lifecycle ─────────────────────────────────────────
-
-  function hideLegacy() {
-    LEGACY_IDS.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.setAttribute("data-admin-ui-replaced", "1");
-    });
-  }
-
-  let _lastVisibleRoute = null;
-  function _isDisplayOwner(route, leaf) {
-    // `display` 是 2026-05-19 退役的 slug（bare-redirect 到 viewer/defaults），
-    // 這個判斷式因此一直是死的。v8 起由「顯示層」overlay 路由接管。
-    return route === "overlay" || leaf === "overlay" ||
-           route === "display" || leaf === "display";
-  }
-
-  function _isViewerOwner(route, leaf) {
-    return (
-      route === "viewer-config" ||
-      route === "viewer" ||
-      leaf === "viewer-config" ||
-      leaf === "viewer"
-    );
-  }
-
-  // D-6 階段 4 (2026-07-29): tab 狀態的唯一來源改成 AdminTabs / router。
-  // 這個模組以前自己養一條 `.admin-tabstrip`，自己寫 dataset、自己算可見性；
-  // router 也在算同一件事，兩套各算各的就會變成 #/history 那種「點 A 分頁反而
-  // 藏掉 B」的打架（見 c5a7c63）。現在 strip 由 shell 統一掛在標題列下方，
-  // 這裡只負責把 router 已經決定好的分頁鏡射回 body.dataset.viewerConfigTab
-  // ——⌘K 深連結寫的是同一格，所以下面的可見性邏輯不必改。
-  //
-  // 讀 `activeLeaf` 而不是自己解析 hash：admin.js 在 dispatch
-  // admin-route-applied 之前就把 `activeLeaf = activeTab || currentRoute`
-  // 寫好了，那是 router 唯一算過一次的答案；重解 hash 只會多出一條可能跟它
-  // 不一致的推導（別名路由的 hash 裡根本沒有 tab 段）。
-  function _mirrorRouterTab(route, leaf) {
-    if (!_isViewerOwner(route, leaf)) return;
-    const cfg = window.AdminTabs?.getConfig?.("viewer");
-    if (!cfg) return; // AdminTabs 還沒載入 → 保留既有 dataset，別亂寫
-    const has = (slug) => cfg.tabs.some((t) => t.slug === slug);
-    let next = has(leaf) ? leaf : null;
-    if (!next && window.AdminTabs.resolveActiveTab) {
-      // 別名進來（#/viewer-config → leaf 還是 route 名）時補一次記憶／預設值。
-      const resolved = window.AdminTabs.resolveActiveTab("viewer", null);
-      if (has(resolved)) next = resolved;
-    }
-    if (next) document.body.dataset.viewerConfigTab = next;
-  }
-
-  // v5 IA — populate the limits tab from /admin/metrics.
-  //
-  // D-6 階段 4 (2026-07-29): 提到 module scope。以前它是那條自製 tabstrip 的
-  // click handler 的閉包，分頁列退役後就沒有呼叫者了；現在由 syncVisibility
-  // 在「limits 分頁真的在台上」時觸發。
-  //
-  // **必須是邊緣觸發**（見下面 _limitsHydrated）。syncVisibility 掛在一個
-  // `subtree: true` 的 MutationObserver 上，任何 DOM 變動都會叫它一次；而這個
-  // 函式自己會寫 textContent，也就是自己製造下一次 mutation。水平觸發會變成
-  // 自我維持的 fetch 迴圈 —— 實測閒置 6 秒打了 26 次 /admin/metrics，然後被
-  // 自己的限流擋成 429。
+  // 「發送與內容限制」的數字從 /admin/metrics 拉。**必須是邊緣觸發**
+  // （syncVisibility 的 _viewerEntered）：這個函式自己會寫 textContent，也就是
+  // 自己製造下一次 mutation，水平觸發會變成自我維持的 fetch 迴圈。
   let _limitsInFlight = false;
-  let _limitsHydrated = false; // 邊緣觸發旗標：進入 limits 分頁時 true，離開時 false
   async function _hydrateLimitsTab() {
     const root = document.getElementById("sec-viewer-config-limits");
     if (!root || _limitsInFlight) return;
@@ -1695,226 +1619,86 @@
     }
   }
 
-  // 只切語言不重新載入時，這張面板（含收合區）整份照新語言重畫：模板裡的
-  // 字串、每列、色票、預覽、摘要都是渲染時才 t() 的，逐個補 data-i18n 會
-  // 漏。事件全部委派在外層 PAGE_ID 上，換掉內容不會掉 listener；收合狀態
-  // 照舊。updateUI() 換完語言會重跑路由 → admin-route-applied → 這裡。
+  // ─── Visibility / lifecycle ─────────────────────────────────────────
+  //
+  // 顯示與隱藏全交給 router（ADMIN_ROUTES 的 sections）；這個模組只負責
+  // 注入、排序、換語言重畫，以及進入彈幕樣式頁時重抓一次設定。
+
+  function hideLegacy() {
+    LEGACY_IDS.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.setAttribute("data-admin-ui-replaced", "1");
+    });
+  }
+
+  function _isViewerRoute() {
+    const shell = document.querySelector(".admin-dash-grid");
+    return !!shell && shell.dataset.activeRoute === "viewer";
+  }
+
+  // 各區塊晚到才注入，注入順序不等於畫面順序。只在順序不對時才搬，
+  // MutationObserver 才不會因此一直重跑。
+  function orderViewerSections() {
+    let prev = null;
+    VIEWER_ORDER.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (prev && prev.parentElement === el.parentElement && prev.nextElementSibling !== el) prev.after(el);
+      prev = el;
+    });
+  }
+
+  // 只切語言不重新載入時，兩個區塊整份照新語言重畫：模板裡的字串都是渲染
+  // 時才 t() 的，逐個補 data-i18n 會漏。事件委派在外殼上，換掉內容不會掉
+  // listener；顯示層收合區的展開狀態照舊。
   let _renderedLang = null;
-  function relocalize(page) {
+  function relocalize() {
     const lang = window.ServerI18n && window.ServerI18n.currentLang;
     if (!lang || lang === _renderedLang) return;
     const first = _renderedLang === null;
     _renderedLang = lang;
     if (first) return;
-    const fold = page.querySelector("[data-dsp-fold]");
-    const wasOpen = !!(fold && fold.open);
     const tmp = document.createElement("div");
-    tmp.innerHTML = pageTemplate();
-    page.replaceChildren(...tmp.firstElementChild.childNodes);
-    const fresh = page.querySelector("[data-dsp-fold]");
-    if (fresh) fresh.open = wasOpen;
-    renderRows();
-    renderDisplayLayer();
-    _viHostsBaseline = ""; // 模板重畫後網站欄位是空的
-    renderViewerImages();
-  }
-
-  function syncVisibility() {
-    const shell = document.querySelector(".admin-dash-grid");
     const page = document.getElementById(PAGE_ID);
-    if (!shell || !page) return;
-    relocalize(page);
-    const route = shell.dataset.activeRoute || "live";
-    const leaf = shell.dataset.activeLeaf || route;
-    _mirrorRouterTab(route, leaf);
-    const tab = (document.body.dataset.viewerConfigTab) || "defaults";
-    // The main display-settings surface now belongs to the top-level
-    // Display route from the handoff bundle, while the viewer route keeps
-    // the /fire page theme + field toggles.
-    //
-    // Legacy `#/viewer-config` hashes are still accepted as viewer aliases
-    // via the router, so the viewer-owned panels continue to render for both
-    // `viewer` and `viewer-config`.
-    const isViewerOwner = _isViewerOwner(route, leaf);
-    // v8（設計稿 07）：同一份面板服務兩條路由，用 data-dsp-mode 決定露出哪一欄。
-    //   顯示層 (overlay) → values   ：主持人設定大螢幕上長什麼樣（值本身）
-    //   觀眾頁 (viewer)  → audience ：觀眾能不能自己改（每列的開關）
-    // 拆成兩份 DOM 會連帶要拆事件委派與 refreshRow 的目標；同一份 DOM 靠
-    // CSS 分模式，改動面小得多，兩頁也永遠不會不同步。
-    const isDisplayOwner = _isDisplayOwner(route, leaf);
-    // v8（設計稿 07 · R4）：觀眾頁的四個分頁退場，四個 section 一起在台上，
-    // 靠群組小標分段。tab 變數只剩下相容用途（舊 deep link 仍可帶著跑）。
-    const showPanel = isViewerOwner || isDisplayOwner;
-    // 只在模式切換的那一刻設定收合：顯示層每次進來都是收合，觀眾頁永遠展開。
-    // （這裡掛在 subtree MutationObserver 上，水平觸發會把使用者剛展開的又關掉。）
-    const fold = page.querySelector("[data-dsp-fold]");
-    if (fold && page.dataset.dspMode !== (isDisplayOwner ? "values" : "audience")) {
-      fold.open = !isDisplayOwner;
+    if (page) {
+      tmp.innerHTML = pageTemplate();
+      page.replaceChildren(...tmp.firstElementChild.childNodes);
+      renderRows();
+      _viHostsBaseline = ""; // 模板重畫後網站欄位是空的
+      renderViewerImages();
     }
-    page.dataset.dspMode = isDisplayOwner ? "values" : "audience";
-    page.style.display = showPanel ? "" : "none";
-    ["sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-limits"]
-      .forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = isViewerOwner ? "" : "none";
-      });
-    const info = document.getElementById("sec-viewer-config-info");
-    if (info) {
-      // 說明橫幅不屬於任何分頁——四個 tab 都該看得到，所以只跟著 route 走。
-      info.style.display = isViewerOwner ? "" : "none";
+    const layout = document.getElementById(LAYOUT_ID);
+    if (layout) {
+      const wasOpen = layout.open;
+      tmp.innerHTML = layoutTemplate();
+      layout.replaceChildren(...tmp.firstElementChild.childNodes);
+      layout.open = wasOpen;
+      renderDisplayLayer();
     }
-    // 限制分頁的數字以前靠 tab 按鈕的 click handler 拉；strip 交給 shell 之後
-    // 沒有那個 handler 了，改成「這個分頁真的在台上」時 lazy 拉。
-    // 邊緣觸發：只在「進入 limits 分頁」那一刻拉一次，離開時重置。syncVisibility
-    // 每次 DOM mutation 都會跑，水平觸發會變成無限 fetch 迴圈（見
-    // _hydrateLimitsTab 的註解）。離開再回來會重抓 —— 跟舊的 click handler
-    // 每點一次就重抓的語意一致，計數本來就會動。
-    if (isViewerOwner) {
-      if (!_limitsHydrated) {
-        _limitsHydrated = true;
-        _hydrateLimitsTab();
-      }
-    } else {
-      _limitsHydrated = false;
-    }
-    if (_isDisplayOwner(route, leaf)) {
-      if (!_state.metricsTimer) startMetricsPoll();
-    } else {
-      stopMetricsPoll();
-    }
-    _lastVisibleRoute = route;
   }
 
-  // D-6 階段 4 (2026-07-29): 這裡以前還會生一條 `.admin-tabstrip` 分頁列
-  // （id `sec-viewer-config-tabs`），塞在 #settings-grid 裡 —— 也就是整頁
-  // **最底部** y≈1387，而其他四個分頁 nav 的 strip 都在標題列正下方 y≈195。
-  // 同一層級的控制長在兩個地方，實測 #/viewer 同時看得到兩條一模一樣的
-  // 4-tab。strip 現在由 admin.js `_renderTabStripFor` 依 TabConfig.viewer
-  // 統一掛載，這個函式只剩下建面板的責任。
-  function _initViewerConfigPanels() {
-    if (document.getElementById("sec-viewer-config-info")) return; // idempotent
+  // 邊緣觸發：只在「進入彈幕樣式頁」那一刻做一次，離開時重置。syncVisibility
+  // 掛在 subtree MutationObserver 上，而這裡做的事本身就會改 DOM，水平觸發
+  // 會變成自我維持的 fetch 迴圈（實測 6 秒 26 次，被自己的限流擋成 429）。
+  let _viewerEntered = false;
+  function syncVisibility() {
+    relocalize();
+    if (!_isViewerRoute()) { _viewerEntered = false; return; }
+    orderViewerSections();
+    if (_viewerEntered) return;
+    _viewerEntered = true;
+    _hydrateLimitsTab();
+    // 「效果」列的開關讀的是動畫效果頁的總開關；從那頁切回來要看到新值。
+    if (_state.options) fetchSettings().then(renderRows);
+    // 字型在字型頁停用／刪除後，主題字型會變成「未採用」——回到這頁時重算。
+    if (window.AdminThemes && window.AdminThemes.refresh) window.AdminThemes.refresh();
+  }
+
+  // 「發送與內容限制」：唯讀的數字摘要，速率限制的編輯器在審核 › 發送上限。
+  function _initLimitsPanel() {
+    if (document.getElementById(LIMITS_ID)) return; // idempotent
     const grid = document.getElementById("settings-grid");
     if (!grid) return;
-
-    // ── Info banner ───────────────────────────────────────────────────────
-    const infoBanner = document.createElement("div");
-    infoBanner.id = "sec-viewer-config-info";
-    infoBanner.className = "lg:col-span-2";
-    infoBanner.innerHTML =
-      '<div class="admin-vc-info-banner">' +
-        t("displayViewerConfigInfoBanner") +
-      '</div>';
-
-    // ── FIELDS panel ──────────────────────────────────────────────────────
-    // D-4：這個陣列建構於函式呼叫當下（非模組頂層），ServerI18n 已 init，
-    // 可直接呼叫 t()，不必走 labelKey 延後解析。
-    const FIELD_DEFS = [
-      { k: t("displayFieldNicknameLabel"), desc: t("displayFieldNicknameDesc"), on: true,  pinned: true },
-      { k: t("displayFieldMessageLabel"),  desc: t("displayFieldMessageDesc"),  on: true,  pinned: true },
-      { k: t("displayFieldColorLabel"),    desc: t("displayFieldColorDesc"),    on: true },
-      { k: t("displayFieldFontLabel"),     desc: t("displayFieldFontDesc"),     on: true },
-      { k: t("displayFieldSizeLabel"),     desc: t("displayFieldSizeDesc"),     on: true },
-      { k: t("displayFieldOpacityLabel"),  desc: t("displayFieldOpacityDesc"),  on: true },
-      { k: t("displayFieldSpeedLabel"),    desc: t("displayFieldSpeedDesc"),    on: true },
-      { k: t("displayFieldLayoutLabel"),   desc: "scroll / top / bottom / float / rise", on: true },
-      { k: t("displayFieldEffectLabel"),   desc: t("displayFieldEffectDesc"),   on: false },
-    ];
-
-    const fieldsPanel = document.createElement("div");
-    fieldsPanel.id = "sec-viewer-config-fields";
-    fieldsPanel.className = "admin-vc-fields-grid lg:col-span-2";
-
-    // Left: field list
-    const leftCol = document.createElement("div");
-    leftCol.className = "admin-vc-col-panel";
-
-    const head = document.createElement("div");
-    head.className = "admin-vc-fields-head";
-    const shownCount = FIELD_DEFS.filter(function (f) { return f.on; }).length;
-    const hiddenCount = FIELD_DEFS.length - shownCount;
-    head.innerHTML =
-      '<span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:1px">' + escapeHtml(t("displayFieldsCountLabel", { count: FIELD_DEFS.length })) + '</span>' +
-      '<span class="admin-vc-fields-count">' + escapeHtml(t("displayFieldsShownHidden", { shown: shownCount, hidden: hiddenCount })) + "</span>";
-    leftCol.appendChild(head);
-
-    const fieldsList = document.createElement("div");
-    fieldsList.className = "admin-vc-fields-list";
-
-    FIELD_DEFS.forEach(function (f) {
-      const row = document.createElement("div");
-      row.className = "admin-vc-field-row" + (f.blocked ? " is-blocked" : "");
-
-      const dot = document.createElement("span");
-      dot.className = "admin-vc-field-dot" + (f.on ? " is-on" : "");
-      row.appendChild(dot);
-
-      const info = document.createElement("div");
-      var badgeHtml = "";
-      if (f.pinned) badgeHtml = '<span class="admin-vc-field-badge admin-vc-field-badge--required">' + escapeHtml(t("displayFieldBadgeRequired")) + '</span>';
-      if (f.blocked) badgeHtml = '<span class="admin-vc-field-badge admin-vc-field-badge--blocked">' + escapeHtml(t("displayFieldBadgeBlocked")) + '</span>';
-      info.innerHTML =
-        '<div class="admin-vc-field-label">' + escapeHtml(f.k) + badgeHtml + "</div>" +
-        '<div class="admin-vc-field-desc">' + escapeHtml(f.desc) + "</div>";
-      row.appendChild(info);
-
-      const toggle = document.createElement("button");
-      toggle.type = "button";
-      toggle.className = "admin-vc-toggle " + (f.on ? "is-on" : "is-off");
-      toggle.textContent = f.on ? t("displayToggleShow") : t("displayToggleHide");
-      if (f.blocked || f.pinned) {
-        toggle.disabled = true;
-        toggle.className += " disabled";
-      } else {
-        var _on = f.on;
-        toggle.addEventListener("click", function () {
-          _on = !_on;
-          toggle.className = "admin-vc-toggle " + (_on ? "is-on" : "is-off");
-          toggle.textContent = _on ? t("displayToggleShow") : t("displayToggleHide");
-          dot.className = "admin-vc-field-dot" + (_on ? " is-on" : "");
-        });
-      }
-      row.appendChild(toggle);
-      fieldsList.appendChild(row);
-    });
-    leftCol.appendChild(fieldsList);
-
-    // Right: preview
-    const rightCol = document.createElement("div");
-    rightCol.className = "admin-vc-col-panel";
-    const SWATCH_COLORS = ["#fde68a", "#a7f3d0", "#bae6fd", "#fbcfe8", "#c4b5fd", "#fff"];
-    var swatchHtml = SWATCH_COLORS.map(function (c, i) {
-      return '<span class="admin-vc-swatch-dot" style="background:' + c +
-        ";border:" + (i === 0 ? "2px solid var(--color-primary,#38bdf8)" : "1px solid var(--color-border,var(--hud-line))") +
-        '"></span>';
-    }).join("");
-
-    rightCol.innerHTML =
-      '<div style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.5px">' + escapeHtml(t("displayAudiencePreviewLabel")) + '</div>' +
-      '<div class="admin-vc-preview-form">' +
-        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayFieldNicknameLabel")) + ' <span style="color: var(--color-ink-error)">*</span></div><div class="admin-vc-preview-input">' + escapeHtml(t("displaySampleNickname")) + '</div></div>' +
-        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayFieldMessageLabel")) + ' <span style="color: var(--color-ink-error)">*</span></div><div class="admin-vc-preview-input" style="min-height:56px">' + escapeHtml(t("displaySampleMessage")) + '</div></div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelColor")) + '</div><div class="admin-vc-preview-input"><span class="admin-vc-swatch">' + swatchHtml + "</span></div></div>" +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelFontFamily")) + '</div><div class="admin-vc-preview-input">Noto Sans TC · <b>Zen Kaku</b></div></div>' +
-        "</div>" +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelFontSize")) + '</div><div class="admin-vc-preview-input">small · <b>regular</b> · large</div></div>' +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelOpacity")) + '</div><div class="admin-vc-preview-input">0.4 · 0.7 · <b>1.0</b></div></div>' +
-        "</div>" +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelSpeed")) + '</div><div class="admin-vc-preview-input">0.5× · <b>1.0×</b> · 2.0×</div></div>' +
-          '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelLayout")) + '</div><div class="admin-vc-preview-input"><b>scroll</b> · top · bottom · float · rise</div></div>' +
-        "</div>" +
-        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayLabelEffect")) + '</div><div class="admin-vc-preview-input">glow · <b>bounce</b> · wave</div></div>' +
-        '<div class="admin-vc-preview-field"><div class="admin-vc-preview-label">' + escapeHtml(t("displayFieldStyleBoundaryLabel")) + '</div><div class="admin-vc-preview-input">' + escapeHtml(t("displayFieldStyleBoundaryDesc")) + '</div></div>' +
-        "</div>" +
-        '<div class="admin-vc-preview-submit">↗ ' + escapeHtml(t("displaySubmitButtonMock")) + '</div>' +
-      "</div>" +
-      '<div class="admin-vc-tip">· ' + escapeHtml(t("displayFieldsTip")) + '</div>';
-
-    fieldsPanel.appendChild(leftCol);
-    fieldsPanel.appendChild(rightCol);
-
     // v5 IA (2026-05-19): Limits tab redesigned per Batch 11 viewer-4tab
     // canvas — two cards (RATE LIMITS amber dot · CONTENT LIMITS cyan dot)
     // each with 4 numeric rows + hint copy, plus a span-2 status strip
@@ -1942,10 +1726,12 @@
       );
     }
 
-    const limitsPanel = document.createElement("div");
-    limitsPanel.id = "sec-viewer-config-limits";
-    limitsPanel.className = "admin-vc-limits-grid lg:col-span-2";
+    const limitsPanel = document.createElement("details");
+    limitsPanel.id = LIMITS_ID;
+    limitsPanel.className = "admin-dsp2-fold lg:col-span-2";
     limitsPanel.innerHTML =
+      '<summary class="admin-ui-page-title">' + escapeHtml(t("viewerLimitsFoldTitle")) + '</summary>' +
+      '<div class="admin-vc-limits-grid">' +
       // ── Rate Limits card ───────────────────────────────────────
       '<div class="admin-vc-limit-card">' +
         '<div class="admin-vc-limit-card__head">' +
@@ -2005,39 +1791,31 @@
         '</div>' +
         '<span class="admin-vc-limit-status__spacer"></span>' +
         '<a href="#/audit" class="admin-vc-limit-status__detail">' + escapeHtml(t("displayAuditLogLink")) + '</a>' +
+      '</div>' +
       '</div>';
 
-    // ── Insert before sec-viewer-theme ────────────────────────────────────
-    const vt = document.getElementById("sec-viewer-theme");
-    if (vt && vt.parentNode === grid) {
-      grid.insertBefore(infoBanner, vt);
-      grid.insertBefore(limitsPanel, vt);
-      grid.insertBefore(fieldsPanel, vt);
-    } else {
-      grid.appendChild(infoBanner);
-      grid.appendChild(limitsPanel);
-      grid.appendChild(fieldsPanel);
-    }
-
-    if (!document.body.dataset.viewerConfigTab) document.body.dataset.viewerConfigTab = "defaults";
-
-    // 可見性全部收斂到 syncVisibility（它同時處理 route-level 的說明橫幅與
-    // 每個分頁的面板）。以前這裡另有一個 _syncBar 各算各的，正是兩套控制
-    // 打架的來源；hashchange / admin-route-applied 的訂閱在 boot() 已經有了，
-    // 這裡只補一次「面板剛建好」的初始同步。
-    syncVisibility();
+    grid.appendChild(limitsPanel);
+    orderViewerSections();
   }
 
   async function inject() {
     const grid = document.getElementById("settings-grid");
-    if (!grid || document.getElementById(PAGE_ID)) {
-      hideLegacy();
-      return;
+    if (!grid) return;
+    let fresh = false;
+    if (!document.getElementById(PAGE_ID)) {
+      grid.insertAdjacentHTML("beforeend", pageTemplate());
+      bindPage(document.getElementById(PAGE_ID));
+      fresh = true;
     }
-    grid.insertAdjacentHTML("beforeend", pageTemplate());
-    bind();
+    if (!document.getElementById(LAYOUT_ID)) {
+      grid.insertAdjacentHTML("beforeend", layoutTemplate());
+      bindLayout(document.getElementById(LAYOUT_ID));
+      fresh = true;
+    }
     hideLegacy();
+    _initLimitsPanel();
     syncVisibility();
+    if (!fresh) return;
     if (!_state.options) await Promise.all([fetchSettings(), fetchFonts()]);
     fetchDisplayLayer();
     fetchViewerImages();
@@ -2047,7 +1825,8 @@
   function boot() {
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
     const observer = new MutationObserver(() => {
-      if (document.getElementById("settings-grid") && !document.getElementById(PAGE_ID)) {
+      if (document.getElementById("settings-grid")
+          && (!document.getElementById(PAGE_ID) || !document.getElementById(LAYOUT_ID))) {
         inject();
       } else {
         hideLegacy();
@@ -2056,17 +1835,17 @@
     });
     observer.observe(document.body, { childList: true, subtree: true });
     window.addEventListener("hashchange", syncVisibility);
-    // admin.js dispatches this AFTER applySectionVisibility() — re-running
-    // syncVisibility here ensures our per-tab display:"none" survives.
     document.addEventListener("admin-route-applied", syncVisibility);
-    document.addEventListener("admin-panel-rendered", () => {
-      inject();
-      hideLegacy();
-      _initViewerConfigPanels();
-      syncVisibility();
+    document.addEventListener("admin-panel-rendered", inject);
+    // 套用主題、改描邊／陰影之後，主題模組重抓完會發這個事件。
+    document.addEventListener("admin-themes-changed", () => {
+      refreshRow("stroke");
+      refreshRow("shadow");
+      refreshRow("Color");
+      refreshRow("FontFamily");
+      renderPreview();
     });
     inject();
-    _initViewerConfigPanels();
   }
 
   if (document.readyState === "loading") {

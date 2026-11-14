@@ -544,8 +544,6 @@ body:has(input:focus, textarea:focus, [contenteditable=true]:focus) .admin-mobil
   to   { transform: translateX(0); }
 }
 
-.admin-vc-info-accent { color: var(--color-ink-accent); letter-spacing: 1.2px; }
-
 [data-admin-tabs-host] {
   /* 2026-07-30 重新設計：分段式控制項自帶外框，不再需要裸色帶＋底線。
    * 上下給呼吸空間，底透明，靠 strip 本身的框定義視覺邊界。 */
@@ -653,11 +651,6 @@ body:has(input:focus, textarea:focus, [contenteditable=true]:focus) .admin-mobil
 @keyframes admin-cmdk-slide {
   from { transform: translateY(-12px); opacity: 0; }
   to   { transform: translateY(0);     opacity: 1; }
-}
-
-[data-dsp-mode="values"] [data-dsp-only="audience"],
-[data-dsp-mode="audience"] [data-dsp-only="values"] {
-  display: none;
 }
 
 @keyframes bc-v4-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }

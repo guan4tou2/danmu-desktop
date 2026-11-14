@@ -1,4 +1,8 @@
-"""Viewer palette defaults and the color policy shared by rendering and /fire."""
+"""Viewer palette defaults and the color policy shared by rendering and /fire.
+
+The color itself is resolved in services/danmu_style.py (viewer choice → active
+theme override → global default), which uses the helpers below.
+"""
 
 import re
 
@@ -26,15 +30,3 @@ def get_color_palette(options):
 
 def allows_color_picker(options):
     return bool(options.get("ViewerColorPicker", [True])[0])
-
-
-def resolve_viewer_color(value, options):
-    row = options.get("Color", [True, [], 0, "#FFFFFF"])
-    default = normalize_color(row[3]) or "#ffffff"
-    if not row[0]:
-        return default
-    chosen = normalize_color(value) or default
-    palette = get_color_palette(options)
-    if not allows_color_picker(options) and chosen not in palette:
-        return default if default in palette else palette[0]
-    return chosen
