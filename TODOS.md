@@ -2,6 +2,74 @@
 
 > 格式：依元件分組，每項標 `**Priority:**`（P0 最高 → P4），完成項移至底部 `## Completed` 並附版本。
 
+## Open
+
+> 2026-11-14 盤點：對照程式碼逐項查證後仍然開放的項目。`docs/plans/`、
+> `docs/design-v2-backlog.md`、`.design-sync/specs/README.md` 裡其餘未勾選項
+> 多數已實作，只是文件沒更新（見最後一節）。
+
+### 設計方向（2026-11-14 拍板）
+
+- **減法重整** — 目標是 Linear 官網／Apple 備忘錄等級的乾淨。順序：先砍功能、
+  再砍文案；一頁只留一個主動作，次要入口折疊；頁面看不懂就改版面，不補說明
+  文字。首屏 3 秒看懂排第一。砍功能清單由 owner 拍板後才動手。**Priority:** P1
+- **清混語** — logo／品牌字樣用英文，其餘介面文字一律走 i18n、同一畫面不混語。
+  「EN · 中文」雙語標籤與混在中文裡的大寫英文 token 全部清掉（推翻 2026-08-09
+  的 monolabel 決議）。**Priority:** P1
+- **Extensions 頁三張「即將支援」卡**（Discord Bridge／OBS Plugin／Bookmarklet，
+  `admin-extensions.js`）— 沒有實作的空殼，減法的首批候選。**Priority:** P1
+
+### Server
+
+- **觀眾頁主題後端持久化**（顏色／Logo／字型）— 目前只存 localStorage，換裝置
+  就沒了；UI 有如實標示。**Priority:** P2
+- **手動輸入的預檢（F9）** — regex 規則、Webhook URL 輸錯就直接寫入，沒有草稿
+  或 server 端 dry-run。**Priority:** P2
+- **外掛上傳開關** — `.py` 外掛以 importlib 直接載入、沒有隔離，admin 登入等同
+  server 程式執行權。是否加預設關閉的環境變數待 owner 決定。**Priority:** P2
+- **全域 undo（F12）** — 只有個別模組有撤銷，沒有共用 action log。注意
+  `docs/FEATURES.md` 把設定與規則的 undo 列為 non-feature，兩者衝突，要先決定
+  做不做。**Priority:** P3
+- **其餘 `except Exception` 稽核** — 14 處直接 `pass` 的已於 5.5.0 補上 log；
+  其餘九十幾處有內容的還沒逐一看過。**Priority:** P3
+- **手寫 atomic write 遷到 `JsonState`** — `managers/settings.py`、
+  `services/fire_token.py`、`services/filter_engine.py`、`services/api_tokens.py`、
+  `config.py`。**Priority:** P3
+- **覆蓋率門檻** — CI 有量但沒設 `fail_under`；以現值起算、只准升。
+  **Priority:** P3
+- **觀眾頁聚合輪詢端點** — overlay 狀態與投票狀態各自輪詢；獨立的效能專案。
+  **Priority:** P3
+- **顯示頁「內容限制」卡的行內編輯器** — 目前唯讀，等 `SettingUpdateSchema`
+  擴充（`admin-display.js` 的 BE TODO）。**Priority:** P4
+
+### Admin 前端
+
+- **拆分 `admin.js` 的 router／shell** — 1,989 行，比當初計畫時還長。
+  **Priority:** P3
+- **IA v7 收尾** — S3 版型模板、S4 清路由別名。**Priority:** P3
+- **`admin.bundle.js` 依路由切片**（825 KB、68 個模組整包載入）與
+  **`style.css` 拆檔**（17,438 行）— 減法做完再量一次，可能自然縮小。
+  **Priority:** P4
+
+### 發行與驗證
+
+- **Windows／Linux 實機驗收矩陣**（#197）— 三平台都有打包，只有 Mac 做過完整
+  實機流程。**Priority:** P2
+- **deepmerge 忽略到期檢查** — `osv-scanner.toml` 的例外 2027-02-14 到期，到期
+  前確認 jest 上游是否已換掉它。**Priority:** P3
+- Mac 的 Developer ID 簽署與公證（#194）**決定不做**，維持 ad-hoc 簽章與手動
+  更新。
+
+### 文件
+
+- **標為歷史或更新** — `docs/engineering-plan-2026-05-04.md`、
+  `docs/backend-prep-2026-05-04.md`（描述的缺口都已補上）、
+  `docs/color-system-v2-proposal.md`（Phase 1／2 已合併，仍寫待決策）、
+  `docs/release-readiness-5.1.0.md`、`docs/IMPROVEMENTS.md`；
+  `docs/FEATURES.md` 停在 v5.0.0。**Priority:** P3
+- **過期註解** — `admin-message-drawer.js:241`（monolabel 決議待決）、
+  `track-manager.js:30`（maxTracks 未接線）。**Priority:** P4
+
 ## Completed
 
 ### Server JavaScript 單元測試環境 — done 2026-10-15（v5.4.1）

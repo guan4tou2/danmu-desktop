@@ -69,7 +69,9 @@ def broadcast_toggle():
             meta={"from": prev_state.get("mode"), "to": mode},
         )
     except Exception:
-        pass
+        current_app.logger.warning(
+            "audit_log.append failed for broadcast/mode_changed", exc_info=True
+        )
 
     return _json_response(new_state)
 
@@ -140,6 +142,8 @@ def broadcast_send():
             meta={"text_preview": text[:120], "len": len(text)},
         )
     except Exception:
-        pass
+        current_app.logger.warning(
+            "audit_log.append failed for broadcast/admin_sent", exc_info=True
+        )
 
     return _json_response({"sent": True, "text": text, "source": "admin"})

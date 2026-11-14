@@ -262,6 +262,6 @@ def fire_effect(name):
             meta={"name": name, "target": target, "duration_ms": duration_ms},
         )
     except Exception:
-        pass
+        current_app.logger.warning("audit_log.append failed for effects/fired", exc_info=True)
 
     return _json_response({"fired": True, "payload": payload})

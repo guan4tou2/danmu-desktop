@@ -118,7 +118,7 @@ def login():
                 "auth", "login", actor="admin", meta={"ip": request.remote_addr or "?"}
             )
         except Exception:
-            pass
+            current_app.logger.warning("audit_log.append failed for auth/login", exc_info=True)
         if _wants_json():
             # 設計稿 15 · EX1：登入過期是「對話框」而不是跳回登入頁，所以
             # 前端要能就地拿到新的 CSRF token（session.clear() 已經換過一顆），
@@ -132,7 +132,7 @@ def login():
             "auth", "login_failed", actor=None, meta={"ip": request.remote_addr or "?"}
         )
     except Exception:
-        pass
+        current_app.logger.warning("audit_log.append failed for auth/login_failed", exc_info=True)
     if _wants_json():
         return jsonify({"ok": False, "error": "wrong_password"}), 401
     flash("wrong password!")
@@ -147,7 +147,7 @@ def logout():
 
         audit_log.append("auth", "logout", actor="admin", meta={"ip": request.remote_addr or "?"})
     except Exception:
-        pass
+        current_app.logger.warning("audit_log.append failed for auth/logout", exc_info=True)
     session.clear()
     return redirect(url_for("admin_bp.admin"))
 
@@ -200,7 +200,9 @@ def change_password():
                 "auth", "password_changed", actor="admin", meta={"ip": request.remote_addr or "?"}
             )
         except Exception:
-            pass
+            current_app.logger.warning(
+                "audit_log.append failed for auth/password_changed", exc_info=True
+            )
         return _json_response({"message": "Password changed successfully", "reauthenticate": True})
     except Exception as exc:
         current_app.logger.error("Failed to save password hash: %s", sanitize_log_string(str(exc)))
