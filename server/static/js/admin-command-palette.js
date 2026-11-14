@@ -76,8 +76,8 @@
     // so jumping there leaves the section hidden. Use the deep-link
     // alias slugs — `_routeAliases` resolves each to the correct
     // {nav, tab} pair, which AdminTabs.applyTabSectionVisibility honors.
-    { label: "Webhooks",            route: "system/webhooks",  section: "sec-webhooks" },
-    { label: "Scheduler",           route: "system/scheduler", section: "sec-scheduler" },
+    { labelKey: "tabExtWebhooks",   route: "system/webhooks",  section: "sec-webhooks" },
+    { labelKey: "tabExtScheduler",  route: "system/scheduler", section: "sec-scheduler" },
     { label: "Fingerprints",        route: "fingerprints", section: "sec-fingerprints" },
     { labelKey: "cmdkSettingSystemOverview", route: "system",    section: "sec-system-overview" },
   ];

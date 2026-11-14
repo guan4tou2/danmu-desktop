@@ -475,7 +475,8 @@ document.addEventListener("DOMContentLoaded", () => {
         "sec-stickers",
         "sec-sounds",
         "sec-themes",
-        "sec-plugins",
+        // 2026-11-14：sec-plugins 移出——它是「系統 › 擴充」的收合區塊，
+        // 要跟 Webhook／API 金鑰／定時發送待在同一個容器（settings-grid）。
         "sec-widgets",
       ],
     },
@@ -1010,12 +1011,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
                                 <!-- assets sections -->
                             </div>
-                            <details id="sec-advanced" class="admin-route-sections" open>
-                                <summary class="sr-only">${ServerI18n.t("sectionAutomationTitle") || "Advanced"}</summary>
-                                <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <!-- webhooks & scheduler -->
-                                </div>
-                            </details>
+                            <!-- 2026-11-14：原本這裡還有一個裝 Webhook／定時發送的
+                                 「進階」<details open> 容器（summary 是 sr-only）。
+                                 兩塊併進「系統 › 擴充」後跟插件、API 金鑰同一個容器
+                                 （settings-grid），畫面順序才由 TabConfig 一處決定。 -->
 
                             <!-- 2026-09-06 設計稿 06：Quick Actions F1–F4 與 My Actions 整區移除。
                                  控制台首屏應該只有三塊——顯示層開關、一行數字、即時訊息流。
@@ -1433,7 +1432,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2026-11-14 側欄收斂：backup 與 integrations 也一樣併進來。
     // 2026-09-07 設計稿 08 · H1：時間軸匯出（sec-timeline-export）跟著備份頁——
     // 「把資料整批倒出來」是備份的事，場次面板只匯出單一場次。
-    system:    { title: "系統",  kicker: "SYSTEM · 健康度與組態", sections: ["sec-system-overview", "admin-security-v2-page", "admin-backup-v2-page", "sec-timeline-export", "sec-extensions-overview", "sec-plugins", "sec-api-tokens-overview", "sec-webhooks", "sec-scheduler", "sec-firetoken-overview", "sec-wcag-overview", "sec-about-overview"] },
+    system:    { title: "系統",  kicker: "SYSTEM · 健康度與組態", sections: ["sec-system-overview", "admin-security-v2-page", "admin-backup-v2-page", "sec-timeline-export", "sec-extensions-overview", "sec-webhooks", "sec-plugins", "sec-api-tokens-overview", "sec-scheduler", "sec-firetoken-overview", "sec-wcag-overview", "sec-about-overview"] },
     // 2026-09-07 設計稿 08 · N1：通知改成頂欄鈴鐺開的右上彈出面板，不再是
     // 一頁。route 保留但沒有 section——舊書籤 #/notifications 仍然解析得到，
     // admin-notifications.js 看到這個 hash 就把面板打開（同 #/setup 的做法）。
@@ -1491,7 +1490,6 @@ document.addEventListener("DOMContentLoaded", () => {
     function routeSectionOwner(sectionId) {
       if (ADMIN_SECTION_GROUPS.moderation.orderedIds.indexOf(sectionId) !== -1) return "moderation-grid";
       if (ADMIN_SECTION_GROUPS.assets.orderedIds.indexOf(sectionId) !== -1) return "assets-grid";
-      if (sectionId === "sec-scheduler" || sectionId === "sec-webhooks") return "sec-advanced";
       return "settings-grid";
     }
 
@@ -1574,19 +1572,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // settings-grid 只裝速率限制分頁的 section），它在 flex 欄裡白吃
       // 兩個 24px gap —— 分頁列下面那個 48px 的洞就是這樣來的。
       // 所以再加一個條件：容器目前真的有可見內容才顯示。
-      const hasVisiblePayload = (container) => {
-        if (container.id === "sec-advanced") {
-          return Array.from(container.querySelectorAll('[id^="sec-"]'))
-            .some((c) => getComputedStyle(c).display !== "none");
-        }
-        return Array.from(container.children)
-          .some((k) => getComputedStyle(k).display !== "none");
-      };
+      const hasVisiblePayload = (container) => Array.from(container.children)
+        .some((k) => getComputedStyle(k).display !== "none");
       shell.querySelectorAll(".admin-route-sections").forEach((container) => {
-        const hasWanted = container.id === "sec-advanced"
-          ? wantedOwners.has("sec-advanced")
-          : wantedOwners.has(container.id);
-        if (!hasWanted) { container.style.display = "none"; return; }
+        if (!wantedOwners.has(container.id)) { container.style.display = "none"; return; }
         // 先還原再量：display:none 底下量不到子元素的真實狀態
         container.style.display = "";
         container.style.display = hasVisiblePayload(container) ? "" : "none";
@@ -1598,12 +1587,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const wanted = new Set(cfg.sections);
       shell.querySelectorAll("[id^=\"sec-\"]").forEach((el) => {
         if (!el.id) return;
-        if (el.id === "sec-advanced") {
-          // Advanced wrapper: visible only if it contains any wanted section
-          const hasAny = Array.from(el.querySelectorAll("[id^=\"sec-\"]")).some((c) => wanted.has(c.id));
-          el.style.display = hasAny ? "" : "none";
-          return;
-        }
         el.style.display = wanted.has(el.id) ? "" : "none";
       });
       // Slice 3: tab-aware visibility wins over route-level visibility for
@@ -1618,13 +1601,20 @@ document.addEventListener("DOMContentLoaded", () => {
       _dedupSectionTitles();
     };
 
-    // 深連結到收合區塊（#/system/webhooks）時展開那一塊並捲過去。區塊是
-    // 各模組晚到才注入的，第一次套路由時常常還不在 DOM 裡——先記著，
-    // MutationObserver 那條路徑會再試，找到一次就清掉。
+    // 深連結到收合區塊（#/system/webhooks）時展開那一塊並捲過去。
+    //
+    // 「現在是哪一塊」是路由狀態的一部分（_activeFold，跟 _activeTab 並列）：
+    // 重新套用目前路由的路徑（_adminNavigateTo——開機與切語言時 updateUI 會
+    // 呼叫它）必須帶著它，不然會被降級成「擴充」分頁、網址改寫、展開丟失。
+    //
+    // 展開動作本身是 pending：區塊是各模組晚到才注入的，套路由當下常常還不在
+    // DOM 裡、或還在被藏起來的容器裡。MutationObserver 那條路徑會再試，直到
+    // 真的看得到、展開並捲過去才清掉；使用者導到別處時才會被換掉。
+    let _activeFold = null;
     let _pendingFold = null;
     function _openPendingFold() {
       const el = _pendingFold && document.getElementById(_pendingFold);
-      if (!el) return;
+      if (!el || !el.getClientRects().length) return;
       _pendingFold = null;
       if (el.tagName === "DETAILS") el.open = true;
       el.scrollIntoView({ block: "start" });
@@ -1736,7 +1726,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       _renderTabStripFor(currentRoute, activeTab);
       _renderBreadcrumb(rawName, currentRoute, activeTab);
-      _pendingFold = resolved.foldSection;
+      // 同一塊重新套用（切語言、巢狀的 hashchange）不重設：已經展開過的不會
+      // 再捲一次，還沒展開的照樣等著。換到別塊或離開才換掉。
+      if (resolved.fold !== _activeFold) {
+        _activeFold = resolved.fold;
+        _pendingFold = resolved.foldSection;
+      }
       _openPendingFold();
 
       try { history.replaceState(null, "", wantedHash); } catch (e) { /* ignore */ }
@@ -1814,7 +1809,8 @@ document.addEventListener("DOMContentLoaded", () => {
     applyRoute(fromHash?.nav || "live", fromHash?.tab || null, _initRaw);
 
     // Expose for i18n: re-apply route title/kicker on language change
-    window._adminNavigateTo = () => applyRoute(currentRoute, _activeTab);
+    // 帶著目前展開的區塊（_activeFold 是區塊 slug，會被解析回同一個分頁）。
+    window._adminNavigateTo = () => applyRoute(currentRoute, _activeFold || _activeTab);
 
     let routeVisibilitySyncScheduled = false;
     function scheduleRouteVisibilitySync() {

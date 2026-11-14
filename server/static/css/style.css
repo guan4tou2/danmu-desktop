@@ -3080,8 +3080,7 @@ summary:focus-visible {
 #live-ops-grid>*,
 #review-grid>*,
 #library-grid>*,
-#automation-grid>*,
-#advanced-grid>* {
+#automation-grid>* {
   width: 100%;
 }
 
@@ -3688,7 +3687,8 @@ summary:focus-visible {
 
 .admin-ext-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  /* min()：手機上容器比 360px 窄（375 寬時 343px），不讓卡片把頁面撐出去 */
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
   gap: var(--space-3);
 }
 

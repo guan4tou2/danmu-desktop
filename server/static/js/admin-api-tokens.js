@@ -161,7 +161,7 @@
 
     return `
       <details id="${PAGE_ID}" class="admin-dsp2-fold lg:col-span-2" data-tpl="B">
-        <summary class="admin-ui-page-title">${ServerI18n.t("tabExtApiKeys")}</summary>
+        <summary class="admin-ui-page-title" data-i18n="tabExtApiKeys">${ServerI18n.t("tabExtApiKeys")}</summary>
         <div class="admin-at-page hud-page-stack">
         <!-- Page header -->
         <div class="admin-ui-page-head">

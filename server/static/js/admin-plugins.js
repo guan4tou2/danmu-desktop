@@ -44,7 +44,7 @@
       // （summary 就是標題，樣式同顯示層頁的 .admin-dsp2-fold）。
       const html = `
         <details id="sec-plugins" class="admin-dsp2-fold lg:col-span-2" data-tpl="B">
-          <summary class="admin-ui-page-title">${ServerI18n.t("tabExtPlugins")}</summary>
+          <summary class="admin-ui-page-title" data-i18n="tabExtPlugins">${ServerI18n.t("tabExtPlugins")}</summary>
           <div class="hud-page-stack">
           <div class="admin-ui-page-head">
           <p class="admin-ui-page-note">${ServerI18n.t("pluginsPageNote2")}</p>

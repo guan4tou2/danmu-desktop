@@ -100,7 +100,8 @@
     // 所以改成：打開就是整合目錄（主持人會用的 Slido 與 Fire Token），
     // 四塊給 IT 人員的內容各自是預設收合的 <details>（`folds`）。舊的分段
     // slug 仍是有效的深連結——#/system/webhooks 會落在「擴充」並展開那一塊。
-    // `sections` 的順序就是畫面順序（同一個容器裡的區塊會照這個順序排）。
+    // `sections` 的順序就是畫面順序：五塊都在 settings-grid，由
+    // applyTabSectionVisibility 照這個順序排（模組各自晚到才注入）。
     system: {
       defaultTab: "overview",
       tabs: [
@@ -109,11 +110,11 @@
         { slug: "backup",    labelKey: "adminNavBackup",
           sections: ["admin-backup-v2-page", "sec-timeline-export"] },
         { slug: "integrations", labelKey: "adminNavIntegrations",
-          sections: ["sec-extensions-overview", "sec-plugins", "sec-api-tokens-overview", "sec-webhooks", "sec-scheduler"],
+          sections: ["sec-extensions-overview", "sec-webhooks", "sec-plugins", "sec-api-tokens-overview", "sec-scheduler"],
           folds: {
+            webhooks: "sec-webhooks",
             plugins: "sec-plugins",
             "api-tokens": "sec-api-tokens-overview",
-            webhooks: "sec-webhooks",
             scheduler: "sec-scheduler",
           } },
         { slug: "firetoken", label: "Fire Token", en: "FIRETOKEN", section: "sec-firetoken-overview" },
