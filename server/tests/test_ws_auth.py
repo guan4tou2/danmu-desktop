@@ -162,51 +162,104 @@ def test_rotate_token_even_when_disabled():
 # ── 3. Service: file corruption recovery ──────────────────────────────────
 
 
-@pytest.mark.ws_auth_raw_seed
-def test_malformed_json_recovers_by_reseeding(monkeypatch):
-    """A corrupt runtime file should not crash boot — re-seed instead.
+def _set_env_unset(monkeypatch):
+    monkeypatch.delenv("WS_REQUIRE_TOKEN", raising=False)
+    monkeypatch.delenv("WS_AUTH_TOKEN", raising=False)
+    monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", False)
+    monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "")
 
-    The file's existence marks an existing deployment, so the re-seed uses
+
+def _write_broken_state(content):
+    ws_auth._STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    ws_auth._STATE_FILE.write_text(content)
+    return ws_auth._STATE_FILE.stat().st_mtime_ns
+
+
+def _corrupt_copies():
+    path = ws_auth._STATE_FILE
+    return sorted(path.parent.glob(path.name + ".corrupt-*"))
+
+
+@pytest.mark.ws_auth_raw_seed
+@pytest.mark.parametrize("broken", ["{not valid json", '{"unrelated": "garbage"}'])
+def test_unreadable_state_file_is_kept_and_auth_is_off_in_memory(monkeypatch, caplog, broken):
+    """A broken ws_auth.json does not crash boot, is not overwritten, and is copied aside.
+
+    The file's existence marks an existing deployment, so the fallback uses
     the env posture (unset → off) rather than the fresh-install token-on
-    default, which would lock out displays already running without a token.
+    default, which would refuse every display that reconnects without one.
     """
-    monkeypatch.delenv("WS_REQUIRE_TOKEN", raising=False)
-    monkeypatch.delenv("WS_AUTH_TOKEN", raising=False)
-    monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", False)
-    monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "")
-    ws_auth._STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    ws_auth._STATE_FILE.write_text("{not valid json")
+    import logging
 
-    state = ws_auth.get_state()
-    assert state["require_token"] is False
-    # File should be rewritten with valid JSON
-    assert json.loads(ws_auth._STATE_FILE.read_text())["require_token"] is False
+    _set_env_unset(monkeypatch)
+    mtime = _write_broken_state(broken)
+
+    with caplog.at_level(logging.WARNING):
+        state = ws_auth.get_state()
+
+    assert state == {"require_token": False, "token": ""}
+    # Original untouched (content and mtime), and a byte-identical copy kept.
+    assert ws_auth._STATE_FILE.read_text() == broken
+    assert ws_auth._STATE_FILE.stat().st_mtime_ns == mtime
+    copies = _corrupt_copies()
+    assert len(copies) == 1
+    assert copies[0].read_text() == broken
+    assert copies[0].stat().st_mode & 0o777 == 0o600  # may hold a token
+    # The warning says what it means for the venue and where the copy is.
+    msgs = [r.getMessage() for r in caplog.records if r.name == "server.services.ws_auth"]
+    assert any("CONNECTION AUTHENTICATION IS OFF" in m and copies[0].name in m for m in msgs)
 
 
 @pytest.mark.ws_auth_raw_seed
-def test_missing_keys_recovers_by_reseeding(monkeypatch):
-    monkeypatch.delenv("WS_REQUIRE_TOKEN", raising=False)
-    monkeypatch.delenv("WS_AUTH_TOKEN", raising=False)
-    monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", False)
-    monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "")
-    ws_auth._STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    ws_auth._STATE_FILE.write_text('{"unrelated": "garbage"}')
+def test_restart_with_same_broken_file_reuses_the_copy(monkeypatch):
+    _set_env_unset(monkeypatch)
+    _write_broken_state("{not valid json")
+    ws_auth.get_state()
+    ws_auth._reset_for_tests()
+    assert ws_auth.get_state()["require_token"] is False
+    assert len(_corrupt_copies()) == 1
+    assert ws_auth._STATE_FILE.read_text() == "{not valid json"
 
-    state = ws_auth.get_state()
-    assert state == {"require_token": False, "token": ""}
+
+@pytest.mark.ws_auth_raw_seed
+def test_admin_save_after_broken_file_writes_a_fresh_file(monkeypatch):
+    _set_env_unset(monkeypatch)
+    _write_broken_state("{not valid json")
+    ws_auth.get_state()
+
+    saved = ws_auth.set_state(require_token=True, token="admin-chosen-token")
+
+    assert json.loads(ws_auth._STATE_FILE.read_text()) == saved
+    assert _corrupt_copies()[0].read_text() == "{not valid json"
+    ws_auth._reset_for_tests()
+    assert ws_auth.get_state() == {"require_token": True, "token": "admin-chosen-token"}
+
+
+@pytest.mark.ws_auth_raw_seed
+def test_admin_route_reports_off_after_broken_file(monkeypatch, logged_client):
+    """Admin → Security reads the in-memory state, so its "auth off" notice shows."""
+    _set_env_unset(monkeypatch)
+    _write_broken_state("{not valid json")
+    ws_auth._reset_for_tests()
+
+    resp = logged_client.get("/admin/ws-auth")
+
+    assert resp.status_code == 200
+    assert resp.get_json()["require_token"] is False
+    assert ws_auth._STATE_FILE.read_text() == "{not valid json"
 
 
 @pytest.mark.ws_auth_raw_seed
 def test_corrupt_file_still_honours_explicit_env_enable(monkeypatch):
-    """Explicit env still wins when re-seeding over a broken file."""
+    """Explicit env still wins over a broken file — in memory, file untouched."""
     monkeypatch.setenv("WS_REQUIRE_TOKEN", "true")
     monkeypatch.setenv("WS_AUTH_TOKEN", "explicit-env-token")
     monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", True)
     monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "explicit-env-token")
-    ws_auth._STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    ws_auth._STATE_FILE.write_text("{not valid json")
+    _write_broken_state("{not valid json")
 
     assert ws_auth.get_state() == {"require_token": True, "token": "explicit-env-token"}
+    assert ws_auth._STATE_FILE.read_text() == "{not valid json"
 
 
 # ── 3b. Compose passes blank values; upgrades keep the saved state ───────
@@ -303,7 +356,9 @@ def test_unwritable_runtime_dir_skips_token_on_default(monkeypatch, caplog):
         state = ws_auth.get_state()
 
     assert state == {"require_token": False, "token": ""}
-    assert any("token-on default" in r.getMessage() for r in caplog.records)
+    assert any("CONNECTION AUTHENTICATION IS OFF" in r.getMessage() for r in caplog.records)
+    # Nothing unreadable here, so no copy is made.
+    assert not list(ws_auth._STATE_FILE.parent.glob("ws_auth.json.corrupt-*"))
 
 
 # ── 4. Admin HTTP route ──────────────────────────────────────────────────

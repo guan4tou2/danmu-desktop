@@ -292,18 +292,60 @@ def test_login_still_works(client):
     assert resp.status_code in (200, 302)
 
 
+_CHUNKED_ENVIRON = {
+    "wsgi.input_terminated": True,
+    "CONTENT_LENGTH": "",
+    "HTTP_TRANSFER_ENCODING": "chunked",
+}
+
+
 def test_body_without_content_length_is_still_bounded(app, client, overlay):
-    """A body sent without Content-Length is cut off at the ceiling, not read in full."""
+    """A body sent without Content-Length is cut off at the ceiling, not read in full.
+
+    The test client derives CONTENT_LENGTH from input_stream, so it has to be
+    blanked explicitly; otherwise the header check answers 413 without any
+    read and this test would not exercise the read-time limit at all.
+    Transfer-Encoding: chunked plus wsgi.input_terminated is what gevent's
+    WSGI server hands over for a chunked upload.
+    """
     ceiling = app.config["PUBLIC_BODY_MAX_BYTES"]
-    stream = _TrackingStream(b'{"text": "' + b"a" * (ceiling * 4) + b'"}')
+    body = b'{"text": "' + b"a" * (ceiling * 4) + b'"}'
+    stream = _TrackingStream(body)
     resp = client.post(
         "/fire",
         input_stream=stream,
         content_type="application/json",
-        environ_overrides={"wsgi.input_terminated": True},
+        environ_overrides=_CHUNKED_ENVIRON,
     )
     assert resp.status_code == 413
-    assert stream.max_pos <= ceiling + 1
+    # The body really was read (no length to reject on), and reading stopped
+    # at the ceiling instead of consuming the whole body.
+    assert stream.was_read
+    assert 0 < stream.max_pos <= ceiling + 1
+    assert stream.max_pos < len(body)
+
+
+@pytest.mark.parametrize(
+    "path,body,content_type,expected",
+    [
+        ("/fire", b'{"text": "chunked hello"}', "application/json", 200),
+        ("/check_blacklist", b'{"text": "hello"}', "application/json", 200),
+        ("/login", b"password=test", "application/x-www-form-urlencoded", 302),
+    ],
+)
+def test_small_body_without_content_length_still_works(
+    client, overlay, path, body, content_type, expected
+):
+    """The body read up front for length-less requests is reused by the view."""
+    resp = client.post(
+        path,
+        input_stream=io.BytesIO(body),
+        content_type=content_type,
+        environ_overrides=_CHUNKED_ENVIRON,
+    )
+    assert resp.status_code == expected, resp.data
+    if path == "/fire":
+        assert ws_queue.dequeue_all()[0]["text"] == "chunked hello"
 
 
 def test_check_blacklist_and_poll_vote_still_work(client, overlay):

@@ -618,21 +618,36 @@ def enforce_public_body_limit() -> None:
 
     MAX_CONTENT_LENGTH is sized for admin uploads (15 MB); the public JSON
     endpoints only take a few short fields. A declared Content-Length over
-    the cap is refused outright with a JSON 413; the per-request
-    ``max_content_length`` also bounds bodies sent without a length, so a
-    later ``get_json()`` / ``request.form`` raises 413 instead of reading on.
+    the cap is refused outright with a JSON 413, without reading.
+
+    A body without a declared length (chunked) can only be measured by
+    reading it. Werkzeug's per-request ``max_content_length`` bounds that
+    read, but at the limit it stops and returns what it has rather than
+    raising, so the view would parse a truncated body. Read at most one byte
+    past the cap here instead: more than the cap is a 413, anything else is
+    cached and served to the later ``get_json()`` / ``request.form``.
     """
     limit = int(current_app.config.get("PUBLIC_BODY_MAX_BYTES", 32 * 1024))
     length = request.content_length
     if length is not None and length > limit:
-        abort(
-            make_response(
-                json.dumps({"error": "Request body too large"}),
-                413,
-                {"Content-Type": "application/json"},
-            )
-        )
+        _abort_body_too_large()
+    # Werkzeug reports 0 for a missing-but-unparseable length and still reads a
+    # self-terminated stream up to max_content_length, so treat 0 like None.
+    if not length:
+        request.max_content_length = limit + 1
+        if len(request.get_data(cache=True)) > limit:
+            _abort_body_too_large()
     request.max_content_length = limit
+
+
+def _abort_body_too_large() -> None:
+    abort(
+        make_response(
+            json.dumps({"error": "Request body too large"}),
+            413,
+            {"Content-Type": "application/json"},
+        )
+    )
 
 
 def limit_public_body(func):
