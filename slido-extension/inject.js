@@ -19,9 +19,21 @@
       (/\/questions/.test(url) || /stream-sio|socket\.io/.test(url));
   }
 
-  function forward(url, body) {
+  // `date` is the response's HTTP Date header: Slido's server clock, which
+  // core.js uses as the start point of "new". "" when it cannot be read
+  // (WebSocket frames, or a cross-origin response that does not expose it).
+  function forward(url, body, date) {
     if (typeof body !== "string" || !body || body.length > MAX_BODY) return;
-    window.postMessage({ __slido_danmu__: true, channel: CHANNEL, url, body }, window.location.origin);
+    const msg = { __slido_danmu__: true, channel: CHANNEL, url, body, date: date || "" };
+    window.postMessage(msg, window.location.origin);
+  }
+
+  function readDate(get) {
+    try {
+      return get() || "";
+    } catch (_) {
+      return "";
+    }
   }
 
   const origFetch = window.fetch;
@@ -31,7 +43,8 @@
       try {
         const url = typeof input === "string" ? input : input && input.url;
         if (mayCarryQuestions(url) && resp && resp.ok) {
-          resp.clone().text().then((body) => forward(url, body), () => {});
+          const date = readDate(() => resp.headers.get("date"));
+          resp.clone().text().then((body) => forward(url, body, date), () => {});
         }
       } catch (err) {
         console.debug(TAG, "fetch hook error", err);
@@ -54,7 +67,7 @@
           const url = this.__slido_url__;
           if (!mayCarryQuestions(url) || this.status < 200 || this.status >= 300) return;
           if (this.responseType && this.responseType !== "text") return;
-          forward(url, this.responseText);
+          forward(url, this.responseText, readDate(() => this.getResponseHeader("Date")));
         } catch (err) {
           console.debug(TAG, "xhr hook error", err);
         }

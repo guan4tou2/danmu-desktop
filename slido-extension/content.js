@@ -42,6 +42,7 @@
     const data = event.data;
     if (!data || data.__slido_danmu__ !== true || data.channel !== "SLIDO_DANMU_BODY") return;
     if (typeof data.url !== "string" || typeof data.body !== "string") return;
-    send({ type: "slido_body", url: data.url, body: data.body });
+    const date = typeof data.date === "string" ? data.date.slice(0, 64) : "";
+    send({ type: "slido_body", url: data.url, body: data.body, date });
   });
 })();

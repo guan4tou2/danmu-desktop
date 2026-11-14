@@ -52,7 +52,8 @@ const list = (qs) => JSON.stringify(qs);
 // A fake clock: sleep() advances time instead of waiting, so pacing is
 // asserted on timestamps rather than on wall-clock flakiness.
 function harness(opts) {
-  let t = 1_000_000;
+  // clock: where the local clock starts (only pacing reads it).
+  let t = opts && opts.clock != null ? opts.clock : 1_000_000;
   const posts = [];
   const responses = (opts && opts.responses) || [];
   const bridge = Core.createBridge(
@@ -75,18 +76,24 @@ function harness(opts) {
   const h = {
     bridge,
     posts,
-    list: (body, eid, query) => bridge.ingest("questions", body, TAB, listUrl(eid || EVENT_A, query)),
-    stream: (q) => bridge.ingest("stream", sioFrame(q), TAB, STREAM_URL),
+    // date: the response's HTTP Date header ("" = could not be read).
+    list: (body, eid, query, date) =>
+      bridge.ingest("questions", body, TAB, listUrl(eid || EVENT_A, query), date || ""),
+    stream: (q, date) => bridge.ingest("stream", sioFrame(q), TAB, STREAM_URL, date || ""),
   };
   return h;
 }
 
 // Event page loaded with an initial list, then live traffic.
-function opened(opts, initial) {
+function opened(opts, initial, date) {
   const h = harness(opts);
-  h.list(initial || "[]");
+  h.list(initial || "[]", EVENT_A, undefined, date);
   return h;
 }
+
+// The page opened at 10:00:00 Slido time (HTTP Date header of the first list).
+const OPENED_AT = "Sat, 14 Nov 2026 10:00:00 GMT";
+const at = (hhmmss) => `2026-11-14T${hhmmss}Z`;
 
 const texts = (posts) => posts.map((p) => p.payload.text);
 
@@ -215,78 +222,149 @@ describe("classifyFireResponse", () => {
   });
 });
 
-describe("bridge: lists are history, the stream is new", () => {
-  test("the first list is history; a stream question is sent", async () => {
-    const h = opened({}, LIST);
-    h.stream(question(900, "2026-11-14T10:05:00Z"));
+describe("bridge: one fixed start point per tab and event (rules 1–2)", () => {
+  test("the first list is history; a newer stream question is sent", async () => {
+    const h = opened({}, LIST, OPENED_AT);
+    h.stream(question(900, at("10:05:00")));
     await h.bridge.idle();
     expect(texts(h.posts)).toEqual(["Question number 900"]);
-    expect(h.bridge.snapshot()).toMatchObject({ state: "watching", sent: 1, skipped: 3 });
+    expect(h.bridge.snapshot()).toMatchObject({ state: "watching", sent: 1, skipped: 3, late_skipped: 0 });
   });
 
   test("a 200-question backlog on page load sends nothing", async () => {
-    const backlog = Array.from({ length: 200 }, (_, i) => question(i + 1, `2026-11-14T09:${String(i % 60).padStart(2, "0")}:00Z`));
-    const h = opened({}, list(backlog));
+    const backlog = Array.from({ length: 200 }, (_, i) => question(i + 1, at(`09:${String(i % 60).padStart(2, "0")}:00`)));
+    const h = opened({}, list(backlog), OPENED_AT);
     await h.bridge.idle();
     expect(h.posts).toHaveLength(0);
     expect(h.bridge.snapshot().skipped).toBe(200);
   });
 
-  test("stream questions without any timestamp are still sent", async () => {
-    const h = opened({}, list([question(1)]));
-    h.stream(question(2));
+  test("P1: a 'popular' baseline without the newest questions, then the 'newest' list: nothing from before opening is sent", async () => {
+    // Opened at 10:00 on the "top" sort, which holds older, upvoted questions only.
+    const h = opened({}, list([question(1, at("09:10:00")), question(2, at("09:20:00"))]), OPENED_AT);
+    // Switching to "newest" shows questions asked at 09:58 / 09:59 — before opening.
+    h.list(list([question(3, at("09:58:00")), question(4, at("09:59:00")), question(1, at("09:10:00"))]), EVENT_A, "sort=newest");
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(0);
+    expect(h.bridge.snapshot()).toMatchObject({ state: "watching", late_skipped: 2 });
+  });
+
+  test("P2: out-of-order stream — the later question arrives first; both are sent, once each", async () => {
+    const h = opened({}, list([question(1, at("09:50:00"))]), OPENED_AT);
+    h.stream(question(31, at("10:00:20")));
+    await h.bridge.idle();
+    h.stream(question(30, at("10:00:19"))); // earlier, but still after opening
+    await h.bridge.idle();
+    h.stream(question(31, at("10:00:20"), { score: 2 }));
+    h.stream(question(30, at("10:00:19"), { score: 1 }));
+    h.list(list([question(31, at("10:00:20")), question(30, at("10:00:19"))]), EVENT_A, "sort=newest");
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 31", "Question number 30"]);
+  });
+
+  test("P2: a question held for Slido moderation is sent on approval, even after newer ones went out", async () => {
+    const h = opened({}, "[]", OPENED_AT);
+    // Submitted at 10:00:05, waiting for the Slido moderator.
+    h.stream(question(40, null, { is_public: false, date_created: at("10:00:05") }));
+    h.stream(question(41, at("10:00:10")));
+    await h.bridge.idle();
+    // Approved later; date_published is the approval (date_created is kept).
+    h.stream(question(40, at("10:00:30"), { date_created: at("10:00:05") }));
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 41", "Question number 40"]);
+  });
+
+  test("a question asked after the start that only shows up in a later list (no stream) is sent", async () => {
+    const h = opened({}, list([question(1, at("09:50:00"))]), OPENED_AT);
+    h.list(list([question(2, at("10:00:01")), question(1, at("09:50:00"))]), EVENT_A, "sort=newest");
     await h.bridge.idle();
     expect(texts(h.posts)).toEqual(["Question number 2"]);
   });
 
-  test("a later list with a different sort order is history (N3)", async () => {
-    // Baseline loaded sorted by "top" with only part of the questions.
-    const h = opened({}, list([question(1, "2026-11-14T09:50:00Z"), question(2, "2026-11-14T10:00:00Z")]));
-    // "Newest" list then shows older questions that were not in the top list.
-    h.list(list([question(3, "2026-11-14T09:55:00Z"), question(4, "2026-11-14T09:10:00Z")]), EVENT_A, "sort=newest");
+  test("a question asked before the start that is first seen after it (older page, other sort) is not sent", async () => {
+    const h = opened({}, list([question(10, at("09:59:00"))]), OPENED_AT);
+    h.list(list([question(5, at("08:00:00")), question(6, at("09:59:59"))]), EVENT_A, "sort=newest&offset=50");
+    h.list(list([question(7, at("09:00:00"))]), EVENT_A, "sort=top");
     await h.bridge.idle();
     expect(h.posts).toHaveLength(0);
+    expect(h.bridge.snapshot()).toMatchObject({ state: "watching", late_skipped: 3 });
   });
 
-  test("an older page of the list is history (N3)", async () => {
-    const h = opened({}, list([question(10, "2026-11-14T10:00:00Z")]));
-    h.list(list([question(5, "2026-11-14T08:00:00Z"), question(6)]), EVENT_A, "sort=newest&offset=50");
-    await h.bridge.idle();
-    expect(h.posts).toHaveLength(0);
-  });
-
-  test("a list item is new only when Slido's clock proves it is newer", async () => {
-    const h = opened({}, list([question(1, "2026-11-14T10:00:00Z")]));
-    h.list(list([question(1, "2026-11-14T10:00:00Z"), question(2, "2026-11-14T10:00:30Z"), question(3, "2026-11-14T10:00:00Z")]));
-    await h.bridge.idle();
-    expect(texts(h.posts)).toEqual(["Question number 2"]);
-  });
-
-  test("a stream update of an old question dated before the baseline is history", async () => {
-    const h = opened({}, list([question(1, "2026-11-14T10:00:00Z")]));
-    h.stream(question(9, "2026-11-14T09:30:00Z")); // older, never listed (e.g. upvoted)
-    h.stream(question(10, "2026-11-14T10:00:30Z"));
+  test("a stream update of a question asked before the start is history", async () => {
+    const h = opened({}, list([question(1, at("09:50:00"))]), OPENED_AT);
+    h.stream(question(9, at("09:30:00"))); // older, never listed (e.g. upvoted)
+    h.stream(question(10, at("10:00:30")));
     await h.bridge.idle();
     expect(texts(h.posts)).toEqual(["Question number 10"]);
   });
 
-  test("a local clock far ahead or behind changes nothing", async () => {
-    for (const skew of [-3_600_000, 3_600_000]) {
-      const h = harness({ bridge: { now: () => Date.now() + skew } });
-      h.list(list([question(1, "2026-11-14T10:00:00Z")]));
-      h.stream(question(2, "2026-11-14T10:00:01Z"));
+  test("the HTTP Date header sets the start; without it the newest list time does; with both the later one wins", async () => {
+    // Date header only (empty list).
+    let h = opened({}, "[]", OPENED_AT);
+    h.stream(question(1, at("09:59:59")));
+    h.stream(question(2, at("10:00:01")));
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 2"]);
+
+    // No readable Date header: the newest question in the first list.
+    h = opened({}, list([question(1, at("09:50:00"))]));
+    h.list(list([question(2, at("09:49:00")), question(3, at("09:55:00"))]), EVENT_A, "sort=newest");
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 3"]);
+
+    // Both, header later: the header wins.
+    h = opened({}, list([question(1, at("09:50:00"))]), OPENED_AT);
+    h.list(list([question(3, at("09:55:00"))]), EVENT_A, "sort=newest");
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(0);
+
+    // Both, list later (e.g. a cached Date): the list wins.
+    h = opened({}, list([question(1, at("09:50:00"))]), "Sat, 14 Nov 2026 09:40:00 GMT");
+    h.list(list([question(2, at("09:45:00")), question(3, at("09:55:00"))]), EVENT_A, "sort=newest");
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 3"]);
+  });
+
+  test("the start never moves: later lists, later Date headers and sends leave it where it was", async () => {
+    const h = opened({}, list([question(1, at("09:50:00"))]), OPENED_AT);
+    const armedAt = Date.parse(OPENED_AT);
+    h.stream(question(2, at("10:10:00")));
+    await h.bridge.idle();
+    h.list(list([question(2, at("10:10:00")), question(3, at("10:20:00"))]), EVENT_A, "sort=newest", "Sat, 14 Nov 2026 10:30:00 GMT");
+    await h.bridge.idle();
+    expect(h.bridge.tabs()[TAB].events[EVENT_A].armedAt).toBe(armedAt);
+    h.stream(question(4, at("10:05:00"))); // before the latest send, after the start
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 2", "Question number 3", "Question number 4"]);
+  });
+
+  test("a local clock ±1 h off changes none of these outcomes", async () => {
+    const scenario = async (clock) => {
+      const h = harness({ clock });
+      h.list(list([question(1, at("09:10:00"))]), EVENT_A, "sort=top", OPENED_AT);
+      h.list(list([question(3, at("09:58:00")), question(5, at("10:00:02"))]), EVENT_A, "sort=newest");
+      h.stream(question(31, at("10:00:20")));
+      h.stream(question(30, at("10:00:19")));
+      h.stream(question(32));
+      h.list(list([question(40), question(41), question(42)]), EVENT_A, "sort=newest&offset=20");
       await h.bridge.idle();
-      expect(h.posts).toHaveLength(1);
+      return { sent: texts(h.posts), snap: h.bridge.snapshot() };
+    };
+    const base = Date.parse(OPENED_AT);
+    const reference = await scenario(base);
+    expect(reference.sent).toEqual(["Question number 5", "Question number 31", "Question number 30", "Question number 32"]);
+    expect(reference.snap).toMatchObject({ error: "feed_unrecognized", late_skipped: 4 });
+    for (const skew of [-3_600_000, 3_600_000]) {
+      expect(await scenario(base + skew)).toEqual(reference);
     }
   });
 
-  test("switching to another event in the same tab takes a new baseline without any page signal (N3)", async () => {
-    const h = opened({}, list([question(1)])); // event A
-    // Single-page navigation to event B: no openPage(), just B's list.
-    h.list(list([question(101, null, { event_id: 2 }), question(102, null, { event_id: 2 })]), EVENT_B);
-    await h.bridge.idle();
-    expect(h.posts).toHaveLength(0);
-    h.stream(question(103, null, { event_id: 2 }));
+  test("switching to another event in the same tab takes that event's own start, without any page signal", async () => {
+    const h = opened({}, list([question(1, at("09:00:00"), { event_id: 1 })]), OPENED_AT); // event A
+    // Single-page navigation to event B at 10:30: no openPage(), just B's list.
+    h.list(list([question(101, at("10:25:00"), { event_id: 2 })]), EVENT_B, undefined, "Sat, 14 Nov 2026 10:30:00 GMT");
+    h.stream(question(102, at("10:20:00"), { event_id: 2 })); // after A's start, before B's
+    h.stream(question(103, at("10:31:00"), { event_id: 2 }));
     await h.bridge.idle();
     expect(texts(h.posts)).toEqual(["Question number 103"]);
   });
@@ -299,7 +377,56 @@ describe("bridge: lists are history, the stream is new", () => {
     expect(h.posts).toHaveLength(0);
   });
 
-  test("stream traffic before any list is not sent; repeated it is flagged", async () => {
+  test("the start point survives a service-worker restart", async () => {
+    const first = opened({}, list([question(1, at("09:50:00"))]), OPENED_AT);
+    const posted = [];
+    const restored = Core.createBridge({
+      post: async (p) => {
+        posted.push(p);
+        return { status: 200 };
+      },
+      handled: first.bridge.handled(),
+      tabs: JSON.parse(JSON.stringify(first.bridge.tabs())), // as chrome.storage.session returns it
+    });
+    restored.ingest("stream", sioFrame(question(2, at("09:59:00"))), TAB, STREAM_URL, "");
+    restored.ingest("stream", sioFrame(question(3, at("10:01:00"))), TAB, STREAM_URL, "");
+    await restored.idle();
+    expect(posted.map((p) => p.text)).toEqual(["Question number 3"]);
+  });
+});
+
+describe("bridge: questions without a timestamp (rules 3–4)", () => {
+  test("an undated stream question is new the first time its id is seen", async () => {
+    const h = opened({}, list([question(1)]));
+    h.stream(question(2));
+    h.stream(question(2, null, { score: 1 }));
+    h.stream(question(1, null, { score: 1 })); // listed before: history
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 2"]);
+  });
+
+  test("P3: undated baseline, stream updates seen, then unknown list ids: nothing sent, and feed_unrecognized at the threshold", async () => {
+    const h = opened({}, list([question(1), question(2)]));
+    h.stream(question(1, null, { score: 4 })); // upvote of an old question: the stream works
+    h.list(list([question(1), question(3)]), EVENT_A, "sort=newest");
+    await h.bridge.idle();
+    expect(h.bridge.snapshot()).toMatchObject({ state: "watching", late_skipped: 1 });
+    h.list(list([question(4), question(5), question(3)]), EVENT_A, "sort=newest");
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(0);
+    expect(h.bridge.snapshot()).toMatchObject({ state: "error", error: "feed_unrecognized", late_skipped: 3 });
+  });
+
+  test("dated lists without any readable start point are undecidable too", async () => {
+    // First list empty and no Date header: there is nothing to compare with.
+    const h = opened({}, "[]");
+    h.list(list([question(1, at("10:00:01")), question(2, at("10:00:02")), question(3, at("10:00:03"))]), EVENT_A, "sort=newest");
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(0);
+    expect(h.bridge.snapshot().error).toBe("feed_unrecognized");
+  });
+
+  test("stream traffic before any list is not sent; repeated it is flagged; closing the tab clears it", async () => {
     const h = harness();
     h.stream(question(1));
     h.stream(question(2));
@@ -308,23 +435,7 @@ describe("bridge: lists are history, the stream is new", () => {
     await h.bridge.idle();
     expect(h.posts).toHaveLength(0);
     expect(h.bridge.snapshot()).toMatchObject({ state: "error", error: "feed_unrecognized" });
-  });
-
-  test("lists with undatable unknown ids and no stream at all are flagged, not guessed (N3 rule 4)", async () => {
-    const h = opened({}, list([question(1)]));
-    h.list(list([question(1), question(2)])); // 2 is unknown, no timestamps, no stream seen
-    await h.bridge.idle();
-    expect(h.posts).toHaveLength(0);
-    expect(h.bridge.snapshot()).toMatchObject({ state: "error", error: "feed_unrecognized" });
-  });
-
-  test("the same unknown list id is fine once the stream is known to work", async () => {
-    const h = opened({}, list([question(1)]));
-    h.stream(question(2));
-    await h.bridge.idle();
-    h.list(list([question(1), question(2), question(3)]));
-    await h.bridge.idle();
-    expect(texts(h.posts)).toEqual(["Question number 2"]);
+    h.bridge.closeTab(TAB);
     expect(h.bridge.snapshot().state).toBe("watching");
   });
 
@@ -347,7 +458,7 @@ describe("bridge: lists are history, the stream is new", () => {
   });
 });
 
-describe("bridge: delivery", () => {
+describe("bridge: never sent twice (rule 5)", () => {
   test("the same question arriving via stream, list refresh and updates is sent once", async () => {
     const q = question(42);
     const h = opened();
@@ -356,15 +467,54 @@ describe("bridge: delivery", () => {
     h.stream(Object.assign({}, q, { score: 9 }));
     await h.bridge.idle();
     expect(h.posts).toHaveLength(1);
+    expect(h.bridge.snapshot().late_skipped).toBe(0);
   });
 
-  test("handled ids and baselines survive a service-worker restart", async () => {
+  test("P4: an undated stream question that was sent is never re-sent, however many other ids follow", async () => {
+    const h = opened({ bridge: { maxHistory: 5 } }, list([question(1, at("09:00:00"))]), OPENED_AT);
+    h.stream(question(2)); // undated, sent
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 2"]);
+    // Far more than the history cap of other ids, dated and undated.
+    h.list(list(Array.from({ length: 30 }, (_, i) => question(100 + i, at("09:30:00")))), EVENT_A, "sort=top");
+    h.list(list(Array.from({ length: 30 }, (_, i) => question(200 + i))), EVENT_A, "sort=top&offset=30");
+    expect(h.bridge.isKept(EVENT_A, 2)).toBe(true);
+    h.list(list([question(2)]), EVENT_A, "sort=newest"); // list refresh
+    h.stream(question(2, null, { score: 5 })); // and a stream update
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(1);
+  });
+
+  test("once dated history was trimmed, an unknown undated stream id can no longer be proven new", async () => {
+    const backlog = Array.from({ length: 5 }, (_, i) => question(i + 1, at("09:00:00")));
+    const h = opened({ bridge: { maxHistory: 3 } }, list(backlog), OPENED_AT);
+    h.stream(question(1, null, { score: 1 })); // trimmed id, back without a date
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(0);
+    expect(h.bridge.snapshot().late_skipped).toBe(1);
+  });
+
+  test("at the kept-id cap the event stops forwarding and says tracking_full", async () => {
+    const h = opened({ bridge: { maxKept: 3 } });
+    [1, 2, 3].forEach((i) => h.stream(question(i)));
+    await h.bridge.idle();
+    h.stream(question(4));
+    [1, 2, 3].forEach((i) => h.stream(question(i, null, { score: 1 })));
+    await h.bridge.idle();
+    expect(texts(h.posts)).toEqual(["Question number 1", "Question number 2", "Question number 3"]);
+    expect(h.bridge.snapshot()).toMatchObject({ state: "error", error: "tracking_full" });
+  });
+
+  test("handled ids survive a service-worker restart", async () => {
     const first = opened();
     first.stream(question(42));
     await first.bridge.idle();
     const posted = [];
     const restored = Core.createBridge({
-      post: async (p) => { posted.push(p); return { status: 200 }; },
+      post: async (p) => {
+        posted.push(p);
+        return { status: 200 };
+      },
       handled: first.bridge.handled(),
       tabs: first.bridge.tabs(),
     });
@@ -412,30 +562,18 @@ describe("bridge: delivery", () => {
     expect(h.bridge.pending()).toBe(0);
   });
 
-  test("a sent question is never re-sent after the handled-id cap evicts it (N5)", async () => {
-    const h = opened({ bridge: { maxSeen: 5 } }, list([question(1, "2026-11-14T10:00:00Z")]));
-    h.stream(question(2, "2026-11-14T10:01:00Z")); // Q2 is sent
-    await h.bridge.idle();
-    expect(texts(h.posts)).toEqual(["Question number 2"]);
-    // Twenty other ids push Q2 out of the 5-entry handled set.
-    h.list(list(Array.from({ length: 20 }, (_, i) => question(100 + i, "2026-11-14T09:00:00Z"))));
-    expect(h.bridge.isHandled(EVENT_A, 2)).toBe(false);
-    h.list(list([question(2, "2026-11-14T10:01:00Z")])); // list refresh, dated
-    h.list(list([question(2)])); // and undated
-    await h.bridge.idle();
-    expect(h.posts).toHaveLength(1);
-  });
-
-  test("a question is only marked done after a final answer; failed ones are retried on the stream", async () => {
+  test("a question is only marked done after a final answer; failed ones are retried, and are not 'undecidable'", async () => {
     const h = opened({ responses: [{ status: 503, body: '{"error":"No overlay connected."}' }] });
     const q = question(7);
     h.stream(q);
     await h.bridge.idle();
     expect(h.bridge.isHandled(EVENT_A, 7)).toBe(false);
+    h.list(list([q])); // list refresh while it is waiting for a retry
+    expect(h.bridge.snapshot().late_skipped).toBe(0);
     h.stream(Object.assign({}, q, { score: 1 }));
     await h.bridge.idle();
     expect(h.posts).toHaveLength(2);
-    expect(h.bridge.isHandled(EVENT_A, 7)).toBe(true);
+    expect(h.bridge.isKept(EVENT_A, 7)).toBe(true);
     h.stream(q);
     await h.bridge.idle();
     expect(h.posts).toHaveLength(2);

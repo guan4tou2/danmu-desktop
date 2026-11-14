@@ -15,6 +15,7 @@ const ERROR_TEXT = {
   no_overlay: "No overlay connected",
   rejected: "Rejected by the danmu server",
   feed_unrecognized: "Slido format not recognized",
+  tracking_full: "Too many questions in this event to track; forwarding stopped",
   server_unreachable: "Danmu server unreachable",
 };
 
@@ -39,7 +40,8 @@ async function load() {
     const res = await chrome.runtime.sendMessage({ type: "get_stats" });
     if (res?.ok && res.stats) {
       const { sent, held, blocked, failed, dropped, error } = res.stats;
-      const counts = `sent ${sent} · held ${held} · blocked ${blocked} · failed ${failed} · dropped ${dropped}`;
+      const skipped = res.stats.late_skipped || 0;
+      const counts = `sent ${sent} · held ${held} · blocked ${blocked} · failed ${failed} · dropped ${dropped} · skipped ${skipped}`;
       setStatus(error ? `${ERROR_TEXT[error] || error} · ${counts}` : counts, error ? "err" : "");
     }
   } catch {

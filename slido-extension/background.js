@@ -55,7 +55,7 @@ async function postFire(payload) {
 
 // chrome.storage.session survives service-worker restarts (MV3 kills idle
 // workers after ~30 s); without it a restart would forget which questions
-// were already handled and each event's baseline.
+// were already handled and each event's start point (armedAt).
 async function getBridge() {
   if (bridge) return bridge;
   await loadSettings();
@@ -110,7 +110,7 @@ async function handleBody(msg, tabId) {
   if (!kind) return;
   const b = await getBridge();
   // Ingested even while switched off: ids are learned, nothing is queued.
-  b.ingest(kind, String(msg.body || ""), String(tabId), msg.url);
+  b.ingest(kind, String(msg.body || ""), String(tabId), msg.url, typeof msg.date === "string" ? msg.date : "");
   await persist(b);
   heartbeat(false)
     .then(() => b.idle())
@@ -137,6 +137,18 @@ chrome.storage.onChanged.addListener((changes, area) => {
   });
   bridge.setActive(settings.enabled !== false);
 });
+
+// A closed tab's state would otherwise keep its last status (e.g. a
+// feed_unrecognized) alive for the rest of the browser session.
+if (chrome.tabs && chrome.tabs.onRemoved) {
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    serial(async () => {
+      const b = await getBridge();
+      b.closeTab(String(tabId));
+      await persist(b);
+    }).catch(() => {});
+  });
+}
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   const tabId = sender && sender.tab ? sender.tab.id : -1;
