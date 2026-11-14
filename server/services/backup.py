@@ -290,7 +290,9 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
             try:
                 _rules.restore_rules_file(data)
                 out["applied"] += 1
-            except (ValueError, _rules.RuleSaveError) as exc:
+            except Exception as exc:  # 一個檔還原失敗不能毀掉整次還原
+                if not isinstance(exc, (ValueError, _rules.RuleSaveError)):
+                    logger.exception("backup restore of %s failed", target.name)
                 out["errors"].append(f"restore {target.name}: {exc}")
             continue
         try:

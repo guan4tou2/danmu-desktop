@@ -965,15 +965,18 @@ def test_at_most_two_checks_run_at_once(monkeypatch):
 
     real_run = rule_regex.subprocess.run
     live, peak = [0], [0]
+    counter_lock = threading.Lock()  # += 跨執行緒不是原子操作
 
     def counting_run(*args, **kwargs):
-        live[0] += 1
-        peak[0] = max(peak[0], live[0])
+        with counter_lock:
+            live[0] += 1
+            peak[0] = max(peak[0], live[0])
         try:
             time.sleep(0.15)  # 讓同時送出的檢查真的重疊
             return real_run(*args, **kwargs)
         finally:
-            live[0] -= 1
+            with counter_lock:
+                live[0] -= 1
 
     monkeypatch.setattr(rule_regex.subprocess, "run", counting_run)
     errors = []
@@ -984,6 +987,8 @@ def test_at_most_two_checks_run_at_once(monkeypatch):
         except Exception as exc:  # pragma: no cover - 失敗時看得到原因
             errors.append(exc)
 
+    # 號誌不保證先來先等，放寬排隊上限，只量同時存活的數量
+    monkeypatch.setattr(rule_regex, "QUEUE_TIMEOUT_SEC", 30.0)
     threads = [threading.Thread(target=one) for _ in range(8)]
     with hard_limit(20):
         for th in threads:
@@ -1023,3 +1028,220 @@ def test_the_child_limits_its_own_address_space_and_degrades_where_unsupported()
     # 在這個平台上（macOS 不允許調低 RLIMIT_AS）照常可以檢查
     with hard_limit(10):
         assert rule_regex.vet_pattern("abc") is None
+
+
+# ── 第四輪複核（2026-11-14）──────────────────────────────────────────────
+
+_BAD_ENTRIES = {
+    "priority_null": {
+        "id": "a",
+        "type": "keyword",
+        "pattern": "x",
+        "action": "review",
+        "priority": None,
+    },
+    "priority_high": {
+        "id": "a",
+        "type": "keyword",
+        "pattern": "x",
+        "action": "review",
+        "priority": "high",
+    },
+}
+
+
+def _tarball(files):
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as tar:
+        for name, data in files:
+            info = tarfile.TarInfo(name)
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+    return buf.getvalue()
+
+
+@pytest.mark.parametrize("case", sorted(_BAD_ENTRIES))
+def test_restoring_unreadable_entries_changes_nothing_and_the_rest_still_restores(
+    tmp_path, monkeypatch, case
+):
+    """B1：條目欄位型別不對的規則檔——還原是全有或全無，一個檔失敗不毀掉整次還原。"""
+    runtime = tmp_path / "runtime"
+    runtime.mkdir()
+    rules_file = runtime / "filter_rules.json"
+    monkeypatch.setattr(backup_svc, "_INCLUDE_DIRS", [("runtime", runtime, "runtime", "*.json")])
+    monkeypatch.setattr(filter_engine, "_path", str(rules_file))
+    filter_engine.reload()
+    filter_engine.add_rule({"type": "word", "pattern": "現有"})
+    before = rules_file.read_bytes()
+
+    bad = json.dumps(
+        [{"id": "ok", "type": "word", "pattern": "好的", "action": "block"}, _BAD_ENTRIES[case]]
+    ).encode()
+    archive = _tarball(
+        [
+            ("manifest.json", b"{}"),
+            ("runtime/filter_rules.json", bad),
+            ("runtime/zz_other.json", b'{"k": 1}'),  # 排在後面的檔
+        ]
+    )
+    out = backup_svc.unpack(archive, dry_run=False)  # 不丟例外
+
+    assert out["ok"] is False
+    assert any("filter_rules.json" in e and "priority" in e for e in out["errors"])
+    assert rules_file.read_bytes() == before
+    assert [r["pattern"] for r in filter_engine.list_rules()] == ["現有"]
+    assert (runtime / "zz_other.json").read_text() == '{"k": 1}'
+    original = FilterEngine._instance
+    try:
+        FilterEngine._instance = None
+        restarted = FilterEngine(path=str(rules_file))  # 不丟例外
+        assert [r.pattern for r in restarted._rules] == ["現有"]
+    finally:
+        FilterEngine._instance = original
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"type": "regex", "pattern": None, "action": "block"},
+        {"type": "word", "pattern": 123, "action": "block"},
+        {"type": "keyword", "pattern": "x", "action": "review", "window_sec": "slow"},
+        "not an object",
+    ],
+)
+def test_restore_file_rejects_other_unreadable_entries(bad):
+    filter_engine.add_rule({"type": "word", "pattern": "現有"})
+    before = Path(filter_engine.path).read_bytes()
+    with pytest.raises(ValueError, match="entry 1"):
+        engine_module.restore_rules_file(json.dumps([bad]).encode())
+    assert Path(filter_engine.path).read_bytes() == before
+    assert [r["pattern"] for r in filter_engine.list_rules()] == ["現有"]
+
+
+def test_startup_skips_an_unreadable_entry_and_keeps_a_copy(caplog):
+    path = Path(filter_engine.path)
+    content = json.dumps(
+        [
+            {
+                "id": "a",
+                "type": "word",
+                "pattern": "留著",
+                "action": "block",
+                "lifetime": "permanent",
+            },
+            {
+                "id": "b",
+                "type": "keyword",
+                "pattern": "壞",
+                "action": "review",
+                "priority": None,
+                "lifetime": "permanent",
+            },
+            {
+                "id": "c",
+                "type": "regex",
+                "pattern": r"\d+",
+                "action": "block",
+                "lifetime": "permanent",
+            },
+        ]
+    )
+    path.write_text(content, encoding="utf-8")
+    original = FilterEngine._instance
+    try:
+        with caplog.at_level("WARNING", logger="server.services.filter_engine"):
+            FilterEngine._instance = None
+            engine = FilterEngine(path=str(path))  # 伺服器起得來
+        assert [r.id for r in engine._rules] == ["a", "c"]
+        assert engine.match_word("留著") == "留著"
+        assert "skipped 1 unreadable entry" in caplog.text
+
+        copies = sorted(path.parent.glob("filter_rules.json.unreadable-*.bak"))
+        assert len(copies) == 1
+        assert copies[0].read_text(encoding="utf-8") == content
+        assert path.read_text(encoding="utf-8") == content  # 讀檔本身不改原檔
+
+        # 同樣的內容再啟動一次：不重複留副本
+        FilterEngine._instance = None
+        FilterEngine(path=str(path))
+        assert sorted(path.parent.glob("filter_rules.json.unreadable-*.bak")) == copies
+
+        # 備份打包不會帶走副本
+        assert not copies[0].name.endswith(".json")
+    finally:
+        FilterEngine._instance = original
+
+
+def test_update_to_session_rechecks_the_session_inside_the_lock(monkeypatch):
+    """N4：改 pattern 加改期限成本場次的更新——驗證時場次在、提交前結束，不能提交。"""
+    rule_id = filter_engine.add_rule({"type": "regex", "pattern": "a+", "action": "block"})
+    answers = iter([True, False])
+    monkeypatch.setattr(engine_module, "_session_live", lambda: next(answers))
+    with pytest.raises(engine_module.RuleValidationError) as exc:
+        filter_engine.update_rule(rule_id, {"pattern": "b+", "lifetime": "session"})
+    assert exc.value.code == "no_session"
+    rule = filter_engine.get_rule(rule_id)
+    assert (rule["pattern"], rule["lifetime"]) == ("a+", "permanent")
+
+
+def test_updating_an_expired_rule_is_not_found(monkeypatch):
+    """N4：update_rule 第一段鎖裡清到期——已到期的規則不能被「改」回來。"""
+    now = [50_000.0]
+    monkeypatch.setattr(engine_module.time, "time", lambda: now[0])
+    rule_id = filter_engine.add_rule(
+        {
+            "type": "keyword",
+            "pattern": "x",
+            "action": "review",
+            "lifetime": "timed",
+            "duration_sec": 60,
+        }
+    )
+    now[0] += 61
+    assert filter_engine.update_rule(rule_id, {"priority": 7}) is False
+    assert filter_engine.get_rule(rule_id) is None
+    assert json.loads(Path(filter_engine.path).read_text()) == []
+
+
+def test_a_rule_that_expires_while_its_edit_is_checked_is_not_found(monkeypatch):
+    """N4：update_rule 第二段鎖裡清到期——驗證（鎖外）期間到期的規則不會被寫回。"""
+    now = [50_000.0]
+    monkeypatch.setattr(engine_module.time, "time", lambda: now[0])
+    rule_id = filter_engine.add_rule(
+        {
+            "type": "regex",
+            "pattern": "a+",
+            "action": "review",
+            "lifetime": "timed",
+            "duration_sec": 60,
+        }
+    )
+    real_validate = filter_engine._validate
+
+    def slow_validate(*args, **kwargs):
+        rule = real_validate(*args, **kwargs)
+        now[0] += 61  # 驗證跑到一半，規則到期
+        return rule
+
+    monkeypatch.setattr(filter_engine, "_validate", slow_validate)
+    assert filter_engine.update_rule(rule_id, {"pattern": "b+"}) is False
+    assert filter_engine.get_rule(rule_id) is None
+    assert json.loads(Path(filter_engine.path).read_text()) == []
+
+
+def test_a_check_that_runs_out_of_memory_is_rejected(client, monkeypatch):
+    """N5：子行程 MemoryError 的那條路（用改過的子行程程式走到那個分支）。"""
+    marker = '    for mode, text in job["probes"]:'
+    assert rule_regex._CHILD.count(marker) == 1
+    monkeypatch.setattr(
+        rule_regex,
+        "_CHILD",
+        rule_regex._CHILD.replace(marker, "    raise MemoryError\n" + marker),
+    )
+    with hard_limit(10):
+        with pytest.raises(rule_regex.PatternCheckUnavailable, match="out of memory"):
+            rule_regex.vet_pattern("abc")
+        res = _post(client, "/admin/filters/add", {"type": "regex", "pattern": "abc"})
+    assert res.status_code == 400
+    assert res.get_json()["code"] == "unsafe_regex"
+    assert filter_engine.list_rules() == []

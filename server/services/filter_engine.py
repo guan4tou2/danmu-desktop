@@ -33,6 +33,7 @@ RuleSaveError，API 回 500 ``save_failed``。
 """
 
 import dataclasses
+import hashlib
 import json
 import logging
 import os
@@ -51,6 +52,8 @@ logger = logging.getLogger(__name__)
 
 # 舊版規則檔第一次被新版讀到時留下的備份（不會被備份功能的 *.json 打包帶走）
 LEGACY_BACKUP_SUFFIX = ".pre-unified.bak"
+# 規則檔裡有解析不了的條目時留下的原檔副本；{digest} 是原檔內容的雜湊（同內容只留一份）
+UNREADABLE_BACKUP_SUFFIX = ".unreadable-{digest}.bak"
 
 _REGEX_TYPES = ("regex", "replace")
 
@@ -156,6 +159,62 @@ def _error_code(texts: list[str]) -> str:
 
 
 _MISSING = object()
+
+
+def _number(entry: dict, key: str, default: Any, kind: type) -> Any:
+    value = entry.get(key, default)
+    try:
+        return kind(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{key} is not a number ({value!r})") from exc
+
+
+def _parse_entry(entry: Any) -> tuple[FilterRule, bool]:
+    """規則檔裡的一條 → (FilterRule, 是否做了 keyword＋block 轉換)。
+
+    讀檔與備份還原共用。解析不了（不是物件、文字欄位不是字串、數字欄位轉不成數字）時
+    丟 ValueError。與 5.8 一樣寬鬆的地方照舊：缺欄位用預設值、"5" 這種數字字串照收、
+    無效的 lifetime 當永久、限時卻沒有到期時間當永久、未知的 type 照存（比對時不命中）。
+    """
+    if not isinstance(entry, dict):
+        raise ValueError("not an object")
+    rule_type = entry.get("type", "keyword")
+    action = entry.get("action", "block")
+    pattern = entry.get("pattern", "")
+    replacement = entry.get("replacement", "")
+    rule_id = entry.get("id") or uuid.uuid4().hex[:8]
+    for key, value in (
+        ("type", rule_type),
+        ("action", action),
+        ("pattern", pattern),
+        ("replacement", replacement),
+        ("id", rule_id),
+    ):
+        if not isinstance(value, str):
+            raise ValueError(f"{key} is not a string ({value!r})")
+    lifetime = entry.get("lifetime", "permanent")
+    if lifetime not in ("permanent", "session", "timed"):
+        lifetime = "permanent"
+    expires_at = entry.get("expires_at")
+    if lifetime == "timed" and (
+        isinstance(expires_at, bool) or not isinstance(expires_at, (int, float))
+    ):
+        lifetime, expires_at = "permanent", None
+    converted = _is_legacy_keyword_block(rule_type, action)
+    rule = FilterRule(
+        id=rule_id,
+        type="word" if converted else rule_type,
+        pattern=pattern,
+        action=action,
+        priority=_number(entry, "priority", 0, int),
+        enabled=bool(entry.get("enabled", True)),
+        replacement=replacement,
+        max_count=_number(entry, "max_count", 0, int),
+        window_sec=_number(entry, "window_sec", 0.0, float),
+        lifetime=lifetime,
+        expires_at=float(expires_at) if lifetime == "timed" else None,
+    )
+    return rule, converted
 
 
 def _client_fields(data: dict[str, Any]) -> dict[str, Any]:
@@ -487,10 +546,12 @@ class FilterEngine:
 
         「換檔」與「重新載入」之間不能有別的寫入：以前備份模組自己寫檔、之後才叫
         reload()，中間若有主持人的編輯提交，會用還原前的記憶體清單把剛還原的檔案
-        蓋回去。舊格式（5.8）的內容照常轉換、留副本（_load）。
+        蓋回去。舊格式（5.8）的內容照常轉換；原檔副本（.pre-unified.bak）只在還沒有
+        副本時才留——已經有的話不覆寫，還原的內容本身就在那份備份裡。
 
-        內容不是 JSON 陣列時丟 ValueError，現有的檔案與清單都不動；寫不進去丟
-        RuleSaveError。
+        全有或全無：先把每一條都解析過（與讀檔同一個 _parse_entry），任何一條解析
+        不了、或內容不是 JSON 陣列，就丟 ValueError，檔案與記憶體裡的清單都不動。
+        寫不進去丟 RuleSaveError（同樣不動）。
         """
         try:
             parsed = json.loads(data.decode("utf-8"))
@@ -499,6 +560,11 @@ class FilterEngine:
         if not isinstance(parsed, list):
             raise ValueError("filter_rules.json must be a JSON array")
         with self._lock:
+            for index, entry in enumerate(parsed):
+                try:
+                    _parse_entry(entry)
+                except ValueError as exc:
+                    raise ValueError(f"filter_rules.json entry {index + 1}: {exc}") from exc
             self._write_bytes(data)
             self._regex_cache.clear()
             self._load()
@@ -810,32 +876,16 @@ class FilterEngine:
             backed_up = self._keep_legacy_copy(raw)
             rules: list[FilterRule] = []
             converted = False
-            for entry in raw:
-                if not isinstance(entry, dict):
+            skipped: list[str] = []
+            for index, entry in enumerate(raw):
+                try:
+                    rule, was_converted = _parse_entry(entry)
+                except ValueError as exc:
+                    # 解析不了的條目（例如 priority 是 null 或 "high"）略過，其餘照常載入；
+                    # 以前會讓整個引擎建不起來，伺服器就起不來。
+                    skipped.append(f"entry {index + 1}: {exc}")
                     continue
-                lifetime = entry.get("lifetime", "permanent")
-                if lifetime not in ("permanent", "session", "timed"):
-                    lifetime = "permanent"
-                expires_at = entry.get("expires_at")
-                if lifetime == "timed" and not isinstance(expires_at, (int, float)):
-                    lifetime, expires_at = "permanent", None
-                rule_type = entry.get("type", "keyword")
-                action = entry.get("action", "block")
-                if _is_legacy_keyword_block(rule_type, action):
-                    rule_type, converted = "word", True
-                rule = FilterRule(
-                    id=entry.get("id", uuid.uuid4().hex[:8]),
-                    type=rule_type,
-                    pattern=entry.get("pattern", ""),
-                    action=action,
-                    priority=int(entry.get("priority", 0)),
-                    enabled=bool(entry.get("enabled", True)),
-                    replacement=entry.get("replacement", ""),
-                    max_count=int(entry.get("max_count", 0)),
-                    window_sec=float(entry.get("window_sec", 0.0)),
-                    lifetime=lifetime,
-                    expires_at=float(expires_at) if lifetime == "timed" else None,
-                )
+                converted = converted or was_converted
                 # Pre-compile regex patterns; skip rules with bad patterns
                 if rule.type in _REGEX_TYPES:
                     try:
@@ -844,8 +894,23 @@ class FilterEngine:
                         rule.enabled = False
                 rules.append(rule)
             self._rules = rules
+            kept_skipped = True
+            if skipped:
+                kept_skipped = self._keep_unreadable_copy()
+                logger.warning(
+                    "Block rules: skipped %d unreadable entr%s in %s (%s); %s",
+                    len(skipped),
+                    "y" if len(skipped) == 1 else "ies",
+                    self._path,
+                    "; ".join(skipped[:5]),
+                    (
+                        "the original file is kept beside it"
+                        if kept_skipped
+                        else "could not keep a copy of the original file"
+                    ),
+                )
             if converted:
-                if backed_up:
+                if backed_up and kept_skipped:
                     self._save()
                 else:
                     # 原檔沒備份成功就不覆寫它：這次只在記憶體裡轉換。之後主持人真的
@@ -855,8 +920,40 @@ class FilterEngine:
                         "the file was left as it is",
                         self._path,
                     )
-        except (json.JSONDecodeError, OSError):
+        except (ValueError, OSError):  # 壞 JSON、不是 UTF-8、讀不到
             self._rules = []
+
+    def _keep_unreadable_copy(self) -> bool:
+        """規則檔裡有條目解析不了時，在旁邊留一份原檔。
+
+        被略過的條目在下一次寫檔時就會從檔案消失，留著原檔才找得回來。檔名帶內容的
+        雜湊（``filter_rules.json.unreadable-<12 碼>.bak``）：同樣的內容不會重複留，
+        不同的壞檔各留一份。不是 ``*.json``，備份打包不會帶走。先寫暫存檔再
+        os.replace。回傳原檔現在是否有副本。
+        """
+        try:
+            with open(self._path, "rb") as f:
+                original = f.read()
+        except OSError as exc:
+            logger.warning("Block rules: could not read %s for a copy: %s", self._path, exc)
+            return False
+        digest = hashlib.sha256(original).hexdigest()[:12]
+        copy_path = self._path + UNREADABLE_BACKUP_SUFFIX.format(digest=digest)
+        if os.path.exists(copy_path):
+            return True
+        tmp_path = copy_path + ".tmp"
+        try:
+            with open(tmp_path, "wb") as f:
+                f.write(original)
+            os.replace(tmp_path, copy_path)
+            return True
+        except OSError as exc:
+            logger.warning("Block rules: could not keep a copy of %s: %s", self._path, exc)
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            return False
 
     def _keep_legacy_copy(self, raw: list) -> bool:
         """需要轉換的規則檔（5.8 以前的格式）第一次被讀到時，在旁邊留一份原檔。

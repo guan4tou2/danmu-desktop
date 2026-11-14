@@ -161,6 +161,7 @@
   let _scope = "all";
   let _editing = null; // 正在編輯的規則（null = 新增）
   let _submitting = false; // 送出中：連按 Enter 不會送第二次
+  let _savingId = null; // 正在送出儲存的那條規則（新增時是 null）
   let _formSeq = 0; // 每次開始新增／編輯（含整頁重繪）加一，認出儲存是哪一次表單操作發起的
   // 有沒有進行中的場次（/admin/filters/list 的 session_live）。沒有時不提供「到本場次
   // 結束」：那時沒有場次可以結束，後端也不收。
@@ -485,6 +486,7 @@
     const payload = editing ? { rule_id: editing.id, updates: body } : body;
     const button = el("blockRuleSubmit");
     _submitting = true;
+    _savingId = editing ? editing.id : null;
     if (button) button.disabled = true;
     try {
       const resp = await window.csrfFetch(url, {
@@ -527,6 +529,7 @@
       window.showToast(t(editing ? "updateRuleFailed" : "addRuleFailed"), false);
     } finally {
       _submitting = false;
+      _savingId = null;
       // 整頁重繪過的話，這顆按鈕已經不是畫面上那顆；畫面上那顆本來就沒被停用。
       if (button) button.disabled = false;
     }
@@ -593,10 +596,30 @@
     }
   }
 
+  /** 把清單上那一列畫成 *enabled*（送的期間若有重新整理，列會被畫成切換前的狀態）。 */
+  function syncRow(ruleId, enabled) {
+    const row = Array.from(document.querySelectorAll("#blockRuleList .admin-block-row"))
+      .find((r) => r.dataset.ruleId === ruleId);
+    if (!row) return;
+    const cb = row.querySelector(".filter-toggle-cb");
+    if (cb) cb.checked = enabled;
+    const dot = row.querySelector(".admin-filter-toggle-dot");
+    if (dot) {
+      dot.classList.toggle("is-on", enabled);
+      dot.classList.toggle("is-off", !enabled);
+    }
+    row.classList.toggle("is-off", !enabled);
+    row.style.opacity = enabled ? "" : "0.45";
+  }
+
+  /**
+   * 回傳 true（伺服器已是 *enabled*）、false（失敗，已重新整理）、null（前一個還在送，
+   * 這次的狀態排進佇列，由那一輪送出）。
+   */
   async function toggleRule(ruleId, enabled) {
     const state = _toggles[ruleId] || (_toggles[ruleId] = { want: enabled, busy: false });
     state.want = enabled;
-    if (state.busy) return;
+    if (state.busy) return null;
     state.busy = true;
     try {
       let sent;
@@ -604,9 +627,11 @@
         sent = state.want;
         if (!(await sendToggle(ruleId, sent))) {
           await refresh(); // 失敗：以伺服器上的狀態重畫
-          break;
+          return false;
         }
       } while (state.want !== sent);
+      syncRow(ruleId, sent);
+      return true;
     } finally {
       delete _toggles[ruleId];
     }
@@ -646,7 +671,8 @@
     const existing = quickRuleFor(q, _rules);
     if (existing && existing.enabled === false) {
       // 在列上被停用的那條：按鈕顯示成未開啟，按下去是重新啟用，不是刪掉它。
-      const ok = await sendToggle(existing.id, true);
+      // 走跟列上開關同一條佇列；失敗時 toggleRule 會重新整理清單。
+      const ok = await toggleRule(existing.id, true);
       if (ok) {
         window.showToast(t("filtersToastEnabled", { label: label }), true);
         await refresh();
@@ -840,7 +866,9 @@
       const edit = e.target.closest(".block-rule-edit");
       if (edit) {
         const rule = _rules.find((r) => r.id === edit.dataset.ruleId);
-        if (rule) startEdit(rule);
+        // 這一條的儲存還在送：現在打開會載入送出前的舊值，再存一次就把剛才的修改蓋回去。
+        // 等它回來（清單會重新整理）再編輯。
+        if (rule && rule.id !== _savingId) startEdit(rule);
       }
     });
 

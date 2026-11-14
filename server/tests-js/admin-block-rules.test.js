@@ -294,12 +294,16 @@ describe("block rule list", () => {
 
   // ── 外部審查（第三輪） ────────────────────────────────────────
 
-  const pending = (url) => {
+  const pending = (url, status = 200) => {
     const gates = [];
     respond = (u, body) => {
       if (u !== url) return undefined;
       return new Promise((resolve) => {
-        gates.push({ body, release: () => resolve({ ok: true, status: 200, json: async () => ({ rule_id: "n1" }) }) });
+        gates.push({
+          body,
+          release: () =>
+            resolve({ ok: status < 400, status, json: async () => (status < 400 ? { rule_id: "n1" } : {}) }),
+        });
       });
     };
     return gates;
@@ -387,5 +391,73 @@ describe("block rule list", () => {
     document.getElementById("blockRuleSubmit").click();
     await flush();
     expect(lastPost("/admin/filters/update").body.updates).toMatchObject({ type: "fingerprint", action: "review" });
+  });
+
+  // ── 第四輪複核（N1–N4） ──────────────────────────────────────
+
+  const editBtn = (id) => document.querySelector(`.block-rule-edit[data-rule-id="${id}"]`);
+  const rowOf = (id) => document.querySelector(`#blockRuleList .admin-block-row[data-rule-id="${id}"]`);
+
+  test("a rule whose save is still in flight cannot be reopened with stale values", async () => {
+    const gates = pending("/admin/filters/update");
+    editBtn("kw1").click();
+    pressEnter("changed");
+    await flush();
+    document.getElementById("blockRuleCancel").click();
+    editBtn("kw1").click();
+    // 沒有載入送出前的舊值
+    expect(document.getElementById("blockRuleInput").value).toBe("");
+    expect(document.getElementById("blockRuleCancel").hidden).toBe(true);
+
+    gates[0].release();
+    await flush();
+    respond = null;
+    editBtn("kw1").click();
+    expect(document.getElementById("blockRuleInput").value).toBe("legacy");
+  });
+
+  test("a 404 for an old save does not reset an edit of another rule", async () => {
+    const gates = pending("/admin/filters/update", 404);
+    editBtn("kw1").click();
+    pressEnter("changed");
+    await flush();
+    document.getElementById("blockRuleCancel").click();
+    editBtn("w1").click();
+    gates[0].release();
+    await flush();
+    expect(document.getElementById("blockRuleInput").value).toBe("<img src=x onerror=alert(1)>");
+    expect(document.getElementById("blockRuleCancel").hidden).toBe(false);
+  });
+
+  test("re-enabling a quick rule goes through the toggle queue and refetches on failure", async () => {
+    rules = rules.map((r) => (r.id === "rx1" ? { ...r, enabled: false } : r));
+    await window.AdminBlockRules.refresh();
+    respond = (url) =>
+      url === "/admin/filters/update"
+        ? { ok: false, status: 404, json: async () => ({ error: "Rule not found" }) }
+        : undefined;
+    calls = [];
+    document.querySelector('[data-flt-quick-id="url"]').click();
+    await flush();
+    expect(calls.filter((c) => c.url === "/admin/filters/update")).toHaveLength(1);
+    expect(calls.filter((c) => c.url === "/admin/filters/list")).toHaveLength(1);
+    expect(calls.filter((c) => c.url === "/admin/filters/remove")).toHaveLength(0);
+  });
+
+  test("a refresh during a toggle does not leave the row showing the old state", async () => {
+    const gates = pending("/admin/filters/update");
+    const cb = rowOf("kw1").querySelector(".filter-toggle-cb");
+    cb.checked = false;
+    cb.dispatchEvent(new Event("change", { bubbles: true }));
+    await flush();
+    // 別的操作在送的期間重新整理：伺服器還是舊狀態（啟用）
+    await window.AdminBlockRules.refresh();
+    expect(rowOf("kw1").querySelector(".filter-toggle-cb").checked).toBe(true);
+
+    gates[0].release();
+    await flush();
+    const row = rowOf("kw1");
+    expect(row.querySelector(".filter-toggle-cb").checked).toBe(false);
+    expect(row.querySelector(".admin-filter-toggle-dot").classList.contains("is-off")).toBe(true);
   });
 });
