@@ -205,9 +205,11 @@ def create_app(config_class=Config):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-        response.headers["Content-Security-Policy"] = _build_content_security_policy(
-            getattr(g, "csp_nonce", "")
-        )
+        # A route serving raw user-provided bytes may ask for a stricter
+        # policy than the page CSP (see poll media).
+        response.headers["Content-Security-Policy"] = getattr(
+            g, "csp_override", None
+        ) or _build_content_security_policy(getattr(g, "csp_nonce", ""))
         if app.config.get("HSTS_ENABLED", False) and request.is_secure:
             response.headers["Strict-Transport-Security"] = _build_hsts_header(app.config)
 

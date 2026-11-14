@@ -204,7 +204,22 @@
     return Promise.resolve(done(_execCopy(text)));
   }
 
+  // 2026-11-14：CSV 儲存格。開頭是 = + - @、Tab 或換行的字串會被試算表
+  // 當成公式；彈幕文字來自匿名觀眾，所以前面加 ' 讓它顯示成文字。需要時
+  // 加上雙引號（逗號、引號、換行）。後台所有產生 CSV 的地方都走這支。
+  const CSV_FORMULA_START = /^[=+\-@\t\r\n]/;
+  function csvSafeText(value) {
+    const s = value == null ? "" : String(value);
+    return typeof value === "string" && CSV_FORMULA_START.test(s) ? "'" + s : s;
+  }
+  function csvCell(value) {
+    const s = csvSafeText(value);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
   window.AdminUtils = {
+    csvCell: csvCell,
+    csvSafeText: csvSafeText,
     copyText: copyText,
     DETAILS_STATE_KEY: DETAILS_STATE_KEY,
     loadDetailsState: loadDetailsState,

@@ -281,7 +281,7 @@ def test_unpack_skips_unknown_prefix(isolated_backup_dirs):
         info.size = len(bad)
         tar.addfile(info, io.BytesIO(bad))
     result = backup_svc.unpack(buf.getvalue(), dry_run=True)
-    assert any(s["reason"] == "unknown prefix" for s in result["skipped"])
+    assert any(s["code"] == "not_backup_file" for s in result["skipped"])
 
 
 # ── Service-level unpack (apply) ──────────────────────────────────────────

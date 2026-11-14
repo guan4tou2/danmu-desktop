@@ -120,11 +120,7 @@
 
   function _csv(records) {
     var headers = ["timestamp", "nickname", "text", "color", "size", "speed", "opacity", "isImage", "fontName", "clientIp", "fingerprint", "status", "delivery_reason"];
-    var esc = function (v) {
-      var s = v == null ? "" : String(v);
-      return s.indexOf(",") >= 0 || s.indexOf('"') >= 0 || s.indexOf("\n") >= 0
-        ? '"' + s.replace(/"/g, '""') + '"' : s;
-    };
+    var esc = window.AdminUtils.csvCell;
     var status = function (r) {
       if (r.status) return r.status;
       if (r.banned) return "banned"; if (r.muted) return "muted"; if (r.is_poll) return "poll"; return "ok";

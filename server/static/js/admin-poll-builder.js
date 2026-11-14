@@ -623,10 +623,7 @@
             rows.push([i + 1, qq.text, o.key, o.text, o.count, pct]);
           });
         });
-        return rows.map(r => r.map(c => {
-          const s = String(c == null ? "" : c);
-          return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-        }).join(",")).join("\n");
+        return rows.map(r => r.map(window.AdminUtils.csvCell).join(",")).join("\n");
       }
 
       function downloadBlob(name, mime, text) {

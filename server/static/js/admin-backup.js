@@ -62,6 +62,12 @@
               <span class="sub" id="bk2-pack-detail">${t("backupPackContentList")}</span>
             </span>
           </div>
+          <label class="admin-ui-group-row" for="bk2-pack-include-credentials">
+            <span class="lbl">${t("backupIncludeCredentials")}</span>
+            <span class="val">
+              <input type="checkbox" class="admin-ui-checkbox" id="bk2-pack-include-credentials" />
+            </span>
+          </label>
           <div class="admin-ui-group-row is-tall">
             <span class="lbl">${t("backupSecSettingsSnap")}
               <span class="sub">${t("backupSettingsSnapshotDesc")}</span>
@@ -417,7 +423,10 @@
   function exportFullPack() {
     // Navigate to the streaming endpoint — browser handles the download
     // headers (Content-Disposition: attachment; filename=...).
-    window.location.href = "/admin/backup/export";
+    // 預設不含連線密碼與 token（Fire／WS token、Webhook 密鑰與網址）；
+    // 勾選才帶上，給整站搬家用。
+    const withCreds = document.getElementById("bk2-pack-include-credentials")?.checked;
+    window.location.href = "/admin/backup/export" + (withCreds ? "?include_credentials=1" : "");
     window.showToast?.(ServerI18n.t("backupDownloadingFullSnapshot"), true);
   }
 
@@ -441,6 +450,24 @@
   function exportAssetPack() {
     window.location.href = "/admin/backup/assets/export";
     window.showToast?.(ServerI18n.t("backupDownloadingAssetPack"), true);
+  }
+
+  // 2026-11-14：還原只收匯出會產生的檔案；伺服器對每個略過的檔給 code，
+  // 這裡換成目前語言的理由。沒有 code 的舊回應退回伺服器的英文 reason。
+  const SKIP_REASON_KEYS = {
+    unsafe_path: "backupSkipUnsafePath",
+    not_backup_file: "backupSkipNotBackupFile",
+    admin_password: "backupSkipAdminPassword",
+    read_failed: "backupSkipReadFailed",
+    plugin_upload_disabled: "backupSkipPluginUploadDisabled",
+    webhook_no_credentials: "backupSkipWebhookNoCredentials",
+  };
+
+  function skippedLines(skipped) {
+    return (skipped || []).map((s) => {
+      const key = s && SKIP_REASON_KEYS[s.code];
+      return "  " + s.path + " — " + (key ? ServerI18n.t(key) : s.reason);
+    });
   }
 
   async function dryRunFullPack() {
@@ -481,6 +508,7 @@
         const m = result.manifest || {};
         lines.push("manifest version: " + (m.version || "?"));
         lines.push("generated_at: " + (m.generated_at ? new Date(m.generated_at * 1000).toISOString() : "—"));
+        if (result.credentials === "omitted") lines.push(ServerI18n.t("backupCredentialsKept"));
         lines.push("");
         lines.push("Will write " + (result.members?.length || 0) + " files:");
         (result.members || []).forEach((m) => {
@@ -490,7 +518,7 @@
         if (result.skipped?.length) {
           lines.push("");
           lines.push("Skipped " + result.skipped.length + " entries:");
-          result.skipped.forEach((s) => lines.push("  " + s.path + " — " + s.reason));
+          lines.push(...skippedLines(result.skipped));
         }
         out.textContent = lines.join("\n");
       }
@@ -536,7 +564,8 @@
           lines.push("");
           lines.push("Applied " + (result.applied || 0) + " files");
           if (result.skipped?.length) {
-            lines.push("Skipped " + result.skipped.length + " (see above)");
+            lines.push("Skipped " + result.skipped.length + " entries:");
+            lines.push(...skippedLines(result.skipped));
           }
         } else {
           lines.push("✗ " + ServerI18n.t("backupApplyFailedHeader"));

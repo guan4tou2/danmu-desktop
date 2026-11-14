@@ -241,6 +241,11 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
             out["skipped"].append({"path": member.name, "reason": "unknown prefix"})
             continue
         label, src_dir, prefix, rel = match
+        # "emojis//abs/x.png" leaves rel starting with "/", which pathlib
+        # would join as an absolute path; refuse empty and dot segments.
+        if any(seg in ("", ".", "..") for seg in rel.split("/")):
+            out["skipped"].append({"path": member.name, "reason": "path traversal rejected"})
+            continue
         if not _asset_allowed(label, rel):
             out["skipped"].append({"path": member.name, "reason": "extension rejected"})
             continue
@@ -257,9 +262,7 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
 
         target = src_dir / rel
         try:
-            target_resolved = target.resolve()
-            src_resolved = src_dir.resolve()
-            if not str(target_resolved).startswith(str(src_resolved)):
+            if not target.resolve().is_relative_to(src_dir.resolve()):
                 out["skipped"].append(
                     {"path": member.name, "reason": "resolves outside source dir"}
                 )

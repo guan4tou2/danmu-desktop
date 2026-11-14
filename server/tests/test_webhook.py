@@ -5,7 +5,7 @@
 import hashlib
 import hmac
 import threading
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -131,10 +131,6 @@ def test_emit_spawns_threads(monkeypatch):
     svc.register(_sample_config(url="https://a.com/h1", events=["on_danmu"], secret=""))
     svc.register(_sample_config(url="https://b.com/h2", events=["on_danmu"], secret=""))
 
-    mock_urlopen = MagicMock()
-    mock_urlopen.__enter__ = MagicMock(return_value=MagicMock(status=200))
-    mock_urlopen.__exit__ = MagicMock(return_value=False)
-
     started_threads: list = []
     original_thread_init = threading.Thread.__init__
 
@@ -143,7 +139,7 @@ def test_emit_spawns_threads(monkeypatch):
         started_threads.append(self)
 
     with (
-        patch("urllib.request.urlopen", return_value=mock_urlopen),
+        patch("server.services.webhook._post", return_value=200),
         patch.object(threading.Thread, "__init__", tracking_init),
     ):
         svc.emit("on_danmu", {"text": "hello"})

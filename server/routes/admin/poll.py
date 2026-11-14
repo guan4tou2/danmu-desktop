@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 import magic
-from flask import current_app, request, send_from_directory
+from flask import current_app, g, request, send_from_directory
 
 from ...services.poll import poll_service
 from ...services.security import rate_limit
@@ -31,6 +31,12 @@ _POLL_IMG_EXT_BY_MIME = {
 }
 # uuid4 hex slice = 8 chars; q_id has prefix `q_` then 8 chars; poll_id is bare
 # 8 hex chars. Allow either by restricting to the safe set we generate.
+_POLL_MEDIA_MIME_BY_EXT = {
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+    "webp": "image/webp",
+}
 _POLL_ID_RE = re.compile(r"^[a-f0-9]{8}$")
 _QUESTION_ID_RE = re.compile(r"^q_[a-f0-9]{8}$")
 
@@ -263,13 +269,21 @@ def _safe_send_poll_media(rel_path: str):
         target.relative_to(POLL_MEDIA_DIR.resolve())
     except (ValueError, RuntimeError):
         return _json_response({"error": "Not found"}, 404)
-    if not target.is_file():
+    # Only the image types the upload endpoint writes are served. Anything
+    # else under runtime/polls/ is not poll media, whatever put it there.
+    mimetype = _POLL_MEDIA_MIME_BY_EXT.get(target.suffix.lstrip(".").lower())
+    if mimetype is None or not target.is_file():
         return _json_response({"error": "Not found"}, 404)
 
     response = send_from_directory(
         POLL_MEDIA_DIR.resolve(),
         rel_path,
         max_age=3600,
+        mimetype=mimetype,
     )
     response.headers["Cache-Control"] = "public, max-age=3600"
+    # Public, same-origin bytes: make sure a browser never treats them as a
+    # document (the app-wide after_request picks this CSP up via g).
+    g.csp_override = "default-src 'none'; img-src 'self'; sandbox"
+    response.headers["X-Content-Type-Options"] = "nosniff"
     return response

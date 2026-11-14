@@ -4,19 +4,21 @@ Webhook 整合服務
 支援 outbound webhooks（事件 -> HTTP POST）與 inbound 簽名驗證。
 格式：json / discord / slack
 持久化：webhooks.json
-執行緒安全，使用 urllib.request（無額外依賴）。
+執行緒安全，使用標準函式庫的 http.client（無額外依賴）。
 """
 
 import hashlib
 import hmac
+import http.client
 import ipaddress
 import json
 import logging
+import os
+import socket
+import ssl
 import threading
 import time
-import urllib.error
 import urllib.parse
-import urllib.request
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -211,40 +213,178 @@ class WebhookConfig:
         )
 
 
-# ── 出站 URL 的安全檢查（2026-09-08）────────────────────────────────────────
+# ── 出站 URL 的安全檢查（2026-09-08，2026-11-14 改為檢查解析結果）───────────
 #
 # webhook 的 URL 由管理員填，而伺服器會照著它發請求——典型的 SSRF 面。
-# 這裡**刻意只擋 link-local**，不擋私有網段：
+# 這裡**刻意只擋 link-local 與雲端 metadata**，不擋私有網段與 localhost：
 #
 #   * `169.254.0.0/16` 與 `fe80::/10` 裡最有價值的是 `169.254.169.254`
 #     （AWS/GCP/Azure/Oracle 的 instance metadata），從 webhook 的角度永遠
-#     不是合法目標。正式環境就跑在 VPS 上，這條是有意義的。
-#   * **私有網段（192.168/10/172.16）刻意放行**：這是自架軟體，「把彈幕轉發到
-#     區網裡的一台服務」是真實且常見的用法，擋掉會弄壞正常情境。
+#     不是合法目標。另外兩個不在 link-local 的 metadata 位址一併擋掉。
+#   * **私有網段（192.168/10/172.16）與 localhost 刻意放行**：這是自架軟體，
+#     「把彈幕轉發到同機或區網裡的一台服務」是真實且常見的用法。
 #
-# 這不是「防住有惡意的管理員」——管理員本來就能上傳 .py 擴充（設計上的 RCE）。
-# 這是防呆與防禦縱深：擋掉一個誤填或被社交工程騙出去的 metadata 位址。
+# 判斷的對象是**主機解析出來的每一個位址**，不是 URL 字面：IPv4 有八進位、
+# 十六進位、整數等寫法，網域名稱也可以指向任何位址。連線時直接連到檢查過的
+# 那幾個位址（不再解析第二次），也不跟隨轉址——轉址的目的地沒經過檢查。
+# 儲存時（register / update）與每次送出前都檢查。
 _BLOCKED_URL_REASON = "URL 指向 link-local 位址（例如雲端 metadata），不允許"
+
+# Cloud metadata endpoints outside link-local space: AWS IMDS over IPv6, and
+# Alibaba Cloud.
+_METADATA_NETWORKS = (
+    ipaddress.ip_network("fd00:ec2::254/128"),
+    ipaddress.ip_network("100.100.100.200/32"),
+)
+# Well-known NAT64 prefix: 64:ff9b::a9fe:a9fe reaches 169.254.169.254.
+_NAT64_NETWORK = ipaddress.ip_network("64:ff9b::/96")
+
+
+class _ResolveError(ValueError):
+    """The host did not resolve; distinct from a destination being refused."""
+
+
+def _blocked_address(ip: "ipaddress._BaseAddress") -> bool:
+    if isinstance(ip, ipaddress.IPv6Address):
+        if ip.ipv4_mapped is not None:
+            return _blocked_address(ip.ipv4_mapped)
+        if ip in _NAT64_NETWORK:
+            return _blocked_address(ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF))
+    if ip.is_link_local:
+        return True
+    return any(ip in net for net in _METADATA_NETWORKS)
+
+
+def _literal_address(host: str) -> Optional["ipaddress._BaseAddress"]:
+    """The address a numeric host denotes, including legacy IPv4 forms."""
+    try:
+        return ipaddress.ip_address(host.split("%", 1)[0])
+    except ValueError:
+        pass
+    try:
+        # inet_aton accepts what the resolver accepts: 0251.0376.0251.0376,
+        # 0xa9fea9fe, 2852039166, 169.254.43518 …
+        return ipaddress.IPv4Address(socket.inet_aton(host))
+    except (OSError, ValueError):
+        return None
+
+
+def _resolve(host: str, port: int) -> List[tuple]:
+    """``[(family, sockaddr), …]`` for *host*. Tests replace this."""
+    infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM, proto=socket.IPPROTO_TCP)
+    return [(family, sockaddr) for family, _type, _proto, _name, sockaddr in infos]
+
+
+def _parse_target(url: str) -> tuple:
+    """``(scheme, host, port, request_target)``; ValueError when unusable."""
+    try:
+        parts = urllib.parse.urlsplit(url)
+        port = parts.port
+    except ValueError as exc:  # 畸形 IPv6、非數字的 port
+        raise ValueError("URL 格式無效") from exc
+    scheme = (parts.scheme or "").lower()
+    if scheme not in ("http", "https"):
+        raise ValueError("URL 只接受 http 或 https")
+    host = parts.hostname or ""
+    if not host:
+        raise ValueError("URL 缺少主機名稱")
+    port = port or (443 if scheme == "https" else 80)
+    target = (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
+    return scheme, host, port, target
+
+
+def _check_destination(url: str) -> tuple:
+    """Resolve *url*'s host and refuse it if any address is blocked.
+
+    Returns ``(scheme, host, port, request_target, addrs)``; the caller
+    connects only to ``addrs``. Raises ValueError (``_ResolveError`` when the
+    name does not resolve).
+    """
+    scheme, host, port, target = _parse_target(url)
+    literal = _literal_address(host)
+    if literal is not None and _blocked_address(literal):
+        raise ValueError(_BLOCKED_URL_REASON)
+    try:
+        addrs = _resolve(host, port)
+    except (OSError, UnicodeError) as exc:
+        raise _ResolveError(f"無法解析主機：{host}") from exc
+    if not addrs:
+        raise _ResolveError(f"無法解析主機：{host}")
+    for _family, sockaddr in addrs:
+        try:
+            ip = ipaddress.ip_address(str(sockaddr[0]).split("%", 1)[0])
+        except ValueError as exc:
+            raise ValueError(_BLOCKED_URL_REASON) from exc
+        if _blocked_address(ip):
+            raise ValueError(_BLOCKED_URL_REASON)
+    return scheme, host, port, target, addrs
 
 
 def _reject_link_local(url: str) -> None:
-    """Raise ValueError if *url* points at a link-local address.
+    """Save-time check (register / update).
 
-    只看字面的 host：不做 DNS 解析。解析了也擋不住 DNS rebinding（發請求時
-    會再解析一次），徒增一次同步查詢與一個掛住的可能。字面檢查擋的是誤填。
+    A host that does not resolve right now is accepted — the service it
+    names may simply not be up yet — because every delivery checks again.
     """
     try:
-        host = urllib.parse.urlparse(url).hostname or ""
-    except ValueError as exc:  # urlparse 對畸形 IPv6 會丟這個
-        raise ValueError("URL 格式無效") from exc
-    if not host:
-        raise ValueError("URL 缺少主機名稱")
+        _check_destination(url)
+    except _ResolveError as exc:
+        logger.info("webhook URL host does not resolve yet: %s", exc)
+
+
+def _connect_any(addrs: List[tuple], timeout: float) -> socket.socket:
+    """Open a TCP connection to the first reachable checked address."""
+    last_exc: Optional[OSError] = None
+    for family, sockaddr in addrs:
+        sock = socket.socket(family, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        try:
+            sock.connect(sockaddr)
+            return sock
+        except OSError as exc:
+            sock.close()
+            last_exc = exc
+    raise last_exc or OSError("no address to connect to")
+
+
+class _PinnedHTTPConnection(http.client.HTTPConnection):
+    """HTTP connection to pre-checked addresses; Host header stays the name."""
+
+    def __init__(self, host: str, port: int, addrs: List[tuple], timeout: float):
+        super().__init__(host, port, timeout=timeout)
+        self._pinned = addrs
+
+    def connect(self) -> None:
+        self.sock = _connect_any(self._pinned, self.timeout)
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """Like _PinnedHTTPConnection; TLS still verifies the URL's host name."""
+
+    def __init__(self, host: str, port: int, addrs: List[tuple], timeout: float):
+        super().__init__(host, port, timeout=timeout, context=ssl.create_default_context())
+        self._pinned = addrs
+
+    def connect(self) -> None:
+        sock = _connect_any(self._pinned, self.timeout)
+        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+
+
+def _post(url: str, body: bytes, headers: Dict[str, str], timeout: float) -> int:
+    """POST once to a checked destination; return the HTTP status.
+
+    Redirects are not followed: a 3xx is returned like any other status.
+    """
+    scheme, host, port, target, addrs = _check_destination(url)
+    conn_cls = _PinnedHTTPSConnection if scheme == "https" else _PinnedHTTPConnection
+    conn = conn_cls(host, port, addrs, timeout)
     try:
-        ip = ipaddress.ip_address(host.strip("[]"))
-    except ValueError:
-        return  # 是網域名稱，不是字面 IP —— 放行
-    if ip.is_link_local:
-        raise ValueError(_BLOCKED_URL_REASON)
+        conn.request("POST", target, body=body, headers=headers)
+        resp = conn.getresponse()
+        resp.read(64 * 1024)  # drain a little so the connection closes cleanly
+        return resp.status
+    finally:
+        conn.close()
 
 
 class WebhookService:
@@ -382,7 +522,11 @@ class WebhookService:
         try:
             data = [h.to_dict() for h in self._hooks.values()]
             tmp = _WEBHOOKS_FILE.with_suffix(".tmp")
-            tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+            # Owner-only: the file holds signing secrets and webhook URLs.
+            fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(json.dumps(data, indent=2, ensure_ascii=False))
+            os.chmod(tmp, 0o600)
             tmp.replace(_WEBHOOKS_FILE)
         except Exception:
             logger.exception("Failed to save webhooks to %s", _WEBHOOKS_FILE)
@@ -537,26 +681,33 @@ class WebhookService:
         attempts = hook.retry_count + 1 if max_attempts is None else max(1, max_attempts)
         started = time.time()
 
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "DanmuDesktop-Webhook/1.0",
+        }
+        if signature:
+            headers["X-Webhook-Signature"] = signature
+
         for attempt in range(attempts):
             if attempt > 0:
                 backoff = 2 ** (attempt - 1)  # 1s, 2s, 4s, ...
                 time.sleep(backoff)
 
             try:
-                req = urllib.request.Request(
-                    hook.url,
-                    data=payload_bytes,
-                    method="POST",
-                    headers={
-                        "Content-Type": "application/json",
-                        "User-Agent": "DanmuDesktop-Webhook/1.0",
-                    },
-                )
-                if signature:
-                    req.add_header("X-Webhook-Signature", signature)
-
-                with urllib.request.urlopen(req, timeout=_REQUEST_TIMEOUT) as resp:
-                    status = resp.status
+                # Resolves and checks the destination again on every attempt,
+                # then connects only to the checked addresses.
+                status = _post(hook.url, payload_bytes, headers, _REQUEST_TIMEOUT)
+            except _ResolveError as exc:
+                last_exc, last_status = exc, None
+            except ValueError as exc:
+                # Destination refused (or URL unusable): retrying cannot help.
+                last_exc, last_status = exc, None
+                logger.warning("Webhook %s not sent: %s", hook.id, exc)
+                break
+            except Exception as exc:
+                last_exc, last_status = exc, None
+            else:
+                if 200 <= status < 300:
                     self._update_status(hook.id, status, None, ok=True)
                     duration_ms = int((time.time() - started) * 1000)
                     self._log_delivery(
@@ -576,17 +727,17 @@ class WebhookService:
                         attempt + 1,
                     )
                     return  # success
+                last_status = status
+                note = " (redirect not followed)" if 300 <= status < 400 else ""
+                last_exc = RuntimeError(f"HTTP {status}{note}")
 
-            except Exception as exc:
-                last_exc = exc
-                last_status = getattr(exc, "code", None)
-                logger.warning(
-                    "Webhook %s attempt %d/%d failed: %s",
-                    hook.id,
-                    attempt + 1,
-                    attempts,
-                    exc,
-                )
+            logger.warning(
+                "Webhook %s attempt %d/%d failed: %s",
+                hook.id,
+                attempt + 1,
+                attempts,
+                last_exc,
+            )
 
         # all retries exhausted
         error_msg = str(last_exc) if last_exc else "unknown error"

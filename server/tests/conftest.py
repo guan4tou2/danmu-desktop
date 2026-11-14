@@ -40,8 +40,28 @@ def _isolate_settings_store(tmp_path_factory):
     yield
 
 
+def _offline_resolve(host, port):
+    """Webhook DNS stand-in: numeric hosts map to themselves, ``localhost`` to
+    127.0.0.1, every other name to a documentation address (TEST-NET-3)."""
+    literal = webhook_mod._literal_address(host)
+    if literal is None:
+        literal = "127.0.0.1" if host == "localhost" else "203.0.113.10"
+    literal = str(literal)
+    if ":" in literal:
+        return [(socket.AF_INET6, (literal, port, 0, 0))]
+    return [(socket.AF_INET, (literal, port))]
+
+
+def _offline_connect(addrs, timeout):
+    raise ConnectionRefusedError("outbound webhook connections are disabled in tests")
+
+
 @pytest.fixture(autouse=True)
-def _isolate_webhook_store(tmp_path):
+def _isolate_webhook_store(tmp_path, monkeypatch):
+    # Webhook delivery threads must never reach DNS or the network from tests;
+    # tests that exercise delivery replace these two themselves.
+    monkeypatch.setattr(webhook_mod, "_resolve", _offline_resolve)
+    monkeypatch.setattr(webhook_mod, "_connect_any", _offline_connect)
     webhook_mod.WebhookService._instance = None
     original_file = webhook_mod._WEBHOOKS_FILE
     webhook_mod._WEBHOOKS_FILE = tmp_path / "webhooks.json"
@@ -50,6 +70,17 @@ def _isolate_webhook_store(tmp_path):
     finally:
         webhook_mod.WebhookService._instance = None
         webhook_mod._WEBHOOKS_FILE = original_file
+
+
+@pytest.fixture(autouse=True)
+def _plugin_upload_allowed(monkeypatch):
+    """Tests default to the development behaviour of ALLOW_PLUGIN_UPLOAD.
+
+    Its default follows ENV, which python-dotenv may pick up from a ``.env``
+    found above the checkout; pin it so results do not depend on the host.
+    Tests that exercise the switch set it themselves.
+    """
+    monkeypatch.setattr(Config, "ALLOW_PLUGIN_UPLOAD", True)
 
 
 @pytest.fixture(scope="session", autouse=True)

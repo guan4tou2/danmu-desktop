@@ -78,12 +78,29 @@ def _download_response(body, content_type, filename):
     return response
 
 
+# Spreadsheet apps evaluate a cell that starts with one of these as a formula.
+# Danmu text comes from anonymous viewers, so such cells get a leading
+# apostrophe and are shown as text.
+_CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r", "\n")
+
+
+def _csv_safe_cell(value):
+    if isinstance(value, str) and value.startswith(_CSV_FORMULA_PREFIXES):
+        return "'" + value
+    return value
+
+
+def _csv_safe_rows(rows):
+    for row in rows:
+        yield {k: _csv_safe_cell(v) for k, v in row.items()}
+
+
 def _timeline_to_csv(timeline):
     out = io.StringIO()
     fieldnames = ["offset_ms", "text", "color", "size", "speed", "opacity", "isImage"]
     writer = csv.DictWriter(out, fieldnames=fieldnames, extrasaction="ignore")
     writer.writeheader()
-    writer.writerows(timeline["records"])
+    writer.writerows(_csv_safe_rows(timeline["records"]))
     return out.getvalue()
 
 
@@ -383,7 +400,7 @@ def _rows_to_csv(rows, include_pii):
     )
     writer = csv.DictWriter(out, fieldnames=fields, extrasaction="ignore")
     writer.writeheader()
-    writer.writerows(rows)
+    writer.writerows(_csv_safe_rows(rows))
     return out.getvalue()
 
 

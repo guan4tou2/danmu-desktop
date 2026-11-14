@@ -403,7 +403,7 @@ def test_pre_upgrade_token_restored_from_backup_is_ignored(tmp_path, monkeypatch
     new_host.mkdir()
     (old_host / "fire_token.json").write_text(json.dumps(LEGACY_STATE))
     monkeypatch.setattr(backup_svc, "_INCLUDE_DIRS", [("runtime", old_host, "runtime", "*.json")])
-    blob = backup_svc.pack()
+    blob = backup_svc.pack(include_credentials=True)
 
     monkeypatch.setattr(backup_svc, "_INCLUDE_DIRS", [("runtime", new_host, "runtime", "*.json")])
     result = backup_svc.unpack(blob, dry_run=False)
@@ -436,7 +436,7 @@ def test_restoring_a_backup_reloads_the_token_immediately(tmp_path, monkeypatch)
     fire_token.reset_for_tests()
     backed_up = fire_token.regenerate()["token"]
     monkeypatch.setattr(backup_svc, "_INCLUDE_DIRS", [("runtime", old_host, "runtime", "*.json")])
-    blob = backup_svc.pack()
+    blob = backup_svc.pack(include_credentials=True)
 
     # The live server has since rotated to another token (and cached it).
     monkeypatch.setattr(fire_token, "_STATE_FILE", new_host / "fire_token.json")
