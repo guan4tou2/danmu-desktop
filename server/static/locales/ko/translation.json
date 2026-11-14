@@ -772,6 +772,7 @@
   "backupSkipWebhookNoCredentials": "이 Webhook의 URL과 시크릿이 백업에도 이 서버에도 없습니다",
   "backupSkipWebhookInvalid": "이 Webhook의 설정 형식이 올바르지 않아 건너뜁니다",
   "backupSkipCredentialInvalid": "이 서버가 읽을 수 없는 형식이라 현재 파일은 그대로 둡니다",
+  "backupSkipWebhookStoreMismatch": "이 파일은 또 다른 Webhook 목록으로 보이지만 백업에 이미 하나가 있어 건너뜁니다",
   "backupIncludeCredentials": "연결 비밀번호와 토큰 포함",
   "backupCredentialsKept": "이 백업에는 연결 비밀번호와 토큰이 없어 현재 값을 유지합니다",
   "backupMergedHeader": "연결 비밀번호와 토큰 처리:",

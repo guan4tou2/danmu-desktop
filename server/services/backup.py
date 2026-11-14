@@ -44,6 +44,7 @@ import hashlib
 import io
 import json
 import logging
+import os
 import re
 import tarfile
 import time
@@ -139,11 +140,31 @@ def _skip(path: str, code: str, reason: str) -> Dict[str, str]:
     return {"path": path, "code": code, "reason": reason}
 
 
+def _same_file(a: Path, b: Path) -> bool:
+    """Whether *a* and *b* are the same file on this host.
+
+    ``Path.resolve()`` equality misses case-only differences on a
+    case-insensitive filesystem (APFS, NTFS), where ``WS_AUTH.json`` and
+    ``ws_auth.json`` are one file. ``os.path.samefile`` asks the filesystem,
+    so a case variant of a credential store is recognised as that store
+    instead of being written as an ordinary file. When a file does not exist
+    yet, fall back to a case-insensitive comparison of the resolved paths.
+    """
+    try:
+        return os.path.samefile(a, b)
+    except OSError:
+        pass
+    try:
+        ra, rb = str(a.resolve()), str(b.resolve())
+    except (OSError, RuntimeError):
+        return False
+    return os.path.normcase(ra) == os.path.normcase(rb)
+
+
 def _is_admin_password_file(target: Path) -> bool:
     candidates = {config_module._HASH_FILE, config_module._LEGACY_HASH_FILE}
     try:
-        resolved = target.resolve()
-        return any(resolved == Path(c).resolve() for c in candidates)
+        return any(_same_file(target, Path(c)) for c in candidates)
     except OSError:
         return True
 
@@ -202,6 +223,7 @@ CREDENTIALS_OMITTED = "omitted"
 SKIP_WEBHOOK_NO_CREDENTIALS = "webhook_no_credentials"
 SKIP_WEBHOOK_INVALID = "webhook_invalid"
 SKIP_CREDENTIAL_INVALID = "credential_invalid"
+SKIP_WEBHOOK_STORE_MISMATCH = "webhook_store_mismatch"
 
 MERGE_WEBHOOK_UPDATED = "webhook_updated"
 MERGE_WEBHOOK_KEPT = "webhook_kept"
@@ -216,6 +238,12 @@ _CREDENTIAL_ARCS = {
     "webhooks": "runtime/webhooks.json",
 }
 _ARC_KINDS = {arc: kind for kind, arc in _CREDENTIAL_ARCS.items()}
+# Lower-cased store archive names. A member whose name matches one of these
+# case-insensitively but not exactly is a case variant of a credential store:
+# on a case-insensitive filesystem it is that physical file, so writing it as
+# a plain runtime file would overwrite the store and bypass the credential
+# merge. Such members are refused outright, on every filesystem.
+_ARC_KINDS_CASEFOLD = {arc.casefold() for arc in _ARC_KINDS}
 
 
 def _credential_stores() -> Dict[str, Path]:
@@ -230,17 +258,10 @@ def _credential_stores() -> Dict[str, Path]:
 
 
 def _store_kind(path: Path, stores: Dict[str, Path]) -> Optional[str]:
-    """Which credential store *path* is, if any."""
-    try:
-        resolved = path.resolve()
-    except (OSError, RuntimeError):
-        return None
+    """Which credential store *path* is, if any — same-file, not string match."""
     for kind, store in stores.items():
-        try:
-            if store.resolve() == resolved:
-                return kind
-        except (OSError, RuntimeError):
-            continue
+        if _same_file(path, store):
+            return kind
     return None
 
 
@@ -326,15 +347,40 @@ def _strip_webhooks(obj: Any) -> Any:
     return [{**h, "url": "", "secret": ""} for h in obj if isinstance(h, dict)]
 
 
+def _looks_like_webhook_list(obj: Any) -> bool:
+    """Conservatively, whether *obj* is a webhook store's content.
+
+    Used to catch a webhook store that travels under a non-standard name
+    (an older backup, or a leftover of a renamed WEBHOOKS_PATH) so its URLs
+    and secrets are not exported raw or restored as a plain file. Kept
+    strict — every entry must be a dict carrying both ``url`` and ``events``,
+    which other runtime lists (filter_rules, api_tokens) do not — so ordinary
+    runtime JSON is never mistaken for it.
+    """
+    if not isinstance(obj, list) or not obj:
+        return False
+    return all(isinstance(h, dict) and "url" in h and "events" in h for h in obj)
+
+
+def _is_webhook_payload(data: bytes) -> bool:
+    """Whether raw bytes parse as a webhook list (see _looks_like_webhook_list)."""
+    try:
+        return _looks_like_webhook_list(json.loads(data.decode("utf-8")))
+    except (ValueError, UnicodeDecodeError):
+        return False
+
+
 def _note(path: str, code: str, reason: str) -> Dict[str, str]:
     return {"path": path, "code": code, "reason": reason}
 
 
-# Each merge takes the backup's content and what the target's service makes
-# of its own store now, and returns (merged, skipped, notes). It merges when
-# the backup says credentials were omitted OR the file's credential fields
-# are empty — whatever the manifest claims, a restore never blanks a
-# credential the target has.
+# Each merge takes the backup's content and the service's live state (the
+# state it enforces now, not whatever happens to be on disk), and returns
+# (merged, skipped, notes). A backup that actually carries a credential is
+# authoritative for that store; a credential-free backup — the manifest says
+# omitted, or the credential fields are empty — keeps what the target already
+# has. Either way a credential the target holds is never blanked just because
+# the backup does not carry it.
 
 
 def _merge_fire_token(incoming: Any, current: Optional[Dict[str, Any]], path: str, omitted: bool):
@@ -586,6 +632,35 @@ def _preserve_unreadable(target: Path) -> Optional[Path]:
     return copy
 
 
+def _webhooks_live() -> List[Dict[str, Any]]:
+    """The webhook service's current list (unredacted), under its lock."""
+    from . import webhook
+
+    svc = webhook.WebhookService()
+    with svc._lock:
+        return [h.to_dict() for h in svc._hooks.values()]
+
+
+def _live_current(kind: str, disk_current: Any) -> Any:
+    """The merge base: the state the service enforces now, not the file.
+
+    Reading the service's in-memory state (rather than re-reading the file)
+    is what stops a corrupt or stale on-disk copy from tricking a restore into
+    blanking a credential the server is still using, or into silently turning
+    an on switch off. Read-only and non-seeding: safe in a dry-run preview and,
+    for ws_auth, reentrant inside ``replace``. Falls back to the disk view only
+    when the service has nothing loaded, which means the file is also the
+    effective state.
+    """
+    from . import fire_token, ws_auth
+
+    if kind == "fire_token":
+        return dict(fire_token._state) if fire_token._state is not None else disk_current
+    if kind == "ws_auth":
+        return ws_auth._state.current()
+    return _webhooks_live()
+
+
 def _restore_credential(kind: str, incoming: Any, path: str, omitted: bool, target: Path):
     """Merge and write one credential store through its service.
 
@@ -600,15 +675,19 @@ def _restore_credential(kind: str, incoming: Any, path: str, omitted: bool, targ
     result: Dict[str, Any] = {}
 
     def build(live: Optional[List[Dict[str, Any]]] = None):
-        current, unusable = _target_state(kind, target)
-        if live is not None:
-            # The webhook service's list is what it would write back next.
-            current = live
-        merged, skipped, notes = _merge_credential(kind, incoming, current, path, omitted)
+        # Whether the on-disk file must be kept aside is decided from disk; a
+        # corrupt file is copied aside *before* the live state is read, so a
+        # non-seeding read can never overwrite its bytes first.
+        disk_current, unusable = _target_state(kind, target)
         if unusable:
             copy = _preserve_unreadable(target)
             if copy is None:
                 raise _PreserveFailed()
+        # The merge base is the service's live state. For webhooks the service
+        # hands its own list in as ``live``; the others read it here.
+        current = live if live is not None else _live_current(kind, disk_current)
+        merged, skipped, notes = _merge_credential(kind, incoming, current, path, omitted)
+        if unusable:
             notes.append(_note(path, MERGE_UNREADABLE_KEPT, f"unreadable file kept as {copy.name}"))
         result["skipped"], result["notes"] = skipped, notes
         return merged
@@ -626,6 +705,13 @@ def _restore_credential(kind: str, incoming: Any, path: str, omitted: bool, targ
 # restore has written it: archive path → reload callable. Credential stores
 # are not listed — their services swap in the restored state themselves, in
 # the same locked step as the write (_restore_credential).
+#
+# Currently empty: every other restored runtime file is read fresh on each
+# request, so it takes effect without a reload (see DEPLOYMENT.md for the ones
+# that still need a restart). The filter-rules reload
+# ("runtime/filter_rules.json" → the filter engine) is being added on a
+# separate branch and plugs in here; the table and the apply-phase loop below
+# stay so that lands as a one-line addition.
 _RELOAD_AFTER_RESTORE: Dict[str, Callable[[], None]] = {}
 
 
@@ -671,6 +757,19 @@ def pack(
                     logger.warning("backup pack skip unreadable %s: %s", f, exc)
                     continue
                 data = json.dumps(stripped, ensure_ascii=False, indent=2).encode("utf-8")
+            elif kind is None and area.label == "runtime" and not include_credentials:
+                # A runtime file that is not a recognised store but holds a
+                # webhook list (an older backup's name, or a leftover from a
+                # renamed WEBHOOKS_PATH) would otherwise carry its URLs and
+                # secrets out raw. Strip it by content, not by its name.
+                try:
+                    parsed = json.loads(data.decode("utf-8"))
+                except (ValueError, UnicodeDecodeError):
+                    parsed = None
+                if _looks_like_webhook_list(parsed):
+                    data = json.dumps(_strip_webhooks(parsed), ensure_ascii=False, indent=2).encode(
+                        "utf-8"
+                    )
             _add_member(tar, arc_name, data, mtime)
             included.append(
                 {
@@ -788,6 +887,29 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
 
     code_allowed = code_policy.code_upload_allowed()
 
+    # A webhook list can travel under a non-store name (an older backup, or a
+    # leftover of a renamed WEBHOOKS_PATH). At most one such stray may stand in
+    # for the webhook store, and only when the archive has no real one — the
+    # canonical name, or a member that resolves to this server's webhook store.
+    stray_webhooks_used = False
+    webhooks_store_present = _CREDENTIAL_ARCS["webhooks"] in names
+    if not webhooks_store_present:
+        for m in members:
+            if not m.isfile() or m.issym() or m.islnk():
+                continue
+            acc, _ = _check_member(m.name)
+            if acc is None:
+                continue
+            a, t = acc
+            if (
+                a.label == "runtime"
+                and _ARC_KINDS.get(m.name) is None
+                and m.name.casefold() not in _ARC_KINDS_CASEFOLD
+                and _store_kind(t, stores) == "webhooks"
+            ):
+                webhooks_store_present = True
+                break
+
     # Walk members + collect safe vs skipped lists.
     # (member name, target, data, credential kind, parsed credential content)
     safe_writes: List[tuple] = []
@@ -811,22 +933,6 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
             )
             continue
 
-        kind = None
-        if area.label == "runtime":
-            kind = _ARC_KINDS.get(m.name)
-            if kind is None:
-                # A file that lands on one of this server's stores under
-                # another name (an older backup of a renamed store) is that
-                # store — unless the archive carries the store as well.
-                kind = _store_kind(target, stores)
-                if kind is not None and _CREDENTIAL_ARCS[kind] in names:
-                    out["skipped"].append(
-                        _skip(m.name, SKIP_NOT_BACKUP_FILE, "duplicate of a credential store")
-                    )
-                    continue
-            if kind is not None:
-                target = stores[kind]
-
         try:
             stream = tar.extractfile(m)
             if stream is None:
@@ -837,6 +943,49 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
             out["skipped"].append(_skip(m.name, SKIP_READ_FAILED, f"read failed: {exc}"))
             continue
 
+        kind = None
+        if area.label == "runtime":
+            kind = _ARC_KINDS.get(m.name)
+            if kind is None:
+                if m.name.casefold() in _ARC_KINDS_CASEFOLD:
+                    # Same name as a credential store but for case: never a
+                    # plain file (see _ARC_KINDS_CASEFOLD).
+                    out["skipped"].append(
+                        _skip(
+                            m.name,
+                            SKIP_NOT_BACKUP_FILE,
+                            "credential store name differs only by case",
+                        )
+                    )
+                    continue
+                # A file that lands on one of this server's stores under
+                # another name (an older backup of a renamed store) is that
+                # store — unless the archive carries the store as well.
+                kind = _store_kind(target, stores)
+                if kind is not None and _CREDENTIAL_ARCS[kind] in names:
+                    out["skipped"].append(
+                        _skip(m.name, SKIP_NOT_BACKUP_FILE, "duplicate of a credential store")
+                    )
+                    continue
+                if kind is None and _is_webhook_payload(data):
+                    # A webhook list under a non-store name: route it to the
+                    # webhook store so its URLs and secrets go through the
+                    # service, never written raw as a plain file. Only when no
+                    # real webhook store is in the archive, and only once.
+                    if webhooks_store_present or stray_webhooks_used:
+                        out["skipped"].append(
+                            _skip(
+                                m.name,
+                                SKIP_WEBHOOK_STORE_MISMATCH,
+                                "webhook-shaped file but the backup already has a webhook store",
+                            )
+                        )
+                        continue
+                    kind = "webhooks"
+                    stray_webhooks_used = True
+            if kind is not None:
+                target = stores[kind]
+
         incoming = None
         if kind is not None:
             try:
@@ -844,9 +993,11 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
             except (ValueError, UnicodeDecodeError) as exc:
                 out["skipped"].append(_skip(m.name, SKIP_READ_FAILED, f"read failed: {exc}"))
                 continue
-            # Preview of the merge against the target as it is now. The
-            # apply step merges again under the service's lock.
-            current, unusable = _target_state(kind, target)
+            # Preview of the merge against the live state (what the service
+            # enforces now). The apply step merges again under the service's
+            # lock; the unusable flag still comes from disk.
+            disk_current, unusable = _target_state(kind, target)
+            current = _live_current(kind, disk_current)
             try:
                 _, dropped, notes = _merge_credential(
                     kind, incoming, current, m.name, credentials_omitted

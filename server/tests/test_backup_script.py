@@ -127,6 +127,20 @@ def test_output_inside_an_archived_directory_does_not_include_itself(checkout, r
     assert not list((checkout / "server" / "runtime").glob(".danmu-backup.*"))
 
 
+def test_output_name_with_glob_characters_still_excludes_itself(checkout):
+    """tar reads --exclude as a glob, so an output name with glob characters
+    (snap[1].tgz) must be escaped or it would fail to match itself and the
+    archive would contain an earlier copy of the same name."""
+    out = checkout / "server" / "runtime" / "snap[1].tgz"
+    out.write_bytes(b"an earlier archive with the same name")
+    _run(checkout, "server/runtime/snap[1].tgz")
+    names = _names(out)
+    assert "server/runtime/settings.json" in names
+    assert "server/runtime/snap[1].tgz" not in names
+    assert not [n for n in names if ".danmu-backup." in n]
+    assert not list((checkout / "server" / "runtime").glob(".danmu-backup.*"))
+
+
 def test_output_path_that_is_a_directory_is_refused(checkout):
     target = checkout / "backups"
     target.mkdir()

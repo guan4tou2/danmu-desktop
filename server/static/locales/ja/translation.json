@@ -772,6 +772,7 @@
   "backupSkipWebhookNoCredentials": "この Webhook の URL とシークレットはバックアップにもこのサーバーにもありません",
   "backupSkipWebhookInvalid": "この Webhook の設定形式が正しくないため、スキップしました",
   "backupSkipCredentialInvalid": "このサーバーで読み込めない形式のため、現在のファイルはそのままです",
+  "backupSkipWebhookStoreMismatch": "このファイルは別の Webhook 一覧のようですが、バックアップに既に 1 つあるためスキップしました",
   "backupIncludeCredentials": "接続パスワードとトークンを含める",
   "backupCredentialsKept": "このバックアップには接続パスワードとトークンがないため、現在の値を保持します",
   "backupMergedHeader": "接続パスワードとトークンの扱い：",

@@ -777,6 +777,7 @@
   "backupSkipWebhookNoCredentials": "這個 Webhook 的網址與密鑰不在備份裡，目前站台也沒有",
   "backupSkipWebhookInvalid": "這個 Webhook 的設定格式不對，略過",
   "backupSkipCredentialInvalid": "內容不是這台伺服器能讀的格式，目前的檔案不變",
+  "backupSkipWebhookStoreMismatch": "這個檔案像是另一份 Webhook 清單，但備份已經有一份了，略過",
   "backupIncludeCredentials": "包含連線密碼與 token",
   "backupCredentialsKept": "這份備份不含連線密碼與 token，還原時保留目前的值",
   "backupMergedHeader": "連線密碼與 token 的處理：",

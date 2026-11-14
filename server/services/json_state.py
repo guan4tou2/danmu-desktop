@@ -156,6 +156,22 @@ class JsonState:
                 self._cache = self._load()
             return copy.deepcopy(self._cache)
 
+    def current(self) -> Dict[str, Any]:
+        """Live state as a deepcopy, read-only — never seeds the file.
+
+        Like ``get``, but when the state has not been loaded yet it reads the
+        file (or falls back to the default) *without* persisting, and without
+        caching. ``get`` writes the default on first load when
+        ``eager_persist_default`` is set; a backup preview must not touch the
+        disk, and a restore must not overwrite a corrupt file before it has
+        been copied aside. Reentrant, so a caller already holding the lock
+        (inside ``replace``) can use it to read the effective live state.
+        """
+        with self._lock:
+            if self._cache is not None:
+                return copy.deepcopy(self._cache)
+            return copy.deepcopy(self._load(persist=False))
+
     def reload(self) -> None:
         """Forget the cached state so the next ``get()`` reads the file again.
 
@@ -217,7 +233,7 @@ class JsonState:
 
     # ── internals ───────────────────────────────────────────────────
 
-    def _load(self) -> Dict[str, Any]:
+    def _load(self, persist: bool = True) -> Dict[str, Any]:
         used_default = False
         unreadable = False
         if not self._path.exists():
@@ -252,7 +268,7 @@ class JsonState:
         if unreadable and self._keep_unreadable_file:
             # Leave the original where it is; only an explicit update() replaces it.
             return state
-        if used_default and self._eager_persist_default:
+        if persist and used_default and self._eager_persist_default:
             try:
                 self._atomic_write(state)
                 logger.info("json_state: seeded %s", self._path)
@@ -293,9 +309,17 @@ class JsonState:
         return target
 
     def _atomic_write(self, state: Dict[str, Any]) -> None:
-        """Atomic replace through a fresh temp file (see atomic_file)."""
+        """Atomic replace through a fresh temp file (see atomic_file).
+
+        Secure files are forced to 0o600. Ordinary files keep the pre-helper
+        behaviour: created under the umask, never chmod'd (so a chmod the
+        filesystem refuses never fails the write).
+        """
         data = json.dumps(state, ensure_ascii=False, indent=2).encode("utf-8")
-        write_atomic(self._path, data, 0o600 if self._secure else 0o644)
+        if self._secure:
+            write_atomic(self._path, data, 0o600)
+        else:
+            write_atomic(self._path, data, 0o644, exact_mode=False)
 
     def _log_write_failure_once(self, exc: Exception) -> None:
         """One-shot warn on unwritable runtime dir; subsequent failures go DEBUG.

@@ -1,23 +1,53 @@
-"""Atomic file replace with an exact mode, for files that may hold secrets.
+"""Atomic file replace, for files that may hold secrets.
 
 The temp file is always newly created (``O_EXCL``) under a unique dotfile
-name next to the target, and gets its final mode before any data is
-written. A temp file left behind by an interrupted write is never reused,
-so its permissions cannot leak into the new content. After the rename the
-directory is synced too, so the new name survives a crash.
+name next to the target. A temp file left behind by an interrupted write is
+never reused, so its permissions cannot leak into the new content.
+
+``exact_mode`` controls whether the final file is forced to *mode* with
+fchmod (for secret files) or just created under the umask like an ordinary
+write. ``durable`` controls whether the data and the rename are fsync'd;
+callers writing high-frequency, losable updates can turn it off, either with
+the ``durable=False`` argument or, when they reach ``write_atomic`` through a
+wrapper that cannot forward the flag, by running inside ``fsync_suppressed()``.
 """
 
 from __future__ import annotations
 
+import contextlib
 import errno
 import logging
 import os
 import secrets
 import threading
 from pathlib import Path
-from typing import Union
+from typing import Iterator, Union
 
 logger = logging.getLogger(__name__)
+
+# Per-thread fsync suppression. The webhook delivery path reaches write_atomic
+# through WebhookService._write_hooks, which tests may replace with a stub that
+# only accepts ``(path, data, mode)``; it therefore cannot pass ``durable``
+# along. Wrapping the losable status write in ``fsync_suppressed()`` turns the
+# fsync off for that thread without changing the call. Thread-local because a
+# gevent worker must not silence another thread's durable write.
+_fsync_suppressed = threading.local()
+
+
+@contextlib.contextmanager
+def fsync_suppressed() -> Iterator[None]:
+    """Skip the fsync of any write_atomic on this thread for the block.
+
+    For high-frequency, losable writes (a webhook's last-delivery status) that
+    go through a wrapper unable to forward ``durable=False``.
+    """
+    previous = getattr(_fsync_suppressed, "active", False)
+    _fsync_suppressed.active = True
+    try:
+        yield
+    finally:
+        _fsync_suppressed.active = previous
+
 
 # Filesystems without POSIX permissions (some network and Windows mounts)
 # refuse chmod. os.open has already created the file with at most *mode*
@@ -42,8 +72,28 @@ def _fsync_dir(directory: Path) -> None:
         os.close(fd)
 
 
-def write_atomic(path: Union[str, Path], data: bytes, mode: int = 0o600) -> None:
-    """Write *data* to *path* via a fresh temp file, then rename over it."""
+def write_atomic(
+    path: Union[str, Path],
+    data: bytes,
+    mode: int = 0o600,
+    *,
+    exact_mode: bool = True,
+    durable: bool = True,
+) -> None:
+    """Write *data* to *path* via a fresh temp file, then rename over it.
+
+    exact_mode:
+        True (default) forces the file to *mode* with fchmod, for files that
+        hold secrets. False lets the umask apply to *mode* like an ordinary
+        write and never chmods — matching how non-secret state files behaved
+        before they moved onto this helper.
+    durable:
+        True (default) fsyncs the data and the directory so the new content
+        survives a crash. False — or running inside ``fsync_suppressed()`` —
+        skips both fsyncs for high-frequency updates that can be lost without
+        harm (a webhook's last-delivery status).
+    """
+    durable = durable and not getattr(_fsync_suppressed, "active", False)
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_name(
@@ -54,7 +104,7 @@ def write_atomic(path: Union[str, Path], data: bytes, mode: int = 0o600) -> None
         # Exact mode before the content arrives (os.open's mode is masked
         # by the umask; fchmod is not).
         fchmod = getattr(os, "fchmod", None)
-        if fchmod is not None:
+        if exact_mode and fchmod is not None:
             try:
                 fchmod(fd, mode)
             except OSError as exc:
@@ -65,7 +115,8 @@ def write_atomic(path: Union[str, Path], data: bytes, mode: int = 0o600) -> None
             fd = -1
             f.write(data)
             f.flush()
-            os.fsync(f.fileno())
+            if durable:
+                os.fsync(f.fileno())
         os.replace(tmp, target)
     except BaseException:
         if fd != -1:
@@ -75,4 +126,5 @@ def write_atomic(path: Union[str, Path], data: bytes, mode: int = 0o600) -> None
         except OSError:
             pass
         raise
-    _fsync_dir(target.parent)
+    if durable:
+        _fsync_dir(target.parent)

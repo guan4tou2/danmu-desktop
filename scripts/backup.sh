@@ -108,6 +108,19 @@ TMP_OUT="$(umask 077 && mktemp "$(dirname "$OUT")/.danmu-backup.XXXXXX")"
 trap 'rm -f "$TMP_OUT"' EXIT
 chmod 600 "$TMP_OUT"
 
+# tar reads an --exclude pattern as a glob, so a name with glob characters
+# (d[1].tgz, a*.tgz) would match the wrong files — or not the archive itself.
+# Escape *, ?, [, ] and backslash so the pattern matches the literal name.
+_glob_escape() {
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//\*/\\*}"
+  s="${s//\?/\\?}"
+  s="${s//\[/\\[}"
+  s="${s//\]/\\]}"
+  printf '%s' "$s"
+}
+
 # When OUT sits inside a directory being archived (server/runtime/ say), the
 # archive must not contain itself, an earlier archive of the same name, or
 # the temp file it is being written to.
@@ -118,8 +131,8 @@ if [[ "$OUT_DIR_REAL/" == "$ROOT_REAL/"* ]]; then
   OUT_REL="${OUT_DIR_REAL#"$ROOT_REAL"}"
   OUT_REL="${OUT_REL#/}"
   OUT_REL="${OUT_REL:+$OUT_REL/}"
-  EXCLUDES+=("--exclude=${OUT_REL}$(basename "$OUT")")
-  EXCLUDES+=("--exclude=${OUT_REL}$(basename "$TMP_OUT")")
+  EXCLUDES+=("--exclude=$(_glob_escape "${OUT_REL}$(basename "$OUT")")")
+  EXCLUDES+=("--exclude=$(_glob_escape "${OUT_REL}$(basename "$TMP_OUT")")")
 fi
 tar -czf "$TMP_OUT" ${EXCLUDES[@]+"${EXCLUDES[@]}"} "${EXIST_PATHS[@]}"
 mv -f "$TMP_OUT" "$OUT"

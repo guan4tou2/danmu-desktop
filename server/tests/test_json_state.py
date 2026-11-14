@@ -8,6 +8,7 @@ security_settings / ratelimit_ip remain in their own test files.
 from __future__ import annotations
 
 import json
+import os
 import stat as stat_mod
 from pathlib import Path
 
@@ -182,6 +183,67 @@ def test_secure_false_writes_with_default_perms(tmp_path):
     # Under a very restrictive umask (0o077) even secure=False lands at 0o600,
     # so only assert secure=False did NOT force 0o600 via chmod call.
     assert mode & 0o200  # owner-write bit set (basic sanity)
+
+
+def test_nonsecure_file_follows_the_umask(tmp_path):
+    """A non-secret state file keeps the 5.8.0 behaviour: created under the
+    umask, never forced. 0o644 under umask 0o022 → 0o644."""
+    js = _make(tmp_path, secure=False)
+    old = os.umask(0o022)
+    try:
+        js.update({"count": 1})
+    finally:
+        os.umask(old)
+    assert stat_mod.S_IMODE(js.path.stat().st_mode) == 0o644
+
+
+def test_secure_file_is_forced_owner_only_despite_a_loose_umask(tmp_path):
+    js = _make(tmp_path, secure=True)
+    old = os.umask(0o022)
+    try:
+        js.update({"count": 1})
+    finally:
+        os.umask(old)
+    assert stat_mod.S_IMODE(js.path.stat().st_mode) == 0o600
+
+
+def test_nonsecure_write_never_chmods_so_a_refused_chmod_cannot_fail_it(tmp_path, monkeypatch):
+    import server.services.atomic_file as af
+
+    def boom(fd, mode):
+        raise OSError("chmod refused by this filesystem")
+
+    monkeypatch.setattr(af.os, "fchmod", boom)
+    js = _make(tmp_path, secure=False)
+    js.update({"count": 2})  # must not raise — exact_mode=False skips fchmod
+    assert js.get()["count"] == 2
+
+
+def test_current_reads_live_state_without_seeding_a_missing_file(tmp_path):
+    """current() is a read-only get(): even with eager_persist_default it
+    returns the default without writing, so a preview has no disk side effect."""
+    js = JsonState(
+        "test.json",
+        default=lambda: {"count": 7, "items": []},
+        normalize=lambda raw: raw,
+        eager_persist_default=True,
+    )
+    js.reset_for_tests(tmp_path / "live.json")
+    assert js.current() == {"count": 7, "items": []}
+    assert not js.path.exists()  # current() wrote nothing
+
+
+def test_current_does_not_overwrite_a_corrupt_file(tmp_path):
+    js = JsonState(
+        "test.json",
+        default=lambda: {"count": 9, "items": []},
+        normalize=lambda raw: raw if isinstance(raw, dict) else (_ for _ in ()).throw(ValueError()),
+        eager_persist_default=True,
+    )
+    js.reset_for_tests(tmp_path / "corrupt.json")
+    js.path.write_text("{not json", encoding="utf-8")
+    assert js.current() == {"count": 9, "items": []}  # falls back to default
+    assert js.path.read_text(encoding="utf-8") == "{not json"  # file untouched
 
 
 # ---------------------------------------------------------------------------

@@ -25,6 +25,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from server.config import Config
 
+from . import atomic_file
 from .atomic_file import write_atomic
 
 logger = logging.getLogger(__name__)
@@ -221,7 +222,13 @@ def _load_entry(entry: Any) -> WebhookConfig:
     for key in ("id", "url", "secret"):
         if entry.get(key) is not None and not isinstance(entry.get(key), str):
             raise TypeError(f"webhook {key} must be a string")
-    return WebhookConfig.from_dict(entry)
+    try:
+        return WebhookConfig.from_dict(entry)
+    except OverflowError as exc:
+        # A non-finite count (e.g. 1e999 from a hand-edited file) cannot be
+        # made an int; treat the entry as unusable rather than letting it
+        # abort the whole load.
+        raise ValueError(f"webhook field out of range: {exc}") from exc
 
 
 # ── 出站 URL 的安全檢查（2026-09-08，2026-11-14 改為檢查解析結果）───────────
@@ -242,8 +249,6 @@ def _load_entry(entry: Any) -> WebhookConfig:
 _LINK_LOCAL_REASON = "URL 指向 link-local 位址，不允許"
 _METADATA_REASON = "URL 指向雲端 metadata 位址，不允許"
 _UNKNOWN_ADDRESS_REASON = "主機解析出無法辨識的位址，不允許"
-# Kept for callers that only need "refused".
-_BLOCKED_URL_REASON = _LINK_LOCAL_REASON
 
 # Cloud metadata endpoints outside link-local space: AWS, Oracle Cloud and
 # Google Compute Engine over IPv6, and Alibaba Cloud. Other private (ULA)
@@ -254,9 +259,17 @@ _METADATA_NETWORKS = (
     ipaddress.ip_network("fd20:ce::254/128"),  # Google Compute Engine
     ipaddress.ip_network("100.100.100.200/32"),  # Alibaba Cloud
 )
-# Address forms whose low 32 bits stand for an IPv4 destination.
-_NAT64_NETWORK = ipaddress.ip_network("64:ff9b::/96")
-_IPV4_COMPATIBLE_NETWORK = ipaddress.ip_network("::/96")
+# Address forms whose low 32 bits stand for an embedded IPv4 destination: the
+# resolver (or a translator) will send the packet to that IPv4 address, so it
+# is checked as IPv4. ``::/96`` (IPv4-compatible) and ``::ffff:0:0/96``
+# (IPv4-mapped / SIIT) both embed in the low 32 bits; the two NAT64 prefixes
+# are the well-known one and the RFC 8215 local range.
+_EMBEDDED_IPV4_NETWORKS = (
+    ipaddress.ip_network("::/96"),
+    ipaddress.ip_network("::ffff:0:0/96"),
+    ipaddress.ip_network("64:ff9b::/96"),
+    ipaddress.ip_network("64:ff9b:1::/48"),
+)
 # Private (ULA) space, where clouds place IPv6 metadata endpoints that end in
 # the link-local IPv4 metadata address. Global unicast addresses are not
 # covered: their low bits are ordinary host bits.
@@ -271,7 +284,7 @@ def _blocked_reason(ip: "ipaddress._BaseAddress") -> Optional[str]:
     """Why *ip* is refused as a webhook destination, or None if it is allowed."""
     if isinstance(ip, ipaddress.IPv6Address):
         embedded = ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
-        if ip.ipv4_mapped is not None or ip in _NAT64_NETWORK or ip in _IPV4_COMPATIBLE_NETWORK:
+        if ip.ipv4_mapped is not None or any(ip in net for net in _EMBEDDED_IPV4_NETWORKS):
             return _blocked_reason(embedded)
         if ip in _ULA_NETWORK and embedded.is_link_local:
             return _METADATA_REASON
@@ -558,7 +571,9 @@ class WebhookService:
             return list(hooks)
 
     def _load(self, strict: bool = False) -> None:
-        """Load webhooks from JSON file (called once at init, under no lock).
+        """Load webhooks from JSON file. Called at init (no lock) and from
+        reload() (under the lock); it only touches ``self._hooks``, which the
+        reload() caller has just reset.
 
         Legacy migration: v4.7.0 moved default to server/runtime/webhooks.json.
         Migration only runs when _WEBHOOKS_FILE is the current default
@@ -608,7 +623,13 @@ class WebhookService:
         logger.info("Loaded %d webhook(s) from %s", len(self._hooks), _WEBHOOKS_FILE)
 
     def _write_hooks(self, hooks: Dict[str, "WebhookConfig"]) -> None:
-        """Write *hooks* to the store; raises on failure. Caller holds the lock."""
+        """Write *hooks* to the store; raises on failure. Caller holds the lock.
+
+        A single ``write_atomic(path, data, mode)`` call. Whether it fsyncs is
+        decided by the caller's thread (see ``_update_status`` and
+        ``atomic_file.fsync_suppressed``), not by an extra argument here, so the
+        call shape stays stable for callers and tests that wrap write_atomic.
+        """
         data = [h.to_dict() for h in hooks.values()]
         # Owner-only: the file holds signing secrets and webhook URLs.
         write_atomic(
@@ -861,7 +882,12 @@ class WebhookService:
         error: Optional[str],
         ok: Optional[bool] = None,
     ) -> None:
-        """Persist last_status / last_error + bump success/fail counters."""
+        """Persist last_status / last_error + bump success/fail counters.
+
+        This runs after every delivery, so it must not fsync on the gevent
+        hub: a lost status counter is harmless. Config changes (register /
+        update / restore) still write durably.
+        """
         with self._lock:
             hook = self._hooks.get(hook_id)
             if hook is None:
@@ -873,7 +899,9 @@ class WebhookService:
                 hook.success_count += 1
             elif ok is False:
                 hook.fail_count += 1
-            self._save()
+            # Losable status write: no fsync on the gevent hub per delivery.
+            with atomic_file.fsync_suppressed():
+                self._save()
 
     # ── Payload formatting ───────────────────────────────────────────────
 

@@ -103,6 +103,44 @@ def test_a_directory_sync_failure_does_not_fail_the_write(tmp_path, monkeypatch)
     assert (tmp_path / "secret.json").read_bytes() == b"x"
 
 
+def test_durable_false_skips_both_fsyncs(tmp_path, monkeypatch):
+    fsyncs = []
+    monkeypatch.setattr(atomic_file.os, "fsync", lambda fd: fsyncs.append(fd))
+    atomic_file.write_atomic(tmp_path / "x.json", b"x", 0o600, durable=False)
+    assert fsyncs == []  # neither the data nor the directory is synced
+    assert (tmp_path / "x.json").read_bytes() == b"x"
+    assert _mode(tmp_path / "x.json") == 0o600  # exact mode still applies
+
+
+def test_fsync_suppressed_context_skips_fsync_without_the_argument(tmp_path, monkeypatch):
+    fsyncs = []
+    monkeypatch.setattr(atomic_file.os, "fsync", lambda fd: fsyncs.append(fd))
+    with atomic_file.fsync_suppressed():
+        atomic_file.write_atomic(tmp_path / "x.json", b"x", 0o600)  # plain 3-arg call
+    assert fsyncs == []
+    # Outside the block the default (durable) behaviour is restored.
+    atomic_file.write_atomic(tmp_path / "y.json", b"y", 0o600)
+    assert fsyncs  # fsync happened for the durable write
+
+
+def test_exact_mode_false_lets_the_umask_apply(tmp_path):
+    old = os.umask(0o022)
+    try:
+        atomic_file.write_atomic(tmp_path / "plain.json", b"{}", 0o644, exact_mode=False)
+    finally:
+        os.umask(old)
+    assert _mode(tmp_path / "plain.json") == 0o644
+
+
+def test_exact_mode_false_never_calls_fchmod(tmp_path, monkeypatch):
+    def boom(fd, mode):
+        raise AssertionError("fchmod must not be called when exact_mode is False")
+
+    monkeypatch.setattr(atomic_file.os, "fchmod", boom)
+    atomic_file.write_atomic(tmp_path / "plain.json", b"{}", 0o644, exact_mode=False)
+    assert (tmp_path / "plain.json").read_bytes() == b"{}"
+
+
 def test_filesystems_without_chmod_still_get_at_most_the_open_mode(tmp_path, monkeypatch):
     import errno
 

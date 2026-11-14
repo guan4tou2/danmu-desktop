@@ -418,9 +418,15 @@ def test_store_is_untouched_when_its_unreadable_copy_cannot_be_made(runtime, mon
         return real(path, data, mode)
 
     monkeypatch.setattr(atomic_file, "write_atomic", no_room_for_copies)
+    # The state container keeps its own copy of an unreadable file the first
+    # time it is read; a full disk fails that copy too.
+    from server.services.json_state import JsonState
+
+    monkeypatch.setattr(JsonState, "_preserve_unreadable_file", lambda self: None)
     blob = _tar({"runtime/ws_auth.json": b'{"require_token": true, "token": "BK"}'}, INCLUDED)
     result = backup_svc.unpack(blob, dry_run=False)
     assert result["errors"] == ["write runtime/ws_auth.json: unreadable file could not be kept"]
+    assert not list(runtime.glob("ws_auth.json.corrupt-*"))
     assert result["restart_required"] is False
     assert (runtime / "ws_auth.json").read_text() == "x{"
 
@@ -444,6 +450,78 @@ def test_unreadable_copies_in_the_same_second_do_not_overwrite_each_other(runtim
     # Identical content reuses its earlier copy.
     target.write_text("first{", encoding="utf-8")
     assert backup_svc._preserve_unreadable(target) == first
+
+
+# ── round 5: the merge base is the live state, not the on-disk file ───────
+
+
+def test_ws_auth_merge_uses_memory_not_a_stale_disk_file(runtime):
+    """The service holds a token in memory; the disk copy is then changed to a
+    tokenless state. A credential-free restore must keep the live token."""
+    _write(runtime, "ws_auth.json", {"require_token": True, "token": "mem-token"})
+    assert ws_auth.get_state()["token"] == "mem-token"  # cache now populated
+    (runtime / "ws_auth.json").write_text(
+        json.dumps({"require_token": False, "token": ""}), encoding="utf-8"
+    )
+    blob = _tar({"runtime/ws_auth.json": b'{"require_token": true, "token": ""}'}, OMITTED)
+    result = backup_svc.unpack(blob, dry_run=False)
+    assert result["ok"], result
+    assert ws_auth.get_state()["token"] == "mem-token"
+    assert _read(runtime, "ws_auth.json")["token"] == "mem-token"
+
+
+def test_fire_token_merge_uses_memory_not_a_stale_disk_file(runtime, monkeypatch):
+    from server.services import fire_token
+
+    _write(
+        runtime,
+        "fire_token.json",
+        {"format": 2, "enabled": True, "token": "mem-fire", "rotated_at": 1.0, "created_at": 1.0},
+    )
+    monkeypatch.setattr(fire_token, "_STATE_FILE", runtime / "fire_token.json")
+    fire_token.reset_for_tests()
+    assert fire_token.get_state()["token"] == "mem-fire"  # _state now cached
+    (runtime / "fire_token.json").write_text(
+        json.dumps({"format": 2, "enabled": False, "token": ""}), encoding="utf-8"
+    )
+    blob = _tar(
+        {"runtime/fire_token.json": b'{"format": 2, "enabled": true, "token": ""}'}, OMITTED
+    )
+    assert backup_svc.unpack(blob, dry_run=False)["ok"]
+    assert fire_token.verify("mem-fire") is True
+
+
+def test_corrupt_ws_auth_with_env_auth_on_keeps_env_token_and_lists_the_off(runtime, monkeypatch):
+    """The file is unreadable, so the server runs on the env-seeded token. A
+    backup that turns auth off must keep that live token and say it turned the
+    requirement off — never silently blank a credential in force."""
+    from server.config import Config
+
+    (runtime / "ws_auth.json").write_text("{not json", encoding="utf-8")
+    monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", True)
+    monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "env-token")
+    monkeypatch.setenv("WS_REQUIRE_TOKEN", "true")
+    monkeypatch.setenv("WS_AUTH_TOKEN", "env-token")
+    blob = _tar({"runtime/ws_auth.json": b'{"require_token": false, "token": ""}'}, INCLUDED)
+    result = backup_svc.unpack(blob, dry_run=False)
+    assert result["ok"], result
+    codes = {n["code"] for n in result["merged"]}
+    assert "ws_auth_turned_off" in codes  # the off is listed
+    assert "unreadable_file_kept" in codes  # the corrupt file was copied aside
+    assert _read(runtime, "ws_auth.json")["token"] == "env-token"  # live token kept
+
+
+def test_overflowing_hook_count_in_a_backup_is_skipped_not_raised(runtime):
+    """A non-finite counter (1e999 → JSON Infinity) must be treated as one
+    invalid entry, not raise out of preview/apply (which the route turns 500)."""
+    _write(runtime, "webhooks.json", [HOOK_A])
+    raw = (
+        b'[{"id":"aaaa1111","url":"","secret":"","events":["on_danmu"],' b'"success_count":1e999}]'
+    )
+    for dry in (True, False):
+        result = backup_svc.unpack(_tar({"runtime/webhooks.json": raw}, OMITTED), dry_run=dry)
+        assert [s["code"] for s in result["skipped"]] == ["webhook_invalid"]
+    assert {h["id"] for h in _read(runtime, "webhooks.json")} == {"aaaa1111"}
 
 
 # ── round 4: a file that was written but not picked up is reported ────────

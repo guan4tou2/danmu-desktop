@@ -463,6 +463,7 @@
     webhook_no_credentials: "backupSkipWebhookNoCredentials",
     webhook_invalid: "backupSkipWebhookInvalid",
     credential_invalid: "backupSkipCredentialInvalid",
+    webhook_store_mismatch: "backupSkipWebhookStoreMismatch",
   };
 
   // 憑證合併的說明：哪些 Webhook 更新了設定、哪些原樣保留、哪個讀不出來的

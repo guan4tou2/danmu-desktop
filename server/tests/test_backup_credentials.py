@@ -382,9 +382,11 @@ def test_manifest_cannot_declare_other_files_as_credentials(tmp_path, monkeypatc
 
 
 def test_old_backup_with_a_nonstandard_webhook_name(tmp_path, monkeypatch):
-    """Backups made before the standard archive name carried a renamed store
-    under its own name. On a server that uses that name it is the store; on
-    any other server it is an ordinary runtime file, as before."""
+    """Backups made before the standard archive name carried the webhook store
+    under its own name. On a server that uses that name it is the store. On any
+    other server it is still recognised as the webhook store by its shape and
+    restored through the service — never written raw as a plain file whose URLs
+    and secrets a later default export would carry out."""
     blob = _tar(
         {
             "runtime/custom_hooks.json": json.dumps(HOOKS).encode(),
@@ -401,8 +403,11 @@ def test_old_backup_with_a_nonstandard_webhook_name(tmp_path, monkeypatch):
     other = _site(tmp_path / "other", hooks=[])
     _point_at(monkeypatch, tmp_path / "other")
     assert backup_svc.unpack(blob, dry_run=False)["ok"]
-    assert _read(other, "webhooks.json") == []
-    assert _read(other, "custom_hooks.json") == HOOKS
+    # No standard name in the archive → the stray is restored as the webhook
+    # store, owner-only, and no plain custom_hooks.json is written.
+    assert not (other / "custom_hooks.json").exists()
+    assert _read(other, "webhooks.json")[0]["secret"] == "hook-secret"
+    assert stat.S_IMODE(os.stat(other / "webhooks.json").st_mode) == 0o600
 
 
 def test_renamed_store_and_standard_name_in_one_archive(tmp_path, monkeypatch):
@@ -434,6 +439,129 @@ def test_old_backup_without_credentials_key_restores_as_is(tmp_path, monkeypatch
     result = backup_svc.unpack(blob, dry_run=False)
     assert result["ok"] and result["credentials"] == "included"
     assert _read(new_runtime, "fire_token.json") == FIRE
+
+
+# ── round 5: case variants of a store name never become a plain file ──────
+#
+# These assertions are filesystem-independent: the refusal compares the member
+# name against the store names case-insensitively, so it holds whether the test
+# runs on a case-sensitive (ext4) or a case-insensitive (APFS/NTFS) filesystem,
+# where the variant would physically be the store itself.
+
+
+@pytest.mark.parametrize(
+    "member,payload",
+    [
+        ("runtime/WS_AUTH.json", b'{"require_token": false, "token": ""}'),
+        ("runtime/Webhooks.json", b"[]"),
+        ("runtime/Fire_Token.json", b'{"format": 2, "enabled": false, "token": ""}'),
+    ],
+)
+def test_case_variant_of_a_credential_store_name_is_refused(tmp_path, monkeypatch, member, payload):
+    runtime = _site(tmp_path / "s", fire=FIRE, ws=WS, hooks=HOOKS)
+    before = {p.name: p.read_bytes() for p in runtime.iterdir()}
+    _point_at(monkeypatch, tmp_path / "s")
+    blob = _tar(
+        {
+            member: payload,
+            "manifest.json": json.dumps({"version": "1", "credentials": "included"}).encode(),
+        }
+    )
+    result = backup_svc.unpack(blob, dry_run=False)
+    assert [s["code"] for s in result["skipped"]] == ["not_backup_file"]
+    assert result["applied"] == 0
+    # The real stores are untouched, and no case-variant file was written.
+    assert {p.name: p.read_bytes() for p in runtime.iterdir()} == before
+
+
+# ── round 5: a webhook list under a non-store name ────────────────────────
+
+
+def test_webhook_shaped_stray_is_stripped_on_a_default_export(tmp_path, monkeypatch):
+    runtime = _site(tmp_path / "s", hooks=[])  # standard store, empty
+    (runtime / "old_hooks.json").write_text(json.dumps(HOOKS), encoding="utf-8")
+    _point_at(monkeypatch, tmp_path / "s")
+
+    members = _members(backup_svc.pack(include_credentials=False))
+    stray = json.loads(members["runtime/old_hooks.json"])
+    assert stray[0]["url"] == "" and stray[0]["secret"] == ""  # stripped by shape
+
+    full = _members(backup_svc.pack(include_credentials=True))
+    assert json.loads(full["runtime/old_hooks.json"])[0]["secret"] == "hook-secret"
+
+
+def test_webhook_shaped_stray_restores_as_the_store_when_no_standard_name(tmp_path, monkeypatch):
+    runtime = _site(tmp_path / "s", hooks=[])
+    _point_at(monkeypatch, tmp_path / "s")
+    blob = _tar(
+        {
+            "runtime/old_hooks.json": json.dumps(HOOKS).encode(),
+            "manifest.json": json.dumps({"version": "1", "credentials": "included"}).encode(),
+        }
+    )
+    result = backup_svc.unpack(blob, dry_run=False)
+    assert result["ok"], result
+    assert not (runtime / "old_hooks.json").exists()
+    assert _read(runtime, "webhooks.json")[0]["secret"] == "hook-secret"
+
+
+def test_only_one_webhook_shaped_stray_can_stand_in_for_the_store(tmp_path, monkeypatch):
+    runtime = _site(tmp_path / "s", hooks=[])
+    _point_at(monkeypatch, tmp_path / "s")
+    blob = _tar(
+        {
+            "runtime/one_hooks.json": json.dumps(HOOKS).encode(),
+            "runtime/two_hooks.json": json.dumps([dict(HOOKS[0], id="second00")]).encode(),
+            "manifest.json": json.dumps({"version": "1", "credentials": "included"}).encode(),
+        }
+    )
+    result = backup_svc.unpack(blob, dry_run=False)
+    assert [s["code"] for s in result["skipped"]] == ["webhook_store_mismatch"]
+    assert not (runtime / "one_hooks.json").exists()
+    assert not (runtime / "two_hooks.json").exists()
+    # Exactly one list made it into the store.
+    assert len(_read(runtime, "webhooks.json")) == 1
+
+
+def test_webhook_shaped_stray_is_skipped_when_the_standard_name_is_present(tmp_path, monkeypatch):
+    runtime = _site(tmp_path / "s", hooks=[])
+    _point_at(monkeypatch, tmp_path / "s")
+    blob = _tar(
+        {
+            "runtime/webhooks.json": json.dumps(HOOKS).encode(),
+            "runtime/old_hooks.json": json.dumps([dict(HOOKS[0], id="stray000")]).encode(),
+            "manifest.json": json.dumps({"version": "1", "credentials": "included"}).encode(),
+        }
+    )
+    result = backup_svc.unpack(blob, dry_run=False)
+    assert [s["code"] for s in result["skipped"]] == ["webhook_store_mismatch"]
+    assert [h["id"] for h in _read(runtime, "webhooks.json")] == ["abcd1234"]
+    assert not (runtime / "old_hooks.json").exists()
+
+
+# Every runtime file shape this server writes, pinned so the conservative
+# webhook-shape test never mistakes one for a webhook list (only the real
+# webhook list carries url+events on every element).
+_RUNTIME_SHAPES = {
+    "fire_token": {"format": 2, "enabled": True, "token": "x"},
+    "ws_auth": {"require_token": True, "token": "x"},
+    "widgets": {"widgets": []},
+    "plugins_state": {},
+    "settings": {"overlay": {}},
+    "filter_rules": [{"type": "keyword", "window_sec": 10, "enabled": True, "pattern": "x"}],
+    "api_tokens": [{"id": "t1", "label": "a", "prefix": "ab", "token_hash": "h", "scopes": []}],
+    "audience": {"flags": {}, "kicks": []},
+    "empty_list": [],
+    "list_of_scalars": [1, 2, 3],
+    "webhook_missing_events": [{"url": "https://x/h"}],
+    "webhook_list": [{"url": "https://x/h", "events": ["on_danmu"], "secret": "s"}],
+}
+
+
+@pytest.mark.parametrize("name", sorted(_RUNTIME_SHAPES))
+def test_only_a_real_webhook_list_matches_the_shape_probe(name):
+    expected = name == "webhook_list"
+    assert backup_svc._looks_like_webhook_list(_RUNTIME_SHAPES[name]) is expected
 
 
 # ── route ─────────────────────────────────────────────────────────────────
