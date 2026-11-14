@@ -59,6 +59,11 @@ def server_ports():
         sys.path.insert(0, ".")
         os.environ["SETTINGS_FILE"] = "{settings_path}"
         os.environ["FILTER_RULES_FILE"] = "{filter_rules_path}"
+        # 這些測試的顯示端不帶 token 連線。全新檢出（CI）沒有 ws_auth.json，
+        # 環境變數留空會被當成全新安裝而預設開啟驗證；只改 Config 屬性不夠，
+        # 因為預設值看的是環境變數有沒有設。
+        os.environ["WS_REQUIRE_TOKEN"] = "false"
+        os.environ["WS_AUTH_TOKEN"] = ""
 
         from server.config import Config
         # 子行程用的是正式 Config，不是 TestConfig —— 不在這裡關掉的話，

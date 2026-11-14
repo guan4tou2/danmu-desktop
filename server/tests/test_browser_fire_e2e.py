@@ -55,6 +55,11 @@ def server_ports():
         os.environ.setdefault("SETTINGS_FILE", "/tmp/_test_fire_e2e_settings.json")
         os.environ["ADMIN_PASSWORD"] = "test"
         os.environ["ADMIN_PASSWORD_HASHED"] = ""
+        # 這些測試的顯示端不帶 token 連線。全新檢出（CI）沒有 ws_auth.json，
+        # 環境變數留空會被當成全新安裝而預設開啟驗證；只改 Config 屬性不夠，
+        # 因為預設值看的是環境變數有沒有設。
+        os.environ["WS_REQUIRE_TOKEN"] = "false"
+        os.environ["WS_AUTH_TOKEN"] = ""
 
         from server.config import Config
         # 子行程用的是正式 Config，不是 TestConfig —— 不在這裡關掉的話，
