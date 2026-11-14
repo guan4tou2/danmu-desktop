@@ -66,8 +66,8 @@ except (ImportError, AttributeError, ValueError, OSError):
 try:
     try:
         rx = re.compile(job["pattern"], job["flags"])
-    except re.error as exc:
-        print(json.dumps({"ok": False, "message": str(exc)}))
+    except (re.error, OverflowError, RecursionError) as exc:
+        print(json.dumps({"ok": False, "message": str(exc) or type(exc).__name__}))
         sys.exit(0)
     for mode, text in job["probes"]:
         (rx.match if mode == "match" else rx.search)(text)
@@ -116,8 +116,16 @@ class PatternCheckBusy(Exception):
 
 
 def compile_pattern(pattern: str) -> "re.Pattern[str]":
-    """在本行程編譯一條規則的正規式。不合法時丟 ``re.error``。"""
-    return re.compile(pattern, FLAGS)
+    """在本行程編譯一條規則的正規式。編譯不了時丟 ``re.error``。
+
+    ``re.compile`` 對某些寫法丟的不是 re.error：重複次數超過上限是 OverflowError，
+    括號巢狀太深是 RecursionError。對呼叫端來說都是「這條 pattern 不能用」，這裡統一
+    轉成 re.error——漏接的話，規則檔裡有一條這樣的 pattern 就會讓引擎建不起來。
+    """
+    try:
+        return re.compile(pattern, FLAGS)
+    except (OverflowError, RecursionError) as exc:
+        raise re.error(str(exc) or type(exc).__name__) from exc
 
 
 def run_pattern(

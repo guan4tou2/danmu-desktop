@@ -169,6 +169,16 @@ def _number(entry: dict, key: str, default: Any, kind: type) -> Any:
         raise ValueError(f"{key} is not a number ({value!r})") from exc
 
 
+def _storable(text: str) -> bool:
+    """*text* 寫得進規則檔（UTF-8）嗎？JSON 的 ``\\ud800`` 這類跳脫會解成落單的代理
+    字元，Python 字串收得下、存檔時卻編碼不了。"""
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    return True
+
+
 def _parse_entry(entry: Any) -> tuple[FilterRule, bool]:
     """規則檔裡的一條 → (FilterRule, 是否做了 keyword＋block 轉換)。
 
@@ -192,6 +202,8 @@ def _parse_entry(entry: Any) -> tuple[FilterRule, bool]:
     ):
         if not isinstance(value, str):
             raise ValueError(f"{key} is not a string ({value!r})")
+        if not _storable(value):
+            raise ValueError(f"{key} has characters that cannot be saved ({value!r})")
     lifetime = entry.get("lifetime", "permanent")
     if lifetime not in ("permanent", "session", "timed"):
         lifetime = "permanent"
@@ -551,7 +563,10 @@ class FilterEngine:
 
         全有或全無：先把每一條都解析過（與讀檔同一個 _parse_entry），任何一條解析
         不了、或內容不是 JSON 陣列，就丟 ValueError，檔案與記憶體裡的清單都不動。
-        寫不進去丟 RuleSaveError（同樣不動）。
+        換檔之後重新載入若丟例外、或載入的條數與預檢不同，就把舊檔與舊清單放回去
+        再丟 ValueError（_undo_restore）。寫不進去丟 RuleSaveError（同樣不動）；唯一
+        會留下不一致的情況是「載入失敗、舊檔又寫不回去」，這時丟 RuleSaveError 並
+        記一筆 error。
         """
         try:
             parsed = json.loads(data.decode("utf-8"))
@@ -565,10 +580,71 @@ class FilterEngine:
                     _parse_entry(entry)
                 except ValueError as exc:
                     raise ValueError(f"filter_rules.json entry {index + 1}: {exc}") from exc
+            # 預檢只保證每一條都解析得了；_load 之後還會做別的事（編譯正規式、舊格式
+            # 轉換後寫回）。那些步驟出任何狀況都退回原樣：先記下現在的檔案與清單，
+            # 載入丟例外、或載入的條數與預檢不同，就把舊檔寫回去。
+            try:
+                with open(self._path, "rb") as f:
+                    previous: Optional[bytes] = f.read()
+            except FileNotFoundError:
+                previous = None
+            except OSError as exc:
+                logger.warning(
+                    "Block rules: could not read %s before a restore: %s", self._path, exc
+                )
+                raise RuleSaveError(
+                    "The current block rules file could not be read; nothing was restored."
+                ) from exc
+            legacy_copy = self._path + LEGACY_BACKUP_SUFFIX
+            had_legacy_copy = os.path.exists(legacy_copy)
+            old_rules, old_cache = self._rules, dict(self._regex_cache)
             self._write_bytes(data)
             self._regex_cache.clear()
-            self._load()
+            try:
+                self._load()
+                if len(self._rules) != len(parsed):
+                    raise ValueError(f"only {len(self._rules)} of {len(parsed)} rules loaded")
+            except Exception as exc:
+                self._rules, self._regex_cache = old_rules, old_cache
+                self._undo_restore(previous, legacy_copy, had_legacy_copy)
+                logger.warning("Block rules: restore of %s was undone: %s", self._path, exc)
+                raise ValueError(
+                    f"filter_rules.json could not be loaded ({exc}); nothing was restored"
+                ) from exc
             return len(self._rules)
+
+    def _undo_restore(
+        self, previous: Optional[bytes], legacy_copy: str, had_legacy_copy: bool
+    ) -> None:
+        """restore_file 載入失敗時把規則檔放回還原前的樣子（呼叫端持有 _lock）。
+
+        還原前沒有檔案就把新寫的刪掉；這次才出現的 .pre-unified.bak 也一併拿掉——它是
+        那份載入失敗的內容的副本，留著會被當成「升級前的規則」。舊檔寫不回去時丟
+        RuleSaveError：這時磁碟上是載入失敗的內容，記憶體裡仍是還原前的清單。
+        """
+        try:
+            if previous is None:
+                os.unlink(self._path)
+            else:
+                self._write_bytes(previous)
+        except FileNotFoundError:
+            pass
+        except (OSError, RuleSaveError) as exc:
+            logger.error(
+                "Block rules: could not put %s back after a failed restore: %s. The file "
+                "holds the content that failed to load; the rules in memory are the ones "
+                "from before the restore.",
+                self._path,
+                exc,
+            )
+            raise RuleSaveError(
+                "The restore failed and the previous block rules file could not be put back."
+            ) from exc
+        if not had_legacy_copy:
+            try:
+                os.unlink(legacy_copy)
+            except OSError:
+                pass
 
     # ── Internal helpers ────────────────────────────────────────
 
@@ -670,6 +746,11 @@ class FilterEngine:
         except ValidationError as err:
             texts = _flatten_messages(err.messages)
             raise RuleValidationError("; ".join(texts), _error_code(texts), err.messages) from err
+
+        for key in ("pattern", "replacement"):
+            if not _storable(clean[key]):
+                msg = "Contains characters that cannot be saved."
+                raise RuleValidationError(f"{key}: {msg}", "invalid", {key: [msg]})
 
         lifetime, expires_at = _resolve_lifetime(
             clean["lifetime"], clean.get("duration_sec"), existing=existing
@@ -871,8 +952,7 @@ class FilterEngine:
             with open(self._path, "r", encoding="utf-8") as f:
                 raw = json.load(f)
             if not isinstance(raw, list):
-                self._rules = []
-                return
+                raise ValueError("not a JSON array")
             backed_up = self._keep_legacy_copy(raw)
             rules: list[FilterRule] = []
             converted = False
@@ -906,7 +986,8 @@ class FilterEngine:
                     (
                         "the original file is kept beside it"
                         if kept_skipped
-                        else "could not keep a copy of the original file"
+                        else "could not keep a copy of the original file; the next change "
+                        "to the rules will drop the skipped entries from it"
                     ),
                 )
             if converted:
@@ -920,8 +1001,22 @@ class FilterEngine:
                         "the file was left as it is",
                         self._path,
                     )
-        except (ValueError, OSError):  # 壞 JSON、不是 UTF-8、讀不到
+        except (ValueError, OSError) as exc:  # 壞 JSON、不是 UTF-8、不是陣列、讀不到
+            # 整個檔讀不懂：從空清單開始，但留一份原檔並講清楚——不留的話，下一次
+            # 改規則就會把這個檔蓋掉。
             self._rules = []
+            kept = self._keep_unreadable_copy()
+            logger.warning(
+                "Block rules: %s could not be read (%s); starting with no rules. %s",
+                self._path,
+                exc,
+                (
+                    "The original file is kept beside it."
+                    if kept
+                    else "No copy of the original could be kept; the next change to the "
+                    "rules will overwrite it."
+                ),
+            )
 
     def _keep_unreadable_copy(self) -> bool:
         """規則檔裡有條目解析不了時，在旁邊留一份原檔。
@@ -992,7 +1087,14 @@ class FilterEngine:
     def _write(self, rules: list[FilterRule]) -> None:
         """把 *rules* 原子地寫進規則檔；寫不進去時記警告並丟 RuleSaveError。"""
         data = [r.to_dict() for r in rules]
-        self._write_bytes(json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8"))
+        try:
+            payload = json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8")
+        except UnicodeEncodeError as exc:
+            logger.warning("Block rules: could not encode the rules for %s: %s", self._path, exc)
+            raise RuleSaveError(
+                "The block rules contain text that cannot be saved; the change was not saved."
+            ) from exc
+        self._write_bytes(payload)
 
     def _write_bytes(self, payload: bytes) -> None:
         """暫存檔＋os.replace。暫存檔名每次都不同（點開頭，備份打包會略過），不會和

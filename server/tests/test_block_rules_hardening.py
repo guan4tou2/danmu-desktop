@@ -1245,3 +1245,251 @@ def test_a_check_that_runs_out_of_memory_is_rejected(client, monkeypatch):
     assert res.status_code == 400
     assert res.get_json()["code"] == "unsafe_regex"
     assert filter_engine.list_rules() == []
+
+
+# ── 複核第四輪：預檢過了、載入卻失敗時，還原要退回原樣 ──────────────────────
+#
+# 上一輪的「全有或全無」只預檢欄位型別。載入時還會編譯正規式、把舊格式轉換後寫回；
+# 那些步驟出狀況時檔案已經換掉了。這裡釘住兩件事：那些寫法不再讓載入失敗，以及
+# 載入不管為什麼失敗，檔案與清單都回到還原前。
+
+TOO_MANY_REPEATS = "a{99999999999999999999}"  # re.compile 丟 OverflowError，不是 re.error
+
+
+def _fresh_engine(path):
+    original = FilterEngine._instance
+    try:
+        FilterEngine._instance = None
+        return FilterEngine(path=str(path))
+    finally:
+        FilterEngine._instance = original
+
+
+def test_compile_errors_that_are_not_re_error_are_reported_as_one(monkeypatch):
+    with pytest.raises(re.error):
+        rule_regex.compile_pattern(TOO_MANY_REPEATS)
+
+    def too_deep(*args, **kwargs):
+        raise RecursionError("maximum recursion depth exceeded")
+
+    caught = None
+    with monkeypatch.context() as patched:  # 這段期間別的程式也拿不到 re.compile，越短越好
+        patched.setattr(rule_regex.re, "compile", too_deep)
+        try:
+            rule_regex.compile_pattern("((((a))))")
+        except re.error as exc:
+            caught = exc
+    assert caught is not None and "recursion" in str(caught)
+
+
+def test_a_pattern_the_compiler_overflows_on_is_a_400_not_a_500(client):
+    with hard_limit(10):
+        res = _post(client, "/admin/filters/add", {"type": "regex", "pattern": TOO_MANY_REPEATS})
+    assert res.status_code == 400
+    assert res.get_json()["code"] == "invalid_regex"
+    assert filter_engine.list_rules() == []
+
+
+def test_a_rules_file_with_such_a_pattern_loads_with_that_rule_switched_off(tmp_path, monkeypatch):
+    """經備份還原、以及之後重啟：都不丟例外，那條規則停用，其餘照常。"""
+    runtime = tmp_path / "runtime"
+    runtime.mkdir()
+    rules_file = runtime / "filter_rules.json"
+    monkeypatch.setattr(backup_svc, "_INCLUDE_DIRS", [("runtime", runtime, "runtime", "*.json")])
+    monkeypatch.setattr(filter_engine, "_path", str(rules_file))
+    filter_engine.reload()
+    content = json.dumps(
+        [
+            {
+                "id": "w",
+                "type": "word",
+                "pattern": "好的",
+                "action": "block",
+                "lifetime": "permanent",
+            },
+            {
+                "id": "r",
+                "type": "regex",
+                "pattern": TOO_MANY_REPEATS,
+                "action": "block",
+                "lifetime": "permanent",
+            },
+        ]
+    ).encode()
+    archive = _tarball([("manifest.json", b"{}"), ("runtime/filter_rules.json", content)])
+
+    out = backup_svc.unpack(archive, dry_run=False)
+
+    assert out["ok"] is True, out["errors"]
+    assert {r["id"]: r["enabled"] for r in filter_engine.list_rules()} == {"w": True, "r": False}
+    assert filter_engine.check("aaaa").action == "pass"
+    restarted = _fresh_engine(rules_file)
+    assert {r.id: r.enabled for r in restarted._rules} == {"w": True, "r": False}
+
+
+def _boom():
+    raise RuntimeError("boom")
+
+
+# 下面的測試把 _load／_write_bytes 換在 filter_engine 這個實例上，不換在類別上：前面有
+# 測試用 monkeypatch 換過實例屬性，還原時會在實例上留下一個綁定方法，類別上的替身
+# 會被它蓋住而完全沒被呼叫。
+
+
+def _legacy_rules_bytes():
+    # 5.8 的格式：沒有 lifetime，keyword＋block 會被轉成封鎖字並留 .pre-unified.bak
+    return json.dumps(
+        [{"id": "old", "type": "keyword", "pattern": "舊", "action": "block"}]
+    ).encode()
+
+
+@pytest.mark.parametrize("failure", ["raises", "loads_fewer"])
+def test_a_restore_that_fails_while_loading_is_undone(monkeypatch, failure):
+    filter_engine.add_rule({"type": "word", "pattern": "現有"})
+    path = Path(filter_engine.path)
+    before = path.read_bytes()
+    legacy_copy = Path(str(path) + engine_module.LEGACY_BACKUP_SUFFIX)
+    assert not legacy_copy.exists()
+    real_load = filter_engine._load
+
+    def load_then_fail():
+        real_load()  # 真的讀進來（含舊格式轉換與留副本），然後才出事
+        if failure == "raises":
+            raise RuntimeError("boom")
+        filter_engine._rules = []
+
+    monkeypatch.setattr(filter_engine, "_load", load_then_fail)
+    with pytest.raises(ValueError, match="nothing was restored"):
+        engine_module.restore_rules_file(_legacy_rules_bytes())
+
+    assert path.read_bytes() == before
+    assert [r["pattern"] for r in filter_engine.list_rules()] == ["現有"]
+    assert filter_engine.match_word("現有") == "現有"
+    assert not legacy_copy.exists()  # 載入失敗的內容不留成「升級前的規則」
+    assert [r.pattern for r in _fresh_engine(path)._rules] == ["現有"]
+
+
+def test_a_failed_restore_onto_no_file_leaves_no_file(monkeypatch):
+    path = Path(filter_engine.path)
+    path.unlink()
+    filter_engine._rules = []  # 不 reload()：預設路徑上沒有檔案時會去搬舊位置的規則檔
+
+    monkeypatch.setattr(filter_engine, "_load", _boom)
+    with pytest.raises(ValueError, match="nothing was restored"):
+        engine_module.restore_rules_file(_legacy_rules_bytes())
+    assert not path.exists()
+    assert filter_engine.list_rules() == []
+
+
+def test_an_existing_pre_unified_copy_survives_a_failed_restore(monkeypatch):
+    filter_engine.add_rule({"type": "word", "pattern": "現有"})
+    path = Path(filter_engine.path)
+    legacy_copy = Path(str(path) + engine_module.LEGACY_BACKUP_SUFFIX)
+    legacy_copy.write_text("[]", encoding="utf-8")
+
+    monkeypatch.setattr(filter_engine, "_load", _boom)
+    with pytest.raises(ValueError):
+        engine_module.restore_rules_file(_legacy_rules_bytes())
+    assert legacy_copy.read_text(encoding="utf-8") == "[]"
+
+
+def test_when_the_old_file_cannot_be_put_back_it_is_a_save_error(monkeypatch, caplog):
+    filter_engine.add_rule({"type": "word", "pattern": "現有"})
+    real_write = filter_engine._write_bytes
+    writes = []
+
+    def second_write_fails(payload):
+        writes.append(payload)
+        if len(writes) == 2:  # 第一次是還原寫入，第二次是把舊檔寫回去
+            raise engine_module.RuleSaveError("disk full")
+        real_write(payload)
+
+    monkeypatch.setattr(filter_engine, "_write_bytes", second_write_fails)
+    monkeypatch.setattr(filter_engine, "_load", _boom)
+    with caplog.at_level("ERROR", logger="server.services.filter_engine"):
+        with pytest.raises(engine_module.RuleSaveError, match="could not be put back"):
+            engine_module.restore_rules_file(_legacy_rules_bytes())
+    assert "could not put" in caplog.text
+    assert [r["pattern"] for r in filter_engine.list_rules()] == ["現有"]  # 記憶體仍是還原前的
+
+
+def test_text_that_cannot_be_saved_is_refused_everywhere(client, caplog):
+    """落單的代理字元：Python 字串收得下，存檔時編碼不了。"""
+    lone = "\ud800"
+    filter_engine.add_rule({"type": "word", "pattern": "現有"})
+    path = Path(filter_engine.path)
+    before = path.read_bytes()
+    entry = {"id": "s", "type": "word", "pattern": lone, "action": "block", "lifetime": "permanent"}
+
+    # 備份還原：整個檔不還原
+    with pytest.raises(ValueError, match="cannot be saved"):
+        engine_module.restore_rules_file(json.dumps([entry]).encode())
+    assert path.read_bytes() == before
+
+    # 後台 API：400，不是 500
+    res = _post(
+        client, "/admin/filters/add", {"type": "keyword", "pattern": lone, "action": "review"}
+    )
+    assert res.status_code == 400
+    assert [r["pattern"] for r in filter_engine.list_rules()] == ["現有"]
+
+    # 萬一還是走到寫檔：是存檔失敗，不是沒人接的例外
+    bad_rule = engine_module.FilterRule(id="x", type="word", pattern=lone, action="block")
+    with pytest.raises(engine_module.RuleSaveError):
+        filter_engine._write([bad_rule])
+    assert path.read_bytes() == before
+
+    # 啟動時檔案裡有一條：略過它、留副本，其餘照常
+    content = json.dumps([json.loads(before)[0], entry])
+    path.write_text(content, encoding="utf-8")
+    with caplog.at_level("WARNING", logger="server.services.filter_engine"):
+        engine = _fresh_engine(path)
+    assert [r.pattern for r in engine._rules] == ["現有"]
+    assert len(list(path.parent.glob("filter_rules.json.unreadable-*.bak"))) == 1
+
+
+def test_an_unexpected_failure_restoring_the_rules_does_not_stop_the_other_files(
+    tmp_path, monkeypatch
+):
+    runtime = tmp_path / "runtime"
+    runtime.mkdir()
+    rules_file = runtime / "filter_rules.json"
+    monkeypatch.setattr(backup_svc, "_INCLUDE_DIRS", [("runtime", runtime, "runtime", "*.json")])
+    monkeypatch.setattr(filter_engine, "_path", str(rules_file))
+    filter_engine.reload()
+
+    def unexpected(data):
+        raise RuntimeError("not one of the expected errors")
+
+    monkeypatch.setattr(engine_module, "restore_rules_file", unexpected)
+    archive = _tarball(
+        [
+            ("manifest.json", b"{}"),
+            ("runtime/filter_rules.json", b"[]"),
+            ("runtime/zz_other.json", b'{"k": 1}'),
+        ]
+    )
+    out = backup_svc.unpack(archive, dry_run=False)  # 不丟例外
+    assert out["ok"] is False
+    assert any("filter_rules.json" in e for e in out["errors"])
+    assert (runtime / "zz_other.json").read_text() == '{"k": 1}'
+
+
+@pytest.mark.parametrize(
+    "content",
+    [b"\xff\xfe not utf-8", b"\xef\xbb\xbf[]", b"[{broken", b'{"not": "a list"}'],
+    ids=["not_utf8", "bom", "bad_json", "not_a_list"],
+)
+def test_a_rules_file_that_cannot_be_read_at_all_is_kept_before_it_is_overwritten(content, caplog):
+    path = Path(filter_engine.path)
+    path.write_bytes(content)
+    with caplog.at_level("WARNING", logger="server.services.filter_engine"):
+        engine = _fresh_engine(path)  # 伺服器起得來
+    assert engine._rules == []
+    assert "starting with no rules" in caplog.text
+    copies = list(path.parent.glob("filter_rules.json.unreadable-*.bak"))
+    assert len(copies) == 1 and copies[0].read_bytes() == content
+    assert path.read_bytes() == content  # 讀檔本身不改原檔
+
+    engine.add_rule({"type": "word", "pattern": "新的"})  # 這一步才會蓋掉原檔
+    assert copies[0].read_bytes() == content
