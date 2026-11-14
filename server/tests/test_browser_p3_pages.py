@@ -435,6 +435,9 @@ def test_ia_system_tab_strip_renders(admin_page):
     2026-09-07 設計稿 08 · X1：`scheduler` 搬去「擴充」，系統剩 5 個分頁。
     隔壁分頁「非作用中要隱藏」改用 security 驗——sec-scheduler 已經不屬於
     這條路由了。
+
+    2026-11-14 側欄收斂：備份與還原、擴充併進系統頁，分頁變 7 個。定時發送
+    是「擴充」分頁裡的收合區塊，不是分頁，所以 scheduler 分頁仍然是 0。
     """
     _go_to_route(admin_page, "system")
     admin_page.wait_for_selector(
@@ -442,7 +445,7 @@ def test_ia_system_tab_strip_renders(admin_page):
     )
     assert admin_page.locator(".admin-system-accordion").count() == 0
     tabs = admin_page.locator("[data-admin-tabs-host] .admin-tabs-btn")
-    assert tabs.count() == 5
+    assert tabs.count() == 7
     active = admin_page.locator(".admin-tabs-btn.is-active").get_attribute("data-tab")
     assert active == "overview"
     assert admin_page.locator('.admin-tabs-btn[data-tab="security"]').count() == 1
@@ -460,9 +463,11 @@ def test_ia_system_legacy_leaf_deeplinks_rehome(admin_page):
     the leaf's new home instead of dumping on the overview tab."""
     # 2026-09-07 設計稿 08 · X1：webhooks 併進「擴充」的分段，舊 deep link
     # 要落到那個分段，而不是一條已經不存在的路由。
+    # 2026-11-14 側欄收斂：備份與還原、擴充回到系統頁當分頁；webhooks 是擴充
+    # 分頁裡的收合區塊（leaf 是分頁 slug，區塊由 router 展開）。
     cases = {
-        "backup": ("backup", "backup"),
-        "webhooks": ("integrations", "webhooks"),
+        "backup": ("system", "backup"),
+        "webhooks": ("system", "integrations"),
         "audit": ("history", "audit"),
     }
     for leaf, (want_route, want_leaf) in cases.items():
@@ -476,6 +481,10 @@ def test_ia_system_legacy_leaf_deeplinks_rehome(admin_page):
         )
         assert got_route == want_route, f"#/system/{leaf} → route {got_route}, want {want_route}"
         assert got_leaf == want_leaf, f"#/system/{leaf} → leaf {got_leaf}, want {want_leaf}"
+        if leaf == "webhooks":
+            assert admin_page.evaluate(
+                '() => document.getElementById("sec-webhooks").open'
+            ), "#/system/webhooks 應該展開 Webhook 那一塊"
 
 
 def test_ia_deep_link_preserves_tab(admin_page):
