@@ -164,7 +164,12 @@ def test_rotate_token_even_when_disabled():
 
 @pytest.mark.ws_auth_raw_seed
 def test_malformed_json_recovers_by_reseeding(monkeypatch):
-    """A corrupt runtime file should not crash boot — re-seed instead."""
+    """A corrupt runtime file should not crash boot — re-seed instead.
+
+    The file's existence marks an existing deployment, so the re-seed uses
+    the env posture (unset → off) rather than the fresh-install token-on
+    default, which would lock out displays already running without a token.
+    """
     monkeypatch.delenv("WS_REQUIRE_TOKEN", raising=False)
     monkeypatch.delenv("WS_AUTH_TOKEN", raising=False)
     monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", False)
@@ -173,10 +178,9 @@ def test_malformed_json_recovers_by_reseeding(monkeypatch):
     ws_auth._STATE_FILE.write_text("{not valid json")
 
     state = ws_auth.get_state()
-    # Re-seeded secure-by-default because env vars are absent.
-    assert state["require_token"] is True
+    assert state["require_token"] is False
     # File should be rewritten with valid JSON
-    assert json.loads(ws_auth._STATE_FILE.read_text())["require_token"] is True
+    assert json.loads(ws_auth._STATE_FILE.read_text())["require_token"] is False
 
 
 @pytest.mark.ws_auth_raw_seed
@@ -189,8 +193,117 @@ def test_missing_keys_recovers_by_reseeding(monkeypatch):
     ws_auth._STATE_FILE.write_text('{"unrelated": "garbage"}')
 
     state = ws_auth.get_state()
-    assert state["require_token"] is True  # re-seeded secure-by-default
-    assert state["token"]
+    assert state == {"require_token": False, "token": ""}
+
+
+@pytest.mark.ws_auth_raw_seed
+def test_corrupt_file_still_honours_explicit_env_enable(monkeypatch):
+    """Explicit env still wins when re-seeding over a broken file."""
+    monkeypatch.setenv("WS_REQUIRE_TOKEN", "true")
+    monkeypatch.setenv("WS_AUTH_TOKEN", "explicit-env-token")
+    monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", True)
+    monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "explicit-env-token")
+    ws_auth._STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    ws_auth._STATE_FILE.write_text("{not valid json")
+
+    assert ws_auth.get_state() == {"require_token": True, "token": "explicit-env-token"}
+
+
+# ── 3b. Compose passes blank values; upgrades keep the saved state ───────
+
+
+def _set_compose_blank_env(monkeypatch):
+    """What docker-compose's `VAR=${VAR:-}` hands the container when .env is silent."""
+    monkeypatch.setenv("WS_REQUIRE_TOKEN", "")
+    monkeypatch.setenv("WS_AUTH_TOKEN", "")
+    monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", False)
+    monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "")
+
+
+@pytest.mark.ws_auth_raw_seed
+def test_blank_env_from_compose_counts_as_unset_on_fresh_install(monkeypatch):
+    _set_compose_blank_env(monkeypatch)
+    assert not ws_auth._STATE_FILE.exists()
+
+    state = ws_auth.get_state()
+
+    assert state["require_token"] is True
+    assert len(state["token"]) >= 16
+    assert json.loads(ws_auth._STATE_FILE.read_text()) == state
+
+
+@pytest.mark.ws_auth_raw_seed
+def test_whitespace_only_env_counts_as_unset(monkeypatch):
+    monkeypatch.setenv("WS_REQUIRE_TOKEN", "  ")
+    monkeypatch.delenv("WS_AUTH_TOKEN", raising=False)
+    monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", False)
+    monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "")
+
+    assert ws_auth.get_state()["require_token"] is True
+
+
+@pytest.mark.ws_auth_raw_seed
+@pytest.mark.parametrize("explicit", ["false", "False", "FALSE"])
+def test_explicit_false_still_respected_on_fresh_install(monkeypatch, explicit):
+    monkeypatch.setenv("WS_REQUIRE_TOKEN", explicit)
+    monkeypatch.setenv("WS_AUTH_TOKEN", "")
+    monkeypatch.setattr(Config, "WS_REQUIRE_TOKEN", False)
+    monkeypatch.setattr(Config, "WS_AUTH_TOKEN", "")
+
+    assert ws_auth.get_state() == {"require_token": False, "token": ""}
+
+
+@pytest.mark.ws_auth_raw_seed
+@pytest.mark.parametrize(
+    "saved",
+    [
+        {"require_token": False, "token": ""},
+        {"require_token": False, "token": "staged-but-not-enforced"},
+        {"require_token": True, "token": "existing-display-token"},
+    ],
+)
+def test_existing_state_file_is_not_rewritten_on_upgrade(monkeypatch, saved):
+    """Upgrading a deployment that already has ws_auth.json keeps it byte-for-byte.
+
+    Production runs with the file present and auth off; with compose now
+    passing a blank WS_REQUIRE_TOKEN the seed would say "on", so the file
+    must win and must not be touched.
+    """
+    _set_compose_blank_env(monkeypatch)
+    path = ws_auth._STATE_FILE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    raw = json.dumps(saved, indent=2)
+    path.write_text(raw)
+    mtime_before = path.stat().st_mtime_ns
+    ws_auth._reset_for_tests()
+
+    assert ws_auth.get_state() == saved
+    assert path.read_text() == raw
+    assert path.stat().st_mtime_ns == mtime_before
+
+
+@pytest.mark.ws_auth_raw_seed
+def test_unwritable_runtime_dir_skips_token_on_default(monkeypatch, caplog):
+    """A token that cannot be saved would change on every restart; stay off instead."""
+    import logging
+
+    _set_compose_blank_env(monkeypatch)
+    real_access = os.access
+    runtime_dir = str(ws_auth._STATE_FILE.parent)
+
+    def fake_access(path, mode, *args, **kwargs):
+        if str(path) == runtime_dir and mode == os.W_OK:
+            return False
+        return real_access(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(os, "access", fake_access)
+    ws_auth._reset_for_tests()
+
+    with caplog.at_level(logging.WARNING, logger="server.services.ws_auth"):
+        state = ws_auth.get_state()
+
+    assert state == {"require_token": False, "token": ""}
+    assert any("token-on default" in r.getMessage() for r in caplog.records)
 
 
 # ── 4. Admin HTTP route ──────────────────────────────────────────────────
