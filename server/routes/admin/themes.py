@@ -10,18 +10,21 @@ from . import _json_response, admin_bp, require_csrf, require_login
 @admin_bp.route("/themes", methods=["GET"])
 @require_login
 def get_themes():
-    from ...services import theme_overrides
+    from ...services import danmu_style, theme_overrides
     from ...services import themes as theme_svc
 
     themes_list = theme_svc.load_all()
     active = theme_svc.get_active_name()
     # overrides 一併回傳：細部設定那組控制項要顯示「現在是哪一段」，而
     # load_all 回的 styles 已經是套用後的結果，反推不出主持人選的是哪一段。
+    # style_defaults：觀眾沒選時實際用的顏色／字型與來源（主題或全域），
+    # 樣式表的顏色、字型兩列靠它標「來自主題」或「主題值未採用」。
     return _json_response(
         {
             "themes": themes_list,
             "active": active,
             "overrides": theme_overrides.get_all(),
+            "style_defaults": danmu_style.effective_defaults(),
         }
     )
 

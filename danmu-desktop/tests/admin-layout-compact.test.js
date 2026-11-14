@@ -70,13 +70,12 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   const themeSwitcherSrc = fs.readFileSync(path.join(staticDir, "admin-theme-switcher.js"), "utf8");
   expect(ratelimitSrc).toContain('SECTION_ID = "sec-ratelimit"');
   expect(ratelimitSrc).toContain('admin-ratelimit-page');
-  expect(displaySrc).toContain('route === "display"');
-  expect(displaySrc).toContain('route === "viewer"');
-  // D-4：note 文案搬進 i18n——源碼釘 key、原文改釘 zh locale
+  // 2026-11-14 彈幕樣式合一：顯示與隱藏全交給 router（ADMIN_ROUTES 的
+  // sections），模組只在進入彈幕樣式頁時做一次邊緣觸發的工作。
+  expect(displaySrc).toContain('shell.dataset.activeRoute === "viewer"');
+  expect(displaySrc).not.toContain("data-dsp-mode");
   const zhLocaleSrc = fs.readFileSync(
     path.join(staticDir, "..", "locales", "zh", "translation.json"), "utf8");
-  expect(displaySrc).toContain('t("displayViewerDefaultsNote")');
-  expect(zhLocaleSrc).toContain("決定觀眾打開網頁時看到什麼、能改什麼");
   expect(securitySrc).toContain('route === "system"');
   expect(securitySrc).toContain('leaf === "security"');
   // 2026-05-19 v5 Batch 12-3: security page title shortened from
@@ -89,7 +88,10 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   expect(systemTabsSrc).toContain("section: \"admin-security-v2-page\"");
   expect(viewerThemeSrc).toContain('SECTION_ID = "sec-viewer-theme"');
   expect(viewerThemeSrc).toContain('admin-vt-page');
-  expect(viewerThemeSrc).toContain('data-vt-jump="display"');
+  // 2026-11-14：「主題」「顯示設定」兩個跳轉退場——它們就在同一頁上。
+  expect(viewerThemeSrc).not.toContain('data-vt-jump="display"');
+  expect(viewerThemeSrc).not.toContain('data-vt-jump="themes"');
+  expect(viewerThemeSrc).toContain('data-vt-jump="effects"');
   // D-5 (2026-07-28): vt-scope callout 改為標準 admin-ui-page-head。
   expect(viewerThemeSrc).toContain('admin-ui-page-note');
   // D-4：note 文案走 viewerThemePageNote key，原文改釘 zh locale
@@ -110,15 +112,13 @@ test("admin Viewer field inventory matches the canonical viewer spec", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const displaySrc = fs.readFileSync(path.join(staticDir, "admin-display.js"), "utf8");
 
-  // D-4：info banner 文案在 zh locale，源碼持 key
-  const zhLocaleSrc2 = fs.readFileSync(
-    path.join(staticDir, "..", "locales", "zh", "translation.json"), "utf8");
-  expect(displaySrc).toContain('t("displayViewerConfigInfoBanner")');
-  expect(zhLocaleSrc2).toContain("Viewer 管理 <b>觀眾頁</b>");
-  expect(zhLocaleSrc2).toContain("主題樣式由 Theme Packs"); // D-4：文案在 zh locale
-  expect(zhLocaleSrc2).toContain("速度 / Speed"); // D-4：欄位標籤在 zh locale
-  expect(zhLocaleSrc2).toContain("排版 / Layout");
-  expect(zhLocaleSrc2).toContain("效果 / Effect");
+  // 2026-11-14 彈幕樣式合一：「表單欄位」面板（只改畫面、不寫後端的假開關）
+  // 與說明橫幅退場。每個欄位觀眾能不能改，就是樣式表每一列的開關。
+  expect(displaySrc).not.toContain("sec-viewer-config-fields");
+  expect(displaySrc).not.toContain("displayViewerConfigInfoBanner");
+  for (const key of ["Opacity", "FontSize", "Speed", "Color", "FontFamily", "Layout", "Effects", "stroke", "shadow"]) {
+    expect(displaySrc).toContain(`key: "${key}"`);
+  }
   expect(displaySrc).not.toContain("描邊 / Stroke");
   expect(displaySrc).not.toContain("陰影 / Shadow");
   expect(displaySrc).not.toContain("匿名送出");
@@ -146,20 +146,11 @@ test("admin Viewer surface exposes language/copy and defaults/limits guidance", 
   for (const literal of ["UI language", "Auto (follow browser)", "Submit button", "Poll prompt"]) {
     expect(displaySrc).not.toContain(literal);
   }
-  for (const key of [
-    "language",
-    "viewerThemeFollowBrowser",
-    "displayAdminCtlPlaceholder",
-    "displayAdminCtlSubmit",
-    "displayAdminCtlPollPrompt",
-  ]) {
-    expect(displaySrc).toContain(`"${key}"`);
-  }
-  // D-4：ADMIN CONTROLLED note 走既有 displayAdminControlledNote key
+  // 2026-11-14：「由管理員控制」那張純說明卡（語言、placeholder、送出鈕、
+  // 投票提示的寫死範例）隨合併退場——語言的實際控制在「觀眾頁外觀」。
+  expect(displaySrc).not.toContain("displayAdminControlledNote");
   const zhLocaleSrc3 = fs.readFileSync(
     path.join(staticDir, "..", "locales", "zh", "translation.json"), "utf8");
-  expect(displaySrc).toContain('t("displayAdminControlledNote")');
-  expect(zhLocaleSrc3).toContain("觀眾端不提供語言切換");
   // 2026-05-19 v5: Limits tab rewritten per batch11-viewer-4tab.jsx.
   // Old static "DEFAULTS / LIMITS" text panel replaced with 2 cards
   // (RATE LIMITS + CONTENT LIMITS) + CURRENT SESSION strip, populated
@@ -194,13 +185,17 @@ test("admin Viewer surface exposes language/copy and defaults/limits guidance", 
   expect(displaySrc).toContain('sec-viewer-config-limits');
 });
 
-test("editable viewer defaults now live under Viewer > Defaults, not Display", () => {
+test("editable defaults and the audience switches share one row per attribute", () => {
   const staticDir = path.join(__dirname, "..", "..", "server", "static", "js");
   const displaySrc = fs.readFileSync(path.join(staticDir, "admin-display.js"), "utf8");
+  const adminSrc = fs.readFileSync(path.join(staticDir, "admin.js"), "utf8");
 
-  expect(displaySrc).toContain('const tab = (document.body.dataset.viewerConfigTab) || "defaults";');
-  expect(displaySrc).toContain('page.style.display = showPanel ? "" : "none";');
-  expect(displaySrc).toContain('document.body.dataset.viewerConfigTab = "defaults"');
+  // 2026-11-14 彈幕樣式合一：值與「觀眾可改」在同一列；不再分兩種模式、
+  // 不再鏡射分頁狀態。顯示層頁只剩大螢幕排版的收合區。
+  expect(displaySrc).not.toContain("viewerConfigTab");
+  expect(displaySrc).not.toContain("showPanel");
+  expect(displaySrc).toContain('const LAYOUT_ID = "sec-overlay-layout"');
+  expect(adminSrc).toContain('sections: ["admin-broadcast-v2-page", "sec-overlay-layout"]');
 });
 
 test("viewer theme and language overrides respect admin force mode", () => {
@@ -233,15 +228,16 @@ test("Viewer entry points use the canonical viewer route instead of legacy viewe
   // v7 S1 (2026-07-28): palette 不再有 ROUTES 複本，開啟時讀 window.ADMIN_ROUTES。
   expect(paletteSrc).toContain('window.ADMIN_ROUTES');
   expect(paletteSrc).toContain('"viewer"');
+  // 2026-11-14 彈幕樣式合一：⌘K 指向 #/viewer/<區塊>，router 展開並捲過去。
   expect(paletteSrc).toContain('labelKey: "cmdkSettingViewerTheme"'); // D-4：label 走 key
-  expect(paletteSrc).toContain('route: "viewer", tab: "page", section: "sec-viewer-theme"');
-  expect(paletteSrc).toContain('labelKey: "cmdkSettingViewerFields"');
-  expect(paletteSrc).toContain('route: "viewer", tab: "fields", section: "sec-viewer-config-fields"');
+  expect(paletteSrc).toContain('route: "viewer/page", section: "sec-viewer-theme"');
+  expect(paletteSrc).toContain('route: "viewer/themes", section: "sec-themes"');
   expect(paletteSrc).toContain('labelKey: "cmdkSettingViewerDefaults"');
-  expect(paletteSrc).toContain('route: "viewer", tab: "defaults", section: "sec-viewer-config-defaults"');
+  expect(paletteSrc).toContain('route: "viewer/defaults", section: "sec-viewer-config-defaults"');
   expect(paletteSrc).toContain('labelKey: "cmdkSettingViewerLimits"');
-  expect(paletteSrc).toContain('route: "viewer", tab: "limits", section: "sec-viewer-config-limits"');
-  expect(paletteSrc).toContain('if (item.tab) document.body.dataset.viewerConfigTab = item.tab;');
+  expect(paletteSrc).toContain('route: "viewer/limits", section: "sec-viewer-config-limits"');
+  expect(paletteSrc).not.toContain("cmdkSettingViewerFields");
+  expect(paletteSrc).not.toContain("viewerConfigTab");
   expect(paletteSrc).not.toContain('route: "viewer-config"');
 
 
@@ -256,7 +252,9 @@ test("Viewer entry points use the canonical viewer route instead of legacy viewe
   expect(tabsSrc).not.toContain('sec-layout');
 
   // v7 S4 (2026-07-28): appearance 殭屍 shell 移除，改為純別名 → themes。
-  expect(adminSrc).toMatch(/appearance:\s*\{\s*nav:\s*"themes"\s*\}/);
+  // 2026-11-14：主題併進彈幕樣式頁，兩者都落在 viewer 的主題區塊。
+  expect(adminSrc).toMatch(/appearance:\s*\{\s*nav:\s*"viewer",\s*tab:\s*"themes"\s*\}/);
+  expect(adminSrc).toMatch(/themes:\s*\{\s*nav:\s*"viewer",\s*tab:\s*"themes"\s*\}/);
   expect(adminSrc).not.toMatch(/appearance:\s*\{\s*title:/);
 });
 
@@ -864,7 +862,9 @@ test("admin shell and Viewer Theme residual controls compose shared primitives",
   expect(adminSrc).toContain('id="effectReloadBtn" class="admin-ui-action admin-effects-action"');
   expect(adminSrc).toContain('class="admin-ui-action admin-effects-inspector-action" id="effectsInspectorReload"');
   expect(adminSrc).toContain('class="admin-ui-action is-primary admin-effects-inspector-action" id="effectsInspectorEdit"');
-  expect(adminSrc).toContain('id="themeReloadBtn" class="admin-ui-action admin-theme-reload-action"');
+  // 2026-11-14：主題區塊的版面搬進 admin-themes.js（彈幕樣式頁的第一塊）。
+  const themesSrc = fs.readFileSync(path.join(staticDir, "admin-themes.js"), "utf8");
+  expect(themesSrc).toContain('id="themeReloadBtn" class="admin-ui-action admin-theme-reload-action"');
   // 2026-09-07 設計稿 08 · H1：進行中的控制項搬到全域的 admin-replay-bar.js，
   // 用的還是同一組共用 primitive（檢查點跟著檔案走，不是放寬）。
   const replayBarSrc = fs.readFileSync(path.join(staticDir, "admin-replay-bar.js"), "utf8");

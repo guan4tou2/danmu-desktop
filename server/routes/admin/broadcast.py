@@ -13,7 +13,7 @@ all fire at the same frame. Streamers asked for this — feels natural.
 from flask import current_app, request
 
 from ...services import broadcast as broadcast_svc
-from ...services import messaging
+from ...services import danmu_style, messaging
 from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login, sanitize_log_string
 
@@ -119,6 +119,8 @@ def broadcast_send():
     for k in ("color", "size", "speed", "opacity", "layout", "fontfamily"):
         if k in payload:
             data[k] = payload[k]
+    # 沒指定顏色／字型時用使用中主題的覆寫（沒有覆寫就什麼都不加）。
+    danmu_style.apply_theme_defaults(data)
 
     # bypass_broadcast_gate=True so the message hits overlay even when the
     # broadcast is in STANDBY — admin pushes are operator messages, not

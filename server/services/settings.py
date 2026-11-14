@@ -13,6 +13,10 @@ def get_setting_ranges():
     return settings_store.get_ranges()
 
 
+def get_setting_defaults():
+    return settings_store.get_defaults()
+
+
 def update_setting(key, index, value):
     return settings_store.update_value(key, index, value)
 

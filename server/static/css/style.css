@@ -15088,30 +15088,104 @@ body.is-light .admin-login-wordmark.is-on-light,
 }
 
 
-/* ─── 顯示層 / 觀眾頁 的兩種模式（2026-08-19 設計稿 07）───────────────
- * 同一份面板服務兩條路由，syncVisibility 在容器上標 data-dsp-mode：
- *   values   → 顯示層：只露「值」那一欄（主持人設定大螢幕長什麼樣）
- *   audience → 觀眾頁：只露「觀眾可自訂」的開關欄
- * 設計稿把這兩件事分成 R1 與 R4 兩頁；資料本來就是同一列的 slot 3 與
- * slot 0，所以拆的是呈現、不是資料。
+/* ─── 彈幕樣式頁（2026-11-14 合併與摺疊第四批）────────────────────
+ * 顯示層的外觀、主題、觀眾頁三處併成一頁：一列一個屬性，三欄＝
+ * [屬性名＋目前值] [預設值（觀眾可改時露出範圍／可選清單）] [觀眾可改]。
+ * 以前同一份表靠 data-dsp-mode 分成「只露值」「只露開關」兩種模式，現在
+ * 三欄同時在場，模式規則一併退場。
+ *
+ * 手機（≤720px，見上面的單欄規則）的三個保證，全部寫在 CSS 本身：
+ *   1. 可點元素至少 44px 高：每一種按鈕／輸入在下面的 @media 裡有
+ *      min-height: 44px（swatch 另有 44px 寬）。
+ *   2. 標籤不斷行：按鈕上的字一律 white-space: nowrap。
+ *   3. 不超出畫面：會排成一列的東西（chip、版面磚、分段、清單按鈕、色票、
+ *      主題卡）全部 flex-wrap，網格欄位一律 minmax(0, 1fr)，單一元素再長
+ *      也只會換到下一行，不會把版心撐寬。
  * ──────────────────────────────────────────────────────────────────── */
-[data-dsp-mode="values"] .admin-dsp2-cell-toggle,
-[data-dsp-mode="audience"] .admin-dsp2-cell-center {
-  display: none;
+.admin-dsp2-cell-label-name { white-space: nowrap; }
+
+/* 後端沒有旗標的列：開關照現況顯示、按不動 */
+.admin-dsp2-pill:disabled { cursor: default; opacity: 0.6; }
+.admin-dsp2-row.is-fixed .admin-dsp2-cell-label-name { color: var(--admin-text-dim); }
+
+/* 開關打開才露出的延伸列（顏色的色票編輯器）：跟在該列下面、佔滿表寬 */
+.admin-dsp2-row-ext.admin-color-palette {
+  border: 0;
+  border-bottom: 1px solid var(--admin-line);
+  border-radius: 0;
+  margin: 0;
 }
 
+/* 可選清單（字型、版面）：開關打開才露出 */
+.admin-dsp2-allow-controls {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--text-caption);
+  color: var(--admin-text-dim);
+}
+.admin-dsp2-allow-btn {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--admin-line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--admin-text);
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+.admin-dsp2-allow-btn.is-apply { border-color: var(--color-primary); color: var(--color-ink-accent); }
+.admin-dsp2-tchip.is-blocked,
+.admin-dsp2-tile.is-blocked { opacity: 0.45; }
 
-/* 標題／說明／欄位表頭也是兩套並存，只露當前模式的那一套 */
-[data-dsp-mode="values"] [data-dsp-only="audience"],
-[data-dsp-mode="audience"] [data-dsp-only="values"] {
-  display: none;
+.admin-dsp2-link {
+  display: inline-flex; align-items: center;
+  font-size: var(--text-caption);
+  color: var(--color-ink-accent);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.admin-dsp2-link:hover { text-decoration: underline; }
+
+.admin-dsp2-chiprow .admin-dsp2-link { margin-left: var(--space-2); }
+
+.admin-dsp2-seg button,
+.admin-dsp2-tchip,
+.admin-dsp2-fchip,
+.admin-dsp2-allow-btn,
+.admin-dsp2-pill-label,
+.admin-dsp2-btn { white-space: nowrap; }
+
+.admin-dsp2-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.admin-dsp2-actions .admin-dsp2-btn { flex: 1 1 auto; }
+
+/* 主題卡片：彈幕樣式頁最上面一排，看一眼就知道長什麼樣、點一下套用 */
+.admin-style-themes { display: flex; flex-direction: column; gap: var(--space-3); }
+.admin-style-themes-head {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--space-2);
+}
+.admin-style-themes-head .admin-ui-group-label { margin: 0; }
+.admin-style-themes-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.admin-style-themes-actions .admin-ui-action { white-space: nowrap; }
+.admin-style-themes #themesList { grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); }
+.admin-style-themes .theme-pack-actions { flex-wrap: wrap; }
+.admin-style-themes .theme-pack-actions .admin-ui-action { white-space: nowrap; }
+
+/* 觀眾圖片：網站清單與格式勾選 */
+.admin-vi-row { flex-wrap: wrap; }
+.admin-vi-hosts { flex: 1 1 240px; min-width: 0; }
+.admin-vi-hosts textarea { width: 100%; resize: vertical; min-height: 64px; }
+.admin-vi-exts { flex-wrap: wrap; gap: var(--space-3); }
+/* 5.8.0 留下的手機點擊高度 42px：整個 label 是點擊目標，高度與內距寫在
+ * class 上（原本是 inline style），box-sizing 讓 44 就是外框高度。 */
+.admin-vi-ext {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0 var(--space-1);
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-
-/* 單欄模式下不需要三欄網格的留白 */
-[data-dsp-mode] .admin-dsp2-row {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-}
 
 
 .admin-dsp2-cell-label { padding-top: 2px; min-width: 0; }
@@ -15139,18 +15213,19 @@ body.is-light .admin-login-wordmark.is-on-light,
   color: var(--color-ink-accent);
 }
 
+/* 值與來源標記（「來自主題」／「主題值未採用」）並排，窄欄時換行 */
+.admin-dsp2-cell-badges {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin-top: var(--space-2);
+}
+.admin-dsp2-cell-badges .admin-dsp2-value-badge { margin-top: 0; }
+
 
 /* ── Center column: hint + picker + range band ───────────────────── */
 .admin-dsp2-cell-center { padding-top: 2px; min-width: 0; }
 
-.admin-dsp2-cell-hint {
-  font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 1.3px;
-  color: var(--admin-text-dim);
-  margin-bottom: var(--space-2);
-  display: flex; align-items: center; gap: var(--space-1);
-}
 
-.admin-dsp2-cell-hint-arrow { color: var(--color-ink-accent); }
 
 
 .admin-dsp2-picker { min-width: 0; }
@@ -15400,15 +15475,6 @@ body.is-light .admin-login-wordmark.is-on-light,
   left: 13px; background: #000;
 }
 
-.admin-dsp2-toggle-hint {
-  font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 1px;
-  text-align: right;
-  color: var(--admin-text-dim);
-  max-width: 150px; line-height: 1.5;
-}
-
-.admin-dsp2-row.is-on .admin-dsp2-toggle-hint { color: var(--color-ink-accent); }
-
 
 /* ── Right rail cards ─────────────────────────────────────────────── */
 .admin-dsp2-rail { display: flex; flex-direction: column; gap: var(--space-3); }
@@ -15420,9 +15486,6 @@ body.is-light .admin-login-wordmark.is-on-light,
   overflow: hidden;
 }
 
-.admin-dsp2-card-head {
-  display: flex; align-items: baseline; gap: var(--space-2); justify-content: space-between;
-}
 
 
 /* PreviewCard */
@@ -15431,18 +15494,7 @@ body.is-light .admin-login-wordmark.is-on-light,
   display: flex; align-items: center; gap: var(--space-2);
 }
 
-.admin-dsp2-preview-sync {
-  margin-left: auto;
-  font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 1px;
-  color: var(--color-ink-accent);
-  display: inline-flex; align-items: center; gap: var(--space-1);
-}
 
-.admin-dsp2-dot {
-  display: inline-block; width: 5px; height: 5px; border-radius: 50%;
-  background: var(--color-primary);
-  box-shadow: 0 0 6px var(--color-primary);
-}
 
 .admin-dsp2-preview-stage {
   height: 180px;
@@ -15519,54 +15571,73 @@ body.is-light .admin-login-wordmark.is-on-light,
 
 .admin-dsp2-btn-ghost:hover { border-color: color-mix(in srgb, var(--color-primary) 55%, transparent); }
 
+/* ─── 彈幕樣式頁 · 手機（≤720px）──────────────────────────────────────
+ * 這一段必須排在所有 .admin-dsp2-* 基本規則**之後**：兩邊的選擇器特異度
+ * 一樣（多半是單一 class），同特異度比的是出現順序。2026-11-14 第一版把它
+ * 放在基本規則前面，結果 .admin-dsp2-swatch 的 28px、.admin-dsp2-tchip 的
+ * min-height 30px 都把這裡的 44px 蓋掉。要加新規則就加在這一段裡。
+ * 檢查方法：python3 scripts/css-cascade-check.py --width 375（repo 根目錄）
+ * ──────────────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .admin-dsp2-tiles { display: flex; flex-wrap: wrap; }
+  .admin-dsp2-tile { flex: 1 1 auto; }
+  .admin-dsp2-tile,
+  .admin-dsp2-fchip,
+  .admin-dsp2-tchip,
+  .admin-dsp2-pill,
+  .admin-dsp2-allow-btn,
+  .admin-dsp2-seg button,
+  .admin-dsp2-link,
+  .admin-dsp2-btn,
+  .admin-dsp2-num,
+  .admin-dsp2-range,
+  .admin-dsp2-fold > summary,
+  .admin-style-themes .admin-ui-action,
+  .admin-vi-ext {
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+  .admin-dsp2-fchip { flex: 1 1 44px; }
+  .admin-dsp2-swatch,
+  .admin-dsp2-swatch-custom { width: 44px; height: 44px; }
+  /* 範圍與步進：點擊目標是 input 本身（外框 span 只是裝單位的容器），
+     所以 44px 給 input，外框不再加上下內距。 */
+  .admin-dsp2-band { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .admin-dsp2-band-input { padding-top: 0; padding-bottom: 0; }
+  .admin-dsp2-band-input input { min-height: 44px; box-sizing: border-box; }
+  .admin-dsp2-seg { display: flex; flex-wrap: wrap; }
+  .admin-vi-ext .admin-ui-checkbox { width: 20px; height: 20px; }
 
-/* SummaryCard */
-.admin-dsp2-summary { padding: var(--space-3); }
-
-.admin-dsp2-summary-list {
-  margin-top: var(--space-3);
-  display: flex; flex-direction: column; gap: var(--space-1);
+  /* 即時預覽：桌面版用絕對定位模擬彈幕飄過的位置（pill-1 故意從左緣外
+     進場，不換行）；窄螢幕上這兩行會超出卡片。改成在卡片裡上下排、可換行，
+     版面預設的位置差異（上方／下方／浮動）只在寬螢幕上表現。 */
+  .admin-dsp2-preview-stage {
+    height: auto;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-3);
+  }
+  .admin-dsp2-preview-pill {
+    position: static;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .admin-dsp2-preview-tag { display: inline-block; max-width: 100%; }
 }
 
-.admin-dsp2-srow {
-  display: flex; align-items: center; gap: var(--space-2);
-  padding: var(--space-2) var(--space-2);
-  border-radius: var(--radius-xs);
-  background: var(--admin-raised);
-  border: 1px solid var(--admin-line);
-}
 
-.admin-dsp2-srow.is-on {
-  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
-  border-color: var(--color-primary);
-}
 
-.admin-dsp2-srow-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--admin-text-dim);
-  flex-shrink: 0;
-}
 
-.admin-dsp2-srow.is-on .admin-dsp2-srow-dot {
-  background: var(--color-primary);
-  box-shadow: 0 0 8px var(--color-primary);
-}
 
-.admin-dsp2-srow-label {
-  font-size: var(--text-footnote); color: var(--admin-text-dim); font-weight: 400;
-}
 
-.admin-dsp2-srow.is-on .admin-dsp2-srow-label {
-  color: var(--admin-text); font-weight: 600;
-}
 
-.admin-dsp2-srow-tag {
-  margin-left: auto;
-  font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 1px;
-  color: var(--admin-text-dim);
-}
 
-.admin-dsp2-srow.is-on .admin-dsp2-srow-tag { color: var(--color-ink-accent); }
+
+
 
 
 /* ──────────────────────────────────────────────────────────────────────────

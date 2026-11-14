@@ -181,6 +181,10 @@ class SettingsStore:
     def get_ranges(self):
         return copy.deepcopy(self._ranges)
 
+    def get_defaults(self):
+        """出廠預設值（admin「還原預設」用；與 reset() 還原成的是同一份）。"""
+        return copy.deepcopy(_DEFAULT_OPTIONS)
+
     def set_toggle(self, key, enabled):
         with self._lock:
             if key in self._options:

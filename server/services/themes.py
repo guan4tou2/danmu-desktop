@@ -335,6 +335,15 @@ def create_user_theme(label: str, base_name: str) -> Dict[str, Any]:
     with open(path, "w", encoding="utf-8") as fh:
         yaml.safe_dump(doc, fh, allow_unicode=True, sort_keys=False)
 
+    # 字型與觀眾預設顏色只在覆寫層才生效（services/danmu_style.py；YAML 裡的
+    # styles.color / font.family 不算數），所以另存時把這兩個覆寫一起帶過去，
+    # 新主題才會跟「照這個再調」的那個長得一樣。
+    carried = {
+        k: v for k, v in theme_overrides.get_for(base_name).items() if k in ("color", "font_family")
+    }
+    if carried:
+        theme_overrides.set_for(name, carried)
+
     _scan()
     logger.info("[Themes] Created user theme: %s", name)
     return {"name": name, "label": label, "custom": True}

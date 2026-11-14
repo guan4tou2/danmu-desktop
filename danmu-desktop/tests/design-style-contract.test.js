@@ -171,8 +171,10 @@ test("viewer font dropdown shows the configured default font name", () => {
   const template = fs.readFileSync(path.join(REPO_ROOT, "server/templates/index.html"), "utf8");
   const mainJs = fs.readFileSync(path.join(REPO_ROOT, "server/static/js/main.js"), "utf8");
 
+  // 2026-11-14：預設字型是「實際會用的」那一個——使用中主題的字型覆寫有效時
+  // 是主題值，否則是 FontFamily[3]（server/services/danmu_style.py）。
   expect(template).toMatch(
-    /<option\s+value="">\s*\{\{\s*options\.FontFamily\[3\]\s+or\s+"NotoSansTC"\s*\}\}\s*<\/option>/,
+    /<option\s+value="">\s*\{\{\s*style_defaults\.FontFamily\.value\s+or\s+"NotoSansTC"\s*\}\}\s*<\/option>/,
   );
   expect(template).not.toMatch(/data-i18n="defaultFont"[^>]*>\s*Default Font/);
   expect(mainJs).toMatch(/function\s+getDefaultFontName\(\)\s*\{/);

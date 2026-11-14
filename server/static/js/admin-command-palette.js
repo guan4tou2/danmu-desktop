@@ -26,7 +26,8 @@
   // （併進系統頁的分頁），改由下面 SETTINGS 的 system/<分頁> 列出。
   const ROUTE_SLUGS = [
     "live", "polls", "moderation",
-    "viewer", "widgets", "effects", "themes", "assets",
+    // 2026-11-14：themes 併進 viewer（彈幕樣式），不再是 ADMIN_ROUTES 條目。
+    "viewer", "widgets", "effects", "assets",
     "system", "history",
     "notifications", "audience", "overlay", "about",
   ];
@@ -44,10 +45,14 @@
   // Setting → {route, sectionId} map. Selecting jumps to the route then
   // scrolls to the section id.
   const SETTINGS = [
-    { labelKey: "cmdkSettingViewerTheme",    route: "viewer", tab: "page", section: "sec-viewer-theme" },
-    { labelKey: "cmdkSettingViewerFields",   route: "viewer", tab: "fields", section: "sec-viewer-config-fields" },
-    { labelKey: "cmdkSettingViewerDefaults", route: "viewer", tab: "defaults", section: "sec-viewer-config-defaults" },
-    { labelKey: "cmdkSettingViewerLimits",   route: "viewer", tab: "limits", section: "sec-viewer-config-limits" },
+    // 2026-11-14 彈幕樣式合一：彈幕樣式頁的四塊。#/viewer/<區塊> 由 router
+    // 展開並捲過去（AdminTabs 的 PageAnchors）。「表單欄位」面板是假開關、已退場，
+    // 每個欄位觀眾能不能改就是樣式表的開關欄。
+    { labelKey: "styleThemePacks",           route: "viewer/themes", section: "sec-themes" },
+    { labelKey: "cmdkSettingViewerDefaults", route: "viewer/defaults", section: "sec-viewer-config-defaults" },
+    { labelKey: "cmdkSettingViewerTheme",    route: "viewer/page", section: "sec-viewer-theme" },
+    { labelKey: "cmdkSettingViewerLimits",   route: "viewer/limits", section: "sec-viewer-config-limits" },
+    { labelKey: "overlayLayoutFoldTitle",    route: "overlay", section: "sec-overlay-layout" },
     // 2026-11-14：黑名單與過濾規則合成一份清單，⌘K 也只剩一個入口。
     { labelKey: "cmdkSettingBlacklist",   route: "moderation/blacklist", section: "sec-blacklist" },
     { labelKey: "cmdkSettingRatelimit",   route: "moderation", tab: "ratelimit", section: "sec-ratelimit" },
@@ -286,7 +291,6 @@
       window.location.hash = "#/" + item.route;
       close();
     } else if (item.type === "setting") {
-      if (item.tab) document.body.dataset.viewerConfigTab = item.tab;
       window.location.hash = "#/" + item.route;
       setTimeout(() => window.dispatchEvent(new Event("hashchange")), 20);
       // Scroll after route applies (admin.js applyRoute toggles display).
@@ -310,14 +314,12 @@
       }, 80);
       close();
     } else if (item.type === "theme") {
-      // Activate the theme via existing /admin/themes/active endpoint.
-      _csrfFetch("/admin/themes/active", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: item.id }),
-      })
-        .then((r) => {
-          if (r.ok) {
+      // 套用主題走 AdminThemes.activate——與主題卡片同一個出口，樣式表的
+      // 描邊／陰影／顏色／字型列才會跟著換（它發 admin-themes-changed）。
+      const themesApi = window.AdminThemes;
+      (themesApi && themesApi.activate ? themesApi.activate(item.id) : Promise.resolve({ ok: false }))
+        .then((result) => {
+          if (result.ok) {
             _toast(ServerI18n.t("cmdkThemeApplied", { name: item.label }), true);
             // Invalidate cache so the active flag refreshes next open.
             _themeCache = null;
@@ -343,7 +345,7 @@
     live: "adminNavGroupLive", overlay: "adminNavGroupLive",
     polls: "adminNavGroupLive", moderation: "adminNavGroupLive",
     viewer: "adminNavGroupAppearance", effects: "adminNavGroupAppearance",
-    themes: "adminNavGroupAppearance", assets: "adminNavGroupAppearance",
+    assets: "adminNavGroupAppearance",
     widgets: "adminNavGroupAppearance",
     system: "adminNavGroupSystem", history: "adminNavGroupSystem",
   };

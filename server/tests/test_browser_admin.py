@@ -127,15 +127,14 @@ SECTION_TO_ROUTE = {
     # Phase A IA (2026-05-06): viewer/display defaults are now reached
     # through the canonical viewer route. Legacy #/viewer-config still works
     # via router aliases, but tests should exercise the visible sidebar home.
-    # v8（2026-08-19 設計稿 07 · R1/R4 拆分）：這六列的「值」現在歸顯示層，
-    # 觀眾頁只留「觀眾能不能自己改」的開關欄。兩頁共用同一份面板，靠
-    # data-dsp-mode 決定露哪一欄——要驗值編輯器就得走 overlay。
-    "sec-color": "overlay",
-    "sec-opacity": "overlay",
-    "sec-fontsize": "overlay",
-    "sec-speed": "overlay",
-    "sec-fontfamily": "overlay",
-    "sec-layout": "overlay",
+    # 2026-11-14 彈幕樣式合一：值與「觀眾可改」開關回到同一列，整張表在
+    # 彈幕樣式頁（#/viewer）。顯示層頁只剩大螢幕排版的收合區。
+    "sec-color": "viewer",
+    "sec-opacity": "viewer",
+    "sec-fontsize": "viewer",
+    "sec-speed": "viewer",
+    "sec-fontfamily": "viewer",
+    "sec-layout": "viewer",
     "sec-viewer-theme": "viewer",
     "sec-themes": "themes",
     # v5: emojis / stickers / sounds bundled into the "assets" route.
@@ -201,18 +200,9 @@ def _open_section(page, section_id: str):
         "sec-layout",
     }
     if section_id in DISPLAY_LEGACY_IDS:
+        # 2026-11-14：樣式表在彈幕樣式頁直接展開，不必再點收合區。
         page.wait_for_selector("#sec-viewer-config-defaults", state="visible", timeout=5000)
-        # 顯示層頁把彈幕外觀收進預設收合的 <details>（主動作在首屏頂端），
-        # 值編輯器要先展開才看得到。先等模式切到 values（收合在切換那一刻
-        # 才設定），再展開。
-        page.wait_for_selector(
-            '#sec-viewer-config-defaults[data-dsp-mode="values"]', state="visible", timeout=5000
-        )
-        fold = page.locator(
-            "#sec-viewer-config-defaults details[data-dsp-fold]:not([open]) > summary"
-        )
-        if fold.count() > 0:
-            fold.click()
+        page.wait_for_selector("#sec-viewer-config-defaults [data-row-key]", timeout=5000)
         return
 
     page.wait_for_selector(
@@ -368,25 +358,31 @@ def test_settings_speed_reflects_new_value(admin_page):
 def test_settings_color_toggle_calls_api(admin_page):
     """切換 Color 的 audience toggle 應發送 /admin/Set 請求（回 200）
 
-    v8（2026-08-19 設計稿 07 · R1/R4 拆分）：「觀眾能不能自己改」的開關欄
-    只在**觀眾頁**露出（顯示層那邊露的是值欄）。SECTION_TO_ROUTE 把
-    sec-color 指向 overlay 是為了值編輯器，這條測的是開關，得自己走 viewer。
+    2026-11-14 彈幕樣式合一：值與開關在彈幕樣式頁的同一列。
     """
     admin_page.evaluate('() => { window.location.hash = "#/viewer"; }')
     admin_page.wait_for_selector(
-        '[data-dsp-mode="audience"] [data-toggle-key="Color"]', state="visible", timeout=5000
+        '#sec-viewer-config-defaults [data-toggle-key="Color"]', state="visible", timeout=5000
     )
     responses = []
     admin_page.on("response", lambda r: responses.append(r) if "/admin/Set" in r.url else None)
 
     # v5: toggle is a button with data-toggle-key, not a checkbox #toggle-Color.
     color_toggle = admin_page.locator('[data-toggle-key="Color"]')
-    color_toggle.click()
-    admin_page.wait_for_timeout(500)
+    before = color_toggle.get_attribute("aria-pressed")
+    try:
+        color_toggle.click()
+        admin_page.wait_for_timeout(500)
 
-    set_resp = [r for r in responses if "/admin/Set" in r.url]
-    assert len(set_resp) >= 1
-    assert set_resp[0].status == 200
+        set_resp = [r for r in responses if "/admin/Set" in r.url]
+        assert len(set_resp) >= 1
+        assert set_resp[0].status == 200
+    finally:
+        # 切回去：這個開關關著時，色票編輯器會收起來，後面的測試找不到它。
+        toggle = admin_page.locator('[data-toggle-key="Color"]')
+        if toggle.get_attribute("aria-pressed") != before:
+            with admin_page.expect_response(lambda r: "/admin/Set" in r.url):
+                toggle.click()
 
 
 # ─── 黑名單管理 ───────────────────────────────────────────────────────────────
@@ -1313,23 +1309,34 @@ def test_admin_palette_edits_and_picker_policy_sync_to_open_viewer(admin_page, l
 @pytest.mark.parametrize("width", [320, 782, 1440])
 @pytest.mark.parametrize("theme", ["light", "dark"])
 def test_palette_visual_layout_preview_and_reduced_motion(admin_page, width, theme):
+    from server.managers import settings_store
+
+    # 色票編輯器只在顏色「觀眾可改」開著時露出；從原廠設定開始，不靠前面的測試
+    # 留下什麼狀態。
+    original_settings = settings_store.get_options()
+    settings_store.reset()
     page = admin_page
-    page.set_viewport_size({"width": width, "height": 1000})
-    page.emulate_media(reduced_motion="reduce")
-    page.evaluate("theme => localStorage.setItem('theme-mode', theme)", theme)
-    page.reload()
-    page.evaluate("location.hash = '#/viewer'")
-    editor = page.locator("[data-admin-color-palette]")
-    expect(editor).to_be_visible()
-    button = editor.locator("[data-palette-preview]").nth(1)
-    color = button.get_attribute("data-palette-preview")
-    button.click()
-    expect(button).to_have_attribute("aria-pressed", "true")
-    expect(editor.locator("[data-palette-preview-code]")).to_have_text(color)
-    assert (
-        editor.locator("[data-palette-preview-text]").evaluate("el => el.getAnimations().length")
-        == 0
-    )
+    try:
+        page.set_viewport_size({"width": width, "height": 1000})
+        page.emulate_media(reduced_motion="reduce")
+        page.evaluate("theme => localStorage.setItem('theme-mode', theme)", theme)
+        page.reload()
+        page.evaluate("location.hash = '#/viewer'")
+        editor = page.locator("[data-admin-color-palette]")
+        expect(editor).to_be_visible()
+        button = editor.locator("[data-palette-preview]").nth(1)
+        color = button.get_attribute("data-palette-preview")
+        button.click()
+        expect(button).to_have_attribute("aria-pressed", "true")
+        expect(editor.locator("[data-palette-preview-code]")).to_have_text(color)
+        assert (
+            editor.locator("[data-palette-preview-text]").evaluate(
+                "el => el.getAnimations().length"
+            )
+            == 0
+        )
+    finally:
+        settings_store.restore_options(original_settings)
     assert editor.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
 
     def _assert_touch_target(locator):

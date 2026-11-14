@@ -61,9 +61,12 @@ EXPECTED_NAV_ORDER = [
     # (2026-09-06 設計稿 08/14: `widgets` 從「擴充」hub 回到這一組——
     #  小工具是主持人活動前會擺一次的東西，跟主題、素材同類，
     #  不屬於給 IT 人員的擴充區)
+    #
+    # 2026-11-14 彈幕樣式合一（合併與摺疊第四批）：`themes` 併進 `viewer`
+    # （側欄標籤改成「彈幕樣式」）。主題是那一頁最上面的一塊，#/themes 落在
+    # #/viewer/themes。顯示層頁收合區的外觀控制也搬過去了。側欄 11 → 10 列。
     "viewer",
     "effects",
-    "themes",
     "assets",
     "widgets",
     # 系統 — 與活動當下無關的維運
@@ -320,7 +323,8 @@ def test_admin_routes_has_new_canonical_slugs(admin_js: str):
     test_tab_config_section_ids_are_creatable 覆蓋。"""
     for slug, expected_section in [
         ("live", "sec-live-feed"),
-        ("viewer", "sec-viewer-config-info"),
+        # 2026-11-14 彈幕樣式合一：說明橫幅退場，探針改成樣式表本身。
+        ("viewer", "sec-viewer-config-defaults"),
     ]:
         pattern = re.compile(
             rf'\b{slug}:\s*\{{[^}}]*sections:\s*\[[^\]]*"{expected_section}"',
@@ -470,10 +474,13 @@ def test_appearance_alias_targets_themes_parent(admin_js: str):
     """v7 S4 (2026-07-28): `appearance` is a parent-only alias to themes —
     its legacy shell (ADMIN_ROUTES entry + TabConfig group) was removed.
     Alias (not bare) so #/appearance/<tab> hashes still resolve."""
-    pattern = re.compile(r'\bappearance:\s*\{\s*nav:\s*"themes"\s*\}')
-    assert pattern.search(
-        admin_js
-    ), "_routeAliases.appearance must equal { nav: 'themes' } — parent-only"
+    # 2026-11-14 彈幕樣式合一：主題併進彈幕樣式頁（viewer）。appearance 與
+    # themes 都指到 viewer 的主題區塊（AdminTabs 的 PageAnchors），themes 自己
+    # 的 ADMIN_ROUTES 條目移除——留著的話它會先被查到，alias 永遠不生效。
+    for slug in ("appearance", "themes"):
+        pattern = re.compile(rf'\b{slug}:\s*\{{\s*nav:\s*"viewer",\s*tab:\s*"themes"\s*\}}')
+        assert pattern.search(admin_js), f"_routeAliases.{slug} must land on viewer/themes"
+    assert not re.search(r"\n\s*themes:\s*\{\s*title:", admin_js)
     assert not re.search(
         r"\n\s*appearance:\s*\{\s*title:", admin_js
     ), "ADMIN_ROUTES.appearance must stay removed (the alias would be dead)"
@@ -860,87 +867,25 @@ def admin_display_js() -> str:
     return path.read_text(encoding="utf-8")
 
 
-def test_viewer_owner_gate_accepts_all_four_owners(admin_display_js: str):
-    """The admin-display syncVisibility() gate must consider every valid
-    owner signal — `route === "viewer-config"` (legacy bookmark) or
-    `route === "viewer"` (canonical), plus the matching leaf paths —
-    and use the resulting flag to decide which tab panel renders.
-
-    2026-05-13 engineering update: the editable per-parameter table
-    (color / opacity / font-size / speed / layout) is now the
-    Viewer › Defaults tab; the helper was renamed from
-    `_isViewerConfigOwner` → `_isViewerOwner` to reflect that the
-    surface now belongs to the Viewer route, not a legacy viewer-config
-    sub-page."""
-    owner_block = re.search(
-        r"function _isViewerOwner\(route, leaf\)\s*\{[\s\S]*?\n\s*\}",
-        admin_display_js,
-    )
-    assert owner_block, "_isViewerOwner helper not found"
-    owner_body = owner_block.group(0)
-    assert 'route === "viewer-config"' in owner_body, "must accept legacy viewer-config route"
-    assert 'route === "viewer"' in owner_body, "must accept canonical viewer route"
-    assert 'leaf === "viewer-config"' in owner_body, "must accept appearance/viewer-config leaf"
-    assert 'leaf === "viewer"' in owner_body, "must accept system or alias viewer leaf"
-
-    sync_block = re.search(
-        r"function syncVisibility\(\)\s*\{[\s\S]*?_lastVisibleRoute\s*=\s*route;",
-        admin_display_js,
-    )
-    assert sync_block, "syncVisibility body not found"
-    body = sync_block.group(0)
-    assert (
-        "const isViewerOwner = _isViewerOwner(route, leaf)" in body
-    ), "syncVisibility must use the shared owner helper"
-    # v8 IA (2026-08-19)：同一份面板改為服務兩條路由——顯示層 (overlay) 露
-    # 「值」欄、觀眾頁 (viewer › defaults) 露「觀眾可自訂」欄，由 data-dsp-mode
-    # 決定。可見性條件因此從單一 gate 變成兩個 owner 的聯集。
-    assert (
-        "const isDisplayOwner = _isDisplayOwner(route, leaf)" in body
-    ), "syncVisibility 必須一併問 display owner（顯示層路由）"
-    # v8 R4（2026-08-19）：觀眾頁四個分頁退場，改成單頁三群組，可見性因此
-    # 不再綁 tab——觀眾頁或顯示層任一在台上就顯示，由 data-dsp-mode 分欄。
-    assert (
-        "const showPanel = isViewerOwner || isDisplayOwner" in body
-    ), "面板可見性 = 觀眾頁 或 顯示層路由（不再綁分頁）"
-    assert (
-        'page.dataset.dspMode = isDisplayOwner ? "values" : "audience"' in body
-    ), "必須標上 data-dsp-mode，CSS 靠它決定露值欄還是觀眾欄"
-    assert 'page.style.display = showPanel ? "" : "none"' in body
-
-
-def test_viewer_tab_state_has_a_single_source(admin_display_js: str):
-    """admin-display.js must not run a second visibility controller
-    alongside syncVisibility(), and must take the active tab from the
-    router instead of re-deriving it.
-
-    D-6 階段 4 (2026-07-29) 改寫。原本這條釘的是 `_syncBar` —— 那個函式
-    是 admin-display.js 自製 `.admin-tabstrip` 分頁列的可見性控制，跟
-    syncVisibility 是兩套各算各的。同層級的控制有兩個來源，就是 c5a7c63
-    那個「點 A 分頁反而藏掉 B」的成因；strip 併進 TabConfig.viewer 之後
-    `_syncBar` 整個退場。契約從「兩套要用同一個判斷」升級成「只准有一套」。
-    """
-    assert (
-        "function _syncBar" not in admin_display_js
-    ), "_syncBar 已退役：可見性只能由 syncVisibility 決定，別再開第二套"
-    assert not re.search(r'className\s*=\s*"admin-tabstrip', admin_display_js), (
-        "viewer 不該再自己生 `.admin-tabstrip`；分頁列由 admin-tabs.js 的 "
-        "TabConfig.viewer 經 shell 統一掛載"
-    )
-
-    mirror = re.search(
-        r"function _mirrorRouterTab\([^)]*\)\s*\{[\s\S]*?\n  \}",
-        admin_display_js,
-    )
-    assert mirror, "_mirrorRouterTab body not found"
-    body = mirror.group(0)
-    assert (
-        "_isViewerOwner(route, leaf)" in body
-    ), "_mirrorRouterTab must use the shared route/leaf owner check"
-    assert 'hash === "viewer-config"' not in body and "location.hash" not in body, (
-        "分頁要讀 router 已經算好的 leaf，不要自己重解 hash —— 別名路由的 "
-        "hash 裡根本沒有 tab 段，重解只會多一條可能不一致的推導"
-    )
+def test_style_page_visibility_is_owned_by_the_router(admin_display_js: str):
+    """2026-11-14 彈幕樣式合一：顯示層（值）與觀眾頁（開關）原本共用同一份面板，
+    靠 `data-dsp-mode` 決定露哪一欄、靠自己的 syncVisibility 決定整塊顯不顯示。
+    合併後值與開關在同一列，彈幕樣式頁與顯示層頁各有自己的 section
+    （`sec-viewer-config-defaults`／`sec-overlay-layout`），顯示與隱藏全由
+    router 依 ADMIN_ROUTES 的 sections 決定——模組不再自己寫 display，也不再
+    鏡射分頁狀態（那正是 c5a7c63「點 A 分頁反而藏掉 B」的成因）。"""
+    assert "data-dsp-mode" not in admin_display_js
+    assert "dspMode" not in admin_display_js
+    assert "viewerConfigTab" not in admin_display_js
+    assert "function _syncBar" not in admin_display_js
+    assert not re.search(r'className\s*=\s*"admin-tabstrip', admin_display_js)
+    sync = re.search(r"function syncVisibility\(\)\s*\{[\s\S]*?\n  \}", admin_display_js)
+    assert sync, "syncVisibility body not found"
+    body = sync.group(0)
+    assert ".style.display" not in body, "可見性由 router 決定，模組不寫 display"
+    assert "_viewerEntered" in body, "進入彈幕樣式頁的工作必須是邊緣觸發"
+    assert 'const LAYOUT_ID = "sec-overlay-layout"' in admin_display_js
+    assert 'const PAGE_ID = "sec-viewer-config-defaults"' in admin_display_js
 
 
 # ─── Command palette must not jump to a route that doesn't own the section ──

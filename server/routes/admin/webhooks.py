@@ -201,9 +201,9 @@ def incoming_webhook(hook_id):
     if not text:
         return _json_response({"error": "Missing text"}, 400)
 
-    color = body.get("color", "FFFFFF")
+    color = body.get("color")
     if not isinstance(color, str) or not _re.match(r"^#?[0-9a-fA-F]{6}$", color):
-        color = "FFFFFF"
+        color = None  # 下面補：使用中主題的覆寫顏色，沒有就照舊 FFFFFF
     size = body.get("size", 50)
     if not isinstance(size, int) or not (1 <= size <= 200):
         size = 50
@@ -240,5 +240,11 @@ def incoming_webhook(hook_id):
     from ...services import viewer_images
 
     viewer_images.apply_to_resend(msg, request.host_url)
+    from ...services import danmu_style
+
+    # 沒帶（或不合法的）顏色與字型用使用中主題的覆寫；沒有覆寫時與以前相同。
+    danmu_style.apply_theme_defaults(msg)
+    if not msg["color"]:
+        msg["color"] = "FFFFFF"
     messaging.forward_to_ws_server(msg)
     return _json_response({"status": "OK"})

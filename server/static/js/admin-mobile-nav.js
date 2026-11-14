@@ -44,7 +44,7 @@
     { route: "overlay",      icon: "▣", labelKey: "adminRouteTitle_overlay", descKey: "mnavDescOverlay" },
     { route: "viewer",       icon: "◐", labelKey: "adminRouteTitle_viewer", descKey: "mnavDescViewer" },
     { route: "effects",      icon: "✦", labelKey: "mnavEffects", descKey: "mnavDescEffects" },
-    { route: "themes",       icon: "❖", labelKey: "mnavThemes", descKey: "mnavDescThemes" },
+    // 2026-11-14：「主題」併進彈幕樣式（viewer），與側欄對齊。
     // 2026-10-29：小工具在側欄有自己一列，手機這層卻沒有——等於手機完全
     // 到不了（⌘K 在手機上不是可行入口）。補回來。
     { route: "widgets",      icon: "▥", labelKey: "adminNavWidgets" },
@@ -64,6 +64,8 @@
     broadcast: "overlay",
     "viewer-config": "viewer",
     display: "viewer",
+    themes: "viewer",
+    appearance: "viewer",
     security: "system",
     backup: "system",
     integrations: "system",

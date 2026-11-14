@@ -408,7 +408,7 @@
               </div>
             </div>
 
-            <div id="colorControl" class="viewer-sheet-group" data-default-color-presets='{{ color_presets|tojson }}'{% if not options.Color[0] %} hidden{% endif %}>
+            <div id="colorControl" class="viewer-sheet-group" data-default-color-presets='{{ color_presets|tojson }}'{% if style_defaults.Color.source == "theme" %} data-theme-default-color="{{ style_defaults.Color.value }}"{% endif %}{% if not options.Color[0] %} hidden{% endif %}>
               <div class="viewer-sheet-group-label" data-i18n="color">顏色</div>
               <div class="viewer-color-row">
                 <div class="viewer-color-presets" data-viewer-color-presets>
@@ -511,8 +511,8 @@
             <div id="userFontSelectControl" class="viewer-sheet-group" style="display: none;">
               <div class="viewer-sheet-group-label" data-i18n="font">字型</div>
               <div class="viewer-select-wrap">
-                <select id="userFontSelect" class="viewer-select" aria-label="Choose font">
-                  <option value="">{{ options.FontFamily[3] or "NotoSansTC" }}</option>
+                <select id="userFontSelect" class="viewer-select" aria-label="Choose font"{% if style_defaults.FontFamily.source == "theme" %} data-theme-default-font="{{ style_defaults.FontFamily.value }}"{% endif %}>
+                  <option value="">{{ style_defaults.FontFamily.value or "NotoSansTC" }}</option>
                 </select>
               </div>
             </div>

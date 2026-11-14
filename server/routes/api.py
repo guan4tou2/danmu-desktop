@@ -6,7 +6,7 @@ from flask import Blueprint, current_app, make_response, request, send_from_dire
 from werkzeug.exceptions import HTTPException
 
 from .. import state
-from ..services import fingerprint_tracker
+from ..services import danmu_style, fingerprint_tracker
 from ..services import history as history_service
 from ..services import messaging, moderation_bans
 from ..services import themes as theme_svc
@@ -16,7 +16,7 @@ from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
 from ..services.emoji import emoji_service
 from ..services.filter_engine import filter_engine
-from ..services.fonts import build_font_payload, is_allowed_font, list_available_fonts
+from ..services.fonts import build_font_payload, list_available_fonts
 from ..services.ip import get_client_ip as _extract_client_ip
 from ..services.layout import get_all_modes, get_layout_config, get_layout_css
 from ..services.plugin_manager import plugin_manager
@@ -37,7 +37,6 @@ from ..services.settings import get_options
 from ..services.sound import sound_service
 from ..services.stickers import sticker_service
 from ..services.validation import BlacklistCheckSchema, FireRequestSchema, validate_request
-from ..services.viewer_colors import resolve_viewer_color
 from ..services.webhook import webhook_service
 from ..services.ws_state import get_ws_client_count
 from ..utils import json_response as _json_response
@@ -108,21 +107,20 @@ def _resolve_danmu_style(data):
             data["fontInfo"] = {"name": data["font"]}
     data.pop("font", None)
 
-    font_setting = options.get("FontFamily", [True, "", "", "NotoSansTC"])
-    chosen_font_name = font_setting[3]
+    # 2026-11-03（字型 P1）：觀眾提交的字型名稱必須通過伺服器端驗證——
+    # 可用清單＋允許清單交叉核對（is_allowed_font）。以前任何字串都照單全收，
+    # 既繞過管理員允許清單，也讓特定名字把引號帶進 overlay 的 @font-face 樣式表。
+    # 2026-11-14：顏色與字型（含使用中主題的覆寫）統一由 danmu_style.resolve 解析，
+    # 所有送上大螢幕的路徑共用同一份優先序。
     # `FireRequestSchema.fontInfo` has `load_default=None`, so the key can be
     # present-but-None (dict.get's fallback doesn't fire for present keys).
-    # Coalesce None → {} before `.get("name")` to avoid AttributeError.
     font_info = data.get("fontInfo") or {}
-    # 2026-11-03（字型 P1）：觀眾提交的字型名稱必須通過伺服器端驗證——
-    # 可用清單＋允許清單交叉核對。以前任何字串都照單全收，既繞過管理員
-    # 允許清單，也讓特定名字把引號帶進 overlay 的 @font-face 樣式表。
-    if font_setting[0] and font_info.get("name") and is_allowed_font(font_info["name"]):
-        chosen_font_name = font_info["name"]
-    data["fontInfo"] = build_font_payload(chosen_font_name)
-
-    # color：管理員設定存 "#FFFFFF"，overlay 期望不含 # 的 hex
-    data["color"] = resolve_viewer_color(data.pop("color", None), options).lstrip("#").upper()
+    style = danmu_style.resolve(
+        data.pop("color", None), font_info.get("name"), audience=True, options=options
+    )
+    data["fontInfo"] = build_font_payload(style.font)
+    # color：設定存 "#FFFFFF"，overlay 期望不含 # 的大寫 hex
+    data["color"] = danmu_style.overlay_color(style.color)
 
     data["opacity"] = _pick(data.pop("opacity", None), options.get("Opacity", [True, 20, 100, 100]))
     data["size"] = _pick(data.pop("size", None), options.get("FontSize", [True, 16, 64, 32]))
@@ -131,10 +129,6 @@ def _resolve_danmu_style(data):
     # Apply active theme defaults for textStyles
     active_theme = theme_svc.get_active()
     theme_styles = active_theme.get("styles", {})
-
-    # If user/admin didn't set color explicitly, use theme color
-    if not data.get("color") and theme_styles.get("color"):
-        data["color"] = str(theme_styles["color"]).lstrip("#")
 
     # Apply theme textStyles as defaults
     text_styles = data.get("textStyles") or {}

@@ -83,7 +83,8 @@
     // 是同一件事的四個面向（觀眾看到什麼、能改什麼、改到什麼程度、長什麼樣），
     // 拆成分頁反而要點四次才看得完一頁的設定。
     // 舊 deep link（#/viewer/defaults 等）仍有效——沒有 TabConfig 時
-    // resolveActiveTab 回 null，applyRoute 直接顯示 route 的全部 section。
+    // resolveActiveTab 回 null，applyRoute 直接顯示 route 的全部 section；
+    // 第二段由下面的 PageAnchors 換成要展開、捲過去的那一塊。
     // viewer: 已移除（保留這段註解，避免下次有人「補回來」）
 
     // v7 S3 (2026-07-28): the system accordion retired — 16 leaves were
@@ -164,10 +165,29 @@
     },
   };
 
+  // 沒有分頁列的單頁路由，第二段網址指的是頁內的一塊（展開並捲過去）。
+  // 2026-11-14 彈幕樣式合一：顯示層的外觀、主題、觀眾頁三處併成 #/viewer
+  // 一頁。舊網址的第二段（#/viewer/page、#/viewer/limits、#/display →
+  // defaults、#/themes → themes）都還有意義，落在同一頁的對應區塊。
+  const PageAnchors = {
+    viewer: {
+      themes: "sec-themes",
+      defaults: "sec-viewer-config-defaults",
+      // 「表單欄位」分頁的內容（每個欄位觀眾能不能改）就是樣式表的開關欄
+      fields: "sec-viewer-config-defaults",
+      page: "sec-viewer-theme",
+      limits: "sec-viewer-config-limits",
+    },
+  };
+
   // 收合區塊的 slug（例如 system 的 webhooks）→ { tab, section }，不是區塊就回 null。
+  // 單頁路由的區塊（PageAnchors）回 { tab: null, section }。
   function foldFor(nav, slug) {
+    if (!slug) return null;
+    const anchor = PageAnchors[nav] && PageAnchors[nav][slug];
+    if (anchor) return { tab: null, section: anchor };
     const cfg = TabConfig[nav];
-    if (!cfg || !slug) return null;
+    if (!cfg) return null;
     const tab = cfg.tabs.find((t) => t.folds && t.folds[slug]);
     return tab ? { tab: tab.slug, section: tab.folds[slug] } : null;
   }

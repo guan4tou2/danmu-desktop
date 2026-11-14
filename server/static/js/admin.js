@@ -175,7 +175,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // v7 S4: `appearance` retired — themes/fonts/viewer-config all have
     // first-class homes; old bookmarks land on the themes page. Alias (not
     // bare) so #/appearance/<anything> still resolves.
-    appearance: { nav: "themes" },
+    // 2026-11-14 彈幕樣式合一：主題頁併進 #/viewer（彈幕樣式），主題是那一頁
+    // 最上面的一塊。tab 寫的是頁內區塊（AdminTabs 的 PageAnchors），落地後
+    // 捲到主題那一塊。
+    appearance: { nav: "viewer", tab: "themes" },
+    themes:     { nav: "viewer", tab: "themes" },
     scheduler: { nav: "system", tab: "scheduler" },
     // 2026-05-19: webhooks/search/audience/about/security promoted to
     // first-class routes with their own ADMIN_ROUTES entries. Aliases
@@ -333,7 +337,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // routes that don't opt into tabs.
     const tabs = window.AdminTabs;
     const tab = tabs?.hasTabsFor?.(route) ? tabs.resolveActiveTab(route, requestedTab) : null;
-    const fold = tab ? tabs.foldFor(route, requestedTab) : null;
+    // 分頁裡的收合區塊，或單頁路由的頁內區塊（#/viewer/themes）——後者沒有分頁。
+    const fold = tabs?.foldFor ? tabs.foldFor(route, requestedTab) : null;
     return {
       route,
       tab,
@@ -477,7 +482,8 @@ document.addEventListener("DOMContentLoaded", () => {
         "sec-emojis",
         "sec-stickers",
         "sec-sounds",
-        "sec-themes",
+        // 2026-11-14：sec-themes 移出——主題併進「彈幕樣式」頁，要跟樣式表
+        // 待在同一個容器（settings-grid），才排得在它上面。
         // 2026-11-14：sec-plugins 移出——它是「系統 › 擴充」的收合區塊，
         // 要跟 Webhook／API 金鑰／定時發送待在同一個容器（settings-grid）。
         "sec-widgets",
@@ -813,21 +819,19 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span class="admin-dash-nav-badge" data-count-blacklist hidden>—</span>
                                 </button>
 
-                                <!-- 外觀與素材：先是觀眾看到的表面，再是可上傳的素材庫。 -->
+                                <!-- 外觀與素材：先是觀眾看到的表面，再是可上傳的素材庫。
+                                     2026-11-14 彈幕樣式合一：「觀眾頁」與「主題」兩列併成
+                                     「彈幕樣式」一列（slug 沿用 viewer），#/themes 落在那一頁
+                                     的主題區塊。顯示層頁收合區的外觀控制也搬過去了。 -->
                                 <div class="admin-dash-nav-label" data-i18n="adminNavGroupAppearance">外觀與素材</div>
                                 <button type="button" class="admin-dash-nav-row" data-route="viewer" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◐</span>
-                                    <span data-i18n="adminNavViewer">觀眾頁</span>
+                                    <span data-i18n="adminNavViewer">彈幕樣式</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="effects" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">✦</span>
                                     <span data-i18n="adminNavEffects">動畫效果</span>
                                     <span class="admin-dash-nav-badge" data-count-effects>—</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="themes" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">❖</span>
-                                    <span data-i18n="adminNavThemes">主題</span>
-                                    <span class="admin-dash-nav-badge" data-count-themes hidden>—</span>
                                 </button>
                                 <button type="button" class="admin-dash-nav-row" data-route="assets" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">▦</span>
@@ -1113,80 +1117,8 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `);
 
-    // Theme Management Card
-    settingsGrid.insertAdjacentHTML("beforeend", `
-      <div id="sec-themes" class="hud-page-stack lg:col-span-2" data-tpl="C">
-        <div class="admin-ui-page-head">
-          <h2 class="admin-ui-page-title" data-i18n="styleThemePacks">${ServerI18n.t("styleThemePacks")}</h2>
-          <p class="admin-ui-page-note" data-i18n="themesSectionDesc">${ServerI18n.t("themesSectionDesc")}</p>
-          <!-- 設計稿 08 · T1：頁首右側「新主題」。頁首被併進 topbar 時
-               shell 的 [data-route-action] 插槽會接住它——所以這顆鈕要
-               自己綁 listener（style-contract §5.4d）。 -->
-          <div class="admin-ui-page-actions">
-            <button type="button" class="admin-ui-action is-primary" id="themeNewBtn">
-              ${ServerI18n.t("themesNewBtn")}
-            </button>
-          </div>
-        </div>
-        <div class="admin-ui-card" style="padding:14px;margin-top:12px">
-          <!-- 2026-09-07 設計稿 08 · T1：toolbar 只剩重新載入。
-               「4 個主題（4 內建）」那行字數量資訊卡片自己就看得到，
-               「ACTIONS」那個欄位標題則是在標一欄根本不存在的表格。 -->
-          <div class="theme-pack-toolbar">
-            <button id="themeReloadBtn" class="admin-ui-action admin-theme-reload-action">
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              ${ServerI18n.t("themesReloadBtn")}
-            </button>
-          </div>
-          <div id="themesList">
-            <span class="theme-pack-muted" style="padding:14px">${ServerI18n.t("themesLoading")}</span>
-          </div>
-        </div>
-
-        <!-- 「<主題> · 細部設定」（設計稿 08 · T1）。主題檔本身是 repo 裡的
-             YAML，改它等於改程式碼；這裡調的值存成一層覆寫，疊在 YAML 之上，
-             由 themes.get_active() 合併後吃到每一則彈幕。 -->
-        <div class="admin-ui-group-label" id="themeDetailLabel">—</div>
-        <div class="admin-ui-group" id="themeDetail" data-theme-detail>
-          <div class="admin-ui-group-row is-tall">
-            <span class="lbl">${escapeHtml(ServerI18n.t("themeDetailFont"))}</span>
-            <span class="val">
-              <select class="admin-ui-input" data-theme-ov="font_family" id="themeOvFont"></select>
-            </span>
-          </div>
-          <div class="admin-ui-group-row is-tall">
-            <span class="lbl">${escapeHtml(ServerI18n.t("themeDetailStroke"))}</span>
-            <span class="val admin-ui-seg" data-theme-seg="stroke">
-              <button type="button" data-theme-opt="none">${escapeHtml(ServerI18n.t("themeStrokeNone"))}</button>
-              <button type="button" data-theme-opt="thin">${escapeHtml(ServerI18n.t("themeStrokeThin"))}</button>
-              <button type="button" data-theme-opt="thick">${escapeHtml(ServerI18n.t("themeStrokeThick"))}</button>
-            </span>
-          </div>
-          <div class="admin-ui-group-row is-tall">
-            <span class="lbl">${escapeHtml(ServerI18n.t("themeDetailShadow"))}</span>
-            <span class="val admin-ui-seg" data-theme-seg="shadow">
-              <button type="button" data-theme-opt="none">${escapeHtml(ServerI18n.t("themeShadowNone"))}</button>
-              <button type="button" data-theme-opt="soft">${escapeHtml(ServerI18n.t("themeShadowSoft"))}</button>
-              <button type="button" data-theme-opt="strong">${escapeHtml(ServerI18n.t("themeShadowStrong"))}</button>
-            </span>
-          </div>
-          <div class="admin-ui-group-row is-tall">
-            <span class="lbl">${escapeHtml(ServerI18n.t("themeDetailColor"))}
-              <span class="sub">${escapeHtml(ServerI18n.t("themeDetailColorHint"))}</span>
-            </span>
-            <span class="val">
-              <input type="color" class="admin-ui-input" data-theme-ov="color" id="themeOvColor" />
-            </span>
-          </div>
-        </div>
-        <div class="theme-pack-sample" id="themeDetailPreview">
-          <span class="theme-pack-sample-label">${ServerI18n.t("themesSampleLabel")}</span>
-          <span class="theme-pack-sample-line" data-theme-preview-line>
-            <span class="theme-pack-sample-nick">小明</span>講得好！+1
-          </span>
-        </div>
-      </div>
-    `);
+    // 主題（sec-themes）的版面由 admin-themes.js 自己注入（2026-11-14 彈幕樣式
+    // 合一：主題變成「彈幕樣式」頁最上面的一塊，描邊與陰影搬進樣式表的列）。
     scheduleIdleTask(initThemesManagement);
 
     // 審核 › 封鎖字（sec-blacklist）由 admin-filters.js 注入：封鎖字、臨時規則與規則庫
@@ -1332,7 +1264,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // 自製的 .admin-tabstrip）退場，viewer 改用 AdminTabs 的 TabConfig，
     // strip 由 shell 掛在標題列下方。剩下的 info banner 不屬於任何 tab，
     // 所以留在 route-level sections 裡（四個 tab 都看得到）。
-    viewer:    { title: "觀眾頁", kicker: "VIEWER · 觀眾端設定", sections: ["sec-viewer-config-info", "sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-defaults", "sec-viewer-config-limits"] },
+    // 2026-11-14 彈幕樣式合一：顯示層收合區的外觀、主題頁、觀眾頁三處併成
+    // 這一頁。sections 的順序就是畫面順序（admin-display.js 依此排）：
+    // 主題 → 樣式表（每列一個屬性＋「觀眾可改」）→ 觀眾頁外觀 → 限制。
+    // 說明橫幅（sec-viewer-config-info）與「表單欄位」面板（只改畫面、不寫
+    // 後端的假開關）退場。
+    viewer:    { title: "彈幕樣式", kicker: "VIEWER · 觀眾端設定", sections: ["sec-themes", "sec-viewer-config-defaults", "sec-viewer-theme", "sec-viewer-config-limits"] },
     // Legacy aliases — same config as their canonical home. Kept so
     // existing `=== "dashboard"` checks + URL bookmarks keep working
     // until Phase B/D collapses them.
@@ -1348,7 +1285,8 @@ document.addEventListener("DOMContentLoaded", () => {
     polls:     { title: "投票",             kicker: "POLLS · 2–6 選項",         sections: ["sec-polls"] },
     // 2026-09-06 設計稿 08/14：名稱去術語化 Desktop Widgets → 小工具。
     widgets:   { title: "小工具",  kicker: "OBS 小工具 · 分數板 · 跑馬燈", sections: ["sec-widgets"] },
-    themes:    { title: "主題",       kicker: "THEME PACKS · 彈幕樣式預設",       sections: ["sec-themes"] },
+    // 2026-11-14：`themes` 條目移除，#/themes 由 _routeAliases 轉到
+    // viewer/themes（彈幕樣式頁的主題區塊）。
     // Viewer owns the page/fields/defaults/limits surface. Legacy
     // `#/viewer-config` deep-links still resolve here for backward compat.
     // v7 S4: `viewer-config` entry removed — the alias (→ viewer) always
@@ -1422,7 +1360,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // 空陣列會讓 syncRouteContainerVisibility() 算出空 owner set 並藏掉
     // 整個容器，模組再怎麼把自己設成 display:"" 都沒用（#/security 也曾
     // 這樣壞過）。
-    overlay:   { title: "顯示層",        kicker: "DESKTOP · ON / OFF / PAUSED",       sections: ["admin-broadcast-v2-page", "sec-viewer-config-defaults"] },
+    // 2026-11-14：收合區只剩大螢幕本身的排版（sec-overlay-layout）；彈幕外觀
+    // 那張表搬到彈幕樣式頁。
+    overlay:   { title: "顯示層",        kicker: "DESKTOP · ON / OFF / PAUSED",       sections: ["admin-broadcast-v2-page", "sec-overlay-layout"] },
     // Missing prototype pages — implemented 2026-04-29
     sessions:     { title: "場次",            kicker: "SESSIONS · 場次列表 · 即時 / 歷史",  sections: ["sec-sessions-overview"] },
     "session-detail": { title: "場次詳情",    kicker: "SESSION DETAIL · 密度時間軸 · 訊息回顧", sections: ["sec-session-detail-overview"] },
@@ -1603,6 +1543,22 @@ document.addEventListener("DOMContentLoaded", () => {
       el.scrollIntoView({ block: "start" });
     }
 
+    // 目前網址 hash 的查詢參數（含 `?`），只在網址列的路由跟 resolved 是同一頁
+    // （同路由、同分頁、同區塊）時回傳；否則回空字串。
+    function _hashQueryFor(resolved) {
+      const hash = window.location.hash || "";
+      const q = hash.indexOf("?");
+      if (q === -1) return "";
+      const parsed = _parseHashRoute(hash);
+      if (!parsed) return "";
+      const m = hash.match(/^#\/([\w-]+)/);
+      const here = _resolveRoute(parsed.nav, parsed.tab, (m && m[1]) || parsed.raw);
+      const same = here.route === resolved.route &&
+        (here.tab || null) === (resolved.tab || null) &&
+        (here.fold || null) === (resolved.fold || null);
+      return same ? hash.slice(q) : "";
+    }
+
     const applyRoute = (name, requestedTab, rawName) => {
       const resolved = _resolveRoute(name, requestedTab, rawName);
       rawName = resolved.rawName;
@@ -1623,11 +1579,14 @@ document.addEventListener("DOMContentLoaded", () => {
       // the URL so the matching sidebar button stays highlighted on
       // re-entry via hashchange. Otherwise use canonical `#/<nav>(/<tab>)`.
       // 收合區塊一律寫成 #/system/<區塊>：重新整理後還會展開同一塊。
-      const wantedHash = resolved.fold
+      // 整理網址只正規化路徑：網址列上那條路由解析出來就是這一頁時，`?` 之後
+      // 的查詢參數原樣帶回去（#/session-detail?id=… 靠它知道是哪個場次）。
+      // 從別頁點過來（側欄、分頁列）時網址上的參數屬於上一頁，不帶。
+      const wantedHash = (resolved.fold
         ? _buildHashRoute(currentRoute, resolved.fold)
         : (rawName && rawName !== currentRoute)
           ? "#/" + rawName
-          : _buildHashRoute(currentRoute, activeTab);
+          : _buildHashRoute(currentRoute, activeTab)) + _hashQueryFor(resolved);
       if (window.location.hash !== wantedHash) {
         try { history.replaceState(null, "", wantedHash); } catch (_) {}
         window.dispatchEvent(new HashChangeEvent("hashchange"));

@@ -33,11 +33,12 @@
 
   function _renderHtml() {
     return `
-      <div id="${SECTION_ID}" class="admin-vt-page hud-page-stack lg:col-span-2">
-        <div class="admin-ui-page-head">
-          <h2 class="admin-ui-page-title">${ServerI18n.t("viewerThemePageTitle")}</h2>
-          <p class="admin-ui-page-note">${ServerI18n.t("viewerThemePageNote")}</p>
-        </div>
+      <!-- 2026-11-14 彈幕樣式合一：觀眾頁外觀變成彈幕樣式頁裡預設收合的一塊
+           （少用；#/viewer/page 會展開它）。summary 就是標題。 -->
+      <details id="${SECTION_ID}" class="admin-vt-page admin-dsp2-fold lg:col-span-2">
+        <summary class="admin-ui-page-title">${ServerI18n.t("viewerThemePageTitle")}</summary>
+        <div class="hud-page-stack">
+        <p class="admin-ui-page-note">${ServerI18n.t("viewerThemePageNote")}</p>
 
         <div class="admin-vt-grid">
           <div class="admin-vt-controls">
@@ -169,14 +170,7 @@
                 <span class="kicker">${ServerI18n.t("viewerThemeLegendOutOfScope")} · ${ServerI18n.t("viewerThemeLegendKickerNote")}</span>
               </div>
               <div class="admin-viewer-theme-legend-rows">
-                <button type="button" class="admin-viewer-theme-legend-row" data-vt-jump="themes">
-                  <span class="k">${ServerI18n.t("viewerThemeLegendRowThemePacks")}</span>
-                  <span class="v">↗ Theme Packs</span>
-                </button>
-                <button type="button" class="admin-viewer-theme-legend-row" data-vt-jump="display">
-                  <span class="k">${ServerI18n.t("viewerThemeLegendRowDisplay")}</span>
-                  <span class="v">↗ Display Settings</span>
-                </button>
+                <!-- 2026-11-14：「主題」「顯示設定」兩列退場——它們現在就在同一頁上。 -->
                 <button type="button" class="admin-viewer-theme-legend-row" data-vt-jump="effects">
                   <span class="k">${ServerI18n.t("viewerThemeLegendRowEffects")}</span>
                   <span class="v">↗ Effects</span>
@@ -189,7 +183,8 @@
             </div>
           </div>
         </div>
-      </div>`;
+        </div>
+      </details>`;
   }
 
   // 2026-09-17（CodeQL #81）：從 localStorage 讀回的主題會被插進

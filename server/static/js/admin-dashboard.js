@@ -105,7 +105,6 @@
       const widgets = boot.get("widgets");
       const histStats = boot.get("history_stats");
       const effects = boot.get("effects");
-      const themes = boot.get("themes");
       _setBadge(
         "[data-count-blacklist]",
         Array.isArray(blacklist) ? blacklist.length : 0
@@ -119,10 +118,7 @@
         "[data-count-effects]",
         Array.isArray(effects?.effects) ? effects.effects.length : 0
       );
-      _setBadge(
-        "[data-count-themes]",
-        Array.isArray(themes?.themes) ? themes.themes.length : 0
-      );
+      // 2026-11-14：側欄「主題」列併進彈幕樣式，主題數量的徽章跟著退場。
       // Plugins not in bootstrap; fetch separately + ignore failures.
       try {
         const r = await fetch("/admin/plugins/list", { credentials: "same-origin" });
