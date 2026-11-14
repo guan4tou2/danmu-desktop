@@ -5,6 +5,14 @@
 格式基於 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，
 版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
+## [5.9.1] - 2026-11-15
+
+- 後台的外掛上傳改回預設開啟。5.9.0 在正式環境（`ENV=production`，Docker 部署的預設值）把它預設關閉，沒有主機存取權的人因此無法安裝外掛。開關 `ALLOW_PLUGIN_UPLOAD` 保留：後台登入由多人共用或交給他人時，設成 `false` 可以鎖定；鎖定後備份還原也不會寫入外掛檔。
+
+### 升級注意
+
+- 從 5.9.0 升級：若先前為了恢復上傳而在 `.env` 設了 `ALLOW_PLUGIN_UPLOAD=true`，可以留著或刪掉，結果相同。想維持 5.9.0 的鎖定行為請設 `ALLOW_PLUGIN_UPLOAD=false`。
+
 ## [5.9.0] - 2026-11-15
 
 - 新增部署期開關 `ALLOW_PLUGIN_UPLOAD`：正式環境（`ENV=production`）預設不能從後台上傳外掛，備份還原也不會寫入外掛檔；已安裝的外掛照常載入、啟用、停用與重新載入。

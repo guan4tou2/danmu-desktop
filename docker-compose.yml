@@ -36,8 +36,8 @@ services:
       - WS_MAX_CONNECTIONS_PER_IP=${WS_MAX_CONNECTIONS_PER_IP:-10}
       - TRUST_X_FORWARDED_FOR=${TRUST_X_FORWARDED_FOR:-false}
       # Admin upload of Python plugins (and the plugin files inside a backup
-      # restore). Blank = off when ENV=production. Plugins run inside the
-      # server process; set true only on a server where that is acceptable.
+      # restore). Blank = on. Plugins run inside the server process; set
+      # false to lock this down when the admin login is shared.
       - ALLOW_PLUGIN_UPLOAD=${ALLOW_PLUGIN_UPLOAD:-}
       # Redirect filter rules + settings + webhooks into the persisted runtime
       # volume. Overridable via .env. See DEPLOYMENT.md § Data persistence.

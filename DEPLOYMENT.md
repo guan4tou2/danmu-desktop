@@ -303,7 +303,7 @@ to the host by the default `docker-compose.yml`:
 | `./server/runtime/plugins_state.json` | `/app/server/runtime/plugins_state.json` | Enabled/disabled plugins |
 | `./server/runtime/ws_auth.json` | `/app/server/runtime/ws_auth.json` | WS token auth state (chmod 0o600, v4.8.0+) |
 | `./server/runtime/admin_password.hash` | `/app/server/runtime/admin_password.hash` | Changed admin password, bcrypt hash (chmod 0o600) |
-| `./server/user_plugins/` | `/app/server/user_plugins/` | Custom user plugins (drop `.py` files here; admin upload needs `ALLOW_PLUGIN_UPLOAD`) |
+| `./server/user_plugins/` | `/app/server/user_plugins/` | Custom user plugins (upload from the admin UI, or drop `.py` files here) |
 | `./server/user_fonts/` | `/app/server/user_fonts/` | Uploaded user fonts |
 | `./server/static/` | `/app/server/static/` | Uploaded stickers / emojis (plus bundled assets) |
 | `./server/logs/` | `/app/server/logs/` | Server logs (optional for backup) |
@@ -453,8 +453,8 @@ Before exposing to the internet:
   Reconnect each desktop and verify a test danmu. Fresh installs without
   explicit WS environment settings are secure by default since v4.8.0;
   verify the persisted runtime setting on every existing deployment.
-- [ ] `ALLOW_PLUGIN_UPLOAD` — leave blank (off in production) unless you
-  need to upload plugins from the admin UI on this server
+- [ ] `ALLOW_PLUGIN_UPLOAD` — blank means on; set `false` if the admin login
+  is shared with people who should not be able to install code on this server
 
 Run `./setup.sh check` to validate your `.env` against these rules.
 
@@ -482,7 +482,7 @@ Key variables:
 | `REDIS_PASSWORD` | `changeme` | Redis auth password |
 | `WS_REQUIRE_TOKEN` | see note | **First-boot seed only since v4.8.0.** After first boot, authoritative state lives in `server/runtime/ws_auth.json` and is controlled from the admin UI. If this env var and `WS_AUTH_TOKEN` are unset or blank on a fresh install, the server seeds secure-on with a generated token. Explicit `false` is respected and never flipped back on. |
 | `WS_AUTH_TOKEN` | — | Same as above — first-boot seed only. The admin UI is authoritative after the runtime file exists. |
-| `ALLOW_PLUGIN_UPLOAD` | off in production, on otherwise | Whether the admin UI may write Python plugins onto the server: plugin upload, and the plugin files inside a backup restore. Plugins run inside the server process with its permissions, so a stolen admin session would otherwise amount to code execution. Blank means the default. Plugins already in `server/user_plugins/` keep loading and can still be enabled, disabled, reloaded and uninstalled. To install one while it is off, copy the `.py` file into `server/user_plugins/` on the host and press Reload on the admin plugins page. |
+| `ALLOW_PLUGIN_UPLOAD` | on | Whether the admin UI may write Python plugins onto the server: plugin upload, and the plugin files inside a backup restore. Plugins run inside the server process with its permissions, so whoever can log in as admin can run code on the server; set `false` when that login is shared or handed to someone else. Blank means the default. Plugins already in `server/user_plugins/` keep loading and can still be enabled, disabled, reloaded and uninstalled. To install one while it is off, copy the `.py` file into `server/user_plugins/` on the host and press Reload on the admin plugins page. |
 
 ---
 
