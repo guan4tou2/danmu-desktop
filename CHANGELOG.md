@@ -5,7 +5,7 @@
 格式基於 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，
 版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased]
+## [5.9.0] - 2026-11-15
 
 - 新增部署期開關 `ALLOW_PLUGIN_UPLOAD`：正式環境（`ENV=production`）預設不能從後台上傳外掛，備份還原也不會寫入外掛檔；已安裝的外掛照常載入、啟用、停用與重新載入。
 - 後台下載的完整備份預設不含 Fire token、顯示端連線 token 與 Webhook 的網址和密鑰；備份頁新增「包含連線密碼與 token」選項供整站搬家使用。還原不含憑證的備份時，會保留目標站台現有的憑證與 Webhook，預覽會列出哪些 Webhook 被更新、保留或略過。
