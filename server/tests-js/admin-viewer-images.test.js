@@ -89,16 +89,15 @@ test("unchecking two formats quickly keeps both unchecked when the first reply l
   change(ext("png"));
   ext("jpg").checked = false;
   change(ext("jpg"));
-  expect(patches.map((p) => p.body.extensions)).toEqual([
-    ["jpg", "gif", "webp"],
-    ["gif", "webp"],
-  ]);
+  // 第二個變更排隊，第一個完成前不送
+  expect(patches.map((p) => p.body.extensions)).toEqual([["jpg", "gif", "webp"]]);
 
-  // 第一個回應先到：裡面 JPG 還是勾著的，不能套用
+  // 第一個回應：裡面 JPG 還是勾著的，但 JPG 的取消還在排隊，不能被改回去
   patches[0].resolve(reply(state({ extensions: ["jpg", "gif", "webp"] })));
   await flush();
   expect(ext("jpg").checked).toBe(false);
   expect(ext("png").checked).toBe(false);
+  expect(patches[1].body.extensions).toEqual(["gif", "webp"]);
 
   patches[1].resolve(reply(state({ extensions: ["gif", "webp"] })));
   await flush();
@@ -108,6 +107,91 @@ test("unchecking two formats quickly keeps both unchecked when the first reply l
   ext("gif").checked = false;
   change(ext("gif"));
   expect(patches[2].body.extensions).toEqual(["webp"]);
+});
+
+// 審查第二輪：前端序號只管「套用哪個回應」，管不到寫入抵達伺服器的先後。
+// 寫入要單線排隊，抵達順序 = 操作順序。
+
+test("a format change and a site change that overlap do not undo the format change", async () => {
+  await bootWith(state());
+  ext("png").checked = false;
+  change(ext("png"));
+  const hosts = $("#viewer-images-hosts");
+  hosts.value = "cdn.example.com";
+  change(hosts);
+  // 網站的變更等格式那個請求完成才送
+  expect(patches).toHaveLength(1);
+  expect(patches[0].body).toEqual({ extensions: ["jpg", "gif", "webp"] });
+
+  patches[0].resolve(reply(state({ extensions: ["jpg", "gif", "webp"] })));
+  await flush();
+  expect(patches).toHaveLength(2);
+  expect(patches[1].body).toEqual({ hosts: ["cdn.example.com"] });
+  expect(ext("png").checked).toBe(false);
+
+  // 伺服器依序處理過兩個請求，第二個回應同時帶著兩個變更
+  patches[1].resolve(reply(state({ extensions: ["jpg", "gif", "webp"], hosts: ["cdn.example.com"] })));
+  await flush();
+  expect(ext("png").checked).toBe(false);
+  expect(hosts.value).toBe("cdn.example.com");
+
+  ext("gif").checked = false;
+  change(ext("gif"));
+  expect(patches[2].body).toEqual({ extensions: ["jpg", "webp"] });
+});
+
+test("the second format change is not sent before the first completes, even if it would win", async () => {
+  await bootWith(state());
+  ext("png").checked = false;
+  change(ext("png"));
+  ext("png").checked = true;
+  change(ext("png"));
+  // 舊做法會兩個都送出、可能以相反順序抵達；現在第二個根本還沒送
+  expect(patches).toHaveLength(1);
+  expect(patches[0].body.extensions).toEqual(["jpg", "gif", "webp"]);
+
+  patches[0].resolve(reply(state({ extensions: ["jpg", "gif", "webp"] })));
+  await flush();
+  expect(patches).toHaveLength(2);
+  expect(patches[1].body.extensions).toEqual(ALL);
+  patches[1].resolve(reply(state()));
+  await flush();
+  expect(ALL.every((e) => ext(e).checked)).toBe(true);
+});
+
+test("changes made while a request is in flight are merged into one request", async () => {
+  await bootWith(state());
+  ext("png").checked = false;
+  change(ext("png"));
+  ext("jpg").checked = false;
+  change(ext("jpg"));
+  ext("gif").checked = false;
+  change(ext("gif"));
+  $("#viewer-images-enabled").checked = false;
+  change($("#viewer-images-enabled"));
+  expect(patches).toHaveLength(1);
+
+  patches[0].resolve(reply(state({ extensions: ["jpg", "gif", "webp"] })));
+  await flush();
+  expect(patches).toHaveLength(2);
+  expect(patches[1].body).toEqual({ extensions: ["webp"], enabled: false });
+});
+
+test("when a request fails, queued changes are dropped and the page realigns with the server", async () => {
+  await bootWith(state());
+  ext("png").checked = false;
+  change(ext("png"));
+  ext("jpg").checked = false;
+  change(ext("jpg")); // 排隊中
+  patches[0].resolve(reply({ error: "boom" }, false));
+  await flush();
+
+  expect(window.showToast).toHaveBeenCalledWith("updateFailed", false);
+  expect(patches).toHaveLength(1); // 排在後面的變更沒有送出
+  expect(getQueue).toHaveLength(2); // 重抓伺服器狀態
+  getQueue[1].resolve(reply(state({ extensions: ["png", "gif", "webp"] })));
+  await flush();
+  expect(ALL.filter((e) => ext(e).checked)).toEqual(["png", "gif", "webp"]);
 });
 
 test("the reply to site list A does not overwrite list B the admin started typing", async () => {

@@ -1404,30 +1404,46 @@
 
   // ── 觀眾外部圖片狀態 ──────────────────────────────────────────────────
   //
-  // 回應的套用有先後保護，三種時序都靠同一套規則：
-  //   · 每個請求（初次 GET 與每一次 PATCH）拿一個遞增序號，只有「最新發出
-  //     的那個」回來時才套用。較早的 GET／PATCH 晚回來不會蓋掉之後的選擇
-  //     （連續取消勾選、載入很慢時先切了開關）。
-  //   · 網站欄位另外有一份基準值：上次由伺服器寫進去、或上次送出時的內容。
-  //     只有欄位仍等於基準值（使用者之後沒再改）且不在輸入中，才回填伺服器
-  //     的正規化結果——送出 A 後又開始打 B，A 的回應不會把 B 蓋掉。
+  // PATCH 只送變動的欄位，伺服器逐欄合併（JsonState.update）。為了讓最後存下
+  // 來的一定是使用者最後看到的狀態，寫入一律**單線排隊**：
+  //   · 同一時間只有一個 PATCH 在途（_viInFlight）。在途期間的變更合併進
+  //     _viPending（同一欄位後蓋前，值都是當下從畫面讀的），前一個完成才送，
+  //     所以抵達伺服器的順序就是操作的順序。
+  //   · 畫面顯示的是「伺服器確認的狀態 + 在途 + 排隊中」疊起來的結果
+  //     （_viEffective），任何回應都不會把還沒確認的操作改回去。
+  //   · 任何一個 PATCH 失敗：顯示錯誤、丟掉排在它後面的變更、重抓伺服器狀態
+  //     把畫面對齊。被拒的網站清單留在欄位裡讓使用者改。
+  //   · GET（初次載入、失敗後對齊）只在沒有任何寫入在途或排隊、而且發出後
+  //     使用者沒再動過時才套用。
+  //   · 網站欄位另有基準值：上次由伺服器寫進去、或上次送出時的內容。只有欄位
+  //     仍等於基準值、不在輸入中、也沒有網站變更在途或排隊時才回填伺服器的
+  //     正規化結果——送出 A 後又開始打 B，A 的回應不會把 B 蓋掉。
   let _viState = null;
-  let _viSeq = 0;
+  let _viInFlight = null;
+  let _viPending = {};
+  let _viEdits = 0; // 使用者每做一次變更 +1；GET 用它判斷回應是否已過時
   let _viHostsBaseline = ""; // 模板裡的欄位一開始是空的
   const _viHostsText = (state) => ((state && state.hosts) || []).join("\n");
+
+  function _viEffective() {
+    return Object.assign({}, _viState || {}, _viInFlight || {}, _viPending);
+  }
 
   function renderViewerImages() {
     const page = document.getElementById(PAGE_ID);
     if (!page || !_viState) return;
+    const view = _viEffective();
     const toggle = page.querySelector("[data-vi-toggle]");
-    if (toggle) toggle.checked = !!_viState.enabled;
-    _viShowRows(page, !!_viState.enabled);
+    if (toggle) toggle.checked = !!view.enabled;
+    _viShowRows(page, !!view.enabled);
     const hosts = page.querySelector("#viewer-images-hosts");
-    if (hosts && document.activeElement !== hosts && hosts.value === _viHostsBaseline) {
+    const hostsUnconfirmed = (_viInFlight && "hosts" in _viInFlight) || "hosts" in _viPending;
+    if (hosts && !hostsUnconfirmed && document.activeElement !== hosts
+        && hosts.value === _viHostsBaseline) {
       hosts.value = _viHostsText(_viState);
       _viHostsBaseline = hosts.value;
     }
-    const exts = _viState.extensions || [];
+    const exts = view.extensions || [];
     page.querySelectorAll("[data-vi-ext]").forEach((el) => {
       el.checked = exts.indexOf(el.getAttribute("data-vi-ext")) !== -1;
     });
@@ -1439,28 +1455,26 @@
     });
   }
 
-  // 送出請求並只在它仍是最新的那一個時套用回應。回傳 { ok, body, latest }。
-  async function _viRequest(doFetch) {
-    const seq = ++_viSeq;
-    let res = null;
-    let body = null;
+  async function _viSend(doFetch) {
     try {
-      res = await doFetch();
+      const res = await doFetch();
+      let body = null;
       try { body = await res.json(); } catch (_) { body = null; }
+      return { ok: !!(res.ok && body), body };
     } catch (e) {
       console.warn("[admin-display] viewer-images request failed:", e);
+      return { ok: false, body: null };
     }
-    const latest = seq === _viSeq;
-    const ok = !!(res && res.ok && body);
-    if (ok && latest) {
-      _viState = body;
-      renderViewerImages();
-    }
-    return { ok, body, latest };
   }
 
-  function fetchViewerImages() {
-    return _viRequest(() => fetch("/admin/viewer-images", { credentials: "same-origin" }));
+  async function fetchViewerImages() {
+    const editsAtStart = _viEdits;
+    const result = await _viSend(() => fetch("/admin/viewer-images", { credentials: "same-origin" }));
+    const idle = !_viInFlight && !Object.keys(_viPending).length;
+    if (result.ok && idle && editsAtStart === _viEdits) {
+      _viState = result.body;
+      renderViewerImages();
+    }
   }
 
   function _viErrorMessage(body) {
@@ -1470,26 +1484,44 @@
     return t("updateFailed");
   }
 
-  async function postViewerImages(patch) {
+  function postViewerImages(patch) {
+    _viEdits += 1;
     const hostsField = document.getElementById("viewer-images-hosts");
     if ("hosts" in patch && hostsField) _viHostsBaseline = hostsField.value;
     if ("enabled" in patch) {
       const page = document.getElementById(PAGE_ID);
-      if (page) _viShowRows(page, !!patch.enabled); // 樂觀顯示，回應來了再以伺服器為準
+      if (page) _viShowRows(page, !!patch.enabled); // 樂觀顯示
     }
-    const result = await _viRequest(() => window.csrfFetch("/admin/viewer-images", {
+    Object.assign(_viPending, patch);
+    if (!_viInFlight) _viFlush();
+  }
+
+  async function _viFlush() {
+    if (_viInFlight || !Object.keys(_viPending).length) return;
+    const patch = _viPending;
+    _viPending = {};
+    _viInFlight = patch;
+    const result = await _viSend(() => window.csrfFetch("/admin/viewer-images", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     }));
-    if (result.ok) return;
+    _viInFlight = null;
+    if (result.ok) {
+      _viState = result.body;
+      renderViewerImages(); // 排隊中的變更疊在上面，不會被改回去
+      _viFlush();
+      return;
+    }
+    // 失敗：排在後面的變更是疊在這次失敗之上的，一併丟掉，重抓伺服器狀態對齊。
+    const dropped = _viPending;
+    _viPending = {};
     window.showToast && window.showToast(_viErrorMessage(result.body), false);
-    // 被拒的網站清單留在欄位裡讓使用者改：基準值設成不可能相等，之後的
-    // 回應都不會回填，直到他再送出一次。
-    if ("hosts" in patch) _viHostsBaseline = null;
-    // 只有最新的請求失敗才需要對齊：重抓一次伺服器的真實狀態（開關與勾選框
-    // 打回伺服器的值）。較早的請求失敗時，之後那個請求的回應會負責對齊。
-    if (result.latest) fetchViewerImages();
+    // 被拒的網站清單留在欄位裡讓使用者改：基準值設成不可能相等，之後的回應
+    // 都不會回填，直到他再送出一次。
+    if ("hosts" in patch || "hosts" in dropped) _viHostsBaseline = null;
+    renderViewerImages(); // 先回到最後一次確認過的狀態，重抓的結果回來再對齊
+    fetchViewerImages();
   }
 
   // ── 顯示層排版狀態 ────────────────────────────────────────────────────
