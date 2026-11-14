@@ -50,6 +50,7 @@ import json
 import logging
 import os
 import threading
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
@@ -90,6 +91,13 @@ class JsonState:
         values that must stay stable across restarts (e.g. ws_auth's
         random token seed — regenerating on every process start would
         force-disconnect every live client).
+    keep_unreadable_file:
+        If True, a state file that exists but cannot be loaded is left in
+        place and copied to ``<name>.corrupt-<UTC timestamp>`` for recovery;
+        the default is used in memory only (``eager_persist_default`` does
+        not apply to it) until the next ``update()`` writes a fresh file.
+        Without it, the default replaces the unreadable file on first load.
+        ``preserved_path`` names the copy (None when there is none).
     """
 
     def __init__(
@@ -100,15 +108,18 @@ class JsonState:
         *,
         secure: bool = False,
         eager_persist_default: bool = False,
+        keep_unreadable_file: bool = False,
     ):
         self._path: Path = _RUNTIME_DIR / filename
         self._default = default
         self._normalize = normalize
         self._secure = secure
         self._eager_persist_default = eager_persist_default
+        self._keep_unreadable_file = keep_unreadable_file
         self._lock = threading.RLock()
         self._cache: Optional[Dict[str, Any]] = None
         self._write_failure_logged = False
+        self._preserved_path: Optional[Path] = None
 
     # ── public API ──────────────────────────────────────────────────
 
@@ -116,6 +127,15 @@ class JsonState:
     def path(self) -> Path:
         """Current on-disk location. Changes across `reset_for_tests`."""
         return self._path
+
+    @property
+    def preserved_path(self) -> Optional[Path]:
+        """Copy of an unreadable state file kept by ``keep_unreadable_file``.
+
+        Set before ``default`` is called, so the default factory can name it
+        in its own log message.
+        """
+        return self._preserved_path
 
     @property
     def lock(self) -> threading.RLock:
@@ -169,11 +189,13 @@ class JsonState:
                 self._path = path
             self._cache = None
             self._write_failure_logged = False
+            self._preserved_path = None
 
     # ── internals ───────────────────────────────────────────────────
 
     def _load(self) -> Dict[str, Any]:
         used_default = False
+        unreadable = False
         if not self._path.exists():
             state = self._default()
             used_default = True
@@ -186,8 +208,7 @@ class JsonState:
                     self._path,
                     exc,
                 )
-                state = self._default()
-                used_default = True
+                unreadable = True
             else:
                 try:
                     state = self._normalize(raw)
@@ -197,9 +218,16 @@ class JsonState:
                         self._path,
                         exc,
                     )
-                    state = self._default()
-                    used_default = True
+                    unreadable = True
+            if unreadable:
+                if self._keep_unreadable_file:
+                    self._preserved_path = self._preserve_unreadable_file()
+                state = self._default()
+                used_default = True
 
+        if unreadable and self._keep_unreadable_file:
+            # Leave the original where it is; only an explicit update() replaces it.
+            return state
         if used_default and self._eager_persist_default:
             try:
                 self._atomic_write(state)
@@ -207,6 +235,38 @@ class JsonState:
             except OSError as exc:
                 self._log_write_failure_once(exc)
         return state
+
+    def _preserve_unreadable_file(self) -> Optional[Path]:
+        """Copy the unreadable state file aside; return the copy's path.
+
+        Reuses an existing copy with identical bytes, so restarting with the
+        same broken file does not pile up copies. Returns None when the file
+        cannot be read or the copy cannot be written (logged).
+        """
+        try:
+            data = self._path.read_bytes()
+        except OSError as exc:
+            logger.warning("json_state: cannot copy unreadable %s: %s", self._path, exc)
+            return None
+        prefix = f"{self._path.name}.corrupt-"
+        for existing in sorted(self._path.parent.glob(prefix + "*")):
+            try:
+                if existing.read_bytes() == data:
+                    return existing
+            except OSError:
+                continue
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        target = self._path.with_name(prefix + stamp)
+        mode = 0o600 if self._secure else 0o644
+        try:
+            fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+            with os.fdopen(fd, "wb") as f:
+                f.write(data)
+        except OSError as exc:
+            logger.warning("json_state: cannot copy unreadable %s: %s", self._path, exc)
+            return None
+        logger.warning("json_state: kept a copy of unreadable %s at %s", self._path, target)
+        return target
 
     def _atomic_write(self, state: Dict[str, Any]) -> None:
         """tmp + rename atomic write. pid+tid suffix avoids multi-worker races."""

@@ -81,22 +81,25 @@ def _seed_from_env() -> Dict[str, Any]:
     ran with WS_REQUIRE_TOKEN=false shouldn't silently flip closed on
     upgrade, and CI smoke tests that need passwordless WS should work.
     Once runtime/ws_auth.json exists this function is not consulted at all
-    (see JsonState) — except when that file is unreadable, in which case
-    the fresh-install default is skipped (see _looks_like_fresh_install).
+    (see JsonState) — except when that file is unreadable. Then the
+    fresh-install default is skipped (see _looks_like_fresh_install), the
+    broken file is left in place with a copy beside it, and the result only
+    lives in memory until an admin saves the setting (keep_unreadable_file).
     """
     require = bool(Config.WS_REQUIRE_TOKEN)
     token = str(Config.WS_AUTH_TOKEN or "")
+    unreadable_file = _state.path.exists()
 
     if _env_unset("WS_REQUIRE_TOKEN") and _env_unset("WS_AUTH_TOKEN"):
         if _looks_like_fresh_install():
             require = True
             token = secrets.token_urlsafe(24)
-        else:
+        elif not unreadable_file:
             logger.warning(
-                "ws_auth: not applying the token-on default because the state file "
-                "is present but unreadable, or the runtime directory is not "
-                "writable; /ws starts without token auth. Check %s and set the "
-                "toggle in Admin → Security.",
+                "ws_auth: CONNECTION AUTHENTICATION IS OFF — the runtime directory "
+                "for %s is not writable, so a generated token could not survive a "
+                "restart. Fix the directory permissions, then enable it in "
+                "Admin → Security.",
                 _state.path,
             )
     elif require and not token:
@@ -104,6 +107,17 @@ def _seed_from_env() -> Dict[str, Any]:
         logger.warning(
             "WS_REQUIRE_TOKEN=true but WS_AUTH_TOKEN empty; generated a "
             "random token and persisted to runtime/ws_auth.json"
+        )
+
+    if unreadable_file:
+        preserved = _state.preserved_path
+        logger.warning(
+            "ws_auth: CONNECTION AUTHENTICATION IS %s — %s could not be loaded. "
+            "The file was left untouched%s. Until an admin saves the setting in "
+            "Admin → Security, this state lives in memory only.",
+            "ON (from environment)" if require else "OFF",
+            _state.path,
+            f"; a copy was kept at {preserved}" if preserved else " (no copy could be made)",
         )
     return {"require_token": require, "token": token}
 
@@ -132,6 +146,9 @@ _state = JsonState(
     normalize=_normalize,
     secure=True,
     eager_persist_default=True,
+    # A broken ws_auth.json is kept (plus a .corrupt-<time> copy) rather than
+    # overwritten with the fallback, so it can be restored by hand.
+    keep_unreadable_file=True,
 )
 
 

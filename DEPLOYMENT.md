@@ -218,7 +218,11 @@ custom self-signed HTTPS port.
      that saved state is authoritative. Updates and restarts do not enable
      authentication automatically; changing the environment variables does
      not override it. A state file that exists but cannot be read is not
-     treated as a fresh install either. Manage the setting in Admin → Security. If authentication
+     treated as a fresh install either: it is left untouched, a copy is kept
+     as `ws_auth.json.corrupt-<UTC time>`, and authentication follows the
+     environment (off when unset) in memory only — the log says
+     `CONNECTION AUTHENTICATION IS OFF` — until you save the setting in
+     Admin → Security, which writes a new file. Manage the setting in Admin → Security. If authentication
      remains off, anyone who can reach `/ws` can connect a display and receive
      danmu; this does not grant admin access.
 
