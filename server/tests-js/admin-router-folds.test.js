@@ -15,6 +15,11 @@ const en = require("../static/locales/en/translation.json");
 // ServerI18n 是替身，但 updateUI 照真的 i18n.js 做兩件事：依 data-i18n
 // 換字、呼叫 _adminNavigateTo（下面那條測試釘住真的 i18n.js 確實這麼做）。
 
+// 每條測試都載入並執行真的 admin.js（約 0.5–1 秒），再等好幾段固定的觀察窗；
+// 最長的一條在忙碌的 CI 機器上會超過 jest 預設的 5 秒。逾時不是這些測試要
+// 驗的東西——它們驗的是「觀察窗內同步了幾次」，機器慢只會讓次數更少。
+jest.setTimeout(20000);
+
 // 晚到的區塊走 MutationObserver → requestAnimationFrame（jsdom 約 16ms）
 const settle = () => new Promise((r) => setTimeout(r, 40));
 const scrolled = [];
