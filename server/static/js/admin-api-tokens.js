@@ -2,7 +2,7 @@
  * Admin · API Tokens page (prototype admin-integrations / developer access).
  *
  * PAGE_ID: sec-api-tokens-overview
- * Route: #/api-tokens (or #/integrations/tokens)
+ * Route: 系統 › 擴充裡的收合區塊（#/system/api-tokens；舊的 #/api-tokens 轉址）
  *
  * Layout: two-column — token list (left) + create form (right, 380px).
  *
@@ -160,10 +160,11 @@
     }).join("");
 
     return `
-      <div id="${PAGE_ID}" class="admin-at-page hud-page-stack lg:col-span-2" data-tpl="B">
+      <details id="${PAGE_ID}" class="admin-dsp2-fold lg:col-span-2" data-tpl="B">
+        <summary class="admin-ui-page-title" data-i18n="tabExtApiKeys">${ServerI18n.t("tabExtApiKeys")}</summary>
+        <div class="admin-at-page hud-page-stack">
         <!-- Page header -->
         <div class="admin-ui-page-head">
-          <h2 class="admin-ui-page-title">API Tokens</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("apiTokensPageNote")}</p>
         </div>
 
@@ -272,7 +273,8 @@
             </div>
           </aside>
         </div>
-      </div>
+        </div>
+      </details>
     `;
   }
 

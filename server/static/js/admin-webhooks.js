@@ -88,28 +88,22 @@
 
   function injectSection() {
     const grid =
-      document.getElementById("advanced-grid") ||
       document.getElementById("settings-grid");
     if (!grid || document.getElementById(SECTION_ID)) return;
 
     grid.insertAdjacentHTML(
       "beforeend",
       `
-      <div id="${SECTION_ID}" class="admin-webhooks-page hud-page-stack lg:col-span-2" data-tpl="B">
+      <details id="${SECTION_ID}" class="admin-dsp2-fold lg:col-span-2" data-tpl="B">
+        <summary class="admin-ui-page-title" data-i18n="tabExtWebhooks">${ServerI18n.t("tabExtWebhooks")}</summary>
+        <div class="admin-webhooks-page hud-page-stack">
         <div class="admin-ui-page-head">
-          <h2 class="admin-ui-page-title">Webhooks</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("webhooksPageNote")}
           </p>
-          <!-- 設計稿 08 · X1：擴充頁的主要動作是「新增 Webhook」，在頁首右側。
-               頁首被併進 topbar 時 shell 的 [data-route-action] 插槽會接住它，
-               而且只有「當下可見的那個分頁的頁首」會被搬——所以切到插件分頁
-               這顆鈕就不會跟著出現。 -->
-          <div class="admin-ui-page-actions">
-            <button type="button" class="admin-ui-action is-primary" data-wh-action="show-add">
-              ${ServerI18n.t("webhooksAddEndpointBtn")}
-            </button>
-          </div>
+          <!-- 2026-11-14：頁首右側那顆「新增 Webhook」移除。它以前會被搬進頂欄；
+               收進「系統 › 擴充」的收合區塊後頁首不再被併掉，兩顆同一個 handler
+               的按鈕就疊在同一塊裡——留端點卡標頭那一顆。 -->
         </div>
 
         <div class="admin-wh-grid">
@@ -186,7 +180,8 @@
             <!-- populated by _renderDetail() -->
           </aside>
         </div>
-      </div>
+        </div>
+      </details>
     `
     );
 
@@ -242,13 +237,6 @@
         }
       });
     }
-
-    // 頁首右側那顆「新增 Webhook」會被 shell 搬進 topbar 的
-    // [data-route-action] 插槽（設計稿 08 · X1）。搬走之後它就不在 page 底下，
-    // 委派在 page 上的 handler 收不到它的 click——所以這顆要自己綁。
-    // 這是所有用 .admin-ui-page-actions 的頁面共同的規矩。
-    page.querySelectorAll(".admin-ui-page-actions [data-wh-action='show-add']")
-      .forEach((btn) => btn.addEventListener("click", () => { if (form) form.hidden = false; }));
 
     page.addEventListener("click", (e) => {
       // Show / hide add form
@@ -720,8 +708,7 @@
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
     const observer = new MutationObserver(() => {
       if (
-        (document.getElementById("advanced-grid") ||
-          document.getElementById("settings-grid")) &&
+        document.getElementById("settings-grid") &&
         !document.getElementById(SECTION_ID)
       ) {
         injectSection();

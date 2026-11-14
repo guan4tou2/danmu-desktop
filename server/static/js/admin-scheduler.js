@@ -394,16 +394,16 @@
 
   function init() {
     const settingsGrid =
-      document.getElementById("advanced-grid") ||
       document.getElementById("settings-grid");
     if (!settingsGrid) return;
 
     settingsGrid.insertAdjacentHTML(
       "beforeend",
       `
-      <div id="${SECTION_ID}" class="admin-scheduler-page hud-page-stack lg:col-span-2">
+      <details id="${SECTION_ID}" class="admin-dsp2-fold lg:col-span-2">
+        <summary class="admin-ui-page-title" data-i18n="tabExtScheduler">${ServerI18n.t("tabExtScheduler")}</summary>
+        <div class="admin-scheduler-page hud-page-stack">
         <div class="admin-ui-page-head">
-          <h2 class="admin-ui-page-title">${ServerI18n.t("schPageTitle")}</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("schPageNote")}
           </p>
@@ -462,7 +462,8 @@
             ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : escapeHTML(ServerI18n.t("loadingJobs"))}
           </div>
         </div>
-      </div>
+        </div>
+      </details>
     `
     );
 
@@ -549,7 +550,6 @@
 
     const observer = new MutationObserver(function () {
       const g =
-        document.getElementById("advanced-grid") ||
         document.getElementById("settings-grid");
       if (g && !document.getElementById(SECTION_ID) && !initializing) {
         initializing = true;
@@ -564,7 +564,6 @@
     observer.observe(document.body, { childList: true, subtree: true });
 
     const grid =
-      document.getElementById("advanced-grid") ||
       document.getElementById("settings-grid");
     if (grid && !document.getElementById(SECTION_ID)) {
       init();

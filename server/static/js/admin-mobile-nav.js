@@ -49,11 +49,10 @@
     // 到不了（⌘K 在手機上不是可行入口）。補回來。
     { route: "widgets",      icon: "▥", labelKey: "adminNavWidgets" },
     { route: "history",      icon: "◷", labelKey: "adminRouteTitle_history", descKey: "mnavDescHistory" },
-    { route: "backup",       icon: "⇪", labelKey: "mnavBackup", descKey: "mnavDescBackup" },
     // 2026-10-29：security 換成 system。安全現在是系統頁的分頁（兩邊同一
     // 外殼），抽屜裡再放一列「安全」就是同一個東西開兩扇門。
+    // 2026-11-14：備份與還原、擴充也一樣併進系統（與側欄對齊）。
     { route: "system",       icon: "◫", labelKey: "adminNavSystem", descKey: "mnavDescSystem" },
-    { route: "integrations", icon: "⌬", labelKey: "adminNavIntegrations", desc: "Slido · Discord · OBS" },
   ];
 
   // 舊 slug → 現行路由。底部導覽的「目前在哪」必須用**解析後**的路由判斷，
@@ -66,6 +65,15 @@
     "viewer-config": "viewer",
     display: "viewer",
     security: "system",
+    backup: "system",
+    integrations: "system",
+    extensions: "system",
+    firetoken: "system",
+    webhooks: "system",
+    plugins: "system",
+    "api-tokens": "system",
+    scheduler: "system",
+    automation: "system",
     modqueue: "moderation",
     modbans: "moderation",
     fingerprints: "moderation",
@@ -73,10 +81,6 @@
     audit: "history",
     replay: "history",
     fonts: "assets",
-    webhooks: "integrations",
-    plugins: "integrations",
-    "api-tokens": "integrations",
-    scheduler: "integrations",
   };
 
   let _overflowOpen = false;

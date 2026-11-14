@@ -32,9 +32,12 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   // 小工具是主持人活動前擺一次的東西，跟主題、素材同類；「擴充」是給
   // IT 人員的區域（Webhook／插件／API 金鑰／定時發送）。
   expect(adminSrc).toContain('data-route="widgets"');
-  // security 反過來：v8 把它提升成側欄獨立一列（安全設定是主持人會直接找的
-  // 東西，藏兩層等於沒有）。
-  expect(adminSrc).toContain('data-route="security"');
+  // security 曾在 v8 被提升成側欄獨立一列（安全設定藏兩層等於沒有）。
+  // 2026-11-14 側欄收斂：安全、備份與還原、擴充併進「系統」——安全早在
+  // 2026-10-29 就是系統頁的分頁，側欄那一列只是同一頁的第二個入口。
+  expect(adminSrc).not.toContain('data-route="security"');
+  expect(adminSrc).not.toContain('data-route="backup"');
+  expect(adminSrc).not.toContain('data-route="integrations"');
   expect(adminSrc).toContain('data-route="overlay"');
   // Secondary surfaces remain reachable through tabs / aliases.
   expect(adminSrc).toContain('data-route="moderation"');
@@ -42,7 +45,10 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   // 2026-05-18 v5: ratelimit promoted to first-class slug (no longer alias).
   expect(adminSrc).toMatch(/"viewer-config":\s*\{\s*nav:\s*"viewer"/);
   expect(adminSrc).toMatch(/dashboard:\s*"live"/);
-  expect(adminSrc).toMatch(/security:\s*\{\s*title:\s*"安全"/);
+  // 原本釘 `security: { title: "安全"`，2026-10-29 之後命中的其實只剩一行被
+  // 註解掉的舊 ADMIN_ROUTES 條目（那行在 2026-11-14 清掉）。改釘實際的行為：
+  // #/security 轉到系統頁的安全分頁。
+  expect(adminSrc).toMatch(/security:\s*\{\s*nav:\s*"system",\s*tab:\s*"security"/);
   // Sections still rendered inline by admin.js renderControlPanel():
   expect(adminSrc).toContain('id="sec-blacklist"');
   // sec-history 於 2026-09-07 隨「重播」分頁一起退場（設計稿 08 · H1：
@@ -887,7 +893,10 @@ test("admin router hides empty route containers so leaf pages do not keep vertic
 
   expect(adminSrc).toContain("function syncRouteContainerVisibility()");
   expect(adminSrc).toContain('shell.querySelectorAll(".admin-route-sections").forEach');
-  expect(adminSrc).toContain('container.id === "sec-advanced"');
+  // 2026-11-14：裝 Webhook／定時發送的 <details id="sec-advanced"> 容器退場
+  // （兩塊併進「系統 › 擴充」，跟插件、API 金鑰同在 settings-grid），容器
+  // 可見性不再需要它的特例。
+  expect(adminSrc).not.toContain("sec-advanced");
   // 2026-07-29：配置擁有(hasWanted)只回答「可能用到」，section 是按當前
   // 分頁顯示的 —— 還要求「目前真的有可見內容」，否則 0 高幽靈容器會在
   // flex 欄裡白吃兩個 24px gap（審核頁分頁列下那個 48px 洞的成因）。

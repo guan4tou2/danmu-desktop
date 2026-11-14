@@ -40,10 +40,13 @@
       // rewrite from legacy Tailwind/hud-table. KPI panel grid,
       // admin-ui-page-head, kpi-strip is-4col, plugin-row table with v4
       // pills, console with 4-level filter chips.
+      // 2026-11-14：「系統 › 擴充」裡給 IT 人員的區塊之一，預設收合
+      // （summary 就是標題，樣式同顯示層頁的 .admin-dsp2-fold）。
       const html = `
-        <div id="sec-plugins" class="hud-page-stack lg:col-span-2" data-tpl="B">
+        <details id="sec-plugins" class="admin-dsp2-fold lg:col-span-2" data-tpl="B">
+          <summary class="admin-ui-page-title" data-i18n="tabExtPlugins">${ServerI18n.t("tabExtPlugins")}</summary>
+          <div class="hud-page-stack">
           <div class="admin-ui-page-head">
-            <h2 class="admin-ui-page-title">${ServerI18n.t("pluginsTitle")}</h2>
           <p class="admin-ui-page-note">${ServerI18n.t("pluginsPageNote2")}</p>
           </div>
 
@@ -127,7 +130,8 @@
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        </details>
       `;
       settingsGrid.insertAdjacentHTML("beforeend", html);
 

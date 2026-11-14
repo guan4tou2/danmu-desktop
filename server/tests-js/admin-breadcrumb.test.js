@@ -29,6 +29,11 @@ describe("route breadcrumb labels", () => {
     window.AdminBreadcrumb.render(shell, "old-alias", "history", null);
     expect(labels()).toEqual(["活動中", "紀錄"]);
   });
+  test("a page named like its section is written once (系統 › 安全)", () => {
+    shell.querySelector('[data-route="history"] [data-i18n]').textContent = "活動中";
+    window.AdminBreadcrumb.render(shell, "history", "history", "audit");
+    expect(labels()).toEqual(["活動中", "操作紀錄"]);
+  });
   test("unknown routes clear and hide an earlier breadcrumb", () => {
     window.AdminBreadcrumb.render(shell, "history", "history", null);
     window.AdminBreadcrumb.render(shell, "unknown", "unknown", null);

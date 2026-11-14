@@ -121,13 +121,18 @@ document.addEventListener("DOMContentLoaded", () => {
     audit:      { nav: "history", tab: "audit" },
     fonts:      { nav: "assets", tab: "fonts" },
     // 2026-09-07 設計稿 08 · X1：擴充四合一，四條舊路由的書籤落到對應分頁。
-    webhooks:    { nav: "integrations", tab: "webhooks" },
-    plugins:     { nav: "integrations", tab: "plugins" },
-    "api-tokens": { nav: "integrations", tab: "api-tokens" },
-    scheduler:   { nav: "integrations", tab: "scheduler" },
+    // 2026-11-14：擴充併進系統頁，這四塊變成「系統 › 擴充」裡的收合區塊；
+    // tab 寫的是區塊 slug，AdminTabs.foldFor 會把它換成擴充分頁並展開那一塊。
+    webhooks:    { nav: "system", tab: "webhooks" },
+    plugins:     { nav: "system", tab: "plugins" },
+    "api-tokens": { nav: "system", tab: "api-tokens" },
+    scheduler:   { nav: "system", tab: "scheduler" },
     // 2026-10-29：側欄「安全」與 #/security 書籤都落到系統頁的安全分頁。
     // ADMIN_ROUTES 裡那條 security 已移除，否則它會先被查到、alias 永遠不生效。
     security:    { nav: "system", tab: "security" },
+    // 2026-11-14：Fire Token 詳情原本同時是一條獨立路由（沒有分頁列）與系統
+    // 的分頁——同一頁兩種外殼，跟 security 當初一樣。只留系統分頁。
+    firetoken:   { nav: "system", tab: "firetoken" },
   });
 
   // Maps deprecated single-segment routes → P0-0 nav homes.
@@ -162,12 +167,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // v7 S4 (2026-07-28): `automation` moved from _bareLegacyRedirects to an
     // alias so explicit-tab deep links (#/automation/webhooks) also translate
     // into the system accordion; its dead ADMIN_ROUTES entry is gone.
-    automation: { nav: "integrations", tab: "scheduler" },
+    automation: { nav: "system", tab: "scheduler" },
     // v7 S4: `appearance` retired — themes/fonts/viewer-config all have
     // first-class homes; old bookmarks land on the themes page. Alias (not
     // bare) so #/appearance/<anything> still resolves.
     appearance: { nav: "themes" },
-    scheduler: { nav: "integrations", tab: "scheduler" },
+    scheduler: { nav: "system", tab: "scheduler" },
     // 2026-05-19: webhooks/search/audience/about/security promoted to
     // first-class routes with their own ADMIN_ROUTES entries. Aliases
     // removed so _parseHashRoute returns the leaf slug directly.
@@ -188,7 +193,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2026-09-07 設計稿 08 · X1：擴充變成四個分段，而目錄卡片（Slido／Discord／
     // OBS／Bookmarklet，含 Fire Token 設定）歸在「插件」那一段——所以要明確
     // 指定分頁，不然 #/extensions 會落在預設的 Webhook 段，目錄根本不在畫面上。
-    extensions:   { nav: "integrations", tab: "plugins" },
+    // 2026-11-14 側欄收斂：備份與還原、擴充從頂層路由變成系統頁的分頁。
+    // 用 alias（不是 bare redirect），#/integrations/webhooks 這種帶區塊的
+    // 舊連結才會把第二段原樣帶過去。
+    extensions:   { nav: "system", tab: "integrations" },
+    integrations: { nav: "system", tab: "integrations" },
+    backup:       { nav: "system", tab: "backup" },
     // Dedicated mobile-admin was removed; admin relies on the normal RWD shell.
     mobile:       { nav: "system", tab: "system" },
   });
@@ -264,6 +274,71 @@ document.addEventListener("DOMContentLoaded", () => {
     return tab ? "#/" + nav + "/" + tab : "#/" + nav;
   }
 
+  // v7 S3 (2026-07-28): the retired system accordion carried leaves that
+  // now live elsewhere — old #/system/<leaf> deep links translate here.
+  // (security/firetoken/wcag/about survive as system tabs and need no
+  // entry; `system` was the overview leaf's own slug. 2026-11-14：backup /
+  // integrations 又回到 system 當分頁，webhooks / plugins / api-tokens /
+  // scheduler 是擴充分頁裡的收合區塊，都由 TabConfig.system 直接接住。)
+  const SYSTEM_LEGACY_LEAF_HOMES = {
+    system: { nav: "system", tab: "overview" },
+    sessions: { nav: "history", tab: "sessions" },
+    search: { nav: "history", tab: "search" },
+    audit: { nav: "history", tab: "audit" },
+    replay: { nav: "history", tab: "replay" },
+    audience: { nav: "history", tab: "audience" },
+  };
+
+  // (name, requestedTab) → 實際顯示的路由、分頁與要展開的收合區塊。
+  // 只讀上面幾張表、ADMIN_ROUTES 與 AdminTabs，不碰 DOM——applyRoute 與
+  // jest（AdminRouter.resolve）共用同一份解析。
+  function _resolveRoute(name, requestedTab, rawName) {
+    // Track original/raw nav slug so the clicked alias button keeps
+    // is-active after redirect (design v4 grouped sidebar 2026-05-18).
+    rawName = rawName || name;
+    // If called with an alias slug (e.g. "themes"), resolve to its real
+    // route via _bareLegacyRedirects / _routeAliases. Hash-driven calls
+    // already pre-resolve in _parseHashRoute; this branch handles direct
+    // click → applyRoute(slug) where slug isn't in ADMIN_ROUTES.
+    if (!ADMIN_ROUTES[name]) {
+      const bare = _bareLegacyRedirects[name];
+      if (typeof bare === "string") {
+        name = bare;
+      } else if (bare && typeof bare === "object") {
+        if (bare.nav) name = bare.nav;
+        if (!requestedTab && bare.tab) requestedTab = bare.tab;
+      } else {
+        const alias = _routeAliases[name];
+        if (typeof alias === "string") {
+          name = alias;
+        } else if (alias && typeof alias === "object") {
+          if (alias.nav) name = alias.nav;
+          if (!requestedTab && alias.tab) requestedTab = alias.tab;
+        }
+      }
+    }
+    // Translate retired system-accordion leaves to their new homes.
+    if (name === "system" && requestedTab && SYSTEM_LEGACY_LEAF_HOMES[requestedTab]) {
+      const home = SYSTEM_LEGACY_LEAF_HOMES[requestedTab];
+      name = home.nav;
+      requestedTab = home.tab || null;
+      rawName = name;
+    }
+    const route = ADMIN_ROUTES[name] ? name : "live";
+    // Resolve tab (Slice 3): hint > sessionStorage > default. null for nav
+    // routes that don't opt into tabs.
+    const tabs = window.AdminTabs;
+    const tab = tabs?.hasTabsFor?.(route) ? tabs.resolveActiveTab(route, requestedTab) : null;
+    const fold = tab ? tabs.foldFor(route, requestedTab) : null;
+    return {
+      route,
+      tab,
+      rawName,
+      fold: fold ? requestedTab : null,
+      foldSection: fold ? fold.section : null,
+    };
+  }
+
   // Expose so admin-* modules (tab container in Slice 3) can read/write.
   window.AdminRouter = window.AdminRouter || {};
   Object.assign(window.AdminRouter, {
@@ -271,6 +346,12 @@ document.addEventListener("DOMContentLoaded", () => {
     tabMemory: _routeTabMemory,
     parseHash: _parseHashRoute,
     buildHash: _buildHashRoute,
+    // 跟 hashchange handler 同一條路：先 parse，再用網址第一段當 rawName。
+    resolve(hash) {
+      const parsed = _parseHashRoute(hash);
+      if (!parsed) return null;
+      return _resolveRoute(parsed.nav, parsed.tab, hash.match(/^#\/([\w-]+)/)[1]);
+    },
   });
   // _effectModalRestoreFocusEl moved to admin-effects-mgmt.js
   var loadDetailsState = window.AdminUtils.loadDetailsState;
@@ -394,7 +475,8 @@ document.addEventListener("DOMContentLoaded", () => {
         "sec-stickers",
         "sec-sounds",
         "sec-themes",
-        "sec-plugins",
+        // 2026-11-14：sec-plugins 移出——它是「系統 › 擴充」的收合區塊，
+        // 要跟 Webhook／API 金鑰／定時發送待在同一個容器（settings-grid）。
         "sec-widgets",
       ],
     },
@@ -763,7 +845,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                      分組標籤寫著「系統」，底下四列卻都不是系統頁；
                                      系統總覽／WCAG／關於／Fire Token 只能靠 ⌘K 或直鏈
                                      才到得了（全庫沒有任何側欄入口）。補上這一列，
-                                     它同時是那四個分頁的家。 -->
+                                     它同時是那四個分頁的家。
+                                     2026-11-14：備份與還原／安全／擴充三列併進來——
+                                     它們同時是側欄一列與系統頁的導向列，同一件事兩三個
+                                     入口。現在只從系統頁的分頁列進去。 -->
                                 <button type="button" class="admin-dash-nav-row" data-route="system" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◫</span>
                                     <span data-i18n="adminNavSystem">系統</span>
@@ -771,18 +856,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <button type="button" class="admin-dash-nav-row" data-route="history" role="tab" aria-selected="false">
                                     <span class="admin-dash-nav-icon">◷</span>
                                     <span data-i18n="adminNavHistory">紀錄與匯出</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="backup" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⇪</span>
-                                    <span data-i18n="adminNavBackup">備份與還原</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="security" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⚿</span>
-                                    <span data-i18n="adminNavSecurity">安全</span>
-                                </button>
-                                <button type="button" class="admin-dash-nav-row" data-route="integrations" role="tab" aria-selected="false">
-                                    <span class="admin-dash-nav-icon">⌬</span>
-                                    <span data-i18n="adminNavIntegrations">擴充</span>
                                 </button>
 </nav>
                             <!-- 2026-08-19 設計稿 03：側欄 TELEMETRY 區移除
@@ -938,12 +1011,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div id="assets-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 admin-route-sections">
                                 <!-- assets sections -->
                             </div>
-                            <details id="sec-advanced" class="admin-route-sections" open>
-                                <summary class="sr-only">${ServerI18n.t("sectionAutomationTitle") || "Advanced"}</summary>
-                                <div id="advanced-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <!-- webhooks & scheduler -->
-                                </div>
-                            </details>
+                            <!-- 2026-11-14：原本這裡還有一個裝 Webhook／定時發送的
+                                 「進階」<details open> 容器（summary 是 sr-only）。
+                                 兩塊併進「系統 › 擴充」後跟插件、API 金鑰同一個容器
+                                 （settings-grid），畫面順序才由 TabConfig 一處決定。 -->
 
                             <!-- 2026-09-06 設計稿 06：Quick Actions F1–F4 與 My Actions 整區移除。
                                  控制台首屏應該只有三塊——顯示層開關、一行數字、即時訊息流。
@@ -1336,16 +1407,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // 連結（它自己寫著「素材庫只負責總覽」），唯一獨有的是各類數量，
     // 而數量現在印在分段標籤上。
     assets:    { title: "素材",           kicker: "ASSETS LIBRARY · 統一素材總覽", sections: ["sec-emojis", "sec-stickers", "sec-sounds", "sec-fonts"] },
-    // v5.2 Sprint 1 (2026-04-27): Extensions catalog page — Slido / Discord
-    // / OBS / Bookmarklet cards + shared Fire Token UI inline.
-    // 2026-09-07 設計稿 08 · X1：擴充四合一。原本 Webhook／插件／API 金鑰／
-    // 定時發送各自是一條路由（前三者沒有側欄入口、只能靠深連結或別的頁面
-    // 帶過去；定時發送藏在系統的分頁裡）。它們是同一群人在同一個場合會碰的
-    // 東西，收成一頁四個分段。
-    integrations: { title: "擴充", sections: ["sec-extensions-overview", "sec-webhooks", "sec-plugins", "sec-api-tokens-overview", "sec-scheduler"] },
-    // v5.2 Sprint 2 deeplink-only (2026-04-27 audit §A.3): Fire Token sub-row
-    // removed from sidebar. Route stays reachable via integrations → 詳細統計.
-    firetoken:    { title: "Fire Token",     kicker: "ADMIN LANE · FIRE TOKEN · 用量 / IP / AUDIT",  sections: ["sec-firetoken-overview"] },
+    // 2026-11-14 側欄收斂：`integrations`（擴充）與 `firetoken` 的條目移除，
+    // 兩者都是系統頁的分頁了（_routeAliases / _bareLegacyRedirects 接住舊網址）。
+    // 留著條目會讓 applyRoute「先查 ADMIN_ROUTES」把舊網址攔在沒有分頁列的
+    // 獨立外殼裡（#/security 在 2026-10-29 就是這樣修的）。
     // Slice 4: moderation extended to host 4 tabs (blacklist / filters /
     // ratelimit / fingerprints). Each tab's section gets hidden by
     // AdminTabs.applyTabSectionVisibility when not active.
@@ -1361,18 +1426,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // / wcag / about, as an AdminTabs strip (TabConfig.system). Old
     // #/system/<leaf> deep links to rehomed leaves translate via the
     // legacy leaf map in applyRoute.
-    system:    { title: "系統",  kicker: "SYSTEM · 健康度與組態", sections: ["sec-system-overview", "admin-security-v2-page", "sec-firetoken-overview", "sec-wcag-overview", "sec-about-overview"] },
-    // Legacy alias target only. Security now resolves under system/security;
-    // the v2 page handles its own visibility from activeRoute + activeLeaf.
-    // 2026-10-29：這一條移除，改由 _routeAliases 指到 system/security。
-    // 留著它會讓 applyRoute 的「先查 ADMIN_ROUTES、再查 alias」順序把
-    // 側欄「安全」攔在這裡 —— 同一頁於是出現兩種外殼：從側欄進去沒有分頁列，
-    // 從 system 進去有。現在兩邊都是 system，分頁列一致。
-    // security:  { title: "安全",             kicker: "SECURITY · 密碼 · WS TOKEN · 審計",  sections: ["admin-security-v2-page"] },
-    // 2026-09-07 設計稿 08 · H1：時間軸匯出（sec-timeline-export）從「紀錄與
-    // 匯出 › 重播」搬進來——「把資料整批倒出來」是備份的事，而「全部清除」
-    // 本來就住這頁。場次面板只匯出單一場次，取代不了跨場次的範圍匯出。
-    backup:    { title: "備份與還原",       kicker: "BACKUP · EXPORT · DANGER",          sections: ["admin-backup-v2-page", "sec-timeline-export"] },
+    // 2026-10-29：security 的獨立條目移除，改由 _bareLegacyRedirects 指到
+    // system/security——留著它，側欄「安全」與 system 的安全分頁會是同一頁的
+    // 兩種外殼（一個有分頁列、一個沒有）。
+    // 2026-11-14 側欄收斂：backup 與 integrations 也一樣併進來。
+    // 2026-09-07 設計稿 08 · H1：時間軸匯出（sec-timeline-export）跟著備份頁——
+    // 「把資料整批倒出來」是備份的事，場次面板只匯出單一場次。
+    system:    { title: "系統",  kicker: "SYSTEM · 健康度與組態", sections: ["sec-system-overview", "admin-security-v2-page", "admin-backup-v2-page", "sec-timeline-export", "sec-extensions-overview", "sec-webhooks", "sec-plugins", "sec-api-tokens-overview", "sec-scheduler", "sec-firetoken-overview", "sec-wcag-overview", "sec-about-overview"] },
     // 2026-09-07 設計稿 08 · N1：通知改成頂欄鈴鐺開的右上彈出面板，不再是
     // 一頁。route 保留但沒有 section——舊書籤 #/notifications 仍然解析得到，
     // admin-notifications.js 看到這個 hash 就把面板打開（同 #/setup 的做法）。
@@ -1430,7 +1490,6 @@ document.addEventListener("DOMContentLoaded", () => {
     function routeSectionOwner(sectionId) {
       if (ADMIN_SECTION_GROUPS.moderation.orderedIds.indexOf(sectionId) !== -1) return "moderation-grid";
       if (ADMIN_SECTION_GROUPS.assets.orderedIds.indexOf(sectionId) !== -1) return "assets-grid";
-      if (sectionId === "sec-scheduler" || sectionId === "sec-webhooks") return "sec-advanced";
       return "settings-grid";
     }
 
@@ -1513,19 +1572,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // settings-grid 只裝速率限制分頁的 section），它在 flex 欄裡白吃
       // 兩個 24px gap —— 分頁列下面那個 48px 的洞就是這樣來的。
       // 所以再加一個條件：容器目前真的有可見內容才顯示。
-      const hasVisiblePayload = (container) => {
-        if (container.id === "sec-advanced") {
-          return Array.from(container.querySelectorAll('[id^="sec-"]'))
-            .some((c) => getComputedStyle(c).display !== "none");
-        }
-        return Array.from(container.children)
-          .some((k) => getComputedStyle(k).display !== "none");
-      };
+      const hasVisiblePayload = (container) => Array.from(container.children)
+        .some((k) => getComputedStyle(k).display !== "none");
       shell.querySelectorAll(".admin-route-sections").forEach((container) => {
-        const hasWanted = container.id === "sec-advanced"
-          ? wantedOwners.has("sec-advanced")
-          : wantedOwners.has(container.id);
-        if (!hasWanted) { container.style.display = "none"; return; }
+        if (!wantedOwners.has(container.id)) { container.style.display = "none"; return; }
         // 先還原再量：display:none 底下量不到子元素的真實狀態
         container.style.display = "";
         container.style.display = hasVisiblePayload(container) ? "" : "none";
@@ -1537,12 +1587,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const wanted = new Set(cfg.sections);
       shell.querySelectorAll("[id^=\"sec-\"]").forEach((el) => {
         if (!el.id) return;
-        if (el.id === "sec-advanced") {
-          // Advanced wrapper: visible only if it contains any wanted section
-          const hasAny = Array.from(el.querySelectorAll("[id^=\"sec-\"]")).some((c) => wanted.has(c.id));
-          el.style.display = hasAny ? "" : "none";
-          return;
-        }
         el.style.display = wanted.has(el.id) ? "" : "none";
       });
       // Slice 3: tab-aware visibility wins over route-level visibility for
@@ -1557,58 +1601,29 @@ document.addEventListener("DOMContentLoaded", () => {
       _dedupSectionTitles();
     };
 
-    // v7 S3 (2026-07-28): the retired system accordion carried leaves that
-    // now live elsewhere — old #/system/<leaf> deep links translate here.
-    // (security/firetoken/scheduler/wcag/about survive as system tabs and
-    // need no entry; `system` was the overview leaf's own slug.)
-    const SYSTEM_LEGACY_LEAF_HOMES = {
-      system: { nav: "system", tab: "overview" },
-      backup: { nav: "backup" },
-      integrations: { nav: "integrations" },
-      "api-tokens": { nav: "integrations", tab: "api-tokens" },
-      webhooks: { nav: "integrations", tab: "webhooks" },
-      plugins: { nav: "integrations", tab: "plugins" },
-      scheduler: { nav: "integrations", tab: "scheduler" },
-      sessions: { nav: "history", tab: "sessions" },
-      search: { nav: "history", tab: "search" },
-      audit: { nav: "history", tab: "audit" },
-      replay: { nav: "history", tab: "replay" },
-      audience: { nav: "history", tab: "audience" },
-    };
+    // 深連結到收合區塊（#/system/webhooks）時展開那一塊並捲過去。
+    //
+    // 「現在是哪一塊」是路由狀態的一部分（_activeFold，跟 _activeTab 並列）：
+    // 重新套用目前路由的路徑（_adminNavigateTo——開機與切語言時 updateUI 會
+    // 呼叫它）必須帶著它，不然會被降級成「擴充」分頁、網址改寫、展開丟失。
+    //
+    // 展開動作本身是 pending：區塊是各模組晚到才注入的，套路由當下常常還不在
+    // DOM 裡、或還在被藏起來的容器裡。MutationObserver 那條路徑會再試，直到
+    // 真的看得到、展開並捲過去才清掉；使用者導到別處時才會被換掉。
+    let _activeFold = null;
+    let _pendingFold = null;
+    function _openPendingFold() {
+      const el = _pendingFold && document.getElementById(_pendingFold);
+      if (!el || !el.getClientRects().length) return;
+      _pendingFold = null;
+      if (el.tagName === "DETAILS") el.open = true;
+      el.scrollIntoView({ block: "start" });
+    }
 
     const applyRoute = (name, requestedTab, rawName) => {
-      // Track original/raw nav slug so the clicked alias button keeps
-      // is-active after redirect (design v4 grouped sidebar 2026-05-18).
-      rawName = rawName || name;
-      // If called with an alias slug (e.g. "themes"), resolve to its real
-      // route via _bareLegacyRedirects / _routeAliases. Hash-driven calls
-      // already pre-resolve in _parseHashRoute; this branch handles direct
-      // click → applyRoute(slug) where slug isn't in ADMIN_ROUTES.
-      if (!ADMIN_ROUTES[name]) {
-        const bare = _bareLegacyRedirects[name];
-        if (typeof bare === "string") {
-          name = bare;
-        } else if (bare && typeof bare === "object") {
-          if (bare.nav) name = bare.nav;
-          if (!requestedTab && bare.tab) requestedTab = bare.tab;
-        } else {
-          const alias = _routeAliases[name];
-          if (typeof alias === "string") {
-            name = alias;
-          } else if (alias && typeof alias === "object") {
-            if (alias.nav) name = alias.nav;
-            if (!requestedTab && alias.tab) requestedTab = alias.tab;
-          }
-        }
-      }
-      // Translate retired system-accordion leaves to their new homes.
-      if (name === "system" && requestedTab && SYSTEM_LEGACY_LEAF_HOMES[requestedTab]) {
-        const home = SYSTEM_LEGACY_LEAF_HOMES[requestedTab];
-        name = home.nav;
-        requestedTab = home.tab || null;
-        rawName = name;
-      }
-      currentRoute = ADMIN_ROUTES[name] ? name : "live";
+      const resolved = _resolveRoute(name, requestedTab, rawName);
+      rawName = resolved.rawName;
+      currentRoute = resolved.route;
       shell.dataset.activeRoute = currentRoute;
       // Slice 8: legacy modules (admin-backup / admin-audit / admin-audience /
       // admin-search / admin-sessions / admin-session-detail /
@@ -1618,26 +1633,18 @@ document.addEventListener("DOMContentLoaded", () => {
       // system, etc.) — not the leaf those modules expect. `activeLeaf` carries
       // the canonical leaf slug: tab slug if tabbed/accordion, else top route.
       // Legacy modules read this instead so they keep working under aliases.
-
-      // Resolve tab (Slice 3): hint > sessionStorage > default. Returns null
-      // for nav routes that don't opt into tabs. (v7 S3: system is a normal
-      // AdminTabs route now — the accordion special case is gone.)
-      let activeTab;
-      if (window.AdminTabs?.hasTabsFor?.(currentRoute)) {
-        activeTab = window.AdminTabs.resolveActiveTab(currentRoute, requestedTab);
-      } else {
-        activeTab = null;
-      }
+      const activeTab = resolved.tab;
 
       // Sync URL hash. When applyRoute was called with an alias slug
       // (rawName differs from resolved currentRoute), keep rawName in
       // the URL so the matching sidebar button stays highlighted on
       // re-entry via hashchange. Otherwise use canonical `#/<nav>(/<tab>)`.
-      const wantedHash = (rawName && rawName !== currentRoute)
-        ? "#/" + rawName
-        : (window.AdminRouter?.buildHash
-            ? window.AdminRouter.buildHash(currentRoute, activeTab)
-            : "#/" + currentRoute);
+      // 收合區塊一律寫成 #/system/<區塊>：重新整理後還會展開同一塊。
+      const wantedHash = resolved.fold
+        ? _buildHashRoute(currentRoute, resolved.fold)
+        : (rawName && rawName !== currentRoute)
+          ? "#/" + rawName
+          : _buildHashRoute(currentRoute, activeTab);
       if (window.location.hash !== wantedHash) {
         try { history.replaceState(null, "", wantedHash); } catch (_) {}
         window.dispatchEvent(new HashChangeEvent("hashchange"));
@@ -1719,6 +1726,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       _renderTabStripFor(currentRoute, activeTab);
       _renderBreadcrumb(rawName, currentRoute, activeTab);
+      // 同一塊重新套用（切語言、巢狀的 hashchange）不重設：已經展開過的不會
+      // 再捲一次，還沒展開的照樣等著。換到別塊或離開才換掉。
+      if (resolved.fold !== _activeFold) {
+        _activeFold = resolved.fold;
+        _pendingFold = resolved.foldSection;
+      }
+      _openPendingFold();
 
       try { history.replaceState(null, "", wantedHash); } catch (e) { /* ignore */ }
     };
@@ -1795,14 +1809,28 @@ document.addEventListener("DOMContentLoaded", () => {
     applyRoute(fromHash?.nav || "live", fromHash?.tab || null, _initRaw);
 
     // Expose for i18n: re-apply route title/kicker on language change
-    window._adminNavigateTo = () => applyRoute(currentRoute, _activeTab);
+    // 帶著目前展開的區塊（_activeFold 是區塊 slug，會被解析回同一個分頁）。
+    window._adminNavigateTo = () => applyRoute(currentRoute, _activeFold || _activeTab);
 
     let routeVisibilitySyncScheduled = false;
+    let routeVisibilitySyncRaf = 0;
+    let routeVisibilitySyncTimer = 0;
     function scheduleRouteVisibilitySync() {
       if (routeVisibilitySyncScheduled) return;
       routeVisibilitySyncScheduled = true;
       const run = () => {
+        if (!routeVisibilitySyncScheduled) return;
         routeVisibilitySyncScheduled = false;
+        // 先到的那個跑，並把另一個取消掉。只看旗標不夠：這次 run 會發事件，
+        // 有些頁面的模組聽到就重繪（→ MutationObserver → 再排一輪、旗標又
+        // 立起來），沒取消的那個回呼晚點醒來會把「下一輪」當成自己的來跑。
+        // 每輪因此變成兩次 run、各自再排一輪，次數倍增到把頁面卡死。
+        if (routeVisibilitySyncRaf && typeof cancelAnimationFrame === "function") {
+          cancelAnimationFrame(routeVisibilitySyncRaf);
+        }
+        clearTimeout(routeVisibilitySyncTimer);
+        routeVisibilitySyncRaf = 0;
+        routeVisibilitySyncTimer = 0;
         applySectionVisibility();
         // Same contract as applyRoute(): the route-level pass above writes
         // inline display="" on every wanted sec-*, clobbering the per-tab
@@ -1817,11 +1845,19 @@ document.addEventListener("DOMContentLoaded", () => {
         document.dispatchEvent(new CustomEvent("admin-route-applied", {
           detail: { route: currentRoute, leaf: _activeTab },
         }));
+        _openPendingFold();
       };
+      // 2026-11-14：rAF 優先（在下一次繪製前跑完，晚到的 section 不會先閃一下），
+      // 但不能只靠它。被遮住或在背景的分頁裡 visibilityState 仍可能回報
+      // "visible"，rAF 卻整個停住——run 永遠不跑、旗標卡在 true，晚到的
+      // section 再也不會觸發容器同步。整頁載入時，開機那次同步發生在各模組
+      // 注入之前（容器裡還沒有這條路由的 section → 被判空、藏起來），於是整頁
+      // 空白到下一次換路由為止。setTimeout 保證 run 一定會跑。
       if (typeof requestAnimationFrame === "function" && document.visibilityState !== "hidden") {
-        requestAnimationFrame(run);
+        routeVisibilitySyncRaf = requestAnimationFrame(run);
+        routeVisibilitySyncTimer = setTimeout(run, 100);
       } else {
-        setTimeout(run, 0);
+        routeVisibilitySyncTimer = setTimeout(run, 0);
       }
     }
 

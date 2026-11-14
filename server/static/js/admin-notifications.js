@@ -185,8 +185,8 @@
   // src 是聚合時寫死的英文內部名，不該直接給使用者看；順便決定「查看」去哪。
   const SRC_MAP = {
     Moderation:   { key: "adminNavModeration",   hash: "#/moderation" },
-    Webhooks:     { key: "adminNavIntegrations", hash: "#/integrations/webhooks" },
-    "Fire Token": { key: "adminNavIntegrations", hash: "#/integrations/plugins" },
+    Webhooks:     { key: "adminNavIntegrations", hash: "#/system/webhooks" },
+    "Fire Token": { key: "adminNavIntegrations", hash: "#/system/integrations" },
     System:       { key: "adminNavSystem",       hash: "#/events" },
   };
 

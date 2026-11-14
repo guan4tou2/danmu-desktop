@@ -111,8 +111,11 @@
     if (!el) return false;
     // 逐層往上找 display:none —— 這些區段是 `el.style.display = "none"` 藏的，
     // 不是移除，所以 offsetParent 之外還要看祖先。
-    for (var n = el; n && n !== document.documentElement; n = n.parentElement) {
+    // 收合中的 <details>（「系統 › 擴充」那幾塊）算看不見：裡面的內容沒在
+    // 畫面上，輪詢等使用者展開再開始。el 本身就是 details 時也一樣。
+    for (var n = el, from = null; n && n !== document.documentElement; from = n, n = n.parentElement) {
       if (n.style && n.style.display === "none") return false;
+      if (n.tagName === "DETAILS" && !n.open && !(from && from.tagName === "SUMMARY")) return false;
     }
     return !!(el.offsetParent || el.getClientRects().length);
   }
@@ -155,7 +158,7 @@
       _pollObserver.observe(document.body, {
         subtree: true,
         attributes: true,
-        attributeFilter: ["style", "class", "hidden"],
+        attributeFilter: ["style", "class", "hidden", "open"],
       });
       window.addEventListener("hashchange", _syncPollers);
       document.addEventListener("visibilitychange", _syncPollers);

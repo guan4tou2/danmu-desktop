@@ -157,7 +157,7 @@
       ? `<div class="admin-ext-token" data-ext-token>
           <div class="admin-ui-monolabel">
             Fire token · ${ServerI18n.t("extSecFireToken")}
-            <a href="#/firetoken" class="admin-ext-token-deeplink">${ServerI18n.t("extTokenDeepLink")}</a>
+            <a href="#/system/firetoken" class="admin-ext-token-deeplink">${ServerI18n.t("extTokenDeepLink")}</a>
           </div>
           <div class="admin-ext-token-row">
             <code class="admin-ext-token-code" data-fire-token-display>${ServerI18n.t("firetokenTokenUnsetPlaceholder")}</code>

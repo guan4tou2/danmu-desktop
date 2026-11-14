@@ -2888,16 +2888,6 @@ button:disabled,
   background: var(--color-accent);
 }
 
-.admin-soh-link { text-decoration: none; color: inherit; }
-.admin-soh-link:hover { background: var(--color-bg-elevated); }
-.admin-soh-link__sub {
-  font-size: var(--text-caption);
-  color: var(--color-text-secondary);
-}
-.admin-soh-link__chev {
-  margin-left: var(--space-2);
-  color: var(--color-text-secondary);
-}
 .hud-console-body {
   padding: var(--space-3) var(--space-3);
   font-family: var(--font-mono);
@@ -3090,8 +3080,7 @@ summary:focus-visible {
 #live-ops-grid>*,
 #review-grid>*,
 #library-grid>*,
-#automation-grid>*,
-#advanced-grid>* {
+#automation-grid>* {
   width: 100%;
 }
 
@@ -3698,7 +3687,8 @@ summary:focus-visible {
 
 .admin-ext-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  /* min()：手機上容器比 360px 窄（375 寬時 343px），不讓卡片把頁面撐出去 */
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
   gap: var(--space-3);
 }
 

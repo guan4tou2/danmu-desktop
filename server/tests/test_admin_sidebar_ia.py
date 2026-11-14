@@ -75,11 +75,15 @@ EXPECTED_NAV_ORDER = [
     # 總覽／WCAG／關於／Fire Token 全靠 ⌘K 或直鏈——分組標籤寫著「系統」，
     # 底下卻沒有一列是系統頁。同時 security 改成 system 的安全分頁
     # （_routeAliases），兩邊共用同一個外殼與分頁列。
+    #
+    # 2026-11-14 側欄收斂（合併與摺疊第二批）：`backup`／`security`／
+    # `integrations` 三列併進 `system`，**推翻 v8 把 security 提升為側欄列的
+    # 決定**。v8 的理由是「安全藏兩層等於沒有」；但 10-29 之後安全已經是
+    # 系統頁的分頁，於是同一頁有兩個入口（側欄「安全」＋系統分頁列），備份
+    # 與擴充則是側欄一列＋系統概覽的導向列。現在三者只從系統頁的分頁列進去
+    # （一層：側欄「系統」→ 分頁），舊網址全部轉到對應分頁。側欄 14 → 11 列。
     "system",
     "history",
-    "backup",
-    "security",
-    "integrations",
 ]
 
 # Group label i18n keys in sidebar order. v6 replaced the v5 keys
@@ -90,6 +94,17 @@ EXPECTED_GROUP_KEYS = [
     "adminNavGroupAppearance",
     "adminNavGroupSystem",
 ]
+
+
+def test_mobile_nav_covers_exactly_the_sidebar():
+    """手機沒有側欄：底部四個主分頁＋「更多」清單要剛好涵蓋側欄的每一列，
+    不多也不少。多一列是同一頁的第二扇門（2026-11-14 前「更多」裡還有備份與
+    擴充），少一列是手機到不了（2026-10-29 小工具就是這樣漏掉的）。"""
+    src = (ADMIN_JS.parent / "admin-mobile-nav.js").read_text(encoding="utf-8")
+    tabs = re.search(r"const TABS = \[([\s\S]+?)\];", src).group(1)
+    overflow = re.search(r"const OVERFLOW = \[([\s\S]+?)\];", src).group(1)
+    routes = re.findall(r'route:\s*"([\w-]+)"', tabs) + re.findall(r'route:\s*"([\w-]+)"', overflow)
+    assert sorted(routes) == sorted(EXPECTED_NAV_ORDER), routes
 
 
 def test_dev_group_is_gone():
@@ -130,19 +145,16 @@ def test_sidebar_renders_nav_rows_in_locked_order(admin_js: str):
     )
 
 
-def test_security_is_a_standalone_sidebar_row(admin_js: str):
-    """v8 IA (2026-08-19) 推翻 2026-05-13 的決定：`security` 回到側欄成為
-    獨立一列。
+def test_system_row_is_the_only_door_to_security_backup_and_extensions(admin_js: str):
+    """2026-11-14 側欄收斂推翻 v8（2026-08-19）「security 是側欄獨立一列」。
 
-    當初把它塞進 System accordion 的 `access` 群組，是因為側欄已經 15 列、
-    再加會爆；v8 把側欄收到 12 列後空間就回來了。安全設定（管理密碼、
-    顯示層連線密碼、後台存取）是主持人會直接找的東西，藏在兩層底下
-    等於沒有。"""
-    pattern = re.compile(
-        r'<button[^>]*\bdata-route="security"[^>]*role="tab"',
-        re.DOTALL,
-    )
-    assert pattern.search(admin_js), "security 應該是側欄的獨立一列"
+    v8 的理由是安全設定藏在兩層底下等於沒有。2026-10-29 安全變成系統頁的
+    分頁之後，它就只在一層底下（側欄「系統」→ 分頁列），側欄那一列反而成了
+    同一頁的第二個入口；備份與還原、擴充同理（側欄一列＋系統概覽的導向列）。
+    三者現在只從系統頁的分頁列進去。"""
+    for slug in ("security", "backup", "integrations"):
+        assert f'data-route="{slug}"' not in admin_js, f"{slug} 不該再有側欄列（併進系統頁的分頁）"
+    assert re.search(r'<button[^>]*\bdata-route="system"[^>]*role="tab"', admin_js)
 
 
 def test_truly_retired_slugs_have_no_sidebar_button(admin_js: str):
@@ -169,6 +181,10 @@ def test_truly_retired_slugs_have_no_sidebar_button(admin_js: str):
         "plugins",
         "webhooks",
         "api-tokens",
+        # 2026-11-14 側欄收斂：併進系統頁的分頁
+        "security",
+        "backup",
+        "integrations",
     ):
         assert retired not in sidebar_slugs, (
             f"retired slug '{retired}' has a sidebar button — should live "
@@ -251,10 +267,15 @@ def test_bare_redirects_consulted_before_alias_resolution(admin_js: str):
     )
 
 
-def test_extensions_lands_on_first_class_integrations_route(admin_js: str):
-    """v8 IA (2026-08-19)：側欄那一列直接是 `integrations`（標題「擴充」），
-    `extensions` 只留作舊書籤的別名。別名仍必須解析到 first-class 的
-    integrations 頁，不能被折回 System。"""
+def test_folded_pages_alias_onto_system_tabs(admin_js: str):
+    """2026-11-14 側欄收斂（推翻 v8 的「integrations 是 first-class 路由、不能
+    折回 System」）：擴充、備份與還原、Fire Token 都是系統頁的分頁了。
+
+    舊網址必須經別名落到對應分頁；而且 ADMIN_ROUTES 不能再留它們的條目——
+    applyRoute 先查 ADMIN_ROUTES，留著條目會把舊網址攔在沒有分頁列的獨立外殼
+    （#/security 在 2026-10-29 就是這樣壞的）。`integrations`／`backup` 用
+    alias 而不是 bare redirect，#/integrations/webhooks 這種帶第二段的舊連結
+    才會原樣帶過去。"""
     alias_match = re.search(
         r"const _routeAliases\s*=\s*Object\.create\(null\);\s*"
         r"Object\.assign\(_routeAliases,\s*\{([\s\S]+?)\n\s*\}\);",
@@ -262,17 +283,19 @@ def test_extensions_lands_on_first_class_integrations_route(admin_js: str):
     )
     assert alias_match, "_routeAliases table not found"
     alias_body = alias_match.group(1)
+    for slug, tab in (
+        ("extensions", "integrations"),
+        ("integrations", "integrations"),
+        ("backup", "backup"),
+    ):
+        assert re.search(
+            rf'\b{slug}:\s*\{{\s*nav:\s*"system",\s*tab:\s*"{tab}"', alias_body
+        ), f"_routeAliases.{slug} must be {{nav: 'system', tab: '{tab}'}}"
+    assert re.search(r'\bfiretoken:\s*\{\s*nav:\s*"system",\s*tab:\s*"firetoken"', admin_js)
 
-    assert re.search(
-        r'\bextensions:\s*\{\s*nav:\s*"integrations"', alias_body
-    ), "sidebar Extensions must resolve to the first-class integrations route"
-    assert not re.search(r'\bintegrations:\s*\{\s*nav:\s*"system"', alias_body), (
-        "integrations is a promoted sidebar route and must not be aliased back "
-        "to the System accordion"
-    )
-    assert re.search(
-        r'\bintegrations:\s*\{\s*title:\s*"擴充"', admin_js
-    ), "ADMIN_ROUTES must keep a first-class integrations page title"
+    routes = _admin_routes_sections(admin_js)
+    for slug in ("integrations", "backup", "firetoken", "security"):
+        assert slug not in routes, f"ADMIN_ROUTES.{slug} would shadow its alias onto system"
 
 
 # ─── ADMIN_ROUTES table ──────────────────────────────────────────────────────
@@ -372,10 +395,12 @@ DEEP_LINK_ALIASES = {
     # tabbed nav (紀錄 & 匯出) alongside audit.
     "replay": ("history", "replay"),
     # 2026-09-07 設計稿 08 · X1：定時發送搬進「擴充」的分段。
-    "scheduler": ("integrations", "scheduler"),
+    # 2026-11-14：擴充併進系統頁；`scheduler` 是擴充分頁裡的收合區塊 slug，
+    # AdminTabs.foldFor 把它換成擴充分頁並展開那一塊。
+    "scheduler": ("system", "scheduler"),
     # v7 S4 (2026-07-28): automation is an alias (not bare) so explicit-tab
     # deep links pass their tab straight through.
-    "automation": ("integrations", "scheduler"),
+    "automation": ("system", "scheduler"),
 }
 
 # Routes promoted from system accordion aliases to first-class ADMIN_ROUTES
@@ -508,20 +533,34 @@ def test_appearance_parent_nav_not_bare_redirected(admin_js: str):
 # AdminTabs route now; only what has no other home stays as a tab.
 # 2026-09-07 設計稿 08 · X1：`scheduler` 從系統搬到「擴充」的四個分段之一
 # （定時發送是拿來把彈幕丟出去的，跟 Webhook／插件／API 金鑰同一群人在用）。
-SYSTEM_TABS_EXPECTED = ["overview", "security", "firetoken", "wcag", "about"]
+# 2026-11-14 側欄收斂：備份與還原、擴充回到系統頁當分頁，排在安全後面。
+SYSTEM_TABS_EXPECTED = [
+    "overview",
+    "security",
+    "backup",
+    "integrations",
+    "firetoken",
+    "wcag",
+    "about",
+]
 
-# 擴充四合一（設計稿 08 · X1）。順序照稿：Webhook / 插件 / API 金鑰 / 定時發送。
-INTEGRATIONS_TABS_EXPECTED = ["webhooks", "plugins", "api-tokens", "scheduler"]
+# 擴充原本的四個分段（設計稿 08 · X1）→ 2026-11-14 起是「系統 › 擴充」裡
+# 預設收合的區塊。順序沿用原本分頁列（Webhook → 插件 → API 金鑰 → 定時
+# 發送）；五塊都在 settings-grid，畫面順序就是這個順序（實際 DOM 順序由
+# jest 的 admin-router-folds 釘住）。
+INTEGRATIONS_FOLDS_EXPECTED = {
+    "webhooks": "sec-webhooks",
+    "plugins": "sec-plugins",
+    "api-tokens": "sec-api-tokens-overview",
+    "scheduler": "sec-scheduler",
+}
 
 # Old #/system/<leaf> deep links for rehomed leaves must translate via the
 # legacy leaf map in admin.js applyRoute.
+# 2026-11-14：backup / integrations / api-tokens / webhooks / plugins /
+# scheduler 移出這張表——它們又住回系統頁（分頁或收合區塊），留在表裡會把
+# #/system/backup 轉去不存在的路由。見 test_rehomed_system_leaves_are_not_redirected。
 SYSTEM_LEGACY_LEAF_HOMES_EXPECTED = {
-    "backup": ("backup", None),
-    "integrations": ("integrations", None),
-    "api-tokens": ("integrations", "api-tokens"),
-    "webhooks": ("integrations", "webhooks"),
-    "plugins": ("integrations", "plugins"),
-    "scheduler": ("integrations", "scheduler"),
     "sessions": ("history", "sessions"),
     "search": ("history", "search"),
     "audit": ("history", "audit"),
@@ -563,23 +602,24 @@ def test_system_tab_group_declares_expected_tabs(tabs_js: str):
     ), f"system tab order drifted.\nexpected: {SYSTEM_TABS_EXPECTED}\nactual:   {found}"
 
 
-def test_integrations_tab_group_declares_expected_tabs(tabs_js: str):
-    """設計稿 08 · X1：擴充四合一，分段順序照稿。
+def test_extensions_tab_folds_the_four_it_sections(tabs_js: str):
+    """設計稿 08 · X1 的擴充四合一（Webhook／插件／API 金鑰／定時發送），
+    2026-11-14 起是「系統 › 擴充」這一個分頁。
 
-    Webhook／插件／API 金鑰／定時發送本來各自是一條路由——前三者連側欄入口
-    都沒有，只能靠深連結或別的頁面帶過去；定時發送藏在系統的分頁裡。它們是
-    同一群人在同一個場合會碰的東西。
+    導航最多兩層：側欄「系統」→ 系統頁的分頁列。擴充底下不再疊第二條分頁列
+    ——打開就是整合目錄，四塊給 IT 人員的內容各自收進預設收合的區塊
+    （`folds`），舊的分段 slug 仍是深連結。`TabConfig.integrations` 整組退場。
     """
-    block = re.search(
-        r"integrations:\s*\{\s*defaultTab:\s*\"([\w-]+)\",\s*tabs:\s*\[([\s\S]+?)\n\s*\]", tabs_js
-    )
-    assert block, "TabConfig.integrations not found in admin-tabs.js"
-    assert block.group(1) == "webhooks", "integrations defaultTab must be webhooks"
-    found = re.findall(r'slug:\s*"([\w-]+)"', block.group(2))
-    assert found == INTEGRATIONS_TABS_EXPECTED, (
-        f"integrations tab order drifted.\nexpected: {INTEGRATIONS_TABS_EXPECTED}\n"
-        f"actual:   {found}"
-    )
+    assert not re.search(
+        r"\n    integrations:\s*\{\s*defaultTab", tabs_js
+    ), "TabConfig.integrations 應已退場（不再有第二層分頁列）"
+    tab = re.search(r'\{\s*slug:\s*"integrations"[\s\S]+?\}\s*\},', tabs_js)
+    assert tab, "TabConfig.system 缺「integrations」分頁"
+    body = tab.group(0)
+    sections = re.findall(r'"([\w-]+)"', re.search(r"sections:\s*\[([^\]]+)\]", body).group(1))
+    assert sections == ["sec-extensions-overview", *INTEGRATIONS_FOLDS_EXPECTED.values()], sections
+    folds = dict(re.findall(r'"?([\w-]+)"?:\s*"(sec-[\w-]+)"', body.split("folds:")[1]))
+    assert folds == INTEGRATIONS_FOLDS_EXPECTED, folds
 
 
 def test_system_legacy_leaf_homes_cover_rehomed_leaves(admin_js: str):
@@ -599,6 +639,17 @@ def test_system_legacy_leaf_homes_cover_rehomed_leaves(admin_js: str):
             f"SYSTEM_LEGACY_LEAF_HOMES missing/wrong for {slug!r} "
             f"(expected nav={nav!r}, tab={tab!r})"
         )
+
+
+def test_rehomed_system_leaves_are_not_redirected(admin_js: str):
+    """2026-11-14：備份與還原、擴充（含四個收合區塊）又住回系統頁。它們的
+    slug 若還在 SYSTEM_LEGACY_LEAF_HOMES，#/system/backup 會被轉去已經不存在
+    的 backup 路由、最後落到控制台。"""
+    block = re.search(r"const SYSTEM_LEGACY_LEAF_HOMES\s*=\s*\{([\s\S]+?)\n\s*\};", admin_js)
+    assert block, "SYSTEM_LEGACY_LEAF_HOMES not found in admin.js"
+    for slug in ("backup", "integrations", "api-tokens", "webhooks", "plugins", "scheduler"):
+        key = rf'(?:"{re.escape(slug)}"|\b{re.escape(slug)}\b)\s*:'
+        assert not re.search(key, block.group(1)), f"{slug} 仍在 SYSTEM_LEGACY_LEAF_HOMES"
 
 
 # ─── Section IDs must actually be creatable (added 2026-07-28) ──────────────
@@ -706,7 +757,8 @@ def test_routes_owning_a_v2_page_do_not_declare_empty_sections(admin_js: str):
     sections_by_slug = _admin_routes_sections(admin_js)
     # 2026-10-29：`security` → `system`。安全頁現在掛在 system 的
     # admin-security-v2-page 分頁底下，owner 是 system。
-    for slug in ("system", "backup", "overlay"):
+    # 2026-11-14：`backup` 同理（admin-backup-v2-page 現在由 system 擁有）。
+    for slug in ("system", "overlay"):
         assert sections_by_slug.get(slug), (
             f"ADMIN_ROUTES.{slug}.sections is empty — the route's v2 page "
             f"lives inside settings-grid, which the container-visibility "
@@ -758,35 +810,38 @@ def test_admin_routes_system_owns_exactly_its_tab_sections(admin_js: str):
     assert system_match, "ADMIN_ROUTES.system entry not found"
     sections = re.findall(r'"([\w-]+)"', system_match.group(1))
     # 2026-09-07 設計稿 08 · X1：sec-scheduler 跟著「定時發送」搬去擴充。
+    # 2026-11-14 側欄收斂：備份與還原、擴充的 section 回到 system（按分頁順序）。
     assert sections == [
         "sec-system-overview",
         "admin-security-v2-page",
+        "admin-backup-v2-page",
+        "sec-timeline-export",
+        "sec-extensions-overview",
+        "sec-webhooks",
+        "sec-plugins",
+        "sec-api-tokens-overview",
+        "sec-scheduler",
         "sec-firetoken-overview",
         "sec-wcag-overview",
         "sec-about-overview",
     ], f"ADMIN_ROUTES.system.sections drifted: {sections}"
 
 
-def test_admin_routes_integrations_owns_its_tab_sections(admin_js: str):
-    """設計稿 08 · X1：擴充路由要列出四個分段的 section。
+def test_admin_routes_system_lists_every_system_tab_section(admin_js: str, tabs_js: str):
+    """原本釘「擴充路由要列出四個分段的 section」，2026-11-14 擴充併進系統後
+    改成通則：TabConfig.system 任何一個分頁的 section 都必須在
+    ADMIN_ROUTES.system.sections 裡。
 
-    sections 少列一個，syncRouteContainerVisibility() 會算出不含它的 owner
-    set，整個容器被藏起來——模組再怎麼把自己設成 display:"" 都沒用
-    （#/security 就這樣壞過）。
-    """
-    match = re.search(
-        r"\bintegrations:\s*\{\s*title:[^}]*?sections:\s*\[([^\]]+)\]",
-        admin_js,
-    )
-    assert match, "ADMIN_ROUTES.integrations entry not found"
-    sections = re.findall(r'"([\w-]+)"', match.group(1))
-    assert sections == [
-        "sec-extensions-overview",
-        "sec-webhooks",
-        "sec-plugins",
-        "sec-api-tokens-overview",
-        "sec-scheduler",
-    ], f"ADMIN_ROUTES.integrations.sections drifted: {sections}"
+    少列一個，syncRouteContainerVisibility() 會算出不含它的 owner set，整個
+    容器被藏起來——模組再怎麼把自己設成 display:"" 都沒用（#/security 就這樣
+    壞過）。"""
+    owned = set(_admin_routes_sections(admin_js)["system"])
+    block = tabs_js[tabs_js.index("    system: {") :]
+    block = block[: block.index("\n    },")]
+    referenced = set(re.findall(r'section:\s*"([\w-]+)"', block))
+    for group in re.findall(r"sections:\s*\[([^\]]+)\]", block):
+        referenced |= set(re.findall(r'"([\w-]+)"', group))
+    assert referenced and referenced <= owned, sorted(referenced - owned)
 
 
 # ─── admin-display.js viewer-config visibility gate ─────────────────────────
@@ -902,8 +957,11 @@ def test_viewer_tab_state_has_a_single_source(admin_display_js: str):
 # own the section), MUST use this route slug (because alias resolves correctly).
 PALETTE_CONTRACT = [
     # (label, must_route_to, must_NOT_route_to)
-    ("Webhooks", "webhooks", "system"),
-    ("Scheduler", "scheduler", "system"),
+    # 2026-11-14：webhooks / scheduler 的 section 現在由 system 擁有（擴充分頁
+    # 的收合區塊），所以 ⌘K 直接指 #/system/<區塊>；不能再指已經不是路由的
+    # integrations。標籤改走 tabExt* key，跟收合區塊的標題同一個詞。
+    ("tabExtWebhooks", "system/webhooks", "integrations"),
+    ("tabExtScheduler", "system/scheduler", "integrations"),
     ("Fingerprints", "fingerprints", "system"),
 ]
 
@@ -928,7 +986,7 @@ def test_palette_routes_to_owning_route(
     the palette must follow."""
     # Find the palette entry line for this label
     pattern = re.compile(
-        rf'\{{\s*label:\s*"{re.escape(label)}",\s*route:\s*"([^"]+)"',
+        rf'\{{\s*(?:label|labelKey):\s*"{re.escape(label)}",\s*route:\s*"([^"]+)"',
     )
     m = pattern.search(palette_js)
     assert m, f"palette entry for label={label!r} not found"

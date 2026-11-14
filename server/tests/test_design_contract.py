@@ -622,17 +622,34 @@ def test_extensions_page_is_four_segments(zh):
     # 按鈕只寫動詞、不加符號，也不要求使用者學會「endpoint」（設計稿 14）
     assert zh["webhooksAddEndpointBtn"] == "新增 Webhook"
 
+    # 2026-11-14 側欄收斂：四個分段變成「系統 › 擴充」裡預設收合的區塊，
+    # 上面那四個標籤現在是各區塊 summary 的標題；分段 slug 仍是深連結。
     tabs = _strip_comments(_read("server/static/js/admin-tabs.js"))
-    block = tabs[tabs.index("integrations: {") :]
-    block = block[: block.index("],")]
-    assert 'defaultTab: "webhooks"' in block
+    block = tabs[tabs.index('slug: "integrations"') :]
+    block = block[: block.index("} },")]
     for slug in ("webhooks", "plugins", "api-tokens", "scheduler"):
-        assert f'slug: "{slug}"' in block, slug
+        assert re.search(rf'"?{re.escape(slug)}"?: "sec-', block), slug
+    for module, key in (
+        ("admin-webhooks.js", "tabExtWebhooks"),
+        ("admin-plugins.js", "tabExtPlugins"),
+        ("admin-api-tokens.js", "tabExtApiKeys"),
+        ("admin-scheduler.js", "tabExtScheduler"),
+    ):
+        src = _strip_comments(_read(f"server/static/js/{module}"))
+        # data-i18n：切語言時 updateUI 會就地換掉標題
+        assert (
+            f'<summary class="admin-ui-page-title" data-i18n="{key}">'
+            f'${{ServerI18n.t("{key}")}}</summary>'
+        ) in src, module
+        assert 'class="admin-dsp2-fold' in src, module
 
-    # 搬進 topbar 插槽的按鈕不能靠 section 上的事件委派——它已經不在 section
-    # 底下了。這條擋的是「按鈕看得到但按了沒反應」。
+    # 原本這裡釘「頁首那顆新增 Webhook 被搬進 topbar 後仍要能按」。2026-11-14
+    # 收進收合區塊後頁首不再被併進 topbar，那顆跟端點卡標頭的那顆變成同一塊裡
+    # 的兩個入口（同一個 handler）——只留端點卡那一顆，自綁的程式一起退場。
     wh = _strip_comments(_read("server/static/js/admin-webhooks.js"))
-    assert ".admin-ui-page-actions [data-wh-action='show-add']" in wh
+    assert wh.count('data-wh-action="show-add"') == 1
+    assert "admin-wh-add-btn" in wh
+    assert ".admin-ui-page-actions [data-wh-action='show-add']" not in wh
 
 
 def test_system_page_is_an_entry_point(zh):
@@ -645,7 +662,12 @@ def test_system_page_is_an_entry_point(zh):
     （系統事件 #/events）。
     """
     assert zh["sohPageTitle"] == "系統"
-    assert zh["sohPageNote"] == "伺服器狀態、語言、備份、安全、擴充的入口。"
+    # 2026-11-14 側欄收斂：備份／安全／擴充／關於都是系統頁分頁列上的分頁了，
+    # 概覽底下那四條導向列只是同一件事的第二個入口——連同「…的入口」這句
+    # 頁首說明一起拿掉。概覽只剩它自己的內容（狀態、數字、網址與 QR、語言、深淺色）。
+    assert "sohPageNote" not in zh
+    for gone_key in ("sohLinkBackupSub", "sohLinkSecuritySub", "sohLinkAbout", "sohLinkExtSub"):
+        assert gone_key not in zh, gone_key
     assert zh["sohAllHealthy"] == "運作正常"
     for key in ("sohMetricUptime", "sohMetricConnected", "sohMetricMemory", "sohMetricVersion"):
         assert key in zh, key
@@ -661,6 +683,8 @@ def test_system_page_is_an_entry_point(zh):
         "QUICK ACTIONS",
         "CONFIG SUMMARY",
         "_renderSpark",
+        "admin-soh-link",
+        'href="${r.hash}"',
     ):
         assert gone not in js, gone
 

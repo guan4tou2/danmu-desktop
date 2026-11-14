@@ -7,9 +7,9 @@
  * the same backend introduced in Sprint 1; only adds aggregation
  * endpoints and a richer UI.
  *
- * Mounted under route "firetoken" (admin-routes.js). The Extensions
- * page (sec-extensions-overview) gets a "查看詳細統計" link button on
- * the Slido card that navigates here via #/firetoken.
+ * Mounted as the system route's "firetoken" tab (TabConfig.system). The
+ * Extensions catalog (sec-extensions-overview) links here from the Slido
+ * card via #/system/firetoken; old #/firetoken bookmarks redirect.
  */
 (function () {
   "use strict";
@@ -32,7 +32,7 @@
       <div id="${PAGE_ID}" class="admin-ft-page hud-page-stack lg:col-span-2">
         <div class="admin-ui-page-head">
           <h2 class="admin-ui-page-title">${ServerI18n.t("firetokenPageTitle")}</h2>
-          <p class="admin-ui-page-note">${ServerI18n.t("firetokenPageNote", { link: '<a href="#/integrations">API Tokens</a>' })}</p>
+          <p class="admin-ui-page-note">${ServerI18n.t("firetokenPageNote", { link: '<a href="#/system/api-tokens">API Tokens</a>' })}</p>
         </div>
 
         <div class="admin-ft-grid">

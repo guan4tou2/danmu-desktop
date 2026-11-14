@@ -22,12 +22,13 @@
   // source with the sidebar/breadcrumb, so names can never drift again.
   // v7 IA (2026-07-28): messages / ratelimit / audit / fonts dropped —
   // their bare-legacy redirects land on live / moderation / history / assets.
+  // 2026-11-14：backup / integrations / firetoken 不再是 ADMIN_ROUTES 條目
+  // （併進系統頁的分頁），改由下面 SETTINGS 的 system/<分頁> 列出。
   const ROUTE_SLUGS = [
     "live", "polls", "moderation",
     "viewer", "widgets", "effects", "themes", "assets",
-    "system", "history", "backup",
-    "integrations", "plugins", "webhooks", "api-tokens",
-    "security", "notifications", "audience", "firetoken", "overlay", "about",
+    "system", "history",
+    "notifications", "audience", "overlay", "about",
   ];
 
   function _routes() {
@@ -54,9 +55,15 @@
     { labelKey: "cmdkSettingEffectsMgmt", route: "effects", section: "sec-effects-mgmt" },
     // 2026-10-29：安全不再是獨立的 ADMIN_ROUTES 條目（改成 system 的分頁），
     // 而 ROUTE_SLUGS 的解析靠 ADMIN_ROUTES[slug].title，少了條目就整筆被濾掉
-    // ——⌘K 從此搜不到「安全」。用別名 slug 補回來，alias 會解析到
-    // {nav: "system", tab: "security"}。
-    { labelKey: "adminRouteTitle_security", route: "security", tab: "security", section: "admin-security-v2-page" },
+    // ——⌘K 從此搜不到「安全」。改成直接指向系統頁的分頁。
+    // 2026-11-14：備份、擴充、Fire Token 同理；插件與 API 金鑰是擴充裡的
+    // 收合區塊，#/system/<區塊> 會展開那一塊。標籤寫成「系統 › 安全」。
+    { labelKey: "adminRouteTitle_security", route: "system/security", section: "admin-security-v2-page" },
+    { labelKey: "adminRouteTitle_backup", route: "system/backup", section: "admin-backup-v2-page" },
+    { labelKey: "adminRouteTitle_integrations", route: "system/integrations", section: "sec-extensions-overview" },
+    { labelKey: "tabExtPlugins", route: "system/plugins", section: "sec-plugins" },
+    { labelKey: "tabExtApiKeys", route: "system/api-tokens", section: "sec-api-tokens-overview" },
+    { labelKey: "adminRouteTitle_firetoken", route: "system/firetoken", section: "sec-firetoken-overview" },
     { label: "Emoji",               route: "assets",    section: "sec-emojis" },
     { label: "Stickers",            route: "assets",    section: "sec-stickers" },
     { label: "Sounds",              route: "assets",    section: "sec-sounds" },
@@ -69,8 +76,8 @@
     // so jumping there leaves the section hidden. Use the deep-link
     // alias slugs — `_routeAliases` resolves each to the correct
     // {nav, tab} pair, which AdminTabs.applyTabSectionVisibility honors.
-    { label: "Webhooks",            route: "webhooks",     section: "sec-webhooks" },
-    { label: "Scheduler",           route: "scheduler",    section: "sec-scheduler" },
+    { labelKey: "tabExtWebhooks",   route: "system/webhooks",  section: "sec-webhooks" },
+    { labelKey: "tabExtScheduler",  route: "system/scheduler", section: "sec-scheduler" },
     { label: "Fingerprints",        route: "fingerprints", section: "sec-fingerprints" },
     { labelKey: "cmdkSettingSystemOverview", route: "system",    section: "sec-system-overview" },
   ];
@@ -338,8 +345,7 @@
     viewer: "adminNavGroupAppearance", effects: "adminNavGroupAppearance",
     themes: "adminNavGroupAppearance", assets: "adminNavGroupAppearance",
     widgets: "adminNavGroupAppearance",
-    history: "adminNavGroupSystem", backup: "adminNavGroupSystem",
-    security: "adminNavGroupSystem", integrations: "adminNavGroupSystem",
+    system: "adminNavGroupSystem", history: "adminNavGroupSystem",
   };
 
   function _scoreRoutes(q) {
@@ -357,9 +363,14 @@
     }).filter((x) => x.score >= 0);
   }
 
+  // 「系統 › 安全」的前半段。ADMIN_ROUTES 的 title 是中文常數，標籤後半段
+  // 卻走 i18n——不先查 adminRouteTitle_* 的話英文介面會拼出「系統 › Security」。
   function _routeTitle(id) {
     const r = _routes()[id];
-    return r ? r.title : "";
+    if (!r) return "";
+    const key = "adminRouteTitle_" + id;
+    const text = ServerI18n.t(key);
+    return text !== key ? text : r.title;
   }
 
   function _scoreSettings(q) {
@@ -374,7 +385,8 @@
         section: s.section,
         // 設計稿 15 · CK1 的範例是「審核 › 封鎖字」——把它住在哪一頁
         // 寫進標籤本身，使用者才知道按下去會跳到哪。
-        label: _routeTitle(s.route) ? `${_routeTitle(s.route)} › ${label}` : label,
+        label: _routeTitle(s.route.split("/")[0])
+          ? `${_routeTitle(s.route.split("/")[0])} › ${label}` : label,
         sub: "",
         icon: "⚙",
         score: _fuzzyScore(label, q),

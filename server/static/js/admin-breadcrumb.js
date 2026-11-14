@@ -27,7 +27,8 @@
     const tab = tabButton
       ? (tabButton.querySelector(".admin-tabs-btn-label") || tabButton).textContent.trim()
       : "";
-    const labels = [section, page, tab].filter(Boolean);
+    // 分區與頁面同名（「系統」分區底下的「系統」頁）只寫一次：系統 › 安全。
+    const labels = [section === page ? "" : section, page, tab].filter(Boolean);
     const fragment = document.createDocumentFragment();
     labels.forEach((text, index) => {
       if (index) {
