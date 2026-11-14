@@ -463,6 +463,24 @@
     webhook_no_credentials: "backupSkipWebhookNoCredentials",
   };
 
+  // 憑證合併的說明：哪些 Webhook 更新了設定、哪些原樣保留、哪個讀不出來的
+  // 憑證檔先另存了一份。
+  const MERGE_NOTE_KEYS = {
+    webhook_updated: "backupMergeWebhookUpdated",
+    webhook_kept: "backupMergeWebhookKept",
+    unreadable_file_kept: "backupMergeUnreadableKept",
+  };
+
+  function mergedLines(merged) {
+    if (!merged || !merged.length) return [];
+    return [""].concat(ServerI18n.t("backupMergedHeader")).concat(
+      merged.map((n) => {
+        const key = n && MERGE_NOTE_KEYS[n.code];
+        return "  " + n.path + " — " + (key ? ServerI18n.t(key) : n.reason);
+      })
+    );
+  }
+
   function skippedLines(skipped) {
     return (skipped || []).map((s) => {
       const key = s && SKIP_REASON_KEYS[s.code];
@@ -520,6 +538,7 @@
           lines.push("Skipped " + result.skipped.length + " entries:");
           lines.push(...skippedLines(result.skipped));
         }
+        lines.push(...mergedLines(result.merged));
         out.textContent = lines.join("\n");
       }
       _pendingPackFile = file;
@@ -567,6 +586,7 @@
             lines.push("Skipped " + result.skipped.length + " entries:");
             lines.push(...skippedLines(result.skipped));
           }
+          lines.push(...mergedLines(result.merged));
         } else {
           lines.push("✗ " + ServerI18n.t("backupApplyFailedHeader"));
           lines.push(JSON.stringify(result.errors || result, null, 2));

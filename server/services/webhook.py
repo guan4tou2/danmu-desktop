@@ -13,7 +13,6 @@ import http.client
 import ipaddress
 import json
 import logging
-import os
 import socket
 import ssl
 import threading
@@ -25,6 +24,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from server.config import Config
+
+from .atomic_file import write_atomic
 
 logger = logging.getLogger(__name__)
 
@@ -230,13 +231,16 @@ class WebhookConfig:
 # 儲存時（register / update）與每次送出前都檢查。
 _BLOCKED_URL_REASON = "URL 指向 link-local 位址（例如雲端 metadata），不允許"
 
-# Cloud metadata endpoints outside link-local space: AWS IMDS over IPv6, and
-# Alibaba Cloud.
+# Cloud metadata endpoints outside link-local space: AWS, Oracle Cloud and
+# Google Compute Engine over IPv6, and Alibaba Cloud. Other private (ULA)
+# addresses stay allowed.
 _METADATA_NETWORKS = (
-    ipaddress.ip_network("fd00:ec2::254/128"),
-    ipaddress.ip_network("100.100.100.200/32"),
+    ipaddress.ip_network("fd00:ec2::254/128"),  # AWS
+    ipaddress.ip_network("fd00:c1::a9fe:a9fe/128"),  # Oracle Cloud
+    ipaddress.ip_network("fd20:ce::254/128"),  # Google Compute Engine
+    ipaddress.ip_network("100.100.100.200/32"),  # Alibaba Cloud
 )
-# Well-known NAT64 prefix: 64:ff9b::a9fe:a9fe reaches 169.254.169.254.
+# Well-known NAT64 prefix: the low 32 bits are the IPv4 destination.
 _NAT64_NETWORK = ipaddress.ip_network("64:ff9b::/96")
 
 
@@ -246,10 +250,14 @@ class _ResolveError(ValueError):
 
 def _blocked_address(ip: "ipaddress._BaseAddress") -> bool:
     if isinstance(ip, ipaddress.IPv6Address):
-        if ip.ipv4_mapped is not None:
-            return _blocked_address(ip.ipv4_mapped)
-        if ip in _NAT64_NETWORK:
-            return _blocked_address(ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF))
+        embedded = ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
+        if ip.ipv4_mapped is not None or ip in _NAT64_NETWORK:
+            return _blocked_address(embedded)
+        # Clouds put their IPv6 metadata endpoint at an address whose low 32
+        # bits are the link-local IPv4 one; refuse that shape wherever it
+        # appears.
+        if embedded.is_link_local:
+            return True
     if ip.is_link_local:
         return True
     return any(ip in net for net in _METADATA_NETWORKS)
@@ -374,6 +382,10 @@ def _post(url: str, body: bytes, headers: Dict[str, str], timeout: float) -> int
     """POST once to a checked destination; return the HTTP status.
 
     Redirects are not followed: a 3xx is returned like any other status.
+    The outcome is the status line; the response body is never read, so a
+    slow or broken body cannot turn a delivered 2xx into a failure (and a
+    duplicate delivery on retry). The connection is not reused, so closing
+    it without draining is fine.
     """
     scheme, host, port, target, addrs = _check_destination(url)
     conn_cls = _PinnedHTTPSConnection if scheme == "https" else _PinnedHTTPConnection
@@ -381,8 +393,12 @@ def _post(url: str, body: bytes, headers: Dict[str, str], timeout: float) -> int
     try:
         conn.request("POST", target, body=body, headers=headers)
         resp = conn.getresponse()
-        resp.read(64 * 1024)  # drain a little so the connection closes cleanly
-        return resp.status
+        status = resp.status
+        try:
+            resp.close()
+        except OSError:
+            pass
+        return status
     finally:
         conn.close()
 
@@ -477,6 +493,16 @@ class WebhookService:
 
     # ── Persistence ──────────────────────────────────────────────────────
 
+    def reload(self) -> None:
+        """Re-read the hooks from disk (after a backup restore replaced the file).
+
+        Without this, the next status update would write the pre-restore
+        list from memory back over the restored file.
+        """
+        with self._lock:
+            self._hooks = {}
+            self._load()
+
     def _load(self) -> None:
         """Load webhooks from JSON file (called once at init, under no lock).
 
@@ -521,13 +547,12 @@ class WebhookService:
         """Persist current hooks to JSON. Caller must hold self._lock."""
         try:
             data = [h.to_dict() for h in self._hooks.values()]
-            tmp = _WEBHOOKS_FILE.with_suffix(".tmp")
             # Owner-only: the file holds signing secrets and webhook URLs.
-            fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-            with os.fdopen(fd, "w", encoding="utf-8") as f:
-                f.write(json.dumps(data, indent=2, ensure_ascii=False))
-            os.chmod(tmp, 0o600)
-            tmp.replace(_WEBHOOKS_FILE)
+            write_atomic(
+                _WEBHOOKS_FILE,
+                json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8"),
+                0o600,
+            )
         except Exception:
             logger.exception("Failed to save webhooks to %s", _WEBHOOKS_FILE)
 
@@ -688,16 +713,22 @@ class WebhookService:
         if signature:
             headers["X-Webhook-Signature"] = signature
 
+        tried = 0
         for attempt in range(attempts):
             if attempt > 0:
                 backoff = 2 ** (attempt - 1)  # 1s, 2s, 4s, ...
                 time.sleep(backoff)
 
+            tried = attempt + 1
             try:
                 # Resolves and checks the destination again on every attempt,
                 # then connects only to the checked addresses.
                 status = _post(hook.url, payload_bytes, headers, _REQUEST_TIMEOUT)
             except _ResolveError as exc:
+                last_exc, last_status = exc, None
+            except ssl.SSLError as exc:
+                # TLS failures (certificate verification included, which is
+                # also a ValueError) are connection failures: retry as usual.
                 last_exc, last_status = exc, None
             except ValueError as exc:
                 # Destination refused (or URL unusable): retrying cannot help.
@@ -749,11 +780,11 @@ class WebhookService:
             event=event,
             code=last_status,
             duration_ms=duration_ms,
-            retries=attempts - 1,
+            retries=max(0, tried - 1),
             ok=False,
             dropped=True,
         )
-        logger.error("Webhook %s failed after %d attempts: %s", hook.id, attempts, error_msg)
+        logger.error("Webhook %s failed after %d attempt(s): %s", hook.id, tried, error_msg)
 
     def _update_status(
         self,

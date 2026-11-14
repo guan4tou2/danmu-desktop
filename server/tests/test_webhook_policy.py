@@ -1,0 +1,64 @@
+"""Webhook address policy additions and retry accounting."""
+
+import ipaddress
+import ssl
+
+import pytest
+
+from server.services import webhook as webhook_mod
+from server.services.webhook import WebhookService
+
+
+@pytest.mark.parametrize("addr", ["fd00:c1::a9fe:a9fe", "fd20:ce::254", "fd00:ec2::254"])
+def test_cloud_metadata_ipv6_addresses_are_refused(addr):
+    assert webhook_mod._blocked_address(ipaddress.ip_address(addr)) is True
+
+
+def test_ipv6_with_link_local_ipv4_in_low_bits_is_refused():
+    assert webhook_mod._blocked_address(ipaddress.ip_address("fd12:3456::a9fe:1")) is True
+
+
+@pytest.mark.parametrize(
+    "addr", ["fd12:3456::1", "fd00:c1::1", "fc00::10", "2001:db8::5", "::1", "10.0.0.5"]
+)
+def test_ordinary_private_and_loopback_addresses_stay_allowed(addr):
+    assert webhook_mod._blocked_address(ipaddress.ip_address(addr)) is False
+
+
+def _hook(svc, retry_count=2):
+    hook_id = svc.register(
+        {"url": "https://hooks.example/h", "events": ["on_danmu"], "retry_count": retry_count}
+    )
+    return svc._hooks[hook_id]
+
+
+def test_tls_errors_are_retried_and_counted(monkeypatch):
+    svc = WebhookService()
+    hook = _hook(svc, retry_count=2)
+    calls = []
+
+    def fail(*_a, **_k):
+        calls.append(1)
+        raise ssl.SSLCertVerificationError("certificate verify failed")
+
+    monkeypatch.setattr(webhook_mod, "_post", fail)
+    monkeypatch.setattr(webhook_mod.time, "sleep", lambda _s: None)
+    svc._send_webhook(hook, "on_danmu", {"text": "x"})
+    assert len(calls) == 3
+    assert svc.list_deliveries()[0]["retries"] == 2
+
+
+def test_refused_destination_is_tried_once_and_logged_as_one_try(monkeypatch):
+    svc = WebhookService()
+    hook = _hook(svc, retry_count=2)
+    calls = []
+
+    def refuse(*_a, **_k):
+        calls.append(1)
+        raise ValueError(webhook_mod._BLOCKED_URL_REASON)
+
+    monkeypatch.setattr(webhook_mod, "_post", refuse)
+    monkeypatch.setattr(webhook_mod.time, "sleep", lambda _s: None)
+    svc._send_webhook(hook, "on_danmu", {"text": "x"})
+    assert len(calls) == 1
+    assert svc.list_deliveries()[0]["retries"] == 0

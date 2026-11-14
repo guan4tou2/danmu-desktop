@@ -42,18 +42,17 @@ import hashlib
 import io
 import json
 import logging
-import os
 import re
 import tarfile
-import threading
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from server import config as config_module
 from server.config import Config
 
-from . import code_policy
+from . import atomic_file, code_policy
 
 logger = logging.getLogger(__name__)
 
@@ -68,10 +67,6 @@ _USER_PLUGINS_DIR = _SERVER_ROOT / "user_plugins"
 _BACKUP_VERSION = "1"
 _MAX_IMPORT_SIZE = 16 * 1024 * 1024  # 16 MB — sanity cap on uploaded backups
 _MAX_FILE_COUNT = 2000  # refuse pathologically large tarballs
-
-# Files in a backup are written with the same permissions their owning
-# service uses: these hold bearer credentials and are owner-only.
-_OWNER_ONLY_FILES = frozenset({"fire_token.json", "ws_auth.json", "webhooks.json"})
 
 # One path segment: plain characters, no leading dot (so no ".", "..",
 # dotfiles or editor temp files) and no separators.
@@ -261,76 +256,308 @@ def _strip_webhooks(obj: Any) -> Any:
     return [{**h, "url": "", "secret": ""} for h in obj if isinstance(h, dict)]
 
 
-def _merge_fire_token(incoming: Any, current: Any, _path: str) -> Tuple[Any, List[Dict]]:
-    current = current if isinstance(current, dict) else {}
+MERGE_WEBHOOK_UPDATED = "webhook_updated"
+MERGE_WEBHOOK_KEPT = "webhook_kept"
+MERGE_UNREADABLE_KEPT = "unreadable_file_kept"
+
+# Each merge returns (merged_obj, skipped, merged_notes). It merges when the
+# backup says credentials were omitted OR the file's credential fields are
+# empty — whatever the manifest claims, a restore never blanks a credential
+# the target has, and never writes a file that switches connection auth off.
+
+
+def _note(path: str, code: str, reason: str) -> Dict[str, str]:
+    return {"path": path, "code": code, "reason": reason}
+
+
+def _valid_fire_token(current: Any) -> Optional[Dict[str, Any]]:
+    """The target's fire-token state if the loader honours its token today."""
+    from . import fire_token
+
+    if not isinstance(current, dict):
+        return None
+    # A token written before the current format is deliberately ignored after
+    # an upgrade and must not come back to life inside a current-format file.
+    if current.get("token") and current.get("format") == fire_token._FORMAT:
+        return current
+    return None
+
+
+def _merge_fire_token(incoming: Any, current: Any, path: str, omitted: bool):
+    if not isinstance(incoming, dict):
+        raise ValueError("fire_token.json is not an object")
+    if incoming.get("token") and not omitted:
+        return incoming, [], []
+    from . import fire_token
+
     merged = dict(incoming)
-    token = str(current.get("token") or "")
-    merged["token"] = token
-    if token:
-        for key in ("format", "rotated_at", "created_at"):
-            if key in current:
-                merged[key] = current[key]
+    keep = _valid_fire_token(current)
+    if keep is not None:
+        # Credential and its on/off switch both stay as they are here.
+        merged.update(
+            format=fire_token._FORMAT,
+            token=keep["token"],
+            enabled=bool(keep.get("enabled", False)),
+            rotated_at=keep.get("rotated_at", 0.0),
+            created_at=keep.get("created_at", 0.0),
+        )
     else:
-        merged["enabled"] = False
-    return merged, []
+        merged.update(token="", enabled=False)
+    return merged, [], []
 
 
-def _merge_ws_auth(incoming: Any, current: Any, _path: str) -> Tuple[Any, List[Dict]]:
-    current = current if isinstance(current, dict) else {}
+def _merge_ws_auth(incoming: Any, current: Any, path: str, omitted: bool):
+    from . import ws_auth
+
+    if not isinstance(incoming, dict):
+        raise ValueError("ws_auth.json is not an object")
+    if incoming.get("token") and not omitted:
+        return incoming, [], []
+    # Only a state file the loader would accept counts as the current token.
+    try:
+        current = ws_auth._normalize(current)
+    except ValueError:
+        current = {}
     merged = dict(incoming)
     merged["token"] = str(current.get("token") or "")
     if merged.get("require_token") and not merged["token"]:
-        # Token auth stays on, as in the backup; displays need the new
-        # token from Admin → Security either way, since the old one was
-        # not in the backup.
+        # Token auth stays on, as in the backup: never write "required but
+        # no token", which the loader would turn into auth switched off.
         import secrets
 
         merged["token"] = secrets.token_urlsafe(24)
-    return merged, []
+    return merged, [], []
 
 
-def _merge_webhooks(incoming: Any, current: Any, path: str) -> Tuple[Any, List[Dict]]:
-    by_id = {h.get("id"): h for h in (current or []) if isinstance(h, dict) and h.get("id")}
-    merged, skipped = [], []
-    for hook in incoming:
-        existing = by_id.get(hook.get("id"))
-        if existing is None or not existing.get("url"):
-            skipped.append(
-                _skip(
-                    f"{path} ({hook.get('id', '?')})",
-                    SKIP_WEBHOOK_NO_CREDENTIALS,
-                    "webhook URL and secret are not in this backup or on this server",
-                )
+def _hook_has_credentials(hook: Dict[str, Any]) -> bool:
+    return bool(hook.get("url") or hook.get("secret"))
+
+
+def _merge_webhooks(incoming: Any, current: Any, path: str, omitted: bool):
+    if not isinstance(incoming, list):
+        raise ValueError("webhooks.json is not a list")
+    hooks = [h for h in incoming if isinstance(h, dict)]
+    current_hooks = (
+        [h for h in (current or []) if isinstance(h, dict)] if isinstance(current, list) else []
+    )
+    by_id = {h.get("id"): h for h in current_hooks if h.get("id")}
+    skipped: List[Dict[str, str]] = []
+    notes: List[Dict[str, str]] = []
+
+    def label(hook):
+        return f"{path} ({hook.get('id', '?')})"
+
+    def no_credentials(hook):
+        skipped.append(
+            _skip(
+                label(hook),
+                SKIP_WEBHOOK_NO_CREDENTIALS,
+                "webhook URL and secret are not in this backup or on this server",
             )
+        )
+
+    if not omitted and any(_hook_has_credentials(h) for h in hooks):
+        # A backup that carries credentials is authoritative for the list.
+        # A hook in it without a URL can only take this server's by id.
+        out = []
+        for hook in hooks:
+            if _hook_has_credentials(hook):
+                out.append(hook)
+                continue
+            existing = by_id.get(hook.get("id"))
+            if existing is None or not existing.get("url"):
+                no_credentials(hook)
+                continue
+            out.append({**hook, "url": existing["url"], "secret": existing.get("secret", "")})
+        return out, skipped, notes
+
+    # Credential-free: every hook this server has stays. A matching hook takes
+    # the backup's settings and keeps its own URL and secret; a hook only in
+    # the backup cannot be created without a URL.
+    incoming_by_id = {h.get("id"): h for h in hooks if h.get("id")}
+    out = []
+    for existing in current_hooks:
+        update = incoming_by_id.get(existing.get("id"))
+        if update is None:
+            out.append(existing)
+            notes.append(_note(label(existing), MERGE_WEBHOOK_KEPT, "kept, not in this backup"))
             continue
-        merged.append({**hook, "url": existing["url"], "secret": existing.get("secret", "")})
-    return merged, skipped
+        out.append({**update, "url": existing.get("url", ""), "secret": existing.get("secret", "")})
+        notes.append(
+            _note(label(existing), MERGE_WEBHOOK_UPDATED, "settings updated, URL and secret kept")
+        )
+    for hook in hooks:
+        if hook.get("id") not in by_id:
+            no_credentials(hook)
+    return out, skipped, notes
 
 
-# runtime/<name>: (strip for export, merge on restore)
-_CREDENTIAL_FILES = {
-    "fire_token.json": (_strip_fire_token, _merge_fire_token),
-    "ws_auth.json": (_strip_ws_auth, _merge_ws_auth),
-    "webhooks.json": (_strip_webhooks, _merge_webhooks),
+# kind: (strip for export, merge on restore)
+_CREDENTIAL_KINDS = {
+    "fire_token": (_strip_fire_token, _merge_fire_token),
+    "ws_auth": (_strip_ws_auth, _merge_ws_auth),
+    "webhooks": (_strip_webhooks, _merge_webhooks),
+}
+# Where each lives under runtime/ with the default configuration.
+_DEFAULT_CREDENTIAL_NAMES = {
+    "fire_token.json": "fire_token",
+    "ws_auth.json": "ws_auth",
+    "webhooks.json": "webhooks",
 }
 
 
-def _credential_handlers(area: _Area, arc_name: str):
-    name = arc_name[len(area.prefix) + 1 :]
-    if area.label != "runtime" or "/" in name:
+def _configured_credential_paths() -> Dict[Path, str]:
+    """The files the services actually read, as configured right now.
+
+    WEBHOOKS_PATH can rename or move the webhook store; the fire token and
+    ws_auth files have fixed names but are read from the modules so test
+    redirection is honoured too.
+    """
+    from . import fire_token, webhook, ws_auth
+
+    out: Dict[Path, str] = {}
+    for path, kind in (
+        (fire_token._STATE_FILE, "fire_token"),
+        (ws_auth._state.path, "ws_auth"),
+        (webhook._WEBHOOKS_FILE, "webhooks"),
+    ):
+        try:
+            out[Path(path).resolve()] = kind
+        except OSError:
+            continue
+    return out
+
+
+def _credential_kind(
+    area: _Area,
+    arc_name: str,
+    local_path: Path,
+    configured: Dict[Path, str],
+    declared: Optional[Dict[str, str]] = None,
+) -> Optional[str]:
+    """Which credential file *arc_name* is, if any.
+
+    A file counts as a credential file when the backup's manifest declares
+    it, when it is the file a service is configured to use on this server,
+    or when it has a service's default name directly under runtime/.
+    """
+    if area.label != "runtime":
         return None
-    return _CREDENTIAL_FILES.get(name)
-
-
-def _merge_credentials(handlers, data: bytes, target: Path, path: str):
-    """Put the target's own credentials into a credential-free backup file."""
-    incoming = json.loads(data.decode("utf-8"))
+    if declared and declared.get(arc_name) in _CREDENTIAL_KINDS:
+        return declared[arc_name]
     try:
-        current = json.loads(target.read_text(encoding="utf-8")) if target.is_file() else None
+        kind = configured.get(local_path.resolve())
+    except OSError:
+        kind = None
+    if kind:
+        return kind
+    rel = arc_name[len(area.prefix) + 1 :]
+    return _DEFAULT_CREDENTIAL_NAMES.get(rel)
+
+
+def _declared_credential_files(manifest: Any) -> Dict[str, str]:
+    raw = manifest.get("credential_files") if isinstance(manifest, dict) else None
+    if not isinstance(raw, dict):
+        return {}
+    return {k: v for k, v in raw.items() if isinstance(k, str) and v in _CREDENTIAL_KINDS}
+
+
+def _readable_credential_state(kind: str, current: Any) -> bool:
+    if kind == "ws_auth":
+        from . import ws_auth
+
+        try:
+            ws_auth._normalize(current)
+        except ValueError:
+            return False
+        return True
+    if kind == "webhooks":
+        return isinstance(current, list)
+    return isinstance(current, dict)
+
+
+def _current_credential_state(kind: str, target: Path) -> Tuple[Any, bool]:
+    """(parsed target file or None, whether it exists but cannot be used)."""
+    if not target.is_file():
+        return None, False
+    try:
+        current = json.loads(target.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        current = None
-    merged, skipped = handlers[1](incoming, current, path)
-    return json.dumps(merged, ensure_ascii=False, indent=2).encode("utf-8"), skipped
+        return None, True
+    if not _readable_credential_state(kind, current):
+        return None, True
+    return current, False
+
+
+def _merge_credentials(kind: str, data: bytes, target: Path, path: str, omitted: bool):
+    """Combine a backup's credential file with the target's own credentials.
+
+    Returns (bytes to write, skipped, merged notes, target_unreadable).
+    """
+    incoming = json.loads(data.decode("utf-8"))
+    current, unreadable = _current_credential_state(kind, target)
+    merged, skipped, notes = _CREDENTIAL_KINDS[kind][1](incoming, current, path, omitted)
+    encoded = json.dumps(merged, ensure_ascii=False, indent=2).encode("utf-8")
+    return encoded, skipped, notes, unreadable
+
+
+def _preserve_unreadable(target: Path) -> Optional[Path]:
+    """Copy an unreadable credential file aside before it is overwritten.
+
+    Same naming as JsonState's keep_unreadable_file
+    (``<name>.corrupt-<UTC timestamp>``); an existing copy with identical
+    bytes is reused. Owner-only, since the bytes may hold a credential.
+    """
+    try:
+        data = target.read_bytes()
+    except OSError as exc:
+        logger.warning("backup: cannot copy unreadable %s: %s", target, exc)
+        return None
+    prefix = f"{target.name}.corrupt-"
+    for existing in sorted(target.parent.glob(prefix + "*")):
+        try:
+            if existing.read_bytes() == data:
+                return existing
+        except OSError:
+            continue
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    copy = target.with_name(prefix + stamp)
+    try:
+        atomic_file.write_atomic(copy, data, 0o600)
+    except OSError as exc:
+        logger.warning("backup: cannot copy unreadable %s: %s", target, exc)
+        return None
+    logger.warning("backup: kept unreadable %s as %s before restoring it", target, copy)
+    return copy
+
+
+def _reload_fire_token() -> None:
+    from . import fire_token
+
+    fire_token.reload()
+
+
+def _reload_ws_auth() -> None:
+    from . import ws_auth
+
+    ws_auth._state.reload()
+
+
+def _reload_webhooks() -> None:
+    from . import webhook
+
+    if webhook.WebhookService._instance is not None:
+        webhook.WebhookService._instance.reload()
+
+
+# Services that cache a restored file: credential kind → reload. Without
+# this the running server kept serving (and later wrote back) the
+# pre-restore state until a restart.
+_RELOAD_AFTER_RESTORE = {
+    "fire_token": _reload_fire_token,
+    "ws_auth": _reload_ws_auth,
+    "webhooks": _reload_webhooks,
+}
 
 
 def _add_member(tar: tarfile.TarFile, name: str, data: bytes, mtime: int) -> None:
@@ -352,11 +579,15 @@ def pack(
     via tmp + replace) and an empty bytes object is returned. Otherwise
     the tarball is returned in-memory — used by the download endpoint.
 
-    Connection credentials (see _CREDENTIAL_FILES) are left out unless
+    Connection credentials (see _CREDENTIAL_KINDS) are left out unless
     ``include_credentials`` is set — the option for moving a whole site.
+    The manifest lists which archive paths are credential files, so the
+    restoring server recognises them even under a non-default name.
     """
     buf = io.BytesIO()
     included: List[Dict[str, Any]] = []
+    credential_files: Dict[str, str] = {}
+    configured = _configured_credential_paths()
 
     with tarfile.open(fileobj=buf, mode="w:gz") as tar:
         for area, f, arc_name in _iter_export_files():
@@ -366,14 +597,17 @@ def pack(
             except OSError as exc:
                 logger.warning("backup pack skip %s: %s", f, exc)
                 continue
-            handlers = None if include_credentials else _credential_handlers(area, arc_name)
-            if handlers is not None:
+            kind = _credential_kind(area, arc_name, f, configured)
+            if kind is not None:
+                credential_files[arc_name] = kind
+            if kind is not None and not include_credentials:
                 try:
-                    stripped = handlers[0](json.loads(data.decode("utf-8")))
+                    stripped = _CREDENTIAL_KINDS[kind][0](json.loads(data.decode("utf-8")))
                 except (ValueError, UnicodeDecodeError) as exc:
                     # Cannot tell what is a credential in a damaged file;
                     # leaving it out is the only safe choice.
                     logger.warning("backup pack skip unreadable %s: %s", f, exc)
+                    credential_files.pop(arc_name, None)
                     continue
                 data = json.dumps(stripped, ensure_ascii=False, indent=2).encode("utf-8")
             _add_member(tar, arc_name, data, mtime)
@@ -387,9 +621,9 @@ def pack(
             )
 
         # Manifest goes last so its hash reflects the full inventory.
-        manifest_bytes = json.dumps(
-            _build_manifest(included, include_credentials), ensure_ascii=False, indent=2
-        ).encode("utf-8")
+        manifest = _build_manifest(included, include_credentials)
+        manifest["credential_files"] = credential_files
+        manifest_bytes = json.dumps(manifest, ensure_ascii=False, indent=2).encode("utf-8")
         _add_member(tar, "manifest.json", manifest_bytes, int(time.time()))
 
     raw = buf.getvalue()
@@ -403,32 +637,16 @@ def pack(
 
 
 def _write_file(target: Path, data: bytes, mode: int) -> None:
-    """Atomic replace with an explicit mode (tmp + rename).
+    """Atomic replace with an explicit mode; see atomic_file.write_atomic.
 
-    The temp file is a dotfile with a per-process name, so a concurrent
-    export never picks it up and a stale one is never reused with other
-    permissions.
+    The temp file is a dotfile, so a concurrent export never picks it up.
     """
-    target.parent.mkdir(parents=True, exist_ok=True)
-    tmp = target.with_name(f".{target.name}.restore-{os.getpid()}-{threading.get_ident()}.tmp")
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
-    try:
-        with os.fdopen(fd, "wb") as f:
-            f.write(data)
-        os.chmod(tmp, mode)
-        os.replace(tmp, target)
-    except BaseException:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
-        raise
+    atomic_file.write_atomic(target, data, mode)
 
 
-def _file_mode(area: _Area, target: Path) -> int:
-    if area.label == "runtime" and target.name in _OWNER_ONLY_FILES:
-        return 0o600
-    return 0o644
+def _file_mode(credential_kind: Optional[str]) -> int:
+    # Credential files are written owner-only, as their services write them.
+    return 0o600 if credential_kind else 0o644
 
 
 def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
@@ -440,6 +658,9 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
         members: [{ path, size, label }]
         applied: int               — number of files written (0 if dry_run)
         skipped: [{ path, code, reason }] — files refused, with a reason code
+        merged: [{ path, code, reason }]  — credential merges worth showing
+                                            (webhooks updated/kept, unreadable
+                                            files kept aside)
         errors: [str]              — fatal errors
 
     Safety rules enforced:
@@ -456,6 +677,7 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
         "members": [],
         "applied": 0,
         "skipped": [],
+        "merged": [],
         "errors": [],
     }
 
@@ -501,11 +723,14 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
         isinstance(manifest, dict) and manifest.get("credentials") == CREDENTIALS_OMITTED
     )
     out["credentials"] = CREDENTIALS_OMITTED if credentials_omitted else CREDENTIALS_INCLUDED
+    configured = _configured_credential_paths()
+    declared = _declared_credential_files(manifest)
 
     code_allowed = code_policy.code_upload_allowed()
 
     # Walk members + collect safe vs skipped lists.
-    safe_writes: List[tuple] = []  # (area, target, data)
+    # (member name, target, data, credential kind, target unreadable)
+    safe_writes: List[tuple] = []
     for m in members:
         if m.name == "manifest.json":
             continue
@@ -536,16 +761,24 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
             out["skipped"].append(_skip(m.name, SKIP_READ_FAILED, f"read failed: {exc}"))
             continue
 
-        handlers = _credential_handlers(area, m.name) if credentials_omitted else None
-        if handlers is not None:
+        kind = _credential_kind(area, m.name, target, configured, declared)
+        unreadable_target = False
+        if kind is not None:
             try:
-                data, dropped = _merge_credentials(handlers, data, target, m.name)
+                data, dropped, notes, unreadable_target = _merge_credentials(
+                    kind, data, target, m.name, credentials_omitted
+                )
             except (ValueError, UnicodeDecodeError, TypeError, AttributeError) as exc:
                 out["skipped"].append(_skip(m.name, SKIP_READ_FAILED, f"read failed: {exc}"))
                 continue
             out["skipped"].extend(dropped)
+            out["merged"].extend(notes)
+            if unreadable_target and dry_run:
+                out["merged"].append(
+                    _note(m.name, MERGE_UNREADABLE_KEPT, "unreadable file will be kept aside")
+                )
 
-        safe_writes.append((area, target, data))
+        safe_writes.append((m.name, target, data, kind, unreadable_target))
         out["members"].append(
             {
                 "path": m.name,
@@ -561,22 +794,36 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
         return out
 
     # Apply phase — atomic per-file via tmp + replace.
-    wrote_fire_token = False
-    for area, target, data in safe_writes:
+    restored_kinds = set()
+    for member, target, data, kind, unreadable_target in safe_writes:
         try:
-            _write_file(target, data, _file_mode(area, target))
+            if unreadable_target:
+                copy = _preserve_unreadable(target)
+                if copy is None:
+                    # Without a copy, overwriting would lose the only
+                    # record of what the file held.
+                    out["errors"].append(f"write {target}: unreadable file could not be kept")
+                    continue
+                out["merged"].append(
+                    _note(member, MERGE_UNREADABLE_KEPT, f"unreadable file kept as {copy.name}")
+                )
+            _write_file(target, data, _file_mode(kind))
             out["applied"] += 1
-            wrote_fire_token = wrote_fire_token or target.name == "fire_token.json"
+            if kind is not None:
+                restored_kinds.add(kind)
         except OSError as exc:
             out["errors"].append(f"write {target}: {exc}")
 
-    # fire_token caches its state; without this the restored token (or the
-    # restored "no token") only took effect after a restart, so /fire kept
-    # honouring the pre-restore credential.
-    if wrote_fire_token:
-        from . import fire_token
-
-        fire_token.reload()
+    # Services that cache their file pick up the restored content now.
+    for kind in sorted(restored_kinds):
+        reload = _RELOAD_AFTER_RESTORE.get(kind)
+        if reload is None:
+            continue
+        try:
+            reload()
+        except Exception as exc:  # restored file is on disk; report, don't fail
+            logger.warning("backup: reload after restore failed for %s: %s", kind, exc)
+            out["errors"].append(f"reload {kind}: {exc}")
 
     out["ok"] = len(out["errors"]) == 0
     return out

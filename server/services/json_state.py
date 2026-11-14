@@ -155,6 +155,14 @@ class JsonState:
                 self._cache = self._load()
             return copy.deepcopy(self._cache)
 
+    def reload(self) -> None:
+        """Forget the cached state so the next ``get()`` reads the file again.
+
+        For callers that replaced the file on disk (backup restore).
+        """
+        with self._lock:
+            self._cache = None
+
     def update(self, patch: Dict[str, Any]) -> Dict[str, Any]:
         """Merge patch into current state, normalize, persist. Return new state.
 

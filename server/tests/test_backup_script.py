@@ -77,6 +77,32 @@ def test_default_output_name_still_works(checkout):
     assert stat.S_IMODE(outputs[0].stat().st_mode) == 0o600
 
 
+def test_existing_loose_output_is_replaced_owner_only(checkout):
+    out = checkout / "snap.tar.gz"
+    out.write_bytes(b"old")
+    out.chmod(0o644)
+    _run(checkout, str(out))
+    assert stat.S_IMODE(out.stat().st_mode) == 0o600
+    assert "server/runtime/settings.json" in _names(out)
+    assert not list(checkout.glob(".danmu-backup.*"))
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root can read the unreadable file")
+def test_failed_tar_keeps_old_file_and_leaves_no_temp(checkout):
+    out = checkout / "snap.tar.gz"
+    out.write_bytes(b"previous archive")
+    unreadable = checkout / "server" / "runtime" / "locked.json"
+    unreadable.write_text("{}")
+    unreadable.chmod(0)
+    try:
+        with pytest.raises(subprocess.CalledProcessError):
+            _run(checkout, str(out))
+    finally:
+        unreadable.chmod(0o600)
+    assert out.read_bytes() == b"previous archive"
+    assert not list(checkout.glob(".danmu-backup.*"))
+
+
 def test_help_describes_env_flag(checkout):
     proc = _run(checkout, "--help")
     assert "--include-env" in proc.stdout

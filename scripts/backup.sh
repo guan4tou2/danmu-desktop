@@ -96,9 +96,16 @@ if [[ ${#EXIST_PATHS[@]} -eq 0 ]]; then
 fi
 
 echo "Writing $OUT"
-# Owner-only from the moment the file exists, not just after a chmod.
-(umask 077 && tar -czf "$OUT" "${EXIST_PATHS[@]}")
-chmod 600 "$OUT"
+# Write to a fresh owner-only temp file next to OUT and move it into place
+# only after tar succeeds. An existing OUT (whatever its mode) is never
+# truncated in place, and a failed run leaves neither a partial archive nor
+# the temp file behind.
+TMP_OUT="$(umask 077 && mktemp "$(dirname "$OUT")/.danmu-backup.XXXXXX")"
+trap 'rm -f "$TMP_OUT"' EXIT
+chmod 600 "$TMP_OUT"
+tar -czf "$TMP_OUT" "${EXIST_PATHS[@]}"
+mv -f "$TMP_OUT" "$OUT"
+trap - EXIT
 
 SIZE=$(du -h "$OUT" | cut -f1)
 TOTAL=$(tar -tzf "$OUT" | wc -l | tr -d ' ')

@@ -212,3 +212,32 @@ def test_a_redirect_response_counts_as_a_failed_delivery(monkeypatch):
     last = service.list_deliveries(limit=1)[0]
     assert last["ok"] is False
     assert last["code"] == 302
+
+
+def test_delivery_is_decided_by_the_status_line_not_the_body(monkeypatch):
+    # The receiver answers 200 and then never sends the body it announced.
+    # Waiting for it would time out and make an accepted delivery look failed
+    # (and be sent again).
+    monkeypatch.setattr(wh, "_resolve", _resolver(PUBLIC))
+    client, server = socket.socketpair()
+    client.settimeout(0.5)
+
+    def run():
+        server.settimeout(5)
+        data = b""
+        while b"\r\n\r\n" not in data:
+            chunk = server.recv(4096)
+            if not chunk:
+                return
+            data += chunk
+        server.sendall(b"HTTP/1.1 200 OK\r\nContent-Length: 1000\r\n\r\n")
+        # keep the socket open; the body never arrives
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+    monkeypatch.setattr(wh, "_connect_any", lambda addrs, timeout: client)
+    try:
+        assert wh._post("http://hooks.example.test/in", b"{}", {}, 0.5) == 200
+    finally:
+        thread.join(timeout=5)
+        server.close()
