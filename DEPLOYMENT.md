@@ -363,7 +363,10 @@ when the server starts (settings, filter rules, the display layer, widgets,
 theme overrides, plugin state, rate-limit rules, the uploaded-image index),
 so the running server keeps serving the old copy until you restart it. After
 restoring anything other than the connection credentials, restart the server
-(`docker compose up -d server`, or your process manager).
+(`docker compose restart server`, or your process manager). The restore result
+says so (`restart_required`, shown in the admin page and recorded in the audit
+log). Until the restart, changing one of those settings in the admin page
+writes the pre-restore copy back over the restored file.
 
 ### Backup (scripts/backup.sh)
 

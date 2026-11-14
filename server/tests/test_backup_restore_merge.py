@@ -563,3 +563,80 @@ def test_import_route_audits_a_restore_that_needs_a_restart(client, runtime, mon
     assert body["restart_required"] is True
     events = [e for e in audit_log.recent(limit=20) if e.get("kind") == "import"]
     assert events and events[0]["meta"]["restart_required"] is True
+
+
+# ── round 5: say when a restart is needed; odd numbers and nesting are skips ──
+
+OMITTED_MANIFEST = {"version": "1", "credentials": "omitted"}
+INCLUDED_MANIFEST = {"version": "1", "credentials": "included"}
+
+
+def test_restoring_an_ordinary_runtime_file_says_a_restart_is_needed(runtime):
+    blob = _tar({"runtime/settings.json": b'{"a": 1}'}, OMITTED_MANIFEST)
+    assert backup_svc.unpack(blob, dry_run=True)["restart_required"] is False  # nothing written
+    result = backup_svc.unpack(blob, dry_run=False)
+    assert result["ok"] is True
+    assert result["restart_required"] is True
+    assert result["reload_failed"] == []
+
+
+def test_restoring_only_connection_credentials_needs_no_restart(runtime):
+    _write(runtime, "webhooks.json", [HOOK_A])
+    blob = _tar({"runtime/webhooks.json": json.dumps([HOOK_B]).encode()}, INCLUDED_MANIFEST)
+    result = backup_svc.unpack(blob, dry_run=False)
+    assert result["applied"] == 1
+    assert result["restart_required"] is False
+
+
+def test_a_file_whose_service_reloads_it_needs_no_restart(runtime, monkeypatch):
+    reloaded = []
+    monkeypatch.setitem(
+        backup_svc._RELOAD_AFTER_RESTORE, "runtime/settings.json", lambda: reloaded.append(1)
+    )
+    blob = _tar({"runtime/settings.json": b'{"a": 1}'}, OMITTED_MANIFEST)
+    result = backup_svc.unpack(blob, dry_run=False)
+    assert reloaded == [1]
+    assert result["restart_required"] is False
+
+
+@pytest.mark.parametrize("dry", [True, False])
+def test_a_fire_token_number_out_of_range_is_a_skip_not_an_error_page(runtime, dry):
+    _write(runtime, "fire_token.json", {"format": 2, "enabled": True, "token": "live"})
+    huge = "1" + "0" * 400
+    raw = ('{"format": 2, "enabled": true, "token": "bk", "rotated_at": %s}' % huge).encode()
+    result = backup_svc.unpack(_tar({"runtime/fire_token.json": raw}, INCLUDED_MANIFEST), dry)
+    assert [s["code"] for s in result["skipped"]] == [backup_svc.SKIP_CREDENTIAL_INVALID]
+    assert _read(runtime, "fire_token.json")["token"] == "live"
+
+
+DEEP = b"[" * 200000 + b"]" * 200000  # deeper than the JSON parser's stack
+
+
+@pytest.mark.parametrize("dry", [True, False])
+@pytest.mark.parametrize("member", ["runtime/settings.json", "runtime/webhooks.json"])
+def test_deeply_nested_json_does_not_raise(runtime, member, dry):
+    _write(runtime, "webhooks.json", [HOOK_A])
+    result = backup_svc.unpack(_tar({member: DEEP}, OMITTED_MANIFEST), dry_run=dry)
+    assert isinstance(result["skipped"], list)  # reached the end
+    assert {h["id"] for h in _read(runtime, "webhooks.json")} == {"aaaa1111"}
+
+
+def test_a_deeply_nested_manifest_is_reported_as_malformed(runtime):
+    result = backup_svc.unpack(_tar({"manifest.json": DEEP, "runtime/settings.json": b"{}"}))
+    assert result["ok"] is False
+    assert any("manifest.json malformed" in e for e in result["errors"])
+
+
+def test_a_name_differing_only_by_case_from_a_store_that_does_not_exist_yet(runtime, monkeypatch):
+    """With a custom WEBHOOKS_PATH and no store on disk there is no file to
+    ask the filesystem about; the name alone has to mark it as the store."""
+    point_credential_stores(monkeypatch, runtime, "hooks.json")
+    assert backup_svc._same_file(runtime / "HOOKS.json", runtime / "hooks.json") is True
+    assert backup_svc._same_file(runtime / "other.json", runtime / "hooks.json") is False
+
+    payload = json.dumps([{"id": "cccc3333", "url": "https://c.example/h", "secret": "sec-c"}])
+    blob = _tar({"runtime/HOOKS.json": payload.encode()}, OMITTED_MANIFEST)
+    backup_svc.unpack(blob, dry_run=False)
+    # Never written out as an ordinary file with its secret in it.
+    for path in runtime.iterdir():
+        assert "sec-c" not in path.read_text(encoding="utf-8"), path.name

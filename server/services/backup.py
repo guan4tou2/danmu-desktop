@@ -148,7 +148,10 @@ def _same_file(a: Path, b: Path) -> bool:
     ``ws_auth.json`` are one file. ``os.path.samefile`` asks the filesystem,
     so a case variant of a credential store is recognised as that store
     instead of being written as an ordinary file. When a file does not exist
-    yet, fall back to a case-insensitive comparison of the resolved paths.
+    yet there is nothing to ask the filesystem about, so the resolved paths
+    are compared ignoring case on every platform: a name that differs from a
+    store's only by case is treated as that store. (``os.path.normcase`` does
+    nothing on macOS, whose default filesystem is case-insensitive.)
     """
     try:
         return os.path.samefile(a, b)
@@ -158,7 +161,7 @@ def _same_file(a: Path, b: Path) -> bool:
         ra, rb = str(a.resolve()), str(b.resolve())
     except (OSError, RuntimeError):
         return False
-    return os.path.normcase(ra) == os.path.normcase(rb)
+    return ra.casefold() == rb.casefold()
 
 
 def _is_admin_password_file(target: Path) -> bool:
@@ -362,11 +365,17 @@ def _looks_like_webhook_list(obj: Any) -> bool:
     return all(isinstance(h, dict) and "url" in h and "events" in h for h in obj)
 
 
+# What reading untrusted JSON can raise: bad syntax or encoding (ValueError
+# covers JSONDecodeError and UnicodeDecodeError), and RecursionError for a
+# document nested deeper than the parser's stack.
+_JSON_ERRORS = (ValueError, RecursionError)
+
+
 def _is_webhook_payload(data: bytes) -> bool:
     """Whether raw bytes parse as a webhook list (see _looks_like_webhook_list)."""
     try:
         return _looks_like_webhook_list(json.loads(data.decode("utf-8")))
-    except (ValueError, UnicodeDecodeError):
+    except _JSON_ERRORS:
         return False
 
 
@@ -550,7 +559,7 @@ def _target_state(kind: str, target: Path) -> Tuple[Any, bool]:
         return None, False
     try:
         raw = json.loads(target.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    except (OSError, *_JSON_ERRORS):
         return None, True
     return _service_view(kind, raw)
 
@@ -591,7 +600,7 @@ def _merge_credential(kind: str, incoming: Any, current: Any, path: str, omitted
     try:
         merged, skipped, notes = _CREDENTIAL_KINDS[kind][1](incoming, current, path, omitted)
         return _validated(kind, merged), skipped, notes
-    except (TypeError, ValueError, AttributeError) as exc:
+    except (TypeError, ValueError, AttributeError, OverflowError, RecursionError) as exc:
         raise _CredentialRefused(
             _skip(path, SKIP_CREDENTIAL_INVALID, f"not a state this server can load: {exc}")
         ) from exc
@@ -706,13 +715,17 @@ def _restore_credential(kind: str, incoming: Any, path: str, omitted: bool, targ
 # are not listed — their services swap in the restored state themselves, in
 # the same locked step as the write (_restore_credential).
 #
-# Currently empty: every other restored runtime file is read fresh on each
-# request, so it takes effect without a reload (see DEPLOYMENT.md for the ones
-# that still need a restart). The filter-rules reload
-# ("runtime/filter_rules.json" → the filter engine) is being added on a
-# separate branch and plugs in here; the table and the apply-phase loop below
-# stay so that lands as a one-line addition.
+# Currently empty, so every other restored runtime file keeps being served
+# from the copy its service loaded at startup until the server restarts; the
+# restore reports that as ``restart_required`` (see DEPLOYMENT.md). The
+# filter-rules reload ("runtime/filter_rules.json" → the filter engine) is
+# being added on a separate branch and plugs in here; the table and the
+# apply-phase loop below stay so that lands as a one-line addition.
 _RELOAD_AFTER_RESTORE: Dict[str, Callable[[], None]] = {}
+
+# Archive areas whose files a running server has already read into memory:
+# runtime state (settings, rules, layers, widgets, …) and plugin code.
+_CACHED_UNTIL_RESTART = ("runtime/", "user_plugins/")
 
 
 def _add_member(tar: tarfile.TarFile, name: str, data: bytes, mtime: int) -> None:
@@ -751,7 +764,7 @@ def pack(
             if kind is not None and not include_credentials:
                 try:
                     stripped = _CREDENTIAL_KINDS[kind][0](json.loads(data.decode("utf-8")))
-                except (ValueError, UnicodeDecodeError) as exc:
+                except _JSON_ERRORS as exc:
                     # Cannot tell what is a credential in a damaged file;
                     # leaving it out is the only safe choice.
                     logger.warning("backup pack skip unreadable %s: %s", f, exc)
@@ -764,7 +777,7 @@ def pack(
                 # secrets out raw. Strip it by content, not by its name.
                 try:
                     parsed = json.loads(data.decode("utf-8"))
-                except (ValueError, UnicodeDecodeError):
+                except _JSON_ERRORS:
                     parsed = None
                 if _looks_like_webhook_list(parsed):
                     data = json.dumps(_strip_webhooks(parsed), ensure_ascii=False, indent=2).encode(
@@ -872,7 +885,7 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
                     continue
                 manifest = json.loads(f.read().decode("utf-8"))
                 break
-            except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            except _JSON_ERRORS as exc:
                 out["errors"].append(f"manifest.json malformed: {exc}")
                 tar.close()
                 return out
@@ -990,7 +1003,7 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
         if kind is not None:
             try:
                 incoming = json.loads(data.decode("utf-8"))
-            except (ValueError, UnicodeDecodeError) as exc:
+            except _JSON_ERRORS as exc:
                 out["skipped"].append(_skip(m.name, SKIP_READ_FAILED, f"read failed: {exc}"))
                 continue
             # Preview of the merge against the live state (what the service
@@ -1059,6 +1072,10 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
         out["applied"] += 1
         if member in _RELOAD_AFTER_RESTORE:
             to_reload[member] = None
+        elif member.startswith(_CACHED_UNTIL_RESTART):
+            # Written, but the running service still holds what it loaded at
+            # startup — and would write that back on its next change.
+            out["restart_required"] = True
 
     # Services that cache a restored file pick up the new content now. The
     # file is already on disk; a failure here means the running server keeps

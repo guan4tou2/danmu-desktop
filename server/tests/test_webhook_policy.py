@@ -27,8 +27,9 @@ def test_ipv6_with_link_local_ipv4_in_low_bits_is_refused():
     "addr",
     [
         "169.254.169.254",  # IPv4 link-local literal
-        "::ffff:169.254.169.254",  # IPv4-mapped (::ffff:0:0/96, SIIT)
+        "::ffff:169.254.169.254",  # IPv4-mapped (::ffff:0:0/96)
         "::ffff:a9fe:a9fe",  # same, written in hex
+        "::ffff:0:a9fe:a9fe",  # IPv4-translated (::ffff:0:0:0/96, SIIT)
         "::a9fe:a9fe",  # IPv4-compatible (::/96)
         "64:ff9b::a9fe:a9fe",  # well-known NAT64
         "64:ff9b:1::a9fe:a9fe",  # RFC 8215 local NAT64

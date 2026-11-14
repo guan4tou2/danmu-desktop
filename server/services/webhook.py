@@ -261,12 +261,14 @@ _METADATA_NETWORKS = (
 )
 # Address forms whose low 32 bits stand for an embedded IPv4 destination: the
 # resolver (or a translator) will send the packet to that IPv4 address, so it
-# is checked as IPv4. ``::/96`` (IPv4-compatible) and ``::ffff:0:0/96``
-# (IPv4-mapped / SIIT) both embed in the low 32 bits; the two NAT64 prefixes
-# are the well-known one and the RFC 8215 local range.
+# is checked as IPv4. ``::/96`` (IPv4-compatible), ``::ffff:0:0/96``
+# (IPv4-mapped) and ``::ffff:0:0:0/96`` (IPv4-translated, SIIT) all embed in
+# the low 32 bits; the two NAT64 prefixes are the well-known one and the
+# RFC 8215 local range.
 _EMBEDDED_IPV4_NETWORKS = (
     ipaddress.ip_network("::/96"),
     ipaddress.ip_network("::ffff:0:0/96"),
+    ipaddress.ip_network("::ffff:0:0:0/96"),
     ipaddress.ip_network("64:ff9b::/96"),
     ipaddress.ip_network("64:ff9b:1::/48"),
 )
