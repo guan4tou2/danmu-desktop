@@ -94,6 +94,10 @@
     allowlistEdit: {},
     paletteBusy: false,
     paletteDraft: "#38BDF8",
+    // 輸入框的「格式錯誤」標記要跟草稿、回饋訊息一樣存在 state：色票區塊
+    // 會被 renderRows() 整段重繪（設定載回、存檔完成時），只寫在 DOM 上的
+    // aria-invalid 會在重繪時消失，畫面上值還是錯的、輔助科技卻讀不到。
+    paletteInvalid: false,
     palettePreview: null,
     paletteNotice: null,
   };
@@ -691,6 +695,7 @@
                 <input type="color" value="${/^#[0-9A-F]{6}$/i.test(_state.paletteDraft) ? draft : "#38bdf8"}" data-palette-picker ${disabled} />
               </label>
               <input id="adminPaletteHex" class="admin-color-palette-code" type="text" data-palette-hex value="${draft}"
+                ${_state.paletteInvalid ? 'aria-invalid="true"' : ""}
                 placeholder="#RRGGBB" maxlength="7" spellcheck="false" autocomplete="off" ${disabled} />
               <button type="button" class="admin-color-palette-add-btn" data-palette-add ${colors.length >= 64 ? "disabled" : disabled}>
                 <span aria-hidden="true">＋</span> ${escapeHtml(t("viewerPaletteAdd"))}
@@ -1104,6 +1109,7 @@
         const input = page.querySelector("[data-palette-hex]");
         const hex = String(input.value).trim().replace(/^#/, "").toUpperCase();
         if (!/^[0-9A-F]{6}$/.test(hex)) {
+          _state.paletteInvalid = true;
           input.setAttribute("aria-invalid", "true");
           paletteFeedback(t("colorFormatError"));
           return;
@@ -1230,13 +1236,17 @@
       if (!t1) return;
       if (t1.matches("[data-palette-picker]")) {
         _state.paletteDraft = t1.value.toUpperCase();
-        page.querySelector("[data-palette-hex]").value = _state.paletteDraft;
+        _state.paletteInvalid = false;
+        const hexInput = page.querySelector("[data-palette-hex]");
+        hexInput.value = _state.paletteDraft;
+        hexInput.removeAttribute("aria-invalid");
         paletteFeedback("", "success");
         previewPaletteColor(_state.paletteDraft);
         return;
       }
       if (t1.matches("[data-palette-hex]")) {
         _state.paletteDraft = t1.value;
+        _state.paletteInvalid = false;
         const hex = t1.value.replace(/^#/, "");
         t1.removeAttribute("aria-invalid");
         paletteFeedback("", "success");
