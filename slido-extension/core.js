@@ -81,6 +81,10 @@
   function _listFromJson(json) {
     if (Array.isArray(json)) return json;
     if (json && typeof json === "object") {
+      // The same /questions URL also answers the page's own "ask a question"
+      // POST with the single question it created (recorded 2026-11-14). That
+      // is a question, not a feed whose format changed.
+      if (json.event_question_id != null) return [json];
       for (const key of ["items", "questions", "data"]) {
         if (Array.isArray(json[key])) return json[key];
       }

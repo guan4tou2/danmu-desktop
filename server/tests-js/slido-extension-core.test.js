@@ -6,10 +6,13 @@
  * object Slido's own participant bundle builds when its dev tool fakes an
  * incoming question (fields event_question_id / text / author.name /
  * is_anonymous / is_public / path / date_published). Names and text are
- * placeholders. A live question-list response could not be captured without
- * joining a third-party event as a participant, so this shape is
- * "from the client code", not "recorded off the wire" — which is why the
- * rules prefer "not sent, error reported" over guessing.
+ * placeholders. That shape is "from the client code".
+ *
+ * fixtures/slido/recorded-2026-11-14.json is different: it was recorded off
+ * the wire from a live event (see its _provenance) and is exercised by the
+ * last describe block. Only an anonymous question was captured, so named
+ * authors, moderation and reply events still rest on the client code — which
+ * is why the rules prefer "not sent, error reported" over guessing.
  */
 const fs = require("fs");
 const path = require("path");
@@ -630,5 +633,64 @@ describe("bridge: never sent twice (rule 5)", () => {
     expect(h.bridge.snapshot()).toMatchObject({ state: "error", error: "feed_unrecognized" });
     h.list("[]");
     expect(h.bridge.snapshot().state).toBe("watching");
+  });
+});
+
+// Shapes recorded off the wire from a live event (see the fixture's
+// _provenance). Everything above was written against Slido's client code;
+// this block is the first check against what the server actually sends.
+describe("recorded from a live Slido event (2026-11-14)", () => {
+  const REC = JSON.parse(
+    fs.readFileSync(path.join(__dirname, "fixtures/slido/recorded-2026-11-14.json"), "utf8"),
+  );
+  const frame = "42" + JSON.stringify(REC.stream_new_question);
+
+  test("the real URLs are recognised, cluster prefix included", () => {
+    expect(Core.classifyUrl(REC.list_url)).toBe("questions");
+    expect(Core.classifyUrl(REC.stream_url)).toBe("stream");
+    expect(Core.eventIdFromUrl(REC.list_url)).toBe(REC.event_uuid);
+  });
+
+  test("a newQuestion frame wraps the question in {target, params}; date_published is null", () => {
+    const parsed = Core.parseBody("stream", frame);
+    expect(parsed.recognized).toBe(true);
+    expect(parsed.questions).toHaveLength(1);
+    const q = parsed.questions[0];
+    expect(q.text).toBe("Recorded question 1");
+    expect(q.anonymous).toBe(true);
+    expect(q.isPublic).toBe(true);
+    // date_published came back null for a public, unmoderated question:
+    // the time has to come from date_created.
+    expect(q.publishedAt).toBe(Date.parse("2026-11-14T07:07:01.000Z"));
+  });
+
+  test("open on an empty list, then a question arrives on the stream: sent once, as Slido, no fingerprint", async () => {
+    const h = harness();
+    expect(h.bridge.ingest("questions", JSON.stringify(REC.empty_list.body), TAB, REC.list_url,
+      REC.empty_list.date_header)).toBe(0);
+    expect(h.bridge.ingest("stream", frame, TAB, REC.stream_url, "")).toBe(1);
+    await h.bridge.idle();
+    expect(h.posts.map((p) => p.payload)).toEqual([{ text: "Recorded question 1", nickname: "Slido" }]);
+    expect(h.bridge.snapshot().state).toBe("watching");
+  });
+
+  test("the page's own 'ask' response on the same URL is a question, not an unreadable feed", async () => {
+    const h = harness();
+    h.bridge.ingest("questions", "[]", TAB, REC.list_url, REC.empty_list.date_header);
+    h.bridge.ingest("stream", frame, TAB, REC.stream_url, "");
+    // Same question again, this time as the single object the POST returns.
+    expect(Core.parseBody("questions", JSON.stringify(REC.post_response.body)).recognized).toBe(true);
+    expect(h.bridge.ingest("questions", JSON.stringify(REC.post_response.body), TAB, REC.post_url,
+      REC.post_response.date_header)).toBe(0);
+    await h.bridge.idle();
+    expect(h.posts).toHaveLength(1);
+    expect(h.bridge.snapshot().error || "").not.toBe("feed_unrecognized");
+  });
+
+  test("other stream events seen on the wire are ignored without complaint", () => {
+    for (const name of REC.other_stream_events_seen) {
+      const parsed = Core.parseBody("stream", "42" + JSON.stringify([name, { target: "x", params: {} }]));
+      expect(parsed).toEqual({ questions: [], recognized: true });
+    }
   });
 });
