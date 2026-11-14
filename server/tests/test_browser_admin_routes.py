@@ -67,6 +67,13 @@ class BrowserTestConfig(TestConfig):
 # 加上 CI 的空資料情境：history 83（分段列＋空狀態卡＋行動呼籲）。
 # 真正「整頁沒渲染」是 0–15 字（只剩分段列），60 仍然擋得住，而且不必為了
 # 每一頁的瘦身開一個具名例外——那只會變成每次改版都在調的數字。
+#
+# 2026-11-14：量測改為「可見文字 ＋ 預設收合的內容」，門檻維持 60。設計方向
+# 是把次要設定摺進 <details>（第一個是 #/overlay 的「彈幕外觀」），而
+# innerText 不含收合中的內容——CI 空資料下 #/overlay 只量到 32 字，其實整頁
+# 都渲染了。這條測的是「路由渲染了多少內容」，跟預設展開或收合無關，所以
+# 把主內容區裡 summary 看得見、本身未展開的 <details> 內文（summary 以外、
+# 去掉空白的 textContent）也算進來。只會加、不會減：其他路由的數字不會變小。
 MIN_CONTENT_CHARS = 60
 
 # 刻意保留的 `[PLACEHOLDER]` 控制項配額（待 BE / 待 Design，見 admin-follow-up
@@ -143,6 +150,24 @@ _SNAPSHOT_JS = """
   const mainLen = main ? (main.innerText || '').trim().length : 0;
   const topbarLen = topbar ? (topbar.innerText || '').trim().length : 0;
 
+  // 已渲染但預設收合的內容（innerText 量不到）。只算 summary 實際可見的
+  // <details>——summary 可見就代表祖先都可見；收合區裡再收合的那層，summary
+  // 本身不可見，不會被重複計算。
+  const foldedLen = (root) => {
+    if (!root) return 0;
+    let total = 0;
+    root.querySelectorAll('details:not([open])').forEach((details) => {
+      const summary = details.querySelector(':scope > summary');
+      if (!summary || !isVisible(summary)) return;
+      details.childNodes.forEach((node) => {
+        if (node === summary || node.nodeType === Node.COMMENT_NODE) return;
+        total += (node.textContent || '').replace(/\\s+/g, '').length;
+      });
+    });
+    return total;
+  };
+  const foldedChars = foldedLen(main);
+
   // Placeholder 有兩種寫法：帶 .admin-be-placeholder-control class 的控制項，
   // 以及只在文字裡寫 `[PLACEHOLDER]` 的葉節點。用 Set 去重，避免同一個元素
   // 因為兩種條件都命中而被算兩次。
@@ -167,7 +192,7 @@ _SNAPSHOT_JS = """
       document.querySelectorAll('[data-route][aria-selected="true"]')
     ).map((b) => b.dataset.route),
     title: titleEl ? (titleEl.textContent || '').trim() : null,
-    contentChars: mainLen - topbarLen,
+    contentChars: mainLen + foldedChars - topbarLen,
     visibleTpls: Array.from(document.querySelectorAll('[data-tpl]'))
       .filter(isVisible).map((el) => el.dataset.tpl),
     placeholders,

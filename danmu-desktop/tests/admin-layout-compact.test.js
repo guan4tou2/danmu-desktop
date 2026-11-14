@@ -134,10 +134,20 @@ test("admin Viewer surface exposes language/copy and defaults/limits guidance", 
   // 2026-08-19 設計稿 03：英文對照標籤全面移除（可見殘留已歸零）。
   expect(displaySrc).not.toContain("ADMIN CONTROLLED");
   expect(displaySrc).not.toContain("LANGUAGE / COPY");
-  expect(displaySrc).toContain("UI language");
-  expect(displaySrc).toContain("Auto (follow browser)");
-  expect(displaySrc).toContain("Placeholder");
-  expect(displaySrc).toContain("Submit button");
+  // 2026-11-14 不混語：這一欄的標籤原本是硬編英文，中文介面下也顯示
+  // 英文。現在全部走 locale key，原始碼裡不該再出現英文字樣本身。
+  for (const literal of ["UI language", "Auto (follow browser)", "Submit button", "Poll prompt"]) {
+    expect(displaySrc).not.toContain(literal);
+  }
+  for (const key of [
+    "language",
+    "viewerThemeFollowBrowser",
+    "displayAdminCtlPlaceholder",
+    "displayAdminCtlSubmit",
+    "displayAdminCtlPollPrompt",
+  ]) {
+    expect(displaySrc).toContain(`"${key}"`);
+  }
   // D-4：ADMIN CONTROLLED note 走既有 displayAdminControlledNote key
   const zhLocaleSrc3 = fs.readFileSync(
     path.join(staticDir, "..", "locales", "zh", "translation.json"), "utf8");

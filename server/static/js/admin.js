@@ -881,11 +881,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                             <span data-cockpit-status>—</span>
                                         </div>
                                     </div>
+                                    <!-- 與顯示層頁同名、同確認行為（admin-broadcast.js 的
+                                         AdminOverlayControl）。清空不可復原，與主動作拉開距離。 -->
                                     <div class="admin-cockpit-overlay-actions">
-                                        <button type="button" class="admin-ui-action" data-cockpit-action="clear"
-                                                data-i18n="adminCockpitClear">清空畫面</button>
-                                        <button type="button" class="admin-ui-action is-danger" data-cockpit-action="toggle"
-                                                data-i18n="adminCockpitTurnOff">關閉</button>
+                                        <button type="button" class="admin-ui-action is-danger" data-cockpit-action="clear"
+                                                data-i18n="broadcastClearScreenBtn">清空畫面</button>
+                                        <button type="button" class="admin-ui-action is-primary" data-cockpit-action="toggle"
+                                                data-i18n="broadcastBigPause">暫停顯示</button>
                                     </div>
                                 </div>
 

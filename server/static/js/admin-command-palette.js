@@ -130,15 +130,10 @@
     },
     {
       id: "overlay-off",
-      labelKey: "cmdkActionOverlayOff",
+      labelKey: "broadcastBigPause",
       subKey: "adminNavOverlay",
-      action: () => _csrfFetch("/admin/broadcast/toggle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "overlay_off" }),
-      })
-        .then((r) => _toast(r.ok ? ServerI18n.t("cmdkToastOverlayOff") : ServerI18n.t("cmdkToastToggleFailed"), r.ok))
-        .catch(() => _toast(ServerI18n.t("cmdkToastToggleFailed"), false)),
+      // 與顯示層頁、控制台同一個動作（AdminOverlayControl）：同名、同提示。
+      action: () => window.AdminOverlayControl?.setDisplay(false),
     },
     {
       id: "reset-poll",

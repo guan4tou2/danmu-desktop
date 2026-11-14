@@ -37,6 +37,34 @@ describe("HUD confirmation user interactions", () => {
     expect(key("Escape").defaultPrevented).toBe(false);
   });
 
+  test.each([["danger", "cancel"], ["warn", "confirm"], ["info", "confirm"]])(
+    "%s dialog opens with focus on %s",
+    async (severity, initial) => {
+      const response = window.HudConfirm.open({ severity });
+      expect(document.activeElement).toBe(action(initial));
+      key("Escape");
+      expect(await response).toBe(false);
+    },
+  );
+
+  test("the default button is focused with a visible focus ring even after a mouse click", async () => {
+    const focus = jest.spyOn(HTMLElement.prototype, "focus");
+    const response = window.HudConfirm.open({ severity: "danger" });
+    const call = focus.mock.instances.findIndex(el => el === action("cancel"));
+    expect(call).toBeGreaterThanOrEqual(0);
+    expect(focus.mock.calls[call][0]).toEqual({ focusVisible: true });
+    key("Escape");
+    expect(await response).toBe(false);
+  });
+
+  test("Enter on a fresh danger dialog cancels instead of confirming", async () => {
+    const response = window.HudConfirm.open({ severity: "danger" });
+    expect(key("Enter").defaultPrevented).toBe(false);
+    // jsdom does not synthesize the native Enter→click; do what the browser does.
+    document.activeElement.click();
+    expect(await response).toBe(false);
+  });
+
   test.each(["Escape", "backdrop"])("%s cancels", async method => {
     const response = window.HudConfirm.open();
     if (method === "Escape") key("Escape");
