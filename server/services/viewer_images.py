@@ -16,8 +16,9 @@
    顯示端只認伺服器給的 `isImage`。
 3. 舊版顯示端的相容：已安裝在現場電腦上的舊版 Electron 顯示端不會跟著伺服器
    升級，仍會用正則把「整段是 http(s) 圖片網址」的文字轉成圖片。所以不合格的
-   圖片網址不能原樣轉送——/fire 直接拒絕；沒辦法拒絕的轉送路徑（人工審核
-   通過、Webhook、回放）改用 `neutralize` 讓舊正則對不上，只會顯示成文字。
+   圖片網址不能原樣轉送——/fire 直接拒絕；沒辦法拒絕的重送路徑（人工審核
+   通過、Webhook、回放）走 `apply_to_resend`：不信任 payload 裡原有的
+   isImage，重新判斷，不合格的用 `neutralize` 讓舊正則對不上，只顯示成文字。
 
 貼圖與 emoji 不受這裡影響：它們是伺服器在**通過這道檢查之後**才自己產生的
 （`:name:` 解析成貼圖網址、emoji 轉成 data URL），判斷靠的是「誰產生的」，
@@ -319,17 +320,58 @@ def neutralize(text: str) -> str:
     return _NEUTRALIZER + text
 
 
-def apply_to_payload(data: Dict[str, Any]) -> Dict[str, Any]:
-    """給沒辦法回錯誤給觀眾的轉送路徑用（人工審核通過、Webhook、回放）。
+def _own_sticker_filename(text: Any) -> Optional[str]:
+    """文字是不是指向本伺服器某個現存貼圖檔的網址；是就回傳檔名。
 
-    合格的外部圖片標成 isImage；不合格的中和成文字。原地修改並回傳 `data`。
-    已經由伺服器標成 isImage 的（貼圖、當時合格的圖片）不在這裡處理。
+    只看路徑：`/static/stickers/<檔名>` 且檔名是目前貼圖庫裡真的有的那一個。
+    網址裡的主機一律不信——紀錄裡的主機是當時送彈幕那個請求的 Host，
+    可能是反向代理內部名稱、另一個入口，也可能是任何人自己填的。呼叫端
+    用伺服器現在的網址重組，所以不管主機寫什麼，載入的都是自己的檔案。
     """
-    if not isinstance(data, dict) or data.get("isImage"):
+    if not isinstance(text, str) or not _looks_like_url(text):
+        return None
+    try:
+        parts = urlsplit(text)
+    except ValueError:
+        return None
+    prefix = "/static/stickers/"
+    if not parts.path.startswith(prefix):
+        return None
+    filename = parts.path[len(prefix) :]
+    if not filename or "/" in filename:
+        return None
+    from .stickers import sticker_service
+
+    known = {s.get("filename") for s in sticker_service.list_stickers()}
+    return filename if filename in known else None
+
+
+def apply_to_resend(data: Dict[str, Any], base_url: Optional[str] = None) -> Dict[str, Any]:
+    """給沒辦法回錯誤給觀眾的重送路徑用（人工審核通過、Webhook、回放）。
+
+    **不信任 payload 裡原有的 isImage**：歷史紀錄裡被封禁、過濾或黑名單擋下
+    的那幾筆，存的是觀眾自己帶的旗標（擋下發生在圖片判斷之前）；回放的紀錄
+    又是後台頁面送上來的。所以一律重新判斷：
+
+    - 指向本伺服器現存貼圖檔的網址 → 用 `base_url`（伺服器現在的網址）重組，
+      標成圖片。舊紀錄裡的貼圖也走這條，回放不會壞。
+    - 其餘照目前的外部圖片設定判斷：合格標成圖片，不合格中和成文字，
+      一般文字的 isImage 清成 False。
+
+    原地修改並回傳 `data`。
+    """
+    if not isinstance(data, dict):
         return data
-    verdict, _ = classify(data.get("text"), False)
-    if verdict == IMAGE:
+    text = data.get("text")
+    sticker = _own_sticker_filename(text) if base_url else None
+    if sticker:
+        data["text"] = f"{base_url.rstrip('/')}/static/stickers/{sticker}"
         data["isImage"] = True
-    elif verdict == BLOCKED:
-        data["text"] = neutralize(data["text"])
+        return data
+    # 帶著旗標的照「要求當圖片」判斷（沒有副檔名的網址也會被檢查），合格才
+    # 保留；不是網址的（INVALID）就是一般文字。
+    verdict, _ = classify(text, bool(data.get("isImage")))
+    data["isImage"] = verdict == IMAGE
+    if verdict == BLOCKED:
+        data["text"] = neutralize(text)
     return data
