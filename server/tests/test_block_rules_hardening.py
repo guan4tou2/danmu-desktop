@@ -1540,16 +1540,79 @@ def _stored(rule_id, lifetime, **extra):
     }
 
 
-def test_restoring_session_rules_with_no_session_live_does_not_install_them(caplog):
-    data = json.dumps([_stored("perm", "permanent"), _stored("sess", "session")]).encode()
-    with caplog.at_level("WARNING", logger="server.services.filter_engine"):
-        assert engine_module.restore_rules_file(data) == 1  # 不因為少一條被當成載入失敗
-    assert [r["id"] for r in filter_engine.list_rules()] == ["perm"]
-    assert filter_engine.check("sess").action == "pass"
-    assert "no session is live" in caplog.text
+def _restart(path=None):
+    """模擬重啟：場次服務重新讀狀態檔，引擎重新建。"""
+    session_service.reset_for_tests()
+    return _fresh_engine(path or filter_engine.path)
 
-    filter_engine.add_rule({"type": "word", "pattern": "新的"})  # 下一次寫檔，檔案裡也沒有它了
-    assert "sess" not in Path(filter_engine.path).read_text(encoding="utf-8")
+
+def test_session_rules_remember_which_session_they_belong_to():
+    session_service.open_session("場")
+    session_id = session_service.get_state()["id"]
+    rule_id = filter_engine.add_rule(_session_rule())
+    filter_engine.add_word("也是本場", lifetime="session")
+    permanent = filter_engine.add_rule({"type": "keyword", "pattern": "p", "action": "review"})
+
+    stored = {e["id"]: e for e in json.loads(Path(filter_engine.path).read_text(encoding="utf-8"))}
+    assert stored[rule_id]["session_id"] == session_id
+    assert [e["session_id"] for e in stored.values() if e["pattern"] == "也是本場"] == [session_id]
+    assert "session_id" not in stored[permanent]
+
+    # 改成永久就不再屬於任何一場；改回本場次會記下現在這一場
+    filter_engine.update_rule(rule_id, {"lifetime": "permanent"})
+    assert "session_id" not in filter_engine.get_rule(rule_id)
+    filter_engine.update_rule(rule_id, {"lifetime": "session"})
+    assert filter_engine.get_rule(rule_id)["session_id"] == session_id
+
+
+def test_a_rule_made_session_scoped_again_belongs_to_the_session_live_then():
+    session_service.open_session("第一場")
+    rule_id = filter_engine.add_rule(_session_rule())
+    filter_engine.update_rule(rule_id, {"lifetime": "permanent"})
+    session_service.close_session()  # 已經是永久規則，留著
+
+    session_service.open_session("第二場")
+    second = session_service.get_state()["id"]
+    filter_engine.update_rule(rule_id, {"lifetime": "session"})
+    assert filter_engine.get_rule(rule_id)["session_id"] == second
+    assert [r.id for r in _restart()._rules] == [rule_id]  # 第二場進行中重啟，它還在
+
+
+def test_a_backup_taken_mid_session_keeps_its_session_rules_on_an_idle_server(
+    tmp_path, monkeypatch
+):
+    """複核 B1：活動中做的備份還原到沒有場次的伺服器（換機、災後重建）。還原當下場次
+    服務看到的還是「沒有場次」，不能因此把本場次規則刪掉——重啟後場次是進行中的。"""
+    runtime = tmp_path / "runtime"
+    runtime.mkdir()
+    rules_file = runtime / "filter_rules.json"
+    monkeypatch.setattr(backup_svc, "_INCLUDE_DIRS", [("runtime", runtime, "runtime", "*.json")])
+    monkeypatch.setattr(session_service, "_STATE_FILE", runtime / "active_session.json")
+    monkeypatch.setattr(filter_engine, "_path", str(rules_file))
+    session_service.reset_for_tests()
+    filter_engine.reload()
+
+    session_service.open_session("活動")
+    filter_engine.add_rule(_session_rule())
+    filter_engine.add_rule({"type": "word", "pattern": "永久"})
+    archive = backup_svc.pack()
+
+    # 新機器：空的 runtime，沒有場次，伺服器已經在跑
+    for leftover in runtime.iterdir():
+        leftover.unlink()
+    session_service.reset_for_tests()
+    filter_engine.reload()
+    assert session_service.is_live() is False
+
+    out = backup_svc.unpack(archive, dry_run=False)
+    assert out["ok"], out["errors"]
+    patterns = sorted(e["pattern"] for e in json.loads(rules_file.read_text(encoding="utf-8")))
+    assert patterns == ["本場", "永久"]  # 檔案照備份帶回來
+    assert sorted(r["pattern"] for r in filter_engine.list_rules()) == ["本場", "永久"]
+
+    restarted = _restart(rules_file)  # 重啟後場次狀態也是備份帶回來的那一場
+    assert session_service.is_live() is True
+    assert sorted(r.pattern for r in restarted._rules) == ["本場", "永久"]
 
 
 def test_restoring_session_rules_during_a_session_keeps_them_until_it_ends():
@@ -1567,13 +1630,13 @@ def test_session_rules_survive_a_restart_while_the_session_is_live():
     assert [r.pattern for r in _fresh_engine(filter_engine.path)._rules] == ["本場"]
 
 
-def test_not_knowing_whether_a_session_is_live_keeps_the_rules(monkeypatch):
+def test_not_knowing_which_session_is_live_keeps_the_rules(monkeypatch):
     Path(filter_engine.path).write_text(json.dumps([_stored("sess", "session")]), encoding="utf-8")
 
     def cannot_tell():
         raise OSError("state file unreadable")
 
-    monkeypatch.setattr(engine_module, "_session_live", cannot_tell)
+    monkeypatch.setattr(engine_module, "_live_session", cannot_tell)
     assert [r.id for r in _fresh_engine(filter_engine.path)._rules] == ["sess"]
 
 
@@ -1609,26 +1672,45 @@ def test_a_usable_expiry_is_kept():
 # ── 外部審查（第三批）與複核的邊角 ────────────────────────────────────────
 
 
-def test_stale_session_rules_are_removed_from_the_file_so_a_later_session_cannot_pick_them_up():
-    """沒有場次時還原 → 開新場次 → 沒有任何寫檔就重啟：那幾條不能變成新場次的規則。"""
-    data = json.dumps([_stored("perm", "permanent"), _stored("sess", "session")]).encode()
-    assert engine_module.restore_rules_file(data) == 1
-    assert "sess" not in Path(filter_engine.path).read_text(encoding="utf-8")
+def test_a_later_session_never_picks_up_an_earlier_sessions_rules():
+    """上一場的規則留在檔案裡（還原進來的、或場次結束時沒清成）→ 開新場次 → 沒有任何
+    寫檔就重啟：它們記著的是別場的 id，不會變成新場次的規則。"""
+    path = Path(filter_engine.path)
+    content = json.dumps(
+        [_stored("perm", "permanent"), _stored("old", "session", session_id="sess_earlier")]
+    )
+    path.write_text(content, encoding="utf-8")
+
+    assert [r.id for r in _restart()._rules] == ["perm"]  # 沒有場次
+    session_service.open_session("下一場")
+    restarted = _restart()  # 場次進行中，但不是那一場
+    assert [r.id for r in restarted._rules] == ["perm"]
+    assert restarted.check("old").action == "pass"
+    assert path.read_text(encoding="utf-8") == content  # 讀檔不改原檔
+
+
+def test_rules_left_on_disk_by_a_failed_cleanup_do_not_come_back_in_the_next_session(unwritable):
+    path = Path(filter_engine.path)
+    session_service.open_session("場")
+    filter_engine.add_rule(_session_rule())
+    unwritable()
+    session_service.close_session()
+    assert "本場" in path.read_text(encoding="utf-8")  # 檔案沒清成
 
     session_service.open_session("下一場")
-    restarted = _fresh_engine(filter_engine.path)
-    assert [r.id for r in restarted._rules] == ["perm"]
-    assert restarted.check("sess").action == "pass"
+    assert _restart()._rules == []
+    assert filter_engine.check("本場的訊息").action == "pass"
 
 
-def test_a_start_with_stale_session_rules_cleans_the_file():
+def test_session_rules_without_an_id_follow_whatever_session_is_live():
+    """手改的檔案或更早的開發版寫出來的：沒有 id 可比，有場次就載入、沒有就不載入。"""
     path = Path(filter_engine.path)
     path.write_text(
         json.dumps([_stored("perm", "permanent"), _stored("sess", "session")]), encoding="utf-8"
     )
-    engine = _fresh_engine(path)  # 沒有進行中的場次
-    assert [r.id for r in engine._rules] == ["perm"]
-    assert [e["id"] for e in json.loads(path.read_text(encoding="utf-8"))] == ["perm"]
+    assert [r.id for r in _restart()._rules] == ["perm"]
+    session_service.open_session("場")
+    assert [r.id for r in _restart()._rules] == ["perm", "sess"]
 
 
 def test_a_rules_file_nested_too_deep_to_parse_is_kept_and_the_server_still_starts(caplog):
