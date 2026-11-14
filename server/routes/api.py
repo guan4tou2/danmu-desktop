@@ -23,7 +23,10 @@ from ..services.poll import poll_service
 from ..services.security import (
     enforce_fire_rate_limits,
     enforce_invalid_token_limit,
+    enforce_public_body_limit,
     fire_token_state,
+    limit_public_body,
+    precheck_fire_limits,
     rate_limit,
     require_csrf,
     verify_captcha,
@@ -247,6 +250,14 @@ def fire():
             503,
         )
 
+    # Before the body is read: refuse IPs the admin denied or whose bucket is
+    # already empty (peek only — the buckets are still charged further down,
+    # at the same points as before), then bound the body size. The token
+    # state comes from a header, so it is known without parsing anything.
+    token_state = fire_token_state()
+    precheck_fire_limits(token_state)
+    enforce_public_body_limit()
+
     try:
         data, error_response = _parse_and_validate(
             FireRequestSchema,
@@ -271,7 +282,6 @@ def fire():
 
         from ..services import fire_sources
 
-        token_state = fire_token_state()
         admin_client = token_state == "valid"
         if token_state == "invalid":
             # A token was sent but is wrong, revoked or disabled. Refuse
@@ -588,6 +598,7 @@ def poll_public_status():
 
 @api_bp.route("/poll/vote", methods=["POST"])
 @rate_limit("fire", "FIRE_RATE_LIMIT", "FIRE_RATE_WINDOW")
+@limit_public_body
 def poll_vote():
     """一次按下即投票 —— 觀眾點選項就送出，不再要求他再按一次「發送」。
 
@@ -744,6 +755,7 @@ def generate_avatar(letter, color):
 
 @api_bp.route("/check_blacklist", methods=["POST"])
 @rate_limit("api", "API_RATE_LIMIT", "API_RATE_WINDOW")
+@limit_public_body
 def check_blacklist():
     """檢查內容是否在黑名單中"""
     try:
@@ -765,6 +777,9 @@ def check_blacklist():
             {"blocked": False, "message": "Content is allowed"},
             200,
         )
+    except HTTPException:
+        # 413 from the body cap must reach the client as-is, not as a 500.
+        raise
     except Exception as exc:
         return _log_and_internal_error("Error checking blacklist", exc, as_json=True)
 
@@ -774,6 +789,7 @@ def check_blacklist():
 # write the status line shown on the Extensions page.
 @api_bp.route("/integrations/slido/status", methods=["POST"])
 @rate_limit("slido_status", "API_RATE_LIMIT", "API_RATE_WINDOW")
+@limit_public_body
 def slido_status_report():
     from ..services import slido_status
 

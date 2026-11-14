@@ -152,6 +152,17 @@ def init_ws(app):
     """Register the /ws flask-sock route (no greenlets — safe for tests)."""
     from flask_sock import Sock
 
+    # Cap inbound messages inside simple-websocket, where frames are
+    # reassembled (and permessage-deflate payloads expanded). Without it the
+    # WS_MAX_SIZE check below only runs once the whole message is already in
+    # memory. Same ceiling as WS_MAX_SIZE; displays only ever send heartbeat,
+    # pong and render_ack messages of well under 1 KB.
+    sock_options = dict(app.config.get("SOCK_SERVER_OPTIONS") or {})
+    sock_options.setdefault(
+        "max_message_size", int(app.config.get("WS_MAX_SIZE", Config.WS_MAX_SIZE))
+    )
+    app.config["SOCK_SERVER_OPTIONS"] = sock_options
+
     sock = Sock(app)
 
     ws_max_connections = int(Config.WS_MAX_CONNECTIONS)

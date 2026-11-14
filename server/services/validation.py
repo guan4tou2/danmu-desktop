@@ -7,17 +7,29 @@ from marshmallow import (
     Schema,
     ValidationError,
     fields,
+    pre_load,
     validate,
     validates,
     validates_schema,
 )
 
 from ..config import Config
+from .effects import MAX_EFFECTS_PER_DANMU
 from .webhook import EVENT_CATALOG as _WEBHOOK_EVENT_CATALOG
 
 _WEBHOOK_EVENT_SLUGS = [e["slug"] for e in _WEBHOOK_EVENT_CATALOG]
 _VALID_SETTING_TYPES = Config.SETTABLE_OPTION_KEYS
 _NO_CTRL_CHARS_RE = r"^[^\r\n\t\x00-\x08\x0b\x0c\x0e-\x1f]+$"
+
+# /fire 容器欄位的上限。觀眾頁一則彈幕的 effects 是「勾了哪幾個特效」，
+# 一個名字一筆（內建 8 個）；每個特效的 params 是 .dme 預設值加上觀眾頁
+# 的參數面板（內建特效最多 4 個）；fontInfo 是 build_font_payload 的形狀（name/url/type）。
+# 上限給到正常用量的數倍，只是讓單一請求的處理量有界。
+MAX_EFFECT_ITEM_KEYS = 4  # {name, params}，留一點空間給舊客戶端
+MAX_EFFECT_PARAMS = 16
+MAX_EFFECT_PARAM_STR_LEN = 256
+MAX_FONT_INFO_KEYS = 8
+_EFFECT_PARAM_SCALARS = (str, int, float, bool, type(None))
 
 
 class FireRequestSchema(Schema):
@@ -28,7 +40,11 @@ class FireRequestSchema(Schema):
     fontInfo = fields.Dict(load_default=None)
     font = fields.Str(load_default=None, validate=validate.Length(max=100))
     # effects：支援多個特效疊加，每個特效可攜帶參數
-    effects = fields.List(fields.Dict(), load_default=[])
+    effects = fields.List(
+        fields.Dict(),
+        load_default=[],
+        validate=validate.Length(max=MAX_EFFECTS_PER_DANMU),
+    )
     color = fields.Str(
         load_default=None,
         validate=validate.Regexp(r"^#?[0-9a-fA-F]{6}$", error="Invalid hex color"),
@@ -49,6 +65,21 @@ class FireRequestSchema(Schema):
         ),
     )
 
+    @pre_load
+    def _cap_container_sizes(self, data, **kwargs):
+        # 在逐筆反序列化之前先擋長度：List 的 validate 要等每一筆都轉換完才會跑。
+        if not isinstance(data, dict):
+            return data
+        effects = data.get("effects")
+        if isinstance(effects, list) and len(effects) > MAX_EFFECTS_PER_DANMU:
+            raise ValidationError(
+                f"At most {MAX_EFFECTS_PER_DANMU} effects per message.", field_name="effects"
+            )
+        font_info = data.get("fontInfo")
+        if isinstance(font_info, dict) and len(font_info) > MAX_FONT_INFO_KEYS:
+            raise ValidationError("fontInfo has too many keys.", field_name="fontInfo")
+        return data
+
     @validates("effects")
     def validate_effects(self, value, **kwargs):
         _SAFE_NAME = _re.compile(r"^[a-zA-Z0-9_-]{1,128}$")
@@ -58,6 +89,22 @@ class FireRequestSchema(Schema):
                 raise ValidationError(
                     "Effect name must be 1-128 alphanumeric/hyphen/underscore chars"
                 )
+            if len(item) > MAX_EFFECT_ITEM_KEYS:
+                raise ValidationError("Effect entry has too many keys.")
+            params = item.get("params")
+            if params is None:
+                continue
+            if not isinstance(params, dict):
+                raise ValidationError("Effect params must be an object.")
+            if len(params) > MAX_EFFECT_PARAMS:
+                raise ValidationError(f"At most {MAX_EFFECT_PARAMS} params per effect.")
+            for pkey, pval in params.items():
+                if not isinstance(pval, _EFFECT_PARAM_SCALARS):
+                    raise ValidationError("Effect param values must be scalars.")
+                if isinstance(pval, str) and len(pval) > MAX_EFFECT_PARAM_STR_LEN:
+                    raise ValidationError("Effect param value too long.")
+                if len(str(pkey)) > 64:
+                    raise ValidationError("Effect param name too long.")
 
     class Meta:
         unknown = EXCLUDE

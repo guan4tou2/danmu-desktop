@@ -40,27 +40,65 @@ from .json_state import JsonState
 logger = logging.getLogger(__name__)
 
 
+def _env_unset(name: str) -> bool:
+    """True when ``name`` is absent or blank in the environment.
+
+    docker-compose passes ``VAR=${VAR:-}`` for every optional setting, so an
+    operator who never set the variable still ends up with an empty string
+    in the container. Blank therefore means "not configured", not "false".
+    """
+    return not (os.environ.get(name) or "").strip()
+
+
+def _looks_like_fresh_install() -> bool:
+    """No saved state file, and somewhere to save the generated token.
+
+    A state file that exists but could not be loaded belongs to an existing
+    deployment: re-seeding it "on" would refuse every display that
+    reconnects without a token. And when the runtime directory is not
+    writable, a generated token would be different after every restart, so
+    no display could keep up with it.
+    """
+    path = _state.path
+    if path.exists():
+        return False
+    parent = path.parent
+    while not parent.exists() and parent != parent.parent:
+        parent = parent.parent
+    return os.access(parent, os.W_OK)
+
+
 def _seed_from_env() -> Dict[str, Any]:
     """Initial state when runtime file doesn't exist yet.
 
-    v4.8 policy: for truly fresh installs (no WS_REQUIRE_TOKEN env var set
-    at all AND no WS_AUTH_TOKEN set), default to require_token=True with a
-    generated token — matches the user's original ask "預設開啟".
+    v4.8 policy: for truly fresh installs (WS_REQUIRE_TOKEN and
+    WS_AUTH_TOKEN both unset or blank, and no state file on disk), default
+    to require_token=True with a generated token — matches the user's
+    original ask "預設開啟".
 
     When the env var is **explicitly** set (even to "false"), respect it.
     That's the v4.7 upgrade case: an existing deploy that intentionally
     ran with WS_REQUIRE_TOKEN=false shouldn't silently flip closed on
     upgrade, and CI smoke tests that need passwordless WS should work.
+    Once runtime/ws_auth.json exists this function is not consulted at all
+    (see JsonState) — except when that file is unreadable, in which case
+    the fresh-install default is skipped (see _looks_like_fresh_install).
     """
-    raw_require = os.environ.get("WS_REQUIRE_TOKEN")
-    raw_token = os.environ.get("WS_AUTH_TOKEN")
-
     require = bool(Config.WS_REQUIRE_TOKEN)
     token = str(Config.WS_AUTH_TOKEN or "")
 
-    if raw_require is None and not raw_token:
-        require = True
-        token = secrets.token_urlsafe(24)
+    if _env_unset("WS_REQUIRE_TOKEN") and _env_unset("WS_AUTH_TOKEN"):
+        if _looks_like_fresh_install():
+            require = True
+            token = secrets.token_urlsafe(24)
+        else:
+            logger.warning(
+                "ws_auth: not applying the token-on default because the state file "
+                "is present but unreadable, or the runtime directory is not "
+                "writable; /ws starts without token auth. Check %s and set the "
+                "toggle in Admin → Security.",
+                _state.path,
+            )
     elif require and not token:
         token = secrets.token_urlsafe(24)
         logger.warning(
