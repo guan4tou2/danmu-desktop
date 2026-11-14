@@ -38,10 +38,13 @@ _ERRORS = frozenset(
         "captcha_required",
         "token_invalid",
         "feed_unrecognized",
+        "tracking_full",
         "server_unreachable",
     }
 )
-_COUNTERS = ("sent", "held", "blocked", "failed", "dropped", "skipped")
+# late_skipped: unknown questions first seen after the extension's start
+# point and skipped as history (older sort / page, or undatable).
+_COUNTERS = ("sent", "held", "blocked", "failed", "dropped", "skipped", "late_skipped")
 _MAX_COUNTER = 10_000_000
 
 _lock = threading.Lock()
@@ -50,6 +53,9 @@ _report: Optional[Dict[str, Any]] = None
 # nature, so it only ever flips the card to "token rejected" for a while;
 # it never touches the stored report.
 _rejected_at: Optional[float] = None
+# The zip set last warned about, so a misbuilt static/extensions/ is logged
+# once per process instead of on every admin poll (~15 s).
+_warned_zips: Optional[tuple] = None
 
 
 def _normalize(raw: Any) -> Dict[str, Any]:
@@ -141,14 +147,21 @@ def extension_info(directory: Optional[Path] = None) -> Optional[Dict[str, str]]
     the server image does not contain the repo root, but it does contain
     static/ — so the card can never advertise a version it cannot serve.
     """
+    global _warned_zips
     folder = directory or _EXTENSIONS_DIR
-    zips = list(folder.glob(f"{_ZIP_PREFIX}*.zip"))
+    zips = sorted(folder.glob(f"{_ZIP_PREFIX}*.zip"))
     if len(zips) != 1:
         # The build script keeps exactly one; picking among several by name
         # would get versions like 0.10.0 vs 0.9.0 wrong.
-        if zips:
+        names = tuple(z.name for z in zips)
+        with _lock:
+            changed = bool(names) and names != _warned_zips
+            _warned_zips = names
+        if changed:
             logger.warning("[slido] %d extension zips in %s; expected one", len(zips), folder)
         return None
+    with _lock:
+        _warned_zips = None  # back to normal: warn again if it breaks again
     path = zips[0]
     try:
         with zipfile.ZipFile(path) as zf:
@@ -161,7 +174,8 @@ def extension_info(directory: Optional[Path] = None) -> Optional[Dict[str, str]]
 
 
 def reset_for_tests() -> None:
-    global _report, _rejected_at
+    global _report, _rejected_at, _warned_zips
     with _lock:
         _report = None
         _rejected_at = None
+        _warned_zips = None

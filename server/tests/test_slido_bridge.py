@@ -516,6 +516,35 @@ def test_extension_info_refuses_to_guess_between_several_zips(tmp_path):
     assert slido_status.extension_info(tmp_path) is None
 
 
+def test_several_zips_are_logged_once_not_on_every_admin_poll(tmp_path, caplog):
+    # P5: the admin card polls every ~15 s.
+    import shutil
+
+    real = next((Path(slido_status._EXTENSIONS_DIR)).glob("danmu-slido-extension-*.zip"))
+    shutil.copy(real, tmp_path / "danmu-slido-extension-0.9.0.zip")
+    shutil.copy(real, tmp_path / "danmu-slido-extension-0.10.0.zip")
+    caplog.set_level(logging.WARNING, logger="server.services.slido_status")
+
+    def warnings():
+        return [r for r in caplog.records if "extension zips" in r.getMessage()]
+
+    for _ in range(5):
+        assert slido_status.extension_info(tmp_path) is None
+    assert len(warnings()) == 1
+    # A different broken set is a new state and is logged again...
+    shutil.copy(real, tmp_path / "danmu-slido-extension-0.11.0.zip")
+    slido_status.extension_info(tmp_path)
+    slido_status.extension_info(tmp_path)
+    assert len(warnings()) == 2
+    # ...and so is breaking again after it was fixed.
+    for name in ("0.9.0", "0.10.0"):
+        (tmp_path / f"danmu-slido-extension-{name}.zip").unlink()
+    assert slido_status.extension_info(tmp_path) is not None
+    shutil.copy(real, tmp_path / "danmu-slido-extension-0.9.0.zip")
+    slido_status.extension_info(tmp_path)
+    assert len(warnings()) == 3
+
+
 # ─── status heartbeat ───────────────────────────────────────────────────────
 
 GOOD_REPORT = {
@@ -611,6 +640,18 @@ def test_admin_reads_status_extension_info_and_staleness(app, client):
     received = data["report"]["received_at"]
     later = slido_status.get_public(now=received + slido_status.STALE_AFTER_SEC + 1)
     assert later["stale"] is True
+
+
+def test_status_report_carries_late_skipped_and_tracking_full():
+    out = slido_status.record({**GOOD_REPORT, "late_skipped": 7})
+    assert out["late_skipped"] == 7
+    # Reports from an extension that predates the counter still validate.
+    legacy = {k: v for k, v in GOOD_REPORT.items() if k != "late_skipped"}
+    assert slido_status.record(legacy)["late_skipped"] == 0
+    full = slido_status.record({**GOOD_REPORT, "state": "error", "error": "tracking_full"})
+    assert full["error"] == "tracking_full"
+    with pytest.raises(ValueError):
+        slido_status.record({**GOOD_REPORT, "late_skipped": "7"})
 
 
 def test_status_counters_are_clamped_and_version_trimmed():
