@@ -96,6 +96,17 @@ EXPECTED_GROUP_KEYS = [
 ]
 
 
+def test_mobile_nav_covers_exactly_the_sidebar():
+    """手機沒有側欄：底部四個主分頁＋「更多」清單要剛好涵蓋側欄的每一列，
+    不多也不少。多一列是同一頁的第二扇門（2026-11-14 前「更多」裡還有備份與
+    擴充），少一列是手機到不了（2026-10-29 小工具就是這樣漏掉的）。"""
+    src = (ADMIN_JS.parent / "admin-mobile-nav.js").read_text(encoding="utf-8")
+    tabs = re.search(r"const TABS = \[([\s\S]+?)\];", src).group(1)
+    overflow = re.search(r"const OVERFLOW = \[([\s\S]+?)\];", src).group(1)
+    routes = re.findall(r'route:\s*"([\w-]+)"', tabs) + re.findall(r'route:\s*"([\w-]+)"', overflow)
+    assert sorted(routes) == sorted(EXPECTED_NAV_ORDER), routes
+
+
 def test_dev_group_is_gone():
     """v8 IA (2026-08-19): 開發擴充 可收合群組退場。五個開發列收進「擴充」
     hub 後，側欄不再有需要收合的群組——連帶 _setDevGroupCollapsed 與
