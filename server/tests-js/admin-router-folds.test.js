@@ -48,22 +48,38 @@ function injectWebhooksFold() {
        <div>body</div></details>`);
 }
 
+// 整個檔案共用的環境替身。每條測試都自己 boot()、自己注入區塊，不依賴前一條
+// 留下的頁面狀態——用 `jest -t` 單獨跑任何一條都要能過。
+beforeAll(() => {
+  window.fetch = jest.fn((url) => url === "/get_settings"
+    ? Promise.resolve({ ok: true, json: async () => ({}) })
+    : new Promise(() => {}));
+  window.AdminUtils = { loadDetailsState: () => ({}), saveDetailsState() {}, escapeHtml: String };
+  window.DANMU_CONFIG = { session: { logged_in: true } };
+  window.showToast = jest.fn();
+  jest.spyOn(console, "info").mockImplementation(() => {});
+  // jsdom 沒有版面：藏在 display:none 底下的元素沒有 rect，其餘當成有畫出來。
+  Element.prototype.getClientRects = function () {
+    for (let n = this; n; n = n.parentElement) if (n.style && n.style.display === "none") return [];
+    return [{}];
+  };
+  Element.prototype.scrollIntoView = function () { scrolled.push(this.id); };
+});
+
+beforeEach(() => {
+  scrolled.length = 0;
+  sessionStorage.clear();
+});
+
+// 開機到 #/system/webhooks、等區塊晚到注入並展開——下面幾條測試的共同起點。
+async function bootWithWebhooksFoldOpen() {
+  boot("#/system/webhooks");
+  await settle(); await settle();
+  injectWebhooksFold();
+  await settle(); await settle();
+}
+
 describe("fold deep links survive a full page load", () => {
-  beforeAll(() => {
-    window.fetch = jest.fn((url) => url === "/get_settings"
-      ? Promise.resolve({ ok: true, json: async () => ({}) })
-      : new Promise(() => {}));
-    window.AdminUtils = { loadDetailsState: () => ({}), saveDetailsState() {}, escapeHtml: String };
-    window.DANMU_CONFIG = { session: { logged_in: true } };
-    window.showToast = jest.fn();
-    jest.spyOn(console, "info").mockImplementation(() => {});
-    // jsdom 沒有版面：藏在 display:none 底下的元素沒有 rect，其餘當成有畫出來。
-    Element.prototype.getClientRects = function () {
-      for (let n = this; n; n = n.parentElement) if (n.style && n.style.display === "none") return [];
-      return [{}];
-    };
-    Element.prototype.scrollIntoView = function () { scrolled.push(this.id); };
-  });
 
   test("the real i18n runtime re-applies the route from updateUI", () => {
     const src = fs.readFileSync(path.resolve(__dirname, "../static/js/i18n.js"), "utf8");
@@ -72,7 +88,6 @@ describe("fold deep links survive a full page load", () => {
   });
 
   test("a fold injected after boot (and after updateUI) still opens, hash untouched", async () => {
-    scrolled.length = 0;
     boot("#/system/webhooks");
     await settle(); await settle();
     const shell = document.querySelector(".admin-dash-grid");
@@ -91,6 +106,8 @@ describe("fold deep links survive a full page load", () => {
   });
 
   test("_adminNavigateTo keeps the fold: same hash, no second scroll, still open", async () => {
+    await bootWithWebhooksFoldOpen();
+    expect(scrolled).toEqual(["sec-webhooks"]);
     window._adminNavigateTo();
     await settle();
     expect(window.location.hash).toBe("#/system/webhooks");
@@ -100,16 +117,17 @@ describe("fold deep links survive a full page load", () => {
   });
 
   test("switching language keeps the fold and relabels its title", async () => {
+    await bootWithWebhooksFoldOpen();
     window.ServerI18n.setLang("en");
     await settle();
     const fold = document.getElementById("sec-webhooks");
     expect(window.location.hash).toBe("#/system/webhooks");
     expect(fold.open).toBe(true);
     expect(fold.querySelector("summary").textContent).toBe(en.tabExtWebhooks);
-    window.ServerI18n.setLang("zh");
   });
 
   test("navigating to another tab drops the fold from the route", async () => {
+    await bootWithWebhooksFoldOpen();
     document.querySelector('.admin-tabs-btn[data-tab="security"]').click();
     await settle();
     expect(window.location.hash).toBe("#/system/security");
@@ -118,8 +136,6 @@ describe("fold deep links survive a full page load", () => {
   });
 
   test("an old block URL loaded directly also opens once the block arrives", async () => {
-    scrolled.length = 0;
-    sessionStorage.clear();
     boot("#/integrations/webhooks");
     await settle(); await settle();
     expect(window.location.hash).toBe("#/system/webhooks");
@@ -171,8 +187,6 @@ describe("full page load in a tab where requestAnimationFrame never fires", () =
     ["#/assets", "sec-emojis", "assets-grid", null],
     ["#/live", "sec-live-feed", "moderation-grid", null],
   ])("%s: the container shows once %s arrives", async (hash, sectionId, containerId, foldId) => {
-    scrolled.length = 0;
-    sessionStorage.clear();
     boot(hash);
     await settleLong();
     const grid = document.getElementById("settings-grid");
@@ -200,9 +214,10 @@ describe("full page load in a tab where requestAnimationFrame never fires", () =
 // 各自再排一輪。rAF 正常的前景分頁才會發生，所以背景分頁的實機驗證看不到。
 describe("a module that re-renders on every sync does not multiply the syncs", () => {
   test("syncs stay at one per animation frame", async () => {
-    sessionStorage.clear();
     boot("#/system/overview");
-    await settle();
+    // 等開機那幾輪同步跑完再開始數。單獨跑這條時是冷啟動，開機收尾比較慢，
+    // 只等一輪會把開機時就排好（在 rAF 被包起來之前）的同步也算進來。
+    await settle(); await settle(); await settle();
     const grid = document.getElementById("settings-grid");
     let syncs = 0;
     let frames = 0;
