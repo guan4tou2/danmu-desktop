@@ -192,3 +192,38 @@ describe("full page load in a tab where requestAnimationFrame never fires", () =
     }
   });
 });
+
+// 2026-11-14 第三輪：上面那個保底計時器沒有取消對應的 rAF，CI 的瀏覽器測試
+// 整批逾時（頁面卡死）。條件是「每次同步都會引發新的 DOM 變動」——同步會發
+// admin-route-applied，聽到就重繪的模組讓 MutationObserver 立刻再排一輪；
+// 這時上一輪沒取消的回呼醒來，把新的一輪當成自己的來跑，於是每輪跑兩次、
+// 各自再排一輪。rAF 正常的前景分頁才會發生，所以背景分頁的實機驗證看不到。
+describe("a module that re-renders on every sync does not multiply the syncs", () => {
+  test("syncs stay at one per animation frame", async () => {
+    sessionStorage.clear();
+    boot("#/system/overview");
+    await settle();
+    const grid = document.getElementById("settings-grid");
+    let syncs = 0;
+    let frames = 0;
+    const realRaf = window.requestAnimationFrame;
+    window.requestAnimationFrame = (cb) => realRaf((t) => { frames += 1; cb(t); });
+    const rerender = () => {
+      syncs += 1;
+      grid.insertAdjacentHTML("beforeend", "<i></i>");
+      grid.lastElementChild.remove();
+    };
+    document.addEventListener("admin-route-applied", rerender);
+    try {
+      grid.insertAdjacentHTML("beforeend", '<div id="sec-system-overview">content</div>');
+      // 夠長，讓保底計時器（100ms）醒來好幾輪
+      await new Promise((r) => setTimeout(r, 600));
+    } finally {
+      document.removeEventListener("admin-route-applied", rerender);
+      window.requestAnimationFrame = realRaf;
+    }
+    expect(syncs).toBeGreaterThan(0);
+    // 每一輪只會有一個回呼真的執行；rAF 先到，所以同步次數不會超過畫格數。
+    expect(syncs).toBeLessThanOrEqual(frames + 1);
+  });
+});

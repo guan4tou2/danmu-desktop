@@ -1813,12 +1813,24 @@ document.addEventListener("DOMContentLoaded", () => {
     window._adminNavigateTo = () => applyRoute(currentRoute, _activeFold || _activeTab);
 
     let routeVisibilitySyncScheduled = false;
+    let routeVisibilitySyncRaf = 0;
+    let routeVisibilitySyncTimer = 0;
     function scheduleRouteVisibilitySync() {
       if (routeVisibilitySyncScheduled) return;
       routeVisibilitySyncScheduled = true;
       const run = () => {
-        if (!routeVisibilitySyncScheduled) return;  // rAF 與 setTimeout 只跑先到的那個
+        if (!routeVisibilitySyncScheduled) return;
         routeVisibilitySyncScheduled = false;
+        // 先到的那個跑，並把另一個取消掉。只看旗標不夠：這次 run 會發事件，
+        // 有些頁面的模組聽到就重繪（→ MutationObserver → 再排一輪、旗標又
+        // 立起來），沒取消的那個回呼晚點醒來會把「下一輪」當成自己的來跑。
+        // 每輪因此變成兩次 run、各自再排一輪，次數倍增到把頁面卡死。
+        if (routeVisibilitySyncRaf && typeof cancelAnimationFrame === "function") {
+          cancelAnimationFrame(routeVisibilitySyncRaf);
+        }
+        clearTimeout(routeVisibilitySyncTimer);
+        routeVisibilitySyncRaf = 0;
+        routeVisibilitySyncTimer = 0;
         applySectionVisibility();
         // Same contract as applyRoute(): the route-level pass above writes
         // inline display="" on every wanted sec-*, clobbering the per-tab
@@ -1840,13 +1852,12 @@ document.addEventListener("DOMContentLoaded", () => {
       // "visible"，rAF 卻整個停住——run 永遠不跑、旗標卡在 true，晚到的
       // section 再也不會觸發容器同步。整頁載入時，開機那次同步發生在各模組
       // 注入之前（容器裡還沒有這條路由的 section → 被判空、藏起來），於是整頁
-      // 空白到下一次換路由為止。setTimeout 保證 run 一定會跑；先到的那個跑，
-      // 另一個看到旗標已經放下就什麼都不做。
+      // 空白到下一次換路由為止。setTimeout 保證 run 一定會跑。
       if (typeof requestAnimationFrame === "function" && document.visibilityState !== "hidden") {
-        requestAnimationFrame(run);
-        setTimeout(run, 100);
+        routeVisibilitySyncRaf = requestAnimationFrame(run);
+        routeVisibilitySyncTimer = setTimeout(run, 100);
       } else {
-        setTimeout(run, 0);
+        routeVisibilitySyncTimer = setTimeout(run, 0);
       }
     }
 
