@@ -8,7 +8,10 @@
 - subagent 的回覆只回到你，使用者看不到 → 收到後把關鍵結論寫進你自己的回覆。
 - 要它**只回結論 + `檔案:行號`**，長產物落檔回路徑。
 - 要它**標註信心與缺口**，不要用「應該」假裝確定。
-- **改 `server/` 下的 Python → 派工時要求它跑過 formatters/linter 再回報**：`cd server && PYTHONPATH=.. uv run black --line-length 100 <檔> && uv run isort --profile black --line-length 100 <檔> && uv run python -m flake8 --max-line-length=100 --extend-ignore=E203,W503 <檔>`，三者都乾淨才算完成。（實戰教訓 2026-07-06：漏了這步，子代理的測試修正沒過 pre-commit 的 black，白費一輪 CI。pre-commit 只掃 `^server/`。）
+- **改 `server/` 下的 Python → 派工時要求它跑過 formatters/linter 再回報**：`cd server && PYTHONPATH=.. uv run black --line-length 100 <檔> && uv run isort --profile black --line-length 100 <檔> && uv run python -m flake8 --max-line-length=100 --extend-ignore=E203,W503 <檔>`，三者都乾淨才算完成。（實戰教訓 2026-07-06：漏了這步，子代理的測試修正沒過 pre-commit 的 black，白費一輪 CI。pre-commit 只掃 `^server/`。）格式檢查要跑**整個 `server/`（含 `tests/`、`scripts/`）**，不要只跑「記得改過的檔」——2026-11-14 漏掉的正是一支被順手改到的測試輔助函式。
+- **改後台前端（`server/static/js`、`css`、`locales`）→ 也要跑桌面端的 jest**：`cd danmu-desktop && npm ci && npm test`。`danmu-desktop/tests/` 裡有契約測試會**讀 `server/static/` 的原始碼與 locale** 做斷言（`admin-layout-compact`、`design-style-contract`、`no-all-caps-copy`、`template-interpolation`）。（實戰教訓 2026-11-14：兩個分支的子代理都只跑了 server 那套 jest，CI 的 `js-test` 各紅一輪。）
+- **子代理的沙箱不能開本機埠、也連不到 localhost**：瀏覽器測試、WS／system 測試在子代理裡一律跑不起來（`PermissionError`／`EPERM`）。派工時明講這是環境限制、要它標「未驗證，交給 CI」；凡是改 UI 的工作，由主對話起預覽伺服器、另派 fresh agent 用瀏覽器實機驗證，不要等 CI 才發現畫面不對。
+- **會摺疊內容的 UI 改動**：`test_browser_admin_routes.py` 的「頁面有沒有渲染」是量主內容區的字數（2026-11-14 起已把預設收合的 `<details>` 內容算進去）。新做的收合若不是用 `<details>`，要自己確認這支測試還量得到。
 
 ---
 
