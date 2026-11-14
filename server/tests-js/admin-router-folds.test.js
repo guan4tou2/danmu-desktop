@@ -146,3 +146,49 @@ describe("fold deep links survive a full page load", () => {
     expect(document.getElementById("sec-plugins").parentElement.id).toBe("settings-grid");
   });
 });
+
+// 2026-11-14 第二輪：整頁載入落在「擴充」分頁時整頁空白（#settings-grid 被藏起來）。
+// 開機那次容器同步發生在各模組注入 section 之前，容器被判空、藏起來是預期的；
+// 之後每個晚到的 section 都要觸發一次重新同步（MutationObserver → 排程）。
+// 排程原本只用 requestAnimationFrame，而被遮住或在背景的分頁裡 visibilityState
+// 仍是 "visible"、rAF 卻停住——同步永遠不跑，容器一直藏著，直到下一次換路由。
+// 這裡把 rAF 凍住重現那個環境。
+describe("full page load in a tab where requestAnimationFrame never fires", () => {
+  const realRaf = window.requestAnimationFrame;
+  beforeAll(() => { window.requestAnimationFrame = () => 0; });
+  afterAll(() => { window.requestAnimationFrame = realRaf; });
+  // 排程的保底計時器是 100ms
+  const settleLong = () => new Promise((r) => setTimeout(r, 250));
+
+  test.each([
+    // [hash, 晚到的 section, 它最後該在的容器, 要展開的區塊]
+    ["#/system/integrations", "sec-extensions-overview", "settings-grid", null],
+    ["#/system/scheduler", "sec-extensions-overview", "settings-grid", "sec-scheduler"],
+    ["#/plugins", "sec-extensions-overview", "settings-grid", "sec-plugins"],
+    ["#/system/security", "admin-security-v2-page", "settings-grid", null],
+    ["#/system/backup", "admin-backup-v2-page", "settings-grid", null],
+    ["#/system/overview", "sec-system-overview", "settings-grid", null],
+    ["#/assets", "sec-emojis", "assets-grid", null],
+    ["#/live", "sec-live-feed", "moderation-grid", null],
+  ])("%s: the container shows once %s arrives", async (hash, sectionId, containerId, foldId) => {
+    scrolled.length = 0;
+    sessionStorage.clear();
+    boot(hash);
+    await settleLong();
+    const grid = document.getElementById("settings-grid");
+    grid.insertAdjacentHTML("beforeend", `<div id="${sectionId}">content</div>`);
+    if (foldId) {
+      grid.insertAdjacentHTML("beforeend",
+        `<details id="${foldId}"><summary>t</summary><div>b</div></details>`);
+    }
+    await settleLong();
+    const section = document.getElementById(sectionId);
+    expect(section.parentElement.id).toBe(containerId);
+    expect(getComputedStyle(document.getElementById(containerId)).display).not.toBe("none");
+    expect(getComputedStyle(section).display).not.toBe("none");
+    if (foldId) {
+      expect(document.getElementById(foldId).open).toBe(true);
+      expect(scrolled).toEqual([foldId]);
+    }
+  });
+});

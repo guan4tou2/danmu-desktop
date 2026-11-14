@@ -1817,6 +1817,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (routeVisibilitySyncScheduled) return;
       routeVisibilitySyncScheduled = true;
       const run = () => {
+        if (!routeVisibilitySyncScheduled) return;  // rAF 與 setTimeout 只跑先到的那個
         routeVisibilitySyncScheduled = false;
         applySectionVisibility();
         // Same contract as applyRoute(): the route-level pass above writes
@@ -1834,8 +1835,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }));
         _openPendingFold();
       };
+      // 2026-11-14：rAF 優先（在下一次繪製前跑完，晚到的 section 不會先閃一下），
+      // 但不能只靠它。被遮住或在背景的分頁裡 visibilityState 仍可能回報
+      // "visible"，rAF 卻整個停住——run 永遠不跑、旗標卡在 true，晚到的
+      // section 再也不會觸發容器同步。整頁載入時，開機那次同步發生在各模組
+      // 注入之前（容器裡還沒有這條路由的 section → 被判空、藏起來），於是整頁
+      // 空白到下一次換路由為止。setTimeout 保證 run 一定會跑；先到的那個跑，
+      // 另一個看到旗標已經放下就什麼都不做。
       if (typeof requestAnimationFrame === "function" && document.visibilityState !== "hidden") {
         requestAnimationFrame(run);
+        setTimeout(run, 100);
       } else {
         setTimeout(run, 0);
       }
