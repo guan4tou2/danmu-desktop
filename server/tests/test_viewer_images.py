@@ -531,8 +531,14 @@ def test_replay_of_an_old_sticker_record_still_shows_the_sticker(known_sticker):
     assert msg["text"] == "https://danmu.example.org/static/stickers/fire.gif"
 
 
-def test_replay_route_rebuilds_stickers_on_the_request_origin(client, known_sticker):
+def test_replay_route_rebuilds_stickers_on_the_request_origin(client, known_sticker, monkeypatch):
     from server.services.replay import replay_service
+
+    # 回放在背景 thread 裡隔 50ms 送一筆。全套測試跑到這裡時，先前起過真
+    # 伺服器的測試可能還留著廣播迴圈在消費 ws_queue，事後才去 dequeue 會
+    # 撲空（CI 上就是這樣）。所以在送進佇列的那一刻攔下來。
+    sent = []
+    monkeypatch.setattr(ws_queue, "enqueue_message", sent.append)
 
     token = _login(client)
     resp = client.post(
@@ -556,8 +562,8 @@ def test_replay_route_rebuilds_stickers_on_the_request_origin(client, known_stic
     )
     assert resp.status_code == 200
     replay_service._thread.join(timeout=5)
-    msgs = ws_queue.dequeue_all()
-    sticker, external = msgs[0], msgs[1]
+    assert len(sent) == 2
+    sticker, external = sent
     assert sticker["isImage"] is True
     assert sticker["text"] == "http://localhost/static/stickers/fire.gif"
     assert external["isImage"] is False
