@@ -1,5 +1,5 @@
 {
-  "_provenance": "Recorded from a live Slido event's participant page on 2026-11-14 (app.sli.do, cluster eu1). Structure, field names, nulls and id types are as received; question text is replaced. Only an anonymous question was captured.",
+  "_provenance": "Recorded from a live Slido event's participant page on 2026-11-14 (app.sli.do, cluster eu1). Structure, field names, nulls and id types are as received; question text, the author's name and the participant id are replaced. Captured: an anonymous question and a named one, both public at once. Not captured: a moderated question being approved, upvotes, replies, deletions. In the named frame the values inside author.attrs and author.user were not inspected; they are placeholders.",
   "event_uuid": "ba1e81ac-4b2c-4b1c-9d94-4aaa6ca9a36e",
   "list_url": "https://app.sli.do/eu1/api/v0.5/events/ba1e81ac-4b2c-4b1c-9d94-4aaa6ca9a36e/questions?eventSectionId=23778461&highlighted_first=true&limit=30&path=%2Fquestions&sort=top",
   "post_url": "https://app.sli.do/eu1/api/v0.5/events/ba1e81ac-4b2c-4b1c-9d94-4aaa6ca9a36e/questions",
@@ -80,6 +80,48 @@
   },
   "other_stream_events_seen": [
     "event.update",
-    "slido.event.summary.update"
+    "slido.event.summary.update",
+    "slido.event.question.topics.update"
+  ],
+  "stream_new_question_named": [
+    "newQuestion",
+    {
+      "target": "slido/events/ba1e81ac-4b2c-4b1c-9d94-4aaa6ca9a36e/",
+      "params": {
+        "author": {
+          "attrs": {},
+          "event_user_id": 787778999,
+          "name": "Ada",
+          "user": null
+        },
+        "attrs": {
+          "language": "sv",
+          "is_profane": false,
+          "profanity_metadata": [],
+          "is_comment": true
+        },
+        "type": "Question",
+        "text_formatted": "Recorded named question",
+        "event_question_id": 122753706,
+        "event_id": 21952274,
+        "event_section_id": 23778461,
+        "text": "Recorded named question",
+        "is_public": true,
+        "is_answered": false,
+        "is_highlighted": false,
+        "is_anonymous": false,
+        "is_bookmarked": false,
+        "score": 0,
+        "date_published": null,
+        "date_highlighted": null,
+        "path": "/questions",
+        "date_created": "2026-11-14T07:13:49.000Z",
+        "date_updated": "2026-11-14T07:13:49.000Z",
+        "date_deleted": null,
+        "labels": [],
+        "pinned_replies": [],
+        "event_user_id": 787778999
+      }
+    }
   ]
 }

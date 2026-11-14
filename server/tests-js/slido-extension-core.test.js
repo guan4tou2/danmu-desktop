@@ -687,6 +687,17 @@ describe("recorded from a live Slido event (2026-11-14)", () => {
     expect(h.bridge.snapshot().error || "").not.toBe("feed_unrecognized");
   });
 
+  test("a named question keeps its author and a per-participant fingerprint", async () => {
+    const h = harness();
+    h.bridge.ingest("questions", "[]", TAB, REC.list_url, REC.empty_list.date_header);
+    expect(h.bridge.ingest("stream", "42" + JSON.stringify(REC.stream_new_question_named), TAB,
+      REC.stream_url, "")).toBe(1);
+    await h.bridge.idle();
+    expect(h.posts.map((p) => p.payload)).toEqual([
+      { text: "Recorded named question", nickname: "Ada", fingerprint: "slido:787778999" },
+    ]);
+  });
+
   test("other stream events seen on the wire are ignored without complaint", () => {
     for (const name of REC.other_stream_events_seen) {
       const parsed = Core.parseBody("stream", "42" + JSON.stringify([name, { target: "x", params: {} }]));
