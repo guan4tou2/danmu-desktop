@@ -2973,5 +2973,13 @@
   "offlineBannerTitle": "Offline · cannot reach the server",
   "offlineMetaReconnecting": "Reconnecting · {sec}s · unsent drafts: {n}",
   "eoffDraftLabel": "Unsent draft ({n})",
-  "eoffDraftFoot": "Nothing is sent automatically after reconnecting — you decide"
+  "eoffDraftFoot": "Nothing is sent automatically after reconnecting — you decide",
+  "viGroupLabel": "Viewer images",
+  "viAllowExternal": "Allow external images from viewers",
+  "viHosts": "Allowed sites",
+  "viHostsPlaceholder": "Leave empty to allow any site. One per line, e.g. cdn.example.com",
+  "viExtensions": "Allowed formats",
+  "viErrInvalidHost": "Not a valid site: {host}",
+  "viErrTooManyHosts": "You can list up to {max} sites",
+  "viewerImageNotAllowed": "This image link can't be sent here"
 }

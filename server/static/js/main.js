@@ -2091,6 +2091,9 @@ document.addEventListener("DOMContentLoaded", () => {
             message = ServerI18n.t("queueFullTryLater");
             _setSendbarStatusRow(message);
             return;
+          } else if (data.reason === "image_not_allowed") {
+            // 外部圖片沒開放，或網站／格式不在允許範圍（伺服器判斷）。
+            message = ServerI18n.t("viewerImageNotAllowed");
           } else {
             message = (typeof data.error === "string" ? data.error : data.error?.message) || message;
           }

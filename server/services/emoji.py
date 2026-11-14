@@ -29,6 +29,11 @@ _MAX_FILE_SIZE = 500 * 1024  # 500 KB
 _ALLOWED_EXTENSIONS = {"png", "gif", "webp"}
 _NAME_RE = re.compile(r"^[a-zA-Z0-9_]{1,32}$")
 _EMOJI_SYNTAX_RE = re.compile(r":([a-zA-Z0-9_]{1,32}):")
+# 一則彈幕最多換成幾個 emoji 圖、內嵌的 dataUrl 合計多大。兩個顯示端都是
+# 「emojis 陣列的一筆換掉文字裡的一處 :name:」，所以同名出現幾次就得有幾筆，
+# 不能依名稱去重；改為限制筆數與合計大小。超過的 :name: 留在原文，不換成圖。
+_MAX_EMOJIS_PER_MESSAGE = 20
+_MAX_EMOJI_DATA_BYTES_PER_MESSAGE = 2 * 1024 * 1024  # 2 MB of data URLs
 _URL_PREFIX = "/static/emojis"
 _MIME_BY_EXT = {"png": "image/png", "gif": "image/gif", "webp": "image/webp"}
 
@@ -132,17 +137,26 @@ class EmojiService:
         with self._lock:
             cache = dict(self._cache)
 
+        data_bytes = 0
         for m in _EMOJI_SYNTAX_RE.finditer(text):
+            if len(emojis) >= _MAX_EMOJIS_PER_MESSAGE:
+                break
             name = m.group(1)
             if name in cache:
                 entry = cache[name]
+                data_url = entry.get("data_url")
+                if data_url:
+                    if data_bytes + len(data_url) > _MAX_EMOJI_DATA_BYTES_PER_MESSAGE:
+                        # 這一處留在原文。後面若有較小的 emoji 仍可放得下。
+                        continue
+                    data_bytes += len(data_url)
                 payload: Dict[str, Any] = {
                     "name": name,
                     "url": entry["url"],
                     "position": m.start(),
                 }
-                if entry.get("data_url"):
-                    payload["dataUrl"] = entry["data_url"]
+                if data_url:
+                    payload["dataUrl"] = data_url
                 emojis.append(payload)
 
         return {"text": text, "emojis": emojis}

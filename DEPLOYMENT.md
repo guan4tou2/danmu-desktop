@@ -203,16 +203,22 @@ custom self-signed HTTPS port.
      token also preserves the authentication toggle and requires updating
      each desktop for its next connection. Keep tokens out of public URLs,
      screenshots, logs, and shared configuration exports.
-   - **Fresh installs** boot with `require_token=true` + a random token
-     already generated, so `/ws` is not publicly open-access by
-     default. Go to the admin UI to copy it into the Electron client.
+   - **Fresh installs** (no `server/runtime/ws_auth.json` yet, and
+     `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` unset or blank — blank is what
+     `docker-compose.yml` passes when `.env` leaves them empty) boot with
+     `require_token=true` + a random token already generated, so `/ws` is
+     not publicly open-access by default. Go to the admin UI to copy it
+     into the Electron client. If the runtime directory is not writable
+     (see Troubleshooting), the token could not survive a restart, so the
+     server starts with authentication off and logs a warning instead.
    - **Opting out on first boot:** set `WS_REQUIRE_TOKEN=false`
      in `.env` before first boot. Explicit env values are respected and
      never silently flipped on by the secure-by-default seeding.
    - **Existing deployments:** once `server/runtime/ws_auth.json` exists,
      that saved state is authoritative. Updates and restarts do not enable
      authentication automatically; changing the environment variables does
-     not override it. Manage the setting in Admin → Security. If authentication
+     not override it. A state file that exists but cannot be read is not
+     treated as a fresh install either. Manage the setting in Admin → Security. If authentication
      remains off, anyone who can reach `/ws` can connect a display and receive
      danmu; this does not grant admin access.
 
@@ -431,7 +437,7 @@ Key variables:
 | `TRUST_X_FORWARDED_FOR` | `false` | Set `true` ONLY when behind a trusted reverse proxy (Caddy/nginx/Traefik). Enables `ProxyFix` so rate limiting uses real client IPs. **Security risk if `true` without a proxy — clients can spoof IPs** |
 | `SESSION_COOKIE_SECURE` | — | Must be `true` in production (HTTPS). Server refuses to start in production without it |
 | `REDIS_PASSWORD` | `changeme` | Redis auth password |
-| `WS_REQUIRE_TOKEN` | see note | **First-boot seed only since v4.8.0.** After first boot, authoritative state lives in `server/runtime/ws_auth.json` and is controlled from the admin UI. If this env var is unset on a fresh install, the server seeds secure-on with a generated token. Explicit `false` is respected and never flipped back on. |
+| `WS_REQUIRE_TOKEN` | see note | **First-boot seed only since v4.8.0.** After first boot, authoritative state lives in `server/runtime/ws_auth.json` and is controlled from the admin UI. If this env var and `WS_AUTH_TOKEN` are unset or blank on a fresh install, the server seeds secure-on with a generated token. Explicit `false` is respected and never flipped back on. |
 | `WS_AUTH_TOKEN` | — | Same as above — first-boot seed only. The admin UI is authoritative after the runtime file exists. |
 
 ---

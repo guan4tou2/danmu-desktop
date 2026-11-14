@@ -25,9 +25,10 @@ services:
       - FONT_TOKEN_EXPIRATION=${FONT_TOKEN_EXPIRATION:-900}
       - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-}
       - TRUSTED_HOSTS=${TRUSTED_HOSTS:-localhost,127.0.0.1}
-      # Default remains false: any client that can reach the server can connect via /ws
-      # unless you enable WS_REQUIRE_TOKEN=true or restrict access at the proxy/firewall.
-      - WS_REQUIRE_TOKEN=${WS_REQUIRE_TOKEN:-false}
+      # First-boot seed only (server/runtime/ws_auth.json is authoritative once it
+      # exists). Left blank, a new install turns /ws token auth on with a generated
+      # token; set WS_REQUIRE_TOKEN=false in .env to opt out before the first boot.
+      - WS_REQUIRE_TOKEN=${WS_REQUIRE_TOKEN:-}
       - WS_AUTH_TOKEN=${WS_AUTH_TOKEN:-}
       - WS_ALLOWED_ORIGINS=${WS_ALLOWED_ORIGINS:-}
       - WEB_WS_ALLOWED_ORIGINS=${WEB_WS_ALLOWED_ORIGINS:-}

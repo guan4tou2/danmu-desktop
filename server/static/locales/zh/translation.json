@@ -2973,5 +2973,13 @@
   "offlineBannerTitle": "離線中 · 無法連線到伺服器",
   "offlineMetaReconnecting": "重新連線中 · {sec} 秒 · 未送出草稿 {n} 則",
   "eoffDraftLabel": "未送出的草稿（{n} 則）",
-  "eoffDraftFoot": "連線恢復後不會自動送出，由你自己決定"
+  "eoffDraftFoot": "連線恢復後不會自動送出，由你自己決定",
+  "viGroupLabel": "觀眾圖片",
+  "viAllowExternal": "允許觀眾送外部圖片",
+  "viHosts": "允許的網站",
+  "viHostsPlaceholder": "留空＝不限網站。一行一個，例如 cdn.example.com",
+  "viExtensions": "允許的格式",
+  "viErrInvalidHost": "網站格式不正確：{host}",
+  "viErrTooManyHosts": "最多只能填 {max} 個網站",
+  "viewerImageNotAllowed": "這個圖片連結不開放傳送"
 }

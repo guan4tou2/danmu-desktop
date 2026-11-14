@@ -17,7 +17,7 @@ decisions even before the full pending-queue store ships.
 
 from flask import current_app, request
 
-from ...services import messaging
+from ...services import messaging, viewer_images
 from ...services.mod_queue import mod_queue
 from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login
@@ -66,6 +66,9 @@ def modqueue_approve():
             # a review rule) so the feed still labels it after approval.
             "integration": resolved.get("integration") or "",
         }
+        # 審核佇列在 /fire 的圖片檢查之前就把訊息收下了，這裡補上同一道政策：
+        # 合格的外部圖片標成圖片，不合格的中和成文字（舊版顯示端也不會轉成圖）。
+        viewer_images.apply_to_payload(forwarded)
         messaging.forward_to_ws_server(forwarded, bypass_broadcast_gate=False)
     except Exception as exc:  # pragma: no cover — log + continue
         current_app.logger.warning("modqueue approve forward failed: %s", exc)
