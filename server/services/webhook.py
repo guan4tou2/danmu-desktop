@@ -265,12 +265,13 @@ _METADATA_NETWORKS = (
 # (IPv4-mapped) and ``::ffff:0:0:0/96`` (IPv4-translated, SIIT) all embed in
 # the low 32 bits; the two NAT64 prefixes are the well-known one and the
 # RFC 8215 local range.
+_NAT64_LOCAL_NETWORK = ipaddress.ip_network("64:ff9b:1::/48")
 _EMBEDDED_IPV4_NETWORKS = (
     ipaddress.ip_network("::/96"),
     ipaddress.ip_network("::ffff:0:0/96"),
     ipaddress.ip_network("::ffff:0:0:0/96"),
     ipaddress.ip_network("64:ff9b::/96"),
-    ipaddress.ip_network("64:ff9b:1::/48"),
+    _NAT64_LOCAL_NETWORK,
 )
 # Private (ULA) space, where clouds place IPv6 metadata endpoints that end in
 # the link-local IPv4 metadata address. Global unicast addresses are not
@@ -282,12 +283,38 @@ class _ResolveError(ValueError):
     """The host did not resolve; distinct from a destination being refused."""
 
 
+def _embedded_ipv4(ip: ipaddress.IPv6Address) -> list:
+    """The IPv4 destinations an address in _EMBEDDED_IPV4_NETWORKS can stand for.
+
+    Everywhere but the local NAT64 range the IPv4 address is the low 32 bits.
+    Inside ``64:ff9b:1::/48`` an operator may run the translator with any
+    prefix length that fits (RFC 6052: /48, /56, /64 or /96), and each length
+    puts the IPv4 bits somewhere else (bits 64-71 are always skipped). Which
+    one is in use cannot be known from here, so every position is returned
+    and the address is refused if any of them is a refused destination.
+    """
+    packed = ip.packed
+    low = ipaddress.IPv4Address(packed[12:16])
+    if ip not in _NAT64_LOCAL_NETWORK:
+        return [low]
+    return [
+        ipaddress.IPv4Address(packed[6:8] + packed[9:11]),  # /48
+        ipaddress.IPv4Address(packed[7:8] + packed[9:12]),  # /56
+        ipaddress.IPv4Address(packed[9:13]),  # /64
+        low,  # /96
+    ]
+
+
 def _blocked_reason(ip: "ipaddress._BaseAddress") -> Optional[str]:
     """Why *ip* is refused as a webhook destination, or None if it is allowed."""
     if isinstance(ip, ipaddress.IPv6Address):
         embedded = ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
         if ip.ipv4_mapped is not None or any(ip in net for net in _EMBEDDED_IPV4_NETWORKS):
-            return _blocked_reason(embedded)
+            for candidate in _embedded_ipv4(ip):
+                reason = _blocked_reason(candidate)
+                if reason is not None:
+                    return reason
+            return None
         if ip in _ULA_NETWORK and embedded.is_link_local:
             return _METADATA_REASON
     if any(ip in net for net in _METADATA_NETWORKS):

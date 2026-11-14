@@ -555,13 +555,53 @@ _RUNTIME_SHAPES = {
     "list_of_scalars": [1, 2, 3],
     "webhook_missing_events": [{"url": "https://x/h"}],
     "webhook_list": [{"url": "https://x/h", "events": ["on_danmu"], "secret": "s"}],
+    "webhook_list_with_a_broken_entry": [
+        {"url": "https://x/h", "events": ["on_danmu"], "secret": "s"},
+        "not-a-hook",
+    ],
 }
+_HOLDS_WEBHOOKS = {"webhook_list", "webhook_list_with_a_broken_entry"}
 
 
 @pytest.mark.parametrize("name", sorted(_RUNTIME_SHAPES))
 def test_only_a_real_webhook_list_matches_the_shape_probe(name):
-    expected = name == "webhook_list"
+    expected = name in _HOLDS_WEBHOOKS
     assert backup_svc._looks_like_webhook_list(_RUNTIME_SHAPES[name]) is expected
+
+
+def test_a_stray_list_with_one_real_hook_and_one_broken_entry_is_not_exported_raw(
+    tmp_path, monkeypatch
+):
+    """The service would load the good entry of such a file, so it carries a
+    credential; a default export must not copy it out unchanged."""
+    runtime = _site(tmp_path / "s", hooks=[])
+    (runtime / "old_hooks.json").write_text(json.dumps(HOOKS + ["not-a-hook"]), encoding="utf-8")
+    _point_at(monkeypatch, tmp_path / "s")
+
+    raw = backup_svc.pack(include_credentials=False)
+    members = _members(raw)
+    assert b"hook-secret" not in members["runtime/old_hooks.json"]
+    assert b"discord.example" not in members["runtime/old_hooks.json"]
+    stray = json.loads(members["runtime/old_hooks.json"])
+    assert [h["id"] for h in stray] == ["abcd1234"] and stray[0]["url"] == ""
+
+
+def test_such_a_list_is_restored_through_the_webhook_store_and_exports_clean(tmp_path, monkeypatch):
+    runtime = _site(tmp_path / "s", hooks=[])
+    _point_at(monkeypatch, tmp_path / "s")
+    blob = _tar(
+        {
+            "runtime/old_hooks.json": json.dumps(HOOKS + ["not-a-hook"]).encode(),
+            "manifest.json": json.dumps({"version": "1", "credentials": "included"}).encode(),
+        }
+    )
+    result = backup_svc.unpack(blob, dry_run=False)
+    assert not (runtime / "old_hooks.json").exists()  # never written as a plain file
+    assert [h["id"] for h in _read(runtime, "webhooks.json")] == ["abcd1234"], result
+    assert stat.S_IMODE(os.stat(runtime / "webhooks.json").st_mode) == 0o600
+
+    for data in _members(backup_svc.pack(include_credentials=False)).values():
+        assert b"hook-secret" not in data and b"discord.example" not in data
 
 
 # ── route ─────────────────────────────────────────────────────────────────

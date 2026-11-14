@@ -246,6 +246,28 @@ def test_current_does_not_overwrite_a_corrupt_file(tmp_path):
     assert js.path.read_text(encoding="utf-8") == "{not json"  # file untouched
 
 
+def test_current_leaves_the_directory_alone_even_when_unreadable_files_are_kept(tmp_path):
+    """With keep_unreadable_file a normal load copies the broken file aside;
+    the read-only load must not — a backup preview may not write anything."""
+    js = JsonState(
+        "test.json",
+        default=lambda: {"count": 9},
+        normalize=lambda raw: raw if isinstance(raw, dict) else (_ for _ in ()).throw(ValueError()),
+        eager_persist_default=True,
+        keep_unreadable_file=True,
+    )
+    js.reset_for_tests(tmp_path / "corrupt.json")
+    js.path.write_text("{not json", encoding="utf-8")
+    before = sorted(p.name for p in tmp_path.iterdir())
+
+    assert js.current() == {"count": 9}
+    assert sorted(p.name for p in tmp_path.iterdir()) == before
+    assert js.preserved_path is None
+
+    js.get()  # the ordinary load does keep a copy
+    assert len(list(tmp_path.glob("corrupt.json.corrupt-*"))) == 1
+
+
 # ---------------------------------------------------------------------------
 # Eager persist default
 # ---------------------------------------------------------------------------

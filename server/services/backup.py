@@ -351,18 +351,20 @@ def _strip_webhooks(obj: Any) -> Any:
 
 
 def _looks_like_webhook_list(obj: Any) -> bool:
-    """Conservatively, whether *obj* is a webhook store's content.
+    """Whether *obj* holds webhook entries.
 
     Used to catch a webhook store that travels under a non-standard name
     (an older backup, or a leftover of a renamed WEBHOOKS_PATH) so its URLs
-    and secrets are not exported raw or restored as a plain file. Kept
-    strict — every entry must be a dict carrying both ``url`` and ``events``,
-    which other runtime lists (filter_rules, api_tokens) do not — so ordinary
-    runtime JSON is never mistaken for it.
+    and secrets are not exported raw or restored as a plain file. One entry
+    that is a dict carrying both ``url`` and ``events`` is enough: the
+    service loads the good entries of a partly bad list, so a list with one
+    real hook and one broken entry still carries a credential. No other
+    runtime list (filter_rules, api_tokens) has entries with both keys, so
+    ordinary runtime JSON is never mistaken for it.
     """
-    if not isinstance(obj, list) or not obj:
+    if not isinstance(obj, list):
         return False
-    return all(isinstance(h, dict) and "url" in h and "events" in h for h in obj)
+    return any(isinstance(h, dict) and "url" in h and "events" in h for h in obj)
 
 
 # What reading untrusted JSON can raise: bad syntax or encoding (ValueError

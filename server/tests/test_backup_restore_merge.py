@@ -418,11 +418,6 @@ def test_store_is_untouched_when_its_unreadable_copy_cannot_be_made(runtime, mon
         return real(path, data, mode)
 
     monkeypatch.setattr(atomic_file, "write_atomic", no_room_for_copies)
-    # The state container keeps its own copy of an unreadable file the first
-    # time it is read; a full disk fails that copy too.
-    from server.services.json_state import JsonState
-
-    monkeypatch.setattr(JsonState, "_preserve_unreadable_file", lambda self: None)
     blob = _tar({"runtime/ws_auth.json": b'{"require_token": true, "token": "BK"}'}, INCLUDED)
     result = backup_svc.unpack(blob, dry_run=False)
     assert result["errors"] == ["write runtime/ws_auth.json: unreadable file could not be kept"]

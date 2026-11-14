@@ -260,7 +260,9 @@ class JsonState:
                     )
                     unreadable = True
             if unreadable:
-                if self._keep_unreadable_file:
+                # persist=False is the read-only path (current()): no default
+                # is written, and no recovery copy either.
+                if self._keep_unreadable_file and persist:
                     self._preserved_path = self._preserve_unreadable_file()
                 state = self._default()
                 used_default = True

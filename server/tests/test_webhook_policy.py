@@ -32,7 +32,10 @@ def test_ipv6_with_link_local_ipv4_in_low_bits_is_refused():
         "::ffff:0:a9fe:a9fe",  # IPv4-translated (::ffff:0:0:0/96, SIIT)
         "::a9fe:a9fe",  # IPv4-compatible (::/96)
         "64:ff9b::a9fe:a9fe",  # well-known NAT64
-        "64:ff9b:1::a9fe:a9fe",  # RFC 8215 local NAT64
+        "64:ff9b:1::a9fe:a9fe",  # RFC 8215 local NAT64, /96 translator
+        "64:ff9b:1:1:a9:fea9:fe00:0",  # same range, /64 translator (RFC 6052)
+        "64:ff9b:1:a9:fe:a9fe::",  # same range, /56 translator
+        "64:ff9b:1:a9fe:a9:fe00::",  # same range, /48 translator
         "fd00:ec2::254",  # AWS metadata over IPv6
         "fd00:c1::a9fe:a9fe",  # Oracle Cloud
         "fd20:ce::254",  # Google Compute Engine
@@ -42,6 +45,12 @@ def test_ipv6_with_link_local_ipv4_in_low_bits_is_refused():
 )
 def test_every_blocked_address_form_stays_blocked(addr):
     assert webhook_mod._blocked_address(ipaddress.ip_address(addr)) is True
+
+
+def test_local_nat64_address_for_an_ordinary_destination_is_allowed():
+    """10.0.0.5 behind a /96 translator: no embedding position reads as a
+    refused destination, so LAN targets reached this way keep working."""
+    assert webhook_mod._blocked_address(ipaddress.ip_address("64:ff9b:1::a00:5")) is False
 
 
 def test_global_unicast_address_with_the_same_low_bits_is_allowed():
