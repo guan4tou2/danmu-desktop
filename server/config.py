@@ -73,7 +73,7 @@ class Config:
     # Priority: runtime hash file > ADMIN_PASSWORD_HASHED env var > plaintext ADMIN_PASSWORD
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
     APP_NAME = "Danmu Fire"
-    APP_VERSION = "5.7.0"
+    APP_VERSION = "5.8.0"
     PORT = int(os.getenv("PORT", "8080"))
     ENV = os.getenv("ENV", "development").lower()
     MAX_CONTENT_LENGTH = 15 * 1024 * 1024  # 15 MB uploads
