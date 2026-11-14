@@ -3,9 +3,9 @@
 import json
 import re
 
-from server import state
 from server.app import create_app
 from server.config import Config
+from server.services.blacklist import add_keyword
 
 # ---------------------------------------------------------------------------
 # /get_settings
@@ -67,7 +67,7 @@ def test_check_blacklist_allowed(client):
 
 
 def test_check_blacklist_blocked(client):
-    state.blacklist.add("badword")
+    add_keyword("badword")
     res = client.post("/check_blacklist", json={"text": "this contains badword here"})
     assert res.status_code == 200
     data = json.loads(res.data)
@@ -75,7 +75,7 @@ def test_check_blacklist_blocked(client):
 
 
 def test_check_blacklist_case_insensitive(client):
-    state.blacklist.add("badword")
+    add_keyword("badword")
     res = client.post("/check_blacklist", json={"text": "BADWORD"})
     assert res.status_code == 200
     assert json.loads(res.data)["blocked"] is True

@@ -49,8 +49,9 @@ test("admin panel uses design-v2 dash grid + Phase A IA sections", () => {
   // 註解掉的舊 ADMIN_ROUTES 條目（那行在 2026-11-14 清掉）。改釘實際的行為：
   // #/security 轉到系統頁的安全分頁。
   expect(adminSrc).toMatch(/security:\s*\{\s*nav:\s*"system",\s*tab:\s*"security"/);
-  // Sections still rendered inline by admin.js renderControlPanel():
-  expect(adminSrc).toContain('id="sec-blacklist"');
+  // 2026-11-14 封鎖規則合一：sec-blacklist 改由 admin-filters.js 注入（整份清單一個區塊）。
+  expect(adminSrc).not.toContain('id="sec-blacklist"');
+  expect(fs.readFileSync(path.join(staticDir, "admin-filters.js"), "utf8")).toContain('id="sec-blacklist"');
   // sec-history 於 2026-09-07 隨「重播」分頁一起退場（設計稿 08 · H1：
   // 紀錄與匯出只有場次／觀眾／搜尋／操作紀錄四段）。
   expect(adminSrc).not.toContain('id="sec-history"');
@@ -759,7 +760,7 @@ test("admin Filters and Fonts toolbar actions compose shared controls", () => {
   const filtersSrc = fs.readFileSync(path.join(staticDir, "js", "admin-filters.js"), "utf8");
   const fontsSrc = fs.readFileSync(path.join(staticDir, "js", "admin-fonts.js"), "utf8");
 
-  expect(filtersSrc).toContain('id="filterAddBtn" type="button" class="admin-ui-action is-primary admin-filter-action"');
+  expect(filtersSrc).toContain('id="blockRuleSubmit" type="button" class="admin-ui-action is-primary admin-filter-action"');
   expect(filtersSrc).toContain('id="filterTestBtn" type="button" class="admin-ui-action admin-filter-action"');
   expect(fontsSrc).toContain('for="adminFontFileInput" class="admin-ui-action admin-font-upload-action"');
   expect(filtersSrc).not.toContain("hud-toolbar-action");
@@ -864,7 +865,6 @@ test("admin shell and Viewer Theme residual controls compose shared primitives",
   expect(adminSrc).toContain('class="admin-ui-action admin-effects-inspector-action" id="effectsInspectorReload"');
   expect(adminSrc).toContain('class="admin-ui-action is-primary admin-effects-inspector-action" id="effectsInspectorEdit"');
   expect(adminSrc).toContain('id="themeReloadBtn" class="admin-ui-action admin-theme-reload-action"');
-  expect(adminSrc).toContain('id="addKeywordBtn" type="button" class="admin-ui-action is-primary"');
   // 2026-09-07 設計稿 08 · H1：進行中的控制項搬到全域的 admin-replay-bar.js，
   // 用的還是同一組共用 primitive（檢查點跟著檔案走，不是放寬）。
   const replayBarSrc = fs.readFileSync(path.join(staticDir, "admin-replay-bar.js"), "utf8");

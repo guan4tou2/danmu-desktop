@@ -86,6 +86,8 @@ def _isolate_filter_store(tmp_path, monkeypatch):
     path.write_text("[]")
     monkeypatch.setattr(Config, "FILTER_RULES_FILE", str(path))
     monkeypatch.setattr(filter_engine, "_path", str(path))
+    # 封鎖字也住在這份清單裡（以前是 state.blacklist），每個測試從空清單開始。
+    filter_engine.reload()
 
 
 @pytest.fixture(autouse=True)
@@ -483,7 +485,6 @@ def app(tmp_path):
 
     # reset globals
     state.USER_FONTS_DIR = original_dir
-    state.blacklist.clear()
     FilterEngine._instance = None  # reset filter engine singleton between tests
     filter_engine._rules = []  # clear loaded production rules so tests start clean
     connection_manager.reset()

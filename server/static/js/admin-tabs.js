@@ -31,6 +31,7 @@
       // v8（2026-08-19 設計稿 07 · R3）：6 個分頁併成 3 個，依「你在管什麼」
       // 而不是「後端有幾張表」分：
       //   封鎖字     ← blacklist（字串黑名單）+ filters（規則）
+      //              2026-11-14 起兩者是同一份規則清單、同一個區塊（admin-filters.js）
       //   被封鎖的觀眾 ← bans（人）+ fingerprints（同一個人的裝置指紋）
       //   發送上限   ← ratelimit
       // queue（待審佇列）保留為第四個分頁，未併入——設計稿的「命中時 →
@@ -45,8 +46,7 @@
       defaultTab: "blacklist",
       tabs: [
         { slug: "queue",        labelKey: "tabModQueue",       en: "QUEUE",   section: "sec-modqueue" },
-        { slug: "blacklist",    labelKey: "tabModBlockedWords", en: "WORDS",
-          sections: ["sec-blacklist", "sec-filters"] },
+        { slug: "blacklist",    labelKey: "tabModBlockedWords", en: "WORDS", section: "sec-blacklist" },
         { slug: "bans",         labelKey: "tabModBlockedViewers", en: "VIEWERS",
           sections: ["sec-modbans-overview", "sec-fingerprints"] },
         { slug: "ratelimit",    labelKey: "tabModSendLimits",  en: "LIMITS",  section: "sec-ratelimit" },

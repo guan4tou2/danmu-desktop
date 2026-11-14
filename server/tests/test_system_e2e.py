@@ -17,8 +17,8 @@ import time
 import pytest
 from websockets.sync.client import connect
 
-from server import state
 from server.services import ws_queue
+from server.services.blacklist import add_keyword, remove_keyword
 from server.services.ws_state import get_ws_client_count
 
 # ─── 輔助函式 ─────────────────────────────────────────────────────────────────
@@ -155,7 +155,7 @@ def test_fire_image_flag_preserved(client, ws_server_port):
 
 def test_blacklisted_fire_not_delivered_to_overlay(client, ws_server_port):
     """被黑名單攔截的 fire 不應入列，overlay 不應收到任何 danmu"""
-    state.blacklist.add("BANNED_WORD")
+    add_keyword("BANNED_WORD")
     try:
         with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
             assert _wait_overlay_registered()
@@ -167,7 +167,7 @@ def test_blacklisted_fire_not_delivered_to_overlay(client, ws_server_port):
             msg = _recv(ws, timeout=1.0)
             assert msg is None, f"overlay unexpectedly received: {msg}"
     finally:
-        state.blacklist.discard("BANNED_WORD")
+        remove_keyword("BANNED_WORD")
 
 
 # ─── 多個 overlay 同時接收 ────────────────────────────────────────────────────

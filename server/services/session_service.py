@@ -14,6 +14,7 @@ Side effects on open_session():
 Side effects on close_session():
   * Sets broadcast mode to "standby" via broadcast service.
   * Appends closed session record to sessions_archive.jsonl.
+  * Removes block rules whose lifetime is "session" (services/filter_engine.py).
 
 The viewer learns about live → ended transitions by polling
 ``GET /session/public-state`` (v5.0.0 Phase 2 — replaces the legacy
@@ -264,6 +265,14 @@ def close_session() -> Dict[str, Any]:
 
     # Append archive record (outside lock)
     _append_archive(archived)
+
+    # 封鎖規則清單裡「到本場次結束」的那些在這裡清掉。
+    try:
+        from .filter_engine import filter_engine
+
+        filter_engine.clear_session_rules()
+    except Exception as exc:
+        logger.warning("Could not clear session-scoped block rules: %s", exc)
 
     # Set broadcast to standby
     try:

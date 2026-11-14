@@ -1,4 +1,4 @@
-from server import state
+from server.services.blacklist import add_keyword
 from server.services.ws_state import update_ws_client_count
 
 
@@ -27,7 +27,7 @@ def test_fire_validation_error_returns_details(client):
 
 def test_fire_blocked_keyword_returns_error(client):
     _register_ws_client()
-    state.blacklist.add("BLOCKED")
+    add_keyword("BLOCKED")
     response = client.post("/fire", json={"text": "BLOCKED message"})
     assert response.status_code == 400
     assert response.is_json

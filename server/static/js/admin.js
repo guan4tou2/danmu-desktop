@@ -118,6 +118,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // the history tabbed nav (retitled 紀錄 & 匯出); fonts folds into the
     // assets tabbed nav. Bookmarks land on the right tab via object form.
     ratelimit:  { nav: "moderation", tab: "ratelimit" },
+    // 2026-11-14 封鎖規則合一：黑名單與過濾規則現在是同一份清單。這兩個舊網址
+    // 以前沒有任何一張表接住，會掉回控制台。
+    blacklist:  { nav: "moderation", tab: "blacklist" },
+    filters:    { nav: "moderation", tab: "blacklist" },
     audit:      { nav: "history", tab: "audit" },
     fonts:      { nav: "assets", tab: "fonts" },
     // 2026-09-07 設計稿 08 · X1：擴充四合一，四條舊路由的書籤落到對應分頁。
@@ -461,7 +465,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "sec-modqueue",
         "sec-modbans-overview",
         "sec-blacklist",
-        "sec-filters",
         "sec-polls",
         "sec-security",
         "sec-ws-auth",
@@ -1186,53 +1189,8 @@ document.addEventListener("DOMContentLoaded", () => {
     `);
     scheduleIdleTask(initThemesManagement);
 
-    // Moderation Overview (AdminModerationPage layout): stats strip + banned/blacklist panel
-    settingsGrid.insertAdjacentHTML("beforeend", `
-      <div id="sec-blacklist" class="hud-page-stack lg:col-span-2" data-tpl="B">
-        <!-- v8（2026-08-19 設計稿 07 · R3）：五格 KPI 條撤掉。稿上這頁只有
-             「輸入列 → 命中時怎麼處理 → 封鎖字清單」三件事；RULES/BANNED/
-             MASKED/BLOCKED/REVIEW 五個數字是儀表板語言，不是這頁的工作。
-             data-mod-stat 契約保留在清單標題的計數裡。 -->
-        <div class="admin-ui-page-head">
-          <h2 class="admin-ui-page-title">${ServerI18n.t("modBlockedWordsTitle")}</h2>
-          <p class="admin-ui-page-note">${ServerI18n.t("modBlockedWordsNote")}</p>
-        </div>
-
-        <div class="admin-mod-addrow">
-          <input type="text" id="newKeywordInput" placeholder="${ServerI18n.t("modAddWordPlaceholder")}"
-            class="admin-ui-input admin-ui-grow">
-          <button id="addKeywordBtn" type="button" class="admin-ui-action is-primary">${ServerI18n.t("modAddWordBtn")}</button>
-        </div>
-
-        <div class="admin-ui-group">
-          <div class="admin-ui-group-row is-tall">
-            <span class="lbl">${ServerI18n.t("modOnHitLabel")}</span>
-            <span class="val">
-              <span class="admin-ui-seg" role="tablist" data-mod-onhit>
-                <button type="button" class="seg-item is-active" data-onhit="hide">${ServerI18n.t("modOnHitHide")}</button>
-                <button type="button" class="seg-item" data-onhit="mask">${ServerI18n.t("modOnHitMask")}</button>
-                <button type="button" class="seg-item" data-onhit="review">${ServerI18n.t("modOnHitReview")}</button>
-              </span>
-            </span>
-          </div>
-          <div class="admin-ui-group-row">
-            <span class="lbl">${ServerI18n.t("modSkipRepeatsLabel")}</span>
-            <span class="val"><input type="checkbox" class="admin-ui-checkbox" data-mod-skip-repeats /></span>
-          </div>
-        </div>
-
-        <div class="admin-ui-group-label">${ServerI18n.t("modBlockedWordsTitle")} · <span id="modBlacklistCount" data-mod-stat="banned">—</span></div>
-        <div class="admin-ui-group">
-          <div id="blacklistKeywords" class="admin-mod-wordlist">
-            <!-- Keywords will be listed here -->
-          </div>
-        </div>
-
-        <!-- 統計契約保留（admin-moderation.js 會寫入），不再佔版面 -->
-        <span hidden data-mod-stat="rules">—</span><span hidden data-mod-stat="masked">—</span>
-        <span hidden data-mod-stat="blocked">—</span><span hidden data-mod-stat="review">—</span>
-      </div>
-    `);
+    // 審核 › 封鎖字（sec-blacklist）由 admin-filters.js 注入：封鎖字、臨時規則與規則庫
+    // 合併成一份清單之後，整個分頁只有那一個區塊。
 
     // Danmu History Card
 
@@ -1415,7 +1373,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ratelimit / fingerprints). Each tab's section gets hidden by
     // AdminTabs.applyTabSectionVisibility when not active.
     // brief 0518-v3 #2: moderation gained queue + bans tabs (was deep-link only).
-    moderation:{ title: "審核",  kicker: "MODERATION · 審核與防護", sections: ["sec-modqueue", "sec-modbans-overview", "sec-blacklist", "sec-filters", "sec-ratelimit", "sec-fingerprints"] },
+    moderation:{ title: "審核",  kicker: "MODERATION · 審核與防護", sections: ["sec-modqueue", "sec-modbans-overview", "sec-blacklist", "sec-ratelimit", "sec-fingerprints"] },
     // v7 IA (2026-07-28): `ratelimit` demoted to _bareLegacyRedirects →
     // moderation/ratelimit (the tab owns sec-ratelimit).
     effects:   { title: "動畫效果",      kicker: "EFFECTS LIBRARY · 熱重載",  sections: ["sec-effects", "sec-effects-mgmt"] },
@@ -1986,7 +1944,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // History/blacklist event listeners moved to admin-history.js
+    // 封鎖規則清單的事件由 admin-filters.js 自己接（admin-history.js 已刪除）
 
     // Replay controls — wired by admin-replay-controls.js (extracted module).
 

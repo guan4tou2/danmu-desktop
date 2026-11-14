@@ -48,8 +48,8 @@
     { labelKey: "cmdkSettingViewerFields",   route: "viewer", tab: "fields", section: "sec-viewer-config-fields" },
     { labelKey: "cmdkSettingViewerDefaults", route: "viewer", tab: "defaults", section: "sec-viewer-config-defaults" },
     { labelKey: "cmdkSettingViewerLimits",   route: "viewer", tab: "limits", section: "sec-viewer-config-limits" },
-    { labelKey: "cmdkSettingBlacklist",   route: "moderation",section: "sec-blacklist" },
-    { labelKey: "cmdkSettingFilters",     route: "moderation",section: "sec-filters" },
+    // 2026-11-14：黑名單與過濾規則合成一份清單，⌘K 也只剩一個入口。
+    { labelKey: "cmdkSettingBlacklist",   route: "moderation/blacklist", section: "sec-blacklist" },
     { labelKey: "cmdkSettingRatelimit",   route: "moderation", tab: "ratelimit", section: "sec-ratelimit" },
     { labelKey: "cmdkSettingEffects",       route: "effects",   section: "sec-effects" },
     { labelKey: "cmdkSettingEffectsMgmt", route: "effects", section: "sec-effects-mgmt" },

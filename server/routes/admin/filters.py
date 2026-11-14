@@ -1,10 +1,37 @@
-"""Filter engine API routes."""
+"""封鎖規則 API（後台「封鎖字」頁的清單）。
+
+驗證只有一處：FilterEngine._validate（裡面用 validation.FilterRuleSchema）。新增、
+更新、測試都走它，這一層只負責 HTTP 形狀與錯誤格式。
+"""
 
 from flask import request
 
+from ...services.filter_engine import RuleValidationError
 from ...services.security import rate_limit
-from ...services.validation import FilterRuleSchema, validate_request
 from . import _json_response, admin_bp, require_csrf, require_login
+
+
+def _engine():
+    from ...services.filter_engine import filter_engine
+
+    return filter_engine
+
+
+def _invalid(err: RuleValidationError, legacy_shape: bool = False):
+    # 舊的更新端點回的是 {"error": {...逐欄位...}}，新增端點是
+    # {"error": "Validation failed", "details": {...}}；兩種形狀都保留，另外帶 code
+    # 讓後台挑翻譯文案（伺服器的英文訊息不直接顯示給主持人）。
+    if legacy_shape:
+        return _json_response({"error": err.details, "code": err.code}, 400)
+    return _json_response(
+        {
+            "error": "Validation failed",
+            "message": str(err),
+            "code": err.code,
+            "details": err.details,
+        },
+        400,
+    )
 
 
 @admin_bp.route("/filters/add", methods=["POST"])
@@ -13,14 +40,13 @@ from . import _json_response, admin_bp, require_csrf, require_login
 @require_login
 def add_filter_rule():
     data = request.get_json(silent=True) or {}
-    validated, errors = validate_request(FilterRuleSchema, data)
-    if errors:
-        return _json_response({"error": "Validation failed", "details": errors}, 400)
-    from ...services.filter_engine import filter_engine
-
+    if not isinstance(data, dict):
+        return _json_response({"error": "Validation failed"}, 400)
     try:
-        rule_id = filter_engine.add_rule(validated)
+        rule_id = _engine().add_rule(data)
         return _json_response({"rule_id": rule_id})
+    except RuleValidationError as e:
+        return _invalid(e)
     except ValueError as e:
         return _json_response({"error": str(e)}, 400)
 
@@ -31,10 +57,8 @@ def add_filter_rule():
 @require_login
 def remove_filter_rule():
     data = request.get_json(silent=True) or {}
-    rule_id = data.get("rule_id", "")
-    from ...services.filter_engine import filter_engine
-
-    if filter_engine.remove_rule(rule_id):
+    rule_id = data.get("rule_id", "") if isinstance(data, dict) else ""
+    if _engine().remove_rule(rule_id):
         return _json_response({"message": "Rule removed"})
     return _json_response({"error": "Rule not found"}, 404)
 
@@ -45,22 +69,17 @@ def remove_filter_rule():
 @require_login
 def update_filter_rule():
     data = request.get_json(silent=True) or {}
-    rule_id = data.get("rule_id", "")
-    updates = data.get("updates", {})
+    rule_id = data.get("rule_id", "") if isinstance(data, dict) else ""
+    updates = data.get("updates", {}) if isinstance(data, dict) else None
     if not rule_id or not isinstance(updates, dict):
         return _json_response({"error": "Missing rule_id or updates"}, 400)
 
-    from ...services.filter_engine import filter_engine
-    from ...services.validation import FilterRuleUpdateSchema, validate_request
-
-    validated_updates, errors = validate_request(FilterRuleUpdateSchema, updates)
-    if errors:
-        return _json_response({"error": errors}, 400)
-
     try:
-        if filter_engine.update_rule(rule_id, validated_updates):
+        if _engine().update_rule(rule_id, updates):
             return _json_response({"message": "Rule updated"})
         return _json_response({"error": "Rule not found"}, 404)
+    except RuleValidationError as e:
+        return _invalid(e, legacy_shape=True)
     except ValueError as e:
         return _json_response({"error": str(e)}, 400)
 
@@ -68,9 +87,16 @@ def update_filter_rule():
 @admin_bp.route("/filters/list", methods=["GET"])
 @require_login
 def list_filter_rules():
-    from ...services.filter_engine import filter_engine
+    return _json_response({"rules": _engine().list_rules()})
 
-    return _json_response({"rules": filter_engine.list_rules()})
+
+@admin_bp.route("/filters/clear-session", methods=["POST"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_csrf
+@require_login
+def clear_session_filter_rules():
+    """移除所有「到本場次結束」的規則（場次結束時也會自動做一次）。"""
+    return _json_response({"removed": _engine().clear_session_rules()})
 
 
 @admin_bp.route("/filters/test", methods=["POST"])
@@ -80,12 +106,13 @@ def list_filter_rules():
 def test_filter_rule():
     """Test if a filter rule matches sample text."""
     data = request.get_json(silent=True) or {}
-    rule_data = data.get("rule", {})
-    sample_text = data.get("text", "")
-    from ...services.filter_engine import filter_engine
+    rule_data = data.get("rule", {}) if isinstance(data, dict) else {}
+    sample_text = data.get("text", "") if isinstance(data, dict) else ""
+    if not isinstance(rule_data, dict) or not isinstance(sample_text, str):
+        return _json_response({"error": "Validation failed"}, 400)
 
     try:
-        result = filter_engine.test_rule(rule_data, sample_text)
+        result = _engine().test_rule(rule_data, sample_text)
         return _json_response(
             {
                 "action": result.action,
@@ -93,6 +120,8 @@ def test_filter_rule():
                 "reason": result.reason,
             }
         )
+    except RuleValidationError as e:
+        return _json_response({"error": str(e), "code": e.code}, 400)
     except ValueError as e:
         return _json_response({"error": str(e)}, 400)
 
@@ -103,10 +132,9 @@ def test_filter_rule():
 def get_filter_events():
     """Recent filter match events (block / mask / replace / allow).
 
-    Powers the Moderation page 即時審核日誌. Caller passes ``?since=<seq>``
+    Powers the 命中紀錄 fold on the block-rule list. Caller passes ``?since=<seq>``
     to get only newer events; first call should pass 0 (or omit) to fetch
-    the latest 50. Response also includes ``counts_24h`` for the
-    Moderation overview strip's MASKED·24H / BLOCKED·24H tiles.
+    the latest 50. Response also includes ``counts_24h`` (notifications use it).
     """
     from ...services import filter_events
 
@@ -114,7 +142,10 @@ def get_filter_events():
         since = int(request.args.get("since", "0") or 0)
     except (TypeError, ValueError):
         since = 0
-    limit = max(1, min(200, int(request.args.get("limit", "50") or 50)))
+    try:
+        limit = max(1, min(200, int(request.args.get("limit", "50") or 50)))
+    except (TypeError, ValueError):
+        limit = 50
     events = filter_events.recent(since=since, limit=limit)
     latest_seq = events[0]["seq"] if events else since
     return _json_response(

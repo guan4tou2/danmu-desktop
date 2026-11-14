@@ -299,5 +299,13 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
 
         fire_token.reload()
 
+    # 封鎖規則同理：引擎把規則放在記憶體裡。不重新讀的話，還原的規則要等重啟才生效，
+    # 而且下一次在後台改任何一條規則，就會用記憶體裡的舊清單把還原的檔案蓋回去。
+    from .filter_engine import filter_engine
+
+    rules_path = Path(filter_engine.path).resolve()
+    if any(t.resolve() == rules_path for t, _ in safe_writes):
+        filter_engine.reload()
+
     out["ok"] = len(out["errors"]) == 0
     return out

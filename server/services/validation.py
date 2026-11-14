@@ -317,8 +317,10 @@ class SchedulerCreateSchema(Schema):
 
 def _safe_compile_regex(pattern: str) -> None:
     """Attempt to compile a regex; raise ValidationError if it's invalid or dangerous."""
+    from . import rule_regex
+
     try:
-        compiled = _re.compile(pattern, _re.IGNORECASE)
+        compiled = rule_regex.compile_pattern(pattern)
     except _re.error as exc:
         raise ValidationError(f"Invalid regex: {exc}")
     # Heuristic ReDoS guard: reject patterns with nested quantifiers on groups/chars
@@ -327,62 +329,82 @@ def _safe_compile_regex(pattern: str) -> None:
         raise ValidationError("Regex pattern may cause catastrophic backtracking.")
     # Test against a short safe input to catch simple ReDoS patterns
     try:
-        compiled.match("a" * 50)
+        rule_regex.run_pattern(compiled, "a" * 50, mode="match")
     except Exception:
         raise ValidationError("Regex pattern failed safety check.")
 
 
+# 封鎖規則（services/filter_engine.py）的型別、動作與期限。
+#   word        封鎖字：關鍵字包含＋封鎖，在其他規則之後比對（原本的字串黑名單）
+#   keyword     關鍵字包含＋放行／送審（keyword＋block 一律存成 word）
+#   regex       正規式；replace 是「正規式＋替換」
+#   rate_limit  同一個指紋在時間窗內的則數
+#   fingerprint 指紋完全相同
+FILTER_RULE_TYPES = ("word", "keyword", "regex", "replace", "rate_limit", "fingerprint")
+FILTER_RULE_ACTIONS = ("block", "replace", "allow", "review")
+FILTER_RULE_LIFETIMES = ("permanent", "session", "timed")
+FILTER_RULE_MAX_DURATION_SEC = 30 * 24 * 3600
+
+
 class FilterRuleSchema(Schema):
-    """過濾規則請求驗證"""
+    """封鎖規則的唯一驗證。
+
+    新增與更新都走這一份：更新是把現有規則與改動合併成完整的一筆，再整筆驗一次
+    （FilterEngine._validate）。以前更新有自己一份「全部欄位選填」的 schema，只改
+    pattern 時 type 不在資料裡，正規式的安全檢查就整段被跳過。
+    """
 
     type = fields.Str(
         required=True,
-        validate=validate.OneOf(
-            ["keyword", "regex", "replace", "rate_limit"],
-            error="Unknown filter type.",
-        ),
+        validate=validate.OneOf(FILTER_RULE_TYPES, error="Unknown filter type."),
     )
-    pattern = fields.Str(required=True, validate=validate.Length(min=1, max=500))
+    # rate_limit 不看 pattern（它數的是同一個指紋的則數），只有它可以留空。
+    pattern = fields.Str(load_default="", validate=validate.Length(max=500))
     replacement = fields.Str(load_default="***", validate=validate.Length(max=200))
     action = fields.Str(
         load_default="block",
         # 2026-05-18 design v4-r3: `review` action holds matched messages
         # in the moderation queue for human approve/reject. See
         # services/mod_queue.py + admin-modqueue.js.
-        validate=validate.OneOf(["block", "replace", "allow", "review"]),
+        validate=validate.OneOf(FILTER_RULE_ACTIONS),
     )
     priority = fields.Int(load_default=100, validate=validate.Range(min=0, max=9999))
     enabled = fields.Bool(load_default=True)
     # rate_limit specific
     max_count = fields.Int(load_default=5, validate=validate.Range(min=1, max=100))
     window_sec = fields.Float(load_default=60, validate=validate.Range(min=1, max=3600))
+    # 期限：permanent 永久、session 到本場次結束、timed 限時（duration_sec 從現在起算；
+    # 已存在的限時規則更新時沒給 duration_sec 就沿用 expires_at）
+    lifetime = fields.Str(load_default="permanent", validate=validate.OneOf(FILTER_RULE_LIFETIMES))
+    duration_sec = fields.Int(
+        load_default=None,
+        allow_none=True,
+        validate=validate.Range(min=60, max=FILTER_RULE_MAX_DURATION_SEC),
+    )
+    expires_at = fields.Float(load_default=None, allow_none=True)
 
     @validates_schema
-    def validate_pattern_safe(self, data, **kwargs):
-        if data.get("type") in ("regex", "replace") and data.get("pattern"):
-            _safe_compile_regex(data["pattern"])
-
-
-class FilterRuleUpdateSchema(FilterRuleSchema):
-    """過濾規則更新驗證（所有欄位為可選，繼承自 FilterRuleSchema）"""
-
-    class Meta:
-        unknown = EXCLUDE
-
-    # Override all fields to be optional (remove required=True and load_default)
-    type = fields.Str(
-        validate=validate.OneOf(
-            ["keyword", "regex", "replace", "rate_limit"],
-            error="Unknown filter type.",
-        ),
-    )
-    pattern = fields.Str(validate=validate.Length(min=1, max=500))
-    replacement = fields.Str(validate=validate.Length(max=200))
-    action = fields.Str(validate=validate.OneOf(["block", "replace", "allow", "review"]))
-    priority = fields.Int(validate=validate.Range(min=0, max=9999))
-    enabled = fields.Bool()
-    max_count = fields.Int(validate=validate.Range(min=1, max=100))
-    window_sec = fields.Float(validate=validate.Range(min=1, max=3600))
+    def validate_rule(self, data, **kwargs):
+        rule_type = data.get("type")
+        pattern = data.get("pattern") or ""
+        if not pattern and rule_type != "rate_limit":
+            raise ValidationError("Length must be between 1 and 500.", "pattern")
+        if rule_type in ("regex", "replace") and pattern:
+            _safe_compile_regex(pattern)
+        if (
+            rule_type in ("word", "keyword")
+            and pattern
+            and not _re.match(_NO_CTRL_CHARS_RE, pattern)
+        ):
+            raise ValidationError("Pattern cannot contain control characters.", "pattern")
+        if rule_type == "word" and data.get("action") != "block":
+            raise ValidationError("A blocked word can only block.", "action")
+        if (
+            data.get("lifetime") == "timed"
+            and data.get("duration_sec") is None
+            and data.get("expires_at") is None
+        ):
+            raise ValidationError("A timed rule needs a duration.", "duration_sec")
 
 
 class WebhookSchema(Schema):

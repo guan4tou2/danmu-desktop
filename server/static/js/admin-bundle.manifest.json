@@ -35,7 +35,6 @@
     "admin-display.js",
     "admin.js",
     "admin-poll.js",
-    "admin-history.js",
     "admin-history-v2.js",
     "admin-replay-bar.js",
     "admin-replay-controls.js",
