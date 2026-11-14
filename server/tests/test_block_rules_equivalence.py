@@ -15,6 +15,7 @@ import json
 
 import pytest
 
+from server.services import session_service
 from server.services.filter_engine import FilterEngine
 from server.tests import _legacy_filter_engine_v58 as legacy
 
@@ -198,6 +199,8 @@ def test_a_converted_file_backs_up_before_converting_even_with_lifetimes(tmp_pat
         [{"id": "k1", "type": "keyword", "pattern": "x", "action": "block", "lifetime": "session"}]
     )
     path.write_text(original, encoding="utf-8")
+    # 場次進行中才會載入本場次規則（沒有場次時它們是上一場留下來的，不載入）。
+    session_service.open_session("場")
     FilterEngine._instance = None
     try:
         engine = FilterEngine(path=str(path))

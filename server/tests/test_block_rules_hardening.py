@@ -1493,3 +1493,114 @@ def test_a_rules_file_that_cannot_be_read_at_all_is_kept_before_it_is_overwritte
 
     engine.add_rule({"type": "word", "pattern": "新的"})  # 這一步才會蓋掉原檔
     assert copies[0].read_bytes() == content
+
+
+# ── 外部審查（第二批）：場次結束後不能留下還在擋訊息的本場次規則 ──────────────
+
+
+def _session_rule(pattern="本場"):
+    return {"type": "keyword", "pattern": pattern, "action": "review", "lifetime": "session"}
+
+
+def test_closing_a_session_drops_its_rules_even_when_the_file_cannot_be_written(unwritable, caplog):
+    session_service.open_session("場")
+    filter_engine.add_rule(_session_rule())
+    filter_engine.add_rule({"type": "word", "pattern": "永久"})
+    assert filter_engine.check("本場的訊息").action == "review"
+
+    unwritable()
+    with caplog.at_level("WARNING", logger="server.services.filter_engine"):
+        session_service.close_session()  # 場次照常結束，不丟例外
+
+    assert filter_engine.check("本場的訊息").action == "pass"  # 下一場的訊息不再被它擋
+    assert [r["pattern"] for r in filter_engine.list_rules()] == ["永久"]
+    assert "could not write" in caplog.text
+    # 檔案沒寫成，殘留的那條在沒有場次時重啟也不會被載入
+    assert "本場" in Path(filter_engine.path).read_text(encoding="utf-8")
+    assert [r.pattern for r in _fresh_engine(filter_engine.path)._rules] == ["永久"]
+
+
+def test_clearing_session_rules_by_hand_still_fails_loudly(unwritable):
+    session_service.open_session("場")
+    filter_engine.add_rule(_session_rule())
+    unwritable()
+    with pytest.raises(engine_module.RuleSaveError):
+        filter_engine.clear_session_rules()
+    assert filter_engine.check("本場的訊息").action == "review"  # 主持人看得到失敗，清單沒變
+
+
+def _stored(rule_id, lifetime, **extra):
+    return {
+        "id": rule_id,
+        "type": "keyword",
+        "pattern": rule_id,
+        "action": "review",
+        "lifetime": lifetime,
+        **extra,
+    }
+
+
+def test_restoring_session_rules_with_no_session_live_does_not_install_them(caplog):
+    data = json.dumps([_stored("perm", "permanent"), _stored("sess", "session")]).encode()
+    with caplog.at_level("WARNING", logger="server.services.filter_engine"):
+        assert engine_module.restore_rules_file(data) == 1  # 不因為少一條被當成載入失敗
+    assert [r["id"] for r in filter_engine.list_rules()] == ["perm"]
+    assert filter_engine.check("sess").action == "pass"
+    assert "no session is live" in caplog.text
+
+    filter_engine.add_rule({"type": "word", "pattern": "新的"})  # 下一次寫檔，檔案裡也沒有它了
+    assert "sess" not in Path(filter_engine.path).read_text(encoding="utf-8")
+
+
+def test_restoring_session_rules_during_a_session_keeps_them_until_it_ends():
+    session_service.open_session("場")
+    data = json.dumps([_stored("perm", "permanent"), _stored("sess", "session")]).encode()
+    assert engine_module.restore_rules_file(data) == 2
+    assert filter_engine.check("sess").action == "review"
+    session_service.close_session()
+    assert [r["id"] for r in filter_engine.list_rules()] == ["perm"]
+
+
+def test_session_rules_survive_a_restart_while_the_session_is_live():
+    session_service.open_session("場")
+    filter_engine.add_rule(_session_rule())
+    assert [r.pattern for r in _fresh_engine(filter_engine.path)._rules] == ["本場"]
+
+
+def test_not_knowing_whether_a_session_is_live_keeps_the_rules(monkeypatch):
+    Path(filter_engine.path).write_text(json.dumps([_stored("sess", "session")]), encoding="utf-8")
+
+    def cannot_tell():
+        raise OSError("state file unreadable")
+
+    monkeypatch.setattr(engine_module, "_session_live", cannot_tell)
+    assert [r.id for r in _fresh_engine(filter_engine.path)._rules] == ["sess"]
+
+
+@pytest.mark.parametrize(
+    "raw",
+    ["10**400", "1e999", "-1e999", "NaN", "true", '"soon"', "null"],
+    ids=["huge_int", "inf", "neg_inf", "nan", "bool", "text", "null"],
+)
+def test_an_expiry_that_cannot_be_used_makes_the_rule_permanent(raw):
+    """expires_at 是超出 float 範圍的整數時，以前 float() 丟 OverflowError、引擎建不起來。"""
+    literal = str(10**400) if raw == "10**400" else raw
+    content = (
+        '[{"id": "t", "type": "keyword", "pattern": "x", "action": "review", '
+        '"lifetime": "timed", "expires_at": ' + literal + "}]"
+    )
+    path = Path(filter_engine.path)
+    path.write_text(content, encoding="utf-8")
+    engine = _fresh_engine(path)  # 伺服器起得來
+    assert [(r.id, r.lifetime, r.expires_at) for r in engine._rules] == [("t", "permanent", None)]
+
+    assert engine_module.restore_rules_file(content.encode()) == 1  # 備份還原也一樣
+    assert filter_engine.get_rule("t")["lifetime"] == "permanent"
+
+
+def test_a_usable_expiry_is_kept():
+    future = time.time() + 3600
+    content = json.dumps([_stored("t", "timed", expires_at=future)])
+    Path(filter_engine.path).write_text(content, encoding="utf-8")
+    rule = _fresh_engine(filter_engine.path)._rules[0]
+    assert (rule.lifetime, rule.expires_at) == ("timed", future)

@@ -163,6 +163,7 @@
   let _submitting = false; // 送出中：連按 Enter 不會送第二次
   let _savingId = null; // 正在送出儲存的那條規則（新增時是 null）
   let _formSeq = 0; // 每次開始新增／編輯（含整頁重繪）加一，認出儲存是哪一次表單操作發起的
+  let _saveSeq = 0; // 每次送出儲存加一：收尾時只有「目前這一次」能清掉送出中的狀態
   // 有沒有進行中的場次（/admin/filters/list 的 session_live）。沒有時不提供「到本場次
   // 結束」：那時沒有場次可以結束，後端也不收。
   let _sessionLive = true;
@@ -485,6 +486,9 @@
     const url = editing ? "/admin/filters/update" : "/admin/filters/add";
     const payload = editing ? { rule_id: editing.id, updates: body } : body;
     const button = el("blockRuleSubmit");
+    // 整頁重繪會把 _submitting 清掉、允許下一次儲存；前一次回來收尾時不能把下一次的
+    // 送出中狀態一起清掉（否則同一筆會被送兩次）。
+    const saveSeq = ++_saveSeq;
     _submitting = true;
     _savingId = editing ? editing.id : null;
     if (button) button.disabled = true;
@@ -528,8 +532,10 @@
       console.error("Save block rule error:", err);
       window.showToast(t(editing ? "updateRuleFailed" : "addRuleFailed"), false);
     } finally {
-      _submitting = false;
-      _savingId = null;
+      if (saveSeq === _saveSeq) {
+        _submitting = false;
+        _savingId = null;
+      }
       // 整頁重繪過的話，這顆按鈕已經不是畫面上那顆；畫面上那顆本來就沒被停用。
       if (button) button.disabled = false;
     }
@@ -888,6 +894,8 @@
     _editing = null;
     _scope = "all";
     _submitting = false;
+    _savingId = null;
+    _saveSeq += 1; // 還在路上的那次儲存回來時，不再碰這份新表單的送出狀態
     _formSeq += 1;
     settingsGrid.insertAdjacentHTML("beforeend", buildSectionHtml());
     const section = document.getElementById("sec-blacklist");

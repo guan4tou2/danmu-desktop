@@ -409,11 +409,37 @@ describe("block rule list", () => {
     expect(document.getElementById("blockRuleInput").value).toBe("");
     expect(document.getElementById("blockRuleCancel").hidden).toBe(true);
 
+    // 伺服器收下了這次修改：之後抓清單拿到的是新值
+    rules = rules.map((r) => (r.id === "kw1" ? { ...r, pattern: gates[0].body.updates.pattern } : r));
     gates[0].release();
     await flush();
     respond = null;
     editBtn("kw1").click();
-    expect(document.getElementById("blockRuleInput").value).toBe("legacy");
+    expect(document.getElementById("blockRuleInput").value).toBe("changed");
+  });
+
+  test("a save that finishes after a re-render does not unlock the save that followed it", async () => {
+    const gates = pending("/admin/filters/add");
+    pressEnter("first");
+    await flush();
+    await rerender(); // 重繪後的新表單可以送下一筆
+    pressEnter("second");
+    await flush();
+    expect(gates).toHaveLength(2);
+
+    gates[0].release(); // 第一筆回來收尾：第二筆還在送，不能因此又能送一次
+    await flush();
+    pressEnter("second");
+    await flush();
+    expect(gates).toHaveLength(2);
+
+    gates[1].release();
+    await flush();
+    respond = null;
+    calls = [];
+    pressEnter("third"); // 第二筆也回來之後，才能再送
+    await flush();
+    expect(lastPost("/admin/filters/add").body).toMatchObject({ pattern: "third" });
   });
 
   test("a 404 for an old save does not reset an edit of another rule", async () => {

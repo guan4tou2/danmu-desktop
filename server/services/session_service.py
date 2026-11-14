@@ -270,7 +270,7 @@ def close_session() -> Dict[str, Any]:
     try:
         from .filter_engine import filter_engine
 
-        filter_engine.clear_session_rules()
+        filter_engine.clear_session_rules(must_save=False)
     except Exception as exc:
         logger.warning("Could not clear session-scoped block rules: %s", exc)
 

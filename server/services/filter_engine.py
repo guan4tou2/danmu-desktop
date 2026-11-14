@@ -36,6 +36,7 @@ import dataclasses
 import hashlib
 import json
 import logging
+import math
 import os
 import re
 import shutil
@@ -169,6 +170,22 @@ def _number(entry: dict, key: str, default: Any, kind: type) -> Any:
         raise ValueError(f"{key} is not a number ({value!r})") from exc
 
 
+def _expiry(value: Any) -> Optional[float]:
+    """規則檔裡的 expires_at → 秒數；不能當到期時間用的回 None（那條規則當永久）。
+
+    不是數字、布林、NaN／無限大都算不能用。超出 float 範圍的整數（例如 10**400）
+    轉換時丟 OverflowError——那等於「永遠不到期」，一樣當永久，不讓它變成沒人接的
+    例外。
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    try:
+        seconds = float(value)
+    except OverflowError:
+        return None
+    return seconds if math.isfinite(seconds) else None
+
+
 def _storable(text: str) -> bool:
     """*text* 寫得進規則檔（UTF-8）嗎？JSON 的 ``\\ud800`` 這類跳脫會解成落單的代理
     字元，Python 字串收得下、存檔時卻編碼不了。"""
@@ -207,11 +224,9 @@ def _parse_entry(entry: Any) -> tuple[FilterRule, bool]:
     lifetime = entry.get("lifetime", "permanent")
     if lifetime not in ("permanent", "session", "timed"):
         lifetime = "permanent"
-    expires_at = entry.get("expires_at")
-    if lifetime == "timed" and (
-        isinstance(expires_at, bool) or not isinstance(expires_at, (int, float))
-    ):
-        lifetime, expires_at = "permanent", None
+    expires_at = _expiry(entry.get("expires_at")) if lifetime == "timed" else None
+    if lifetime == "timed" and expires_at is None:
+        lifetime = "permanent"
     converted = _is_legacy_keyword_block(rule_type, action)
     rule = FilterRule(
         id=rule_id,
@@ -224,7 +239,7 @@ def _parse_entry(entry: Any) -> tuple[FilterRule, bool]:
         max_count=_number(entry, "max_count", 0, int),
         window_sec=_number(entry, "window_sec", 0.0, float),
         lifetime=lifetime,
-        expires_at=float(expires_at) if lifetime == "timed" else None,
+        expires_at=expires_at,
     )
     return rule, converted
 
@@ -305,6 +320,7 @@ class FilterEngine:
         self._lock = threading.RLock()
         self._rules: list[FilterRule] = []
         self._regex_cache: dict[str, re.Pattern] = {}
+        self._stale_session_rules = 0  # 上一次 _load 因為沒有場次而沒載入的規則數
         self._rate_tracker: dict[str, list[float]] = {}
         self._check_count = 0
         if path is None:
@@ -447,13 +463,24 @@ class FilterEngine:
             words = [r for r in self._rules if r.type == "word"]
             return [r.to_dict() for r in self._sorted_rules() + words]
 
-    def clear_session_rules(self) -> int:
-        """移除所有「到本場次結束」的規則，回傳移除幾條。場次結束時自動呼叫。"""
+    def clear_session_rules(self, must_save: bool = True) -> int:
+        """移除所有「到本場次結束」的規則，回傳移除幾條。
+
+        must_save=True（後台按「清除」）：寫不進去就丟 RuleSaveError，清單不變，主持人
+        看得到失敗。must_save=False（場次結束時自動呼叫）：先從記憶體拿掉再寫檔，
+        寫不進去只記警告——場次已經結束，這些規則不能因為磁碟的問題繼續擋下一場的
+        訊息。檔案裡殘留的那幾條，下一次寫檔時清掉；在那之前重啟的話，_load 看到沒有
+        進行中的場次也不會載入它們。
+        """
         with self._lock:
             kept = [r for r in self._rules if r.lifetime != "session"]
             removed = len(self._rules) - len(kept)
             if removed:
-                self._commit(kept)
+                if must_save:
+                    self._commit(kept)
+                else:
+                    self._rules = kept
+                    self._save()
             return removed
 
     def test_rule(self, rule_data: dict[str, Any], sample_text: str) -> FilterResult:
@@ -602,8 +629,9 @@ class FilterEngine:
             self._regex_cache.clear()
             try:
                 self._load()
-                if len(self._rules) != len(parsed):
-                    raise ValueError(f"only {len(self._rules)} of {len(parsed)} rules loaded")
+                loaded = len(self._rules) + self._stale_session_rules
+                if loaded != len(parsed):
+                    raise ValueError(f"only {loaded} of {len(parsed)} rules loaded")
             except Exception as exc:
                 self._rules, self._regex_cache = old_rules, old_cache
                 self._undo_restore(previous, legacy_copy, had_legacy_copy)
@@ -973,6 +1001,19 @@ class FilterEngine:
                     except ValueError:
                         rule.enabled = False
                 rules.append(rule)
+            # 沒有進行中的場次時，檔案裡「到本場次結束」的規則是上一場留下來的（場次
+            # 結束時寫檔失敗），或是從別處還原進來的：沒有場次可以結束它們，不載入。
+            # 檔案這時不動，下一次寫檔自然就沒有它們。
+            self._stale_session_rules = 0
+            if any(r.lifetime == "session" for r in rules) and not self._session_live_at_load():
+                live = [r for r in rules if r.lifetime != "session"]
+                self._stale_session_rules = len(rules) - len(live)
+                logger.warning(
+                    "Block rules: %d session rule(s) in %s were not loaded: no session is live",
+                    self._stale_session_rules,
+                    self._path,
+                )
+                rules = live
             self._rules = rules
             kept_skipped = True
             if skipped:
@@ -1017,6 +1058,15 @@ class FilterEngine:
                     "rules will overwrite it."
                 ),
             )
+
+    @staticmethod
+    def _session_live_at_load() -> bool:
+        """讀檔時問場次服務有沒有進行中的場次；問不到就當作有（寧可多載入）。"""
+        try:
+            return _session_live()
+        except Exception as exc:  # 場次狀態檔讀不到之類
+            logger.warning("Block rules: could not tell whether a session is live: %s", exc)
+            return True
 
     def _keep_unreadable_copy(self) -> bool:
         """規則檔裡有條目解析不了時，在旁邊留一份原檔。
