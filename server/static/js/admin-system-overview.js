@@ -234,10 +234,7 @@
       if (!a || a.disabled) return;
       if (a.dataset.sohAction === "copy-url") {
         const url = document.getElementById("sysoPublicUrl")?.textContent || "";
-        navigator.clipboard?.writeText(url).then(
-          () => window.showToast && window.showToast(ServerI18n.t("sohCopied"), true),
-          () => window.showToast && window.showToast(ServerI18n.t("sohCopyFailed"), false)
-        );
+        window.AdminUtils.copyText(url);
         return;
       }
       if (a.dataset.sohAction === "show-qr") {

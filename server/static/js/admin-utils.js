@@ -170,7 +170,39 @@
     };
   }
 
+  // 複製文字，結果一定有 toast（成功用 okMessage，預設「已複製」；失敗「複製失敗」）。
+  // 非安全連線（主持人用區網 IP 以 http 開後台）下 navigator.clipboard 不存在，
+  // 或權限被拒時，退回隱藏 textarea + execCommand("copy")。回傳 Promise<boolean>。
+  function _execCopy(text) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = !!document.execCommand("copy"); } catch (_) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  function copyText(text, okMessage) {
+    const t = (k) => (window.ServerI18n ? window.ServerI18n.t(k) : k);
+    const done = (ok) => {
+      if (window.showToast) window.showToast(ok ? (okMessage || t("sohCopied")) : t("sohCopyFailed"), ok);
+      return ok;
+    };
+    if (!text) return Promise.resolve(done(false));
+    const clip = navigator.clipboard;
+    if (clip && typeof clip.writeText === "function") {
+      return clip.writeText(text).then(() => done(true), () => done(_execCopy(text)));
+    }
+    return Promise.resolve(done(_execCopy(text)));
+  }
+
   window.AdminUtils = {
+    copyText: copyText,
     DETAILS_STATE_KEY: DETAILS_STATE_KEY,
     loadDetailsState: loadDetailsState,
     saveDetailsState: saveDetailsState,

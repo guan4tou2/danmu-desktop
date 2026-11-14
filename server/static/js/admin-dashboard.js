@@ -519,17 +519,50 @@
 
   // ── 控制台的顯示層卡（設計稿 06 · K1）────────────────────────────
   //
-  // 全頁唯一的狀態顯示。狀態有兩個來源，缺一不可：
-  //   · /overlay_status → 有幾台顯示層連著（沒有裝置就沒東西可顯示）
-  //   · /admin/broadcast/status → 主持人有沒有把渲染打開
-  // 兩者都成立才算「顯示中」。
+  // 全頁唯一的狀態顯示。兩個來源各說一件事，不合併成一個開關：
+  //   · /admin/broadcast/status → 顯示開著還是暫停（按鈕、色點、文字都跟它）
+  //   · /overlay_status → 有幾個顯示端連著（0 也照實寫出來）
+  // 字樣由 AdminOverlayControl.statusText / toggleKey 決定，與顯示層頁同一份。
+  //
+  // 狀態快取在 _cockpitState，畫面一律從它重畫：
+  //   · 自己的輪詢（只在卡片看得見時打 API）
+  //   · admin-overlay-state 事件（任何入口切換成功、顯示層頁輪詢）——卡片
+  //     看不見也照寫，切回 #/live 時已經是新的
+  //   · admin-route-applied 進到控制台的那一刻，先用快取畫、再補問一次
   let _cockpitTimer = null;
+  let _cockpitState = null;
+  // 每次事件更新顯示狀態就 +1。輪詢開始時記下當時的值；回來時若已不同，
+  // 代表期間有更新的事件（例如剛按了暫停），輪詢讀到的 mode 是舊的，不採用。
+  let _cockpitRev = 0;
+
+  function renderCockpitOverlay() {
+    const card = document.querySelector("[data-cockpit-overlay]");
+    const ctl = window.AdminOverlayControl;
+    const st = _cockpitState;
+    if (!card || !ctl || !st) return;
+    card.classList.toggle("is-on", st.live);
+    // 只在內容真的變了才寫入：每次寫 textContent 都是一次 DOM 變動，路由的
+    // MutationObserver 會看到，沒有必要讓每次輪詢都驚動它。
+    const setText = (el, text) => { if (el.textContent !== text) el.textContent = text; };
+    const status = card.querySelector("[data-cockpit-status]");
+    if (status) setText(status, ctl.statusText(st.live, st.count));
+    // data-i18n 一起換，切換語言時才不會跳回舊字。
+    const toggle = card.querySelector('[data-cockpit-action="toggle"]');
+    if (toggle) {
+      toggle.dataset.i18n = ctl.toggleKey(st.live);
+      setText(toggle, ServerI18n.t(toggle.dataset.i18n));
+      toggle.dataset.next = st.live ? "standby" : "live";
+    }
+  }
 
   async function refreshCockpitOverlay() {
     const card = document.querySelector("[data-cockpit-overlay]");
     if (!card || card.offsetParent === null) return;
-    let count = 0;
-    let live = false;
+    const rev = _cockpitRev;
+    // null = 這次沒問到。問不到就沿用已知的值，不要把「不知道」畫成
+    // 「已暫停、0 個顯示端」。
+    let count = null;
+    let live = null;
     try {
       const r = await fetch("/overlay_status", { credentials: "same-origin" });
       if (r.ok) count = (await r.json()).overlay_count || 0;
@@ -538,26 +571,32 @@
       const r = await fetch("/admin/broadcast/status", { credentials: "same-origin" });
       if (r.ok) live = (await r.json()).mode === "live";
     } catch (_) {}
-
-    const on = count > 0 && live;
-    card.classList.toggle("is-on", on);
-    const status = card.querySelector("[data-cockpit-status]");
-    if (status) {
-      status.textContent = on
-        ? ServerI18n.t("adminCockpitOn", { n: count })
-        : ServerI18n.t("adminCockpitOff");
-    }
-    const toggle = card.querySelector('[data-cockpit-action="toggle"]');
-    if (toggle) {
-      toggle.textContent = ServerI18n.t(on ? "adminCockpitTurnOff" : "adminCockpitTurnOn");
-      toggle.classList.toggle("is-danger", on);
-      toggle.classList.toggle("is-primary", !on);
-      toggle.dataset.next = on ? "standby" : "live";
-    }
-    // 沒有裝置連著時，「清空畫面」沒有作用對象
-    const clear = card.querySelector('[data-cockpit-action="clear"]');
-    if (clear) clear.disabled = count === 0;
+    const prev = _cockpitState;
+    if (!prev && live === null) return;
+    const fresh = live !== null && rev === _cockpitRev;
+    _cockpitState = {
+      live: fresh ? live : (prev ? prev.live : live),
+      count: count !== null ? count : (prev ? prev.count : 0),
+    };
+    renderCockpitOverlay();
   }
+
+  document.addEventListener("admin-overlay-state", (e) => {
+    const d = (e && e.detail) || {};
+    _cockpitRev += 1;
+    _cockpitState = {
+      live: !!d.live,
+      count: typeof d.count === "number" ? d.count : (_cockpitState ? _cockpitState.count : 0),
+    };
+    renderCockpitOverlay();
+  });
+
+  document.addEventListener("admin-route-applied", (e) => {
+    const route = e && e.detail && e.detail.route;
+    if (route !== "live" && route !== "dashboard") return;
+    renderCockpitOverlay();
+    refreshCockpitOverlay();
+  });
 
   function bindCockpit() {
     const card = document.querySelector("[data-cockpit-overlay]");
@@ -567,37 +606,50 @@
     card.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-cockpit-action]");
       if (!btn) return;
+      // 與顯示層頁共用同一份動作（admin-broadcast.js）：同名、同確認、同提示
       const action = btn.dataset.cockpitAction;
       if (action === "clear") {
-        try {
-          const r = await window.csrfFetch("/admin/overlay/clear", { method: "POST" });
-          if (!r.ok) throw new Error("HTTP " + r.status);
-          window.showToast && window.showToast(ServerI18n.t("toastCleared"), true);
-        } catch (_) {
-          window.showToast && window.showToast(ServerI18n.t("toastClearFailed"), false);
-        }
+        window.AdminOverlayControl?.clearScreen();
         return;
       }
       if (action === "toggle") {
-        try {
-          const r = await window.csrfFetch("/admin/broadcast/toggle", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ mode: btn.dataset.next || "standby" }),
-          });
-          if (!r.ok) throw new Error("HTTP " + r.status);
-        } catch (_) {
-          window.showToast && window.showToast(ServerI18n.t("broadcastToastToggleFailed", { msg: "" }), false);
-        }
+        await window.AdminOverlayControl?.setDisplay(btn.dataset.next === "live");
         refreshCockpitOverlay();
       }
     });
 
-    // 兩顆次要動作只是入口，實際頁面各自擁有完整操作
     const qr = card.parentElement && card.parentElement.querySelector('[data-cockpit-action="idle-qr"]');
-    if (qr) qr.addEventListener("click", () => { location.hash = "#/overlay"; });
+    if (qr) qr.addEventListener("click", showJoinQr);
     const poll = card.parentElement && card.parentElement.querySelector('[data-cockpit-action="poll"]');
     if (poll) poll.addEventListener("click", () => { location.hash = "#/polls"; });
+  }
+
+  // 入場 QR 原地放大：與系統頁「公開網址 · QR」同一支 /admin/qr/public，
+  // 套同一個 .admin-soh-qr 外框，裝進共用的 HudConfirm。
+  async function showJoinQr() {
+    let data;
+    try {
+      const r = await fetch("/admin/qr/public", { credentials: "same-origin" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      data = await r.json();
+    } catch (_) {
+      window.showToast && window.showToast(ServerI18n.t("sohQrFailed"), false);
+      return;
+    }
+    const box = document.createElement("div");
+    box.className = "admin-soh-qr";
+    box.innerHTML = data.svg; // server 自己產生的 SVG，內容只有入場網址
+    const copy = await window.HudConfirm?.open({
+      icon: "▦",
+      titleText: data.url,
+      body: box,
+      severity: "info",
+      confirmLabel: ServerI18n.t("copyBtn"),
+      cancelLabel: ServerI18n.t("close"),
+      width: 360,
+    });
+    if (!copy) return;
+    window.AdminUtils.copyText(data.url);
   }
 
   function startCockpitPolling() {
@@ -621,6 +673,7 @@
     startSessionPolling,
     stopSessionPolling,
     refreshCockpitOverlay,
+    renderCockpitOverlay,
     startCockpitPolling,
     stopCockpitPolling,
   };

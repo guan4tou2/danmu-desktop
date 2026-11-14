@@ -94,6 +94,10 @@
     allowlistEdit: {},
     paletteBusy: false,
     paletteDraft: "#38BDF8",
+    // 輸入框的「格式錯誤」標記要跟草稿、回饋訊息一樣存在 state：色票區塊
+    // 會被 renderRows() 整段重繪（設定載回、存檔完成時），只寫在 DOM 上的
+    // aria-invalid 會在重繪時消失，畫面上值還是錯的、輔助科技卻讀不到。
+    paletteInvalid: false,
     palettePreview: null,
     paletteNotice: null,
   };
@@ -127,14 +131,16 @@
 
   function pageTemplate() {
     return `
-      <div id="${PAGE_ID}" class="admin-dsp2-page hud-page-stack lg:col-span-2" data-tpl="C">
-        <!-- 標題／說明兩套並存，由 data-dsp-mode 決定露哪一套（CSS 在 style.css）。
-             同一份面板服務顯示層與觀眾頁兩條路由，文案不能只寫一種。 -->
-        <div class="admin-ui-page-head">
-          <h2 class="admin-ui-page-title" data-dsp-only="values">${escapeHtml(t("displayValuesTitle"))}</h2>
-          <p class="admin-ui-page-note" data-dsp-only="values">${t("displayValuesNote")}</p>
-          <h2 class="admin-ui-page-title" data-dsp-only="audience">${escapeHtml(t("viewerGroupAudience"))}</h2>
-          <p class="admin-ui-page-note" data-dsp-only="audience">${t("displayViewerDefaultsNote")}</p>
+      <div id="${PAGE_ID}" class="lg:col-span-2" data-tpl="C">
+        <!-- 同一份面板服務兩條路由。顯示層 (values) 上它是次要設定，收進預設
+             收合的 details，summary 就是標題；觀眾頁 (audience) 上它是主體，
+             syncVisibility 把它展開、summary 藏起來。 -->
+        <details class="admin-dsp2-fold" data-dsp-fold>
+        <summary class="admin-ui-page-title" data-dsp-only="values" data-i18n="displayValuesTitle">${escapeHtml(t("displayValuesTitle"))}</summary>
+        <div class="admin-dsp2-page hud-page-stack">
+        <div class="admin-ui-page-head" data-dsp-only="audience">
+          <h2 class="admin-ui-page-title" data-i18n="viewerGroupAudience">${escapeHtml(t("viewerGroupAudience"))}</h2>
+          <p class="admin-ui-page-note">${t("displayViewerDefaultsNote")}</p>
         </div>
 
         <!-- 顯示層專屬：大螢幕怎麼排（2026-08-19 設計稿 07 · R1）。
@@ -300,17 +306,16 @@
 
             <div class="admin-dsp2-card admin-dsp2-admin-controlled" style="padding:14px;background:var(--admin-panel,var(--color-bg-base));border:1px solid var(--hud-line);border-radius:6px;display:flex;flex-direction:column;gap:10px">
               <div class="admin-ui-monolabel admin-dsp2-card-head">
-                <span>${escapeHtml(t("displayAdminControlledTitle"))}</span>
+                <span data-i18n="displayAdminControlledTitle">${escapeHtml(t("displayAdminControlledTitle"))}</span>
               </div>
               <div style="display:grid;grid-template-columns:auto 1fr;gap:7px 12px;align-items:start;font-size:11px;line-height:1.45">
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">UI language</span><span>Auto (follow browser)</span>
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">Placeholder</span><span>${escapeHtml(t("displayPlaceholderExample"))}</span>
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">Submit button</span><span>${ServerI18n.t("fireDanmu")}</span>
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em">Poll prompt</span><span>${escapeHtml(t("displayPollPromptExample"))}</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="language">${escapeHtml(t("language"))}</span><span data-i18n="viewerThemeFollowBrowser">${escapeHtml(t("viewerThemeFollowBrowser"))}</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="displayAdminCtlPlaceholder">${escapeHtml(t("displayAdminCtlPlaceholder"))}</span><span data-i18n="displayPlaceholderExample">${escapeHtml(t("displayPlaceholderExample"))}</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="displayAdminCtlSubmit">${escapeHtml(t("displayAdminCtlSubmit"))}</span><span data-i18n="fireDanmu">${escapeHtml(t("fireDanmu"))}</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.08em" data-i18n="displayAdminCtlPollPrompt">${escapeHtml(t("displayAdminCtlPollPrompt"))}</span><span data-i18n="displayPollPromptExample">${escapeHtml(t("displayPollPromptExample"))}</span>
               </div>
-              <div style="padding-top:8px;border-top:1px solid var(--hud-line);font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);line-height:1.6">
-                ${escapeHtml(t("displayAdminControlledNote"))}
-              </div>
+              <div style="padding-top:8px;border-top:1px solid var(--hud-line);font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);line-height:1.6"
+                   data-i18n="displayAdminControlledNote">${escapeHtml(t("displayAdminControlledNote"))}</div>
             </div>
 
             <div class="admin-dsp2-card admin-dsp2-summary" id="dsp2-summary">
@@ -321,6 +326,8 @@
             </div>
           </div>
         </div>
+        </div>
+        </details>
       </div>`;
   }
 
@@ -688,6 +695,7 @@
                 <input type="color" value="${/^#[0-9A-F]{6}$/i.test(_state.paletteDraft) ? draft : "#38bdf8"}" data-palette-picker ${disabled} />
               </label>
               <input id="adminPaletteHex" class="admin-color-palette-code" type="text" data-palette-hex value="${draft}"
+                ${_state.paletteInvalid ? 'aria-invalid="true"' : ""}
                 placeholder="#RRGGBB" maxlength="7" spellcheck="false" autocomplete="off" ${disabled} />
               <button type="button" class="admin-color-palette-add-btn" data-palette-add ${colors.length >= 64 ? "disabled" : disabled}>
                 <span aria-hidden="true">＋</span> ${escapeHtml(t("viewerPaletteAdd"))}
@@ -1046,7 +1054,7 @@
       icon: "↩",
       title: t("displayRevertConfirmTitle"),
       subtitle: ServerI18n.t("cfmSubRevertDefaults"),
-      severity: "warn",
+      severity: "danger",
       body: t("displayRevertConfirm"),
       confirmLabel: t("displayDeployRevert"),
     });
@@ -1101,6 +1109,7 @@
         const input = page.querySelector("[data-palette-hex]");
         const hex = String(input.value).trim().replace(/^#/, "").toUpperCase();
         if (!/^[0-9A-F]{6}$/.test(hex)) {
+          _state.paletteInvalid = true;
           input.setAttribute("aria-invalid", "true");
           paletteFeedback(t("colorFormatError"));
           return;
@@ -1227,13 +1236,17 @@
       if (!t1) return;
       if (t1.matches("[data-palette-picker]")) {
         _state.paletteDraft = t1.value.toUpperCase();
-        page.querySelector("[data-palette-hex]").value = _state.paletteDraft;
+        _state.paletteInvalid = false;
+        const hexInput = page.querySelector("[data-palette-hex]");
+        hexInput.value = _state.paletteDraft;
+        hexInput.removeAttribute("aria-invalid");
         paletteFeedback("", "success");
         previewPaletteColor(_state.paletteDraft);
         return;
       }
       if (t1.matches("[data-palette-hex]")) {
         _state.paletteDraft = t1.value;
+        _state.paletteInvalid = false;
         const hex = t1.value.replace(/^#/, "");
         t1.removeAttribute("aria-invalid");
         paletteFeedback("", "success");
@@ -1499,10 +1512,33 @@
     }
   }
 
+  // 只切語言不重新載入時，這張面板（含收合區）整份照新語言重畫：模板裡的
+  // 字串、每列、色票、預覽、摘要都是渲染時才 t() 的，逐個補 data-i18n 會
+  // 漏。事件全部委派在外層 PAGE_ID 上，換掉內容不會掉 listener；收合狀態
+  // 照舊。updateUI() 換完語言會重跑路由 → admin-route-applied → 這裡。
+  let _renderedLang = null;
+  function relocalize(page) {
+    const lang = window.ServerI18n && window.ServerI18n.currentLang;
+    if (!lang || lang === _renderedLang) return;
+    const first = _renderedLang === null;
+    _renderedLang = lang;
+    if (first) return;
+    const fold = page.querySelector("[data-dsp-fold]");
+    const wasOpen = !!(fold && fold.open);
+    const tmp = document.createElement("div");
+    tmp.innerHTML = pageTemplate();
+    page.replaceChildren(...tmp.firstElementChild.childNodes);
+    const fresh = page.querySelector("[data-dsp-fold]");
+    if (fresh) fresh.open = wasOpen;
+    renderRows();
+    renderDisplayLayer();
+  }
+
   function syncVisibility() {
     const shell = document.querySelector(".admin-dash-grid");
     const page = document.getElementById(PAGE_ID);
     if (!shell || !page) return;
+    relocalize(page);
     const route = shell.dataset.activeRoute || "live";
     const leaf = shell.dataset.activeLeaf || route;
     _mirrorRouterTab(route, leaf);
@@ -1524,6 +1560,12 @@
     // v8（設計稿 07 · R4）：觀眾頁的四個分頁退場，四個 section 一起在台上，
     // 靠群組小標分段。tab 變數只剩下相容用途（舊 deep link 仍可帶著跑）。
     const showPanel = isViewerOwner || isDisplayOwner;
+    // 只在模式切換的那一刻設定收合：顯示層每次進來都是收合，觀眾頁永遠展開。
+    // （這裡掛在 subtree MutationObserver 上，水平觸發會把使用者剛展開的又關掉。）
+    const fold = page.querySelector("[data-dsp-fold]");
+    if (fold && page.dataset.dspMode !== (isDisplayOwner ? "values" : "audience")) {
+      fold.open = !isDisplayOwner;
+    }
     page.dataset.dspMode = isDisplayOwner ? "values" : "audience";
     page.style.display = showPanel ? "" : "none";
     ["sec-viewer-theme", "sec-viewer-config-fields", "sec-viewer-config-limits"]
