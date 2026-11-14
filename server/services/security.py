@@ -30,6 +30,16 @@ class BaseRateLimiter:
     def allow(self, key: str, limit: int, window: int) -> bool:
         raise NotImplementedError
 
+    def would_allow(self, key: str, limit: int, window: int) -> bool:
+        """Read-only check: would ``allow()`` succeed right now?
+
+        Does not record a hit. Used to turn away an already-exhausted client
+        before its request body is read; the real charge still happens in
+        ``allow()`` at the usual place. Backends that cannot peek say yes,
+        which leaves the decision to ``allow()``.
+        """
+        return True
+
     def reset(self):
         raise NotImplementedError
 
@@ -54,6 +64,16 @@ class InMemoryRateLimiter(BaseRateLimiter):
                 for k in empty_keys:
                     del self.history[k]
         return True
+
+    def would_allow(self, key: str, limit: int, window: int) -> bool:
+        now = time.time()
+        with self.lock:
+            dq = self.history.get(key)
+            if not dq:
+                return limit > 0
+            while dq and now - dq[0] > window:
+                dq.popleft()
+            return len(dq) < limit
 
     def reset(self):
         with self.lock:
@@ -383,6 +403,17 @@ return 1
         )
         return bool(allowed)
 
+    def would_allow(self, key: str, limit: int, window: int) -> bool:
+        # ZCOUNT over the live window only reads; allow() still does the
+        # trimming and the insert. A failed peek falls through to allow(),
+        # which keeps its own error behaviour.
+        now = time.time()
+        try:
+            count = self.client.zcount(f"ratelimit:{key}", f"({now - window}", "+inf")
+        except Exception:
+            return True
+        return int(count) < limit
+
     def reset(self):
         # not implemented for redis backend
         pass
@@ -416,6 +447,10 @@ def require_csrf(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         token = session.get("csrf_token")
+        if not token:
+            # No session token means the request fails either way; refuse it
+            # before request.form / get_json() read the body.
+            abort(403, description="Invalid CSRF token")
         candidate = (
             request.headers.get("X-CSRF-Token")
             or request.form.get("csrf_token")
@@ -576,6 +611,96 @@ def enforce_invalid_token_limit() -> None:
     window = int(cfg.get("FIRE_RATE_WINDOW", 60))
     if limit > 0 and not rate_limiter.allow(f"fire_badtoken:{client_ip}", limit, window):
         abort(429, description="Too Many Requests")
+
+
+def enforce_public_body_limit() -> None:
+    """Cap the request body of a public endpoint before anything reads it.
+
+    MAX_CONTENT_LENGTH is sized for admin uploads (15 MB); the public JSON
+    endpoints only take a few short fields. A declared Content-Length over
+    the cap is refused outright with a JSON 413; the per-request
+    ``max_content_length`` also bounds bodies sent without a length, so a
+    later ``get_json()`` / ``request.form`` raises 413 instead of reading on.
+    """
+    limit = int(current_app.config.get("PUBLIC_BODY_MAX_BYTES", 32 * 1024))
+    length = request.content_length
+    if length is not None and length > limit:
+        abort(
+            make_response(
+                json.dumps({"error": "Request body too large"}),
+                413,
+                {"Content-Type": "application/json"},
+            )
+        )
+    request.max_content_length = limit
+
+
+def limit_public_body(func):
+    """Decorator form of :func:`enforce_public_body_limit`.
+
+    Place it below ``@rate_limit`` so the bucket is charged exactly as
+    before; only the body read that follows is bounded.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        enforce_public_body_limit()
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+def precheck_fire_limits(token_state: str) -> None:
+    """Turn away a /fire request that is certain to be refused, before its body is read.
+
+    Read-only: no bucket is charged here. The buckets peeked are the ones
+    the request would be charged against later — ``fire_admin`` for a valid
+    token, ``fire_badtoken`` for an invalid one, and the public per-IP and
+    global buckets otherwise (the per-fingerprint bucket needs the body, so
+    it stays where it is). Admin IP deny rules reject here as well; allow
+    rules skip the peek, matching ``enforce_fire_rate_limits``.
+    """
+    cfg = current_app.config
+    client_ip = _get_client_ip()
+
+    verdict = _check_ip_rules(client_ip)
+    if verdict == "deny":
+        abort(429, description="Too Many Requests")
+    if verdict == "allow" and token_state != "invalid":
+        return
+
+    if token_state == "valid":
+        checks = [
+            (
+                f"fire_admin:{client_ip}",
+                int(cfg.get("FIRE_ADMIN_RATE_LIMIT", 200)),
+                int(cfg.get("FIRE_ADMIN_RATE_WINDOW", 60)),
+            )
+        ]
+    elif token_state == "invalid":
+        checks = [
+            (
+                f"fire_badtoken:{client_ip}",
+                int(cfg.get("FIRE_RATE_LIMIT", 20)),
+                int(cfg.get("FIRE_RATE_WINDOW", 60)),
+            )
+        ]
+    else:
+        checks = [
+            (
+                f"fire:{client_ip}",
+                int(cfg.get("FIRE_RATE_LIMIT", 20)),
+                int(cfg.get("FIRE_RATE_WINDOW", 60)),
+            ),
+            (
+                "fire_global:all",
+                int(cfg.get("GLOBAL_FIRE_RATE_LIMIT", 0)),
+                int(cfg.get("GLOBAL_FIRE_RATE_WINDOW", 60)),
+            ),
+        ]
+    for key, limit, window in checks:
+        if limit > 0 and not rate_limiter.would_allow(key, limit, window):
+            abort(429, description="Too Many Requests")
 
 
 def verify_captcha(token: str | None) -> bool:

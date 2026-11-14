@@ -6,7 +6,7 @@ import re as _re
 from flask import request
 
 from ...services import audit_log, messaging
-from ...services.security import rate_limit
+from ...services.security import limit_public_body, rate_limit
 from ...services.validation import WebhookSchema, validate_request
 from . import _json_response, admin_bp, require_csrf, require_login
 
@@ -173,6 +173,7 @@ def test_webhook():
 
 @admin_bp.route("/webhook/incoming/<hook_id>", methods=["POST"])
 @rate_limit("fire", "FIRE_RATE_LIMIT", "FIRE_RATE_WINDOW")
+@limit_public_body
 def incoming_webhook(hook_id):
     """Receive external webhook and convert to danmu."""
     from ...services.webhook import webhook_service
