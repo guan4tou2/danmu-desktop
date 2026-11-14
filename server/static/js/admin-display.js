@@ -1403,20 +1403,29 @@
   }
 
   // ── 觀眾外部圖片狀態 ──────────────────────────────────────────────────
+  //
+  // 回應的套用有先後保護，三種時序都靠同一套規則：
+  //   · 每個請求（初次 GET 與每一次 PATCH）拿一個遞增序號，只有「最新發出
+  //     的那個」回來時才套用。較早的 GET／PATCH 晚回來不會蓋掉之後的選擇
+  //     （連續取消勾選、載入很慢時先切了開關）。
+  //   · 網站欄位另外有一份基準值：上次由伺服器寫進去、或上次送出時的內容。
+  //     只有欄位仍等於基準值（使用者之後沒再改）且不在輸入中，才回填伺服器
+  //     的正規化結果——送出 A 後又開始打 B，A 的回應不會把 B 蓋掉。
   let _viState = null;
+  let _viSeq = 0;
+  let _viHostsBaseline = ""; // 模板裡的欄位一開始是空的
+  const _viHostsText = (state) => ((state && state.hosts) || []).join("\n");
 
   function renderViewerImages() {
     const page = document.getElementById(PAGE_ID);
     if (!page || !_viState) return;
     const toggle = page.querySelector("[data-vi-toggle]");
     if (toggle) toggle.checked = !!_viState.enabled;
-    page.querySelectorAll("[data-vi-row]").forEach((row) => {
-      row.style.display = _viState.enabled ? "" : "none";
-    });
+    _viShowRows(page, !!_viState.enabled);
     const hosts = page.querySelector("#viewer-images-hosts");
-    // 正在輸入時不要把使用者打到一半的內容蓋掉
-    if (hosts && document.activeElement !== hosts) {
-      hosts.value = (_viState.hosts || []).join("\n");
+    if (hosts && document.activeElement !== hosts && hosts.value === _viHostsBaseline) {
+      hosts.value = _viHostsText(_viState);
+      _viHostsBaseline = hosts.value;
     }
     const exts = _viState.extensions || [];
     page.querySelectorAll("[data-vi-ext]").forEach((el) => {
@@ -1424,15 +1433,34 @@
     });
   }
 
-  async function fetchViewerImages() {
+  function _viShowRows(page, on) {
+    page.querySelectorAll("[data-vi-row]").forEach((row) => {
+      row.style.display = on ? "" : "none";
+    });
+  }
+
+  // 送出請求並只在它仍是最新的那一個時套用回應。回傳 { ok, body, latest }。
+  async function _viRequest(doFetch) {
+    const seq = ++_viSeq;
+    let res = null;
+    let body = null;
     try {
-      const res = await fetch("/admin/viewer-images", { credentials: "same-origin" });
-      if (!res.ok) return;
-      _viState = await res.json();
-      renderViewerImages();
+      res = await doFetch();
+      try { body = await res.json(); } catch (_) { body = null; }
     } catch (e) {
-      console.warn("[admin-display] viewer-images fetch failed:", e);
+      console.warn("[admin-display] viewer-images request failed:", e);
     }
+    const latest = seq === _viSeq;
+    const ok = !!(res && res.ok && body);
+    if (ok && latest) {
+      _viState = body;
+      renderViewerImages();
+    }
+    return { ok, body, latest };
+  }
+
+  function fetchViewerImages() {
+    return _viRequest(() => fetch("/admin/viewer-images", { credentials: "same-origin" }));
   }
 
   function _viErrorMessage(body) {
@@ -1443,29 +1471,25 @@
   }
 
   async function postViewerImages(patch) {
-    try {
-      const res = await window.csrfFetch("/admin/viewer-images", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
-      });
-      let body = null;
-      try { body = await res.json(); } catch (_) { body = null; }
-      if (!res.ok) {
-        window.showToast && window.showToast(_viErrorMessage(body), false);
-        // 輸入框保留使用者打的內容讓他改；開關與勾選框打回伺服器的值
-        if (!("hosts" in patch)) renderViewerImages();
-        return;
-      }
-      _viState = body;
-      const hosts = document.getElementById("viewer-images-hosts");
-      if (hosts && "hosts" in patch) hosts.value = (_viState.hosts || []).join("\n");
-      renderViewerImages();
-    } catch (e) {
-      renderViewerImages();
-      console.warn("[admin-display] viewer-images update failed:", e);
-      window.showToast && window.showToast(t("updateFailed"), false);
+    const hostsField = document.getElementById("viewer-images-hosts");
+    if ("hosts" in patch && hostsField) _viHostsBaseline = hostsField.value;
+    if ("enabled" in patch) {
+      const page = document.getElementById(PAGE_ID);
+      if (page) _viShowRows(page, !!patch.enabled); // 樂觀顯示，回應來了再以伺服器為準
     }
+    const result = await _viRequest(() => window.csrfFetch("/admin/viewer-images", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    }));
+    if (result.ok) return;
+    window.showToast && window.showToast(_viErrorMessage(result.body), false);
+    // 被拒的網站清單留在欄位裡讓使用者改：基準值設成不可能相等，之後的
+    // 回應都不會回填，直到他再送出一次。
+    if ("hosts" in patch) _viHostsBaseline = null;
+    // 只有最新的請求失敗才需要對齊：重抓一次伺服器的真實狀態（開關與勾選框
+    // 打回伺服器的值）。較早的請求失敗時，之後那個請求的回應會負責對齊。
+    if (result.latest) fetchViewerImages();
   }
 
   // ── 顯示層排版狀態 ────────────────────────────────────────────────────
@@ -1659,6 +1683,7 @@
     if (fresh) fresh.open = wasOpen;
     renderRows();
     renderDisplayLayer();
+    _viHostsBaseline = ""; // 模板重畫後網站欄位是空的
     renderViewerImages();
   }
 
