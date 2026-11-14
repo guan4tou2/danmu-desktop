@@ -65,7 +65,7 @@ def _broadcast_to_outboxes(payload):
         try:
             q.put_nowait(payload)
         except Exception:
-            pass
+            logger.warning("Failed to enqueue broadcast payload to a client outbox", exc_info=True)
 
 
 def _check_msg_rate(ws, *, receipt=False, assigned=True) -> bool:
@@ -104,11 +104,13 @@ def _sender_loop(ws, outbox):
                 delivery_tracking.revoke(message_id, ws)
                 raise
     except Exception:
-        pass
+        # Send failure / bad frame ends this client's sender; normal on disconnect.
+        logger.debug("WS sender loop ended", exc_info=True)
     try:
         ws.close()
     except Exception:
-        pass
+        # Socket is usually already closed by the peer at this point.
+        logger.debug("WS close after sender loop failed", exc_info=True)
 
 
 def _forward_messages():

@@ -38,7 +38,9 @@ def overlay_clear():
         try:
             audit_log.append("broadcast", "overlay_cleared", actor="admin")
         except Exception:
-            pass
+            current_app.logger.warning(
+                "audit_log.append failed for broadcast/overlay_cleared", exc_info=True
+            )
         # Webhook v2 — operators subscribing to on_overlay_clear get a
         # ping every time admin nukes the visible danmu (useful for OBS
         # scene swaps / external scoreboards that want to reset visuals).
@@ -95,7 +97,9 @@ def overlay_recall():
         try:
             audit_log.append("broadcast", "overlay_recalled", actor="admin")
         except Exception:
-            pass
+            current_app.logger.warning(
+                "audit_log.append failed for broadcast/overlay_recalled", exc_info=True
+            )
     except Exception as exc:  # pragma: no cover — best-effort logging
         current_app.logger.error(
             "[overlay] recall broadcast failed: %s", sanitize_log_string(str(exc))
