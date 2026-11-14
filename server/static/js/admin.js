@@ -1582,7 +1582,10 @@ document.addEventListener("DOMContentLoaded", () => {
         // innerHTML 讀回來的是序列化結果；mergedNote 本身也是從另一個元素的
         // innerHTML 讀來的，兩邊同一種序列化，相同內容就會逐字相等。
         if (noteSlot.innerHTML !== html) noteSlot.innerHTML = html;
-        if (noteSlot.hidden !== !mergedNote) noteSlot.hidden = !mergedNote;
+        // toggleAttribute 在狀態相同時什麼都不做。（別寫成拿 .hidden 屬性和
+        // 布林值做不等比較：壓縮後的 bundle 會出現 tailwind 當成「hidden 加
+        // 驚嘆號」工具類別的字樣，tailwind.css 多一條規則、新鮮度檢查變紅。）
+        noteSlot.toggleAttribute("hidden", !mergedNote);
       }
     }
 

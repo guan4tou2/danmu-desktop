@@ -68,7 +68,7 @@ def modqueue_approve():
         }
         # 審核佇列在 /fire 的圖片檢查之前就把訊息收下了，這裡補上同一道政策：
         # 合格的外部圖片標成圖片，不合格的中和成文字（舊版顯示端也不會轉成圖）。
-        viewer_images.apply_to_payload(forwarded)
+        viewer_images.apply_to_resend(forwarded, request.host_url)
         messaging.forward_to_ws_server(forwarded, bypass_broadcast_gate=False)
     except Exception as exc:  # pragma: no cover — log + continue
         current_app.logger.warning("modqueue approve forward failed: %s", exc)

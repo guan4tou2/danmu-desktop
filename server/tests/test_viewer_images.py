@@ -23,12 +23,14 @@ _LEGACY_RE = r"^https?://([^\s/]+/)*[^\s/]+\.(gif|png|jpeg|jpg|webp)$"
 @pytest.fixture(autouse=True)
 def _overlay_connected():
     """/fire 在沒有顯示端連線時直接回 503；這裡的測試要走到圖片判斷那一段。"""
-    from server.services.ws_state import update_ws_client_count
+    from server.services.ws_state import get_ws_client_count, update_ws_client_count
 
+    previous = get_ws_client_count()
     update_ws_client_count(1)
     ws_queue.dequeue_all()
     yield
     ws_queue.dequeue_all()
+    update_ws_client_count(previous)
 
 
 def _legacy_would_render_image(text):
@@ -373,18 +375,70 @@ def test_fire_emoji_works_when_disabled(client):
 # ─── 不能回錯誤的轉送路徑 ─────────────────────────────────────────────────
 
 
-def test_apply_to_payload_neutralizes_or_marks():
-    blocked = viewer_images.apply_to_payload({"text": "https://evil.test/a.png"})
+_STICKERS = [{"name": "fire", "filename": "fire.gif", "url": "/static/stickers/fire.gif"}]
+
+
+@pytest.fixture
+def known_sticker():
+    with patch("server.services.stickers.sticker_service.list_stickers", return_value=_STICKERS):
+        yield
+
+
+def test_resend_neutralizes_or_marks():
+    blocked = viewer_images.apply_to_resend({"text": "https://evil.test/a.png"})
     assert blocked["text"] != "https://evil.test/a.png"
     assert not _legacy_would_render_image(blocked["text"])
-    assert not blocked.get("isImage")
+    assert blocked["isImage"] is False
 
     viewer_images.set_state({"enabled": True})
-    allowed = viewer_images.apply_to_payload({"text": "https://example.com/a.png"})
+    allowed = viewer_images.apply_to_resend({"text": "https://example.com/a.png"})
     assert allowed == {"text": "https://example.com/a.png", "isImage": True}
 
-    sticker = {"text": "http://host/static/stickers/fire.gif", "isImage": True}
-    assert viewer_images.apply_to_payload(dict(sticker)) == sticker
+
+def test_resend_keeps_a_flagged_image_only_if_it_passes_the_current_settings():
+    viewer_images.set_state({"enabled": True, "hosts": ["example.com"]})
+    kept = viewer_images.apply_to_resend({"text": "https://i.example.com/a.png", "isImage": True})
+    assert kept == {"text": "https://i.example.com/a.png", "isImage": True}
+    # 旗標為真時沒有副檔名的網址也要檢查——不合格就清掉旗標並中和
+    odd = viewer_images.apply_to_resend({"text": "https://example.com/pic", "isImage": True})
+    assert odd["isImage"] is False
+    assert odd["text"] != "https://example.com/pic"
+
+
+def test_resend_ignores_an_image_flag_already_in_the_payload():
+    """重送的 payload 帶 isImage 也不信：外部圖片照目前設定判斷。"""
+    msg = viewer_images.apply_to_resend({"text": "https://evil.test/a.png", "isImage": True})
+    assert msg["isImage"] is False
+    assert not _legacy_would_render_image(msg["text"])
+    plain = viewer_images.apply_to_resend({"text": "hello", "isImage": True})
+    assert plain == {"text": "hello", "isImage": False}
+
+
+def test_resend_rebuilds_own_sticker_urls_on_the_current_origin(known_sticker):
+    base = "https://danmu.example.org/"
+    for old in (
+        "http://internal:4000/static/stickers/fire.gif",  # 反向代理後面記下的內部名稱
+        "https://evil.test/static/stickers/fire.gif",  # 主機是任何人自己填的
+    ):
+        msg = viewer_images.apply_to_resend({"text": old, "isImage": True}, base)
+        assert msg == {
+            "text": "https://danmu.example.org/static/stickers/fire.gif",
+            "isImage": True,
+        }
+
+
+def test_resend_does_not_trust_unknown_sticker_paths(known_sticker):
+    msg = viewer_images.apply_to_resend(
+        {"text": "https://evil.test/static/stickers/other.gif", "isImage": True},
+        "https://danmu.example.org/",
+    )
+    assert msg["isImage"] is False
+    assert not _legacy_would_render_image(msg["text"])
+    nested = viewer_images.apply_to_resend(
+        {"text": "https://evil.test/static/stickers/x/fire.gif", "isImage": True},
+        "https://danmu.example.org/",
+    )
+    assert nested["isImage"] is False
 
 
 def test_review_queue_approval_neutralizes_disallowed_image(client):
@@ -415,11 +469,99 @@ def test_replay_neutralizes_disallowed_image_text():
 
     msg = ReplayService._build_message({"text": "https://evil.test/a.png"})
     assert not _legacy_would_render_image(msg["text"])
-    sticker = ReplayService._build_message(
-        {"text": "http://host/static/stickers/fire.gif", "isImage": True}
+    assert msg["isImage"] is False
+
+
+def test_replay_of_a_blocked_record_ignores_the_viewers_own_image_flag(client):
+    """被擋下的訊息在圖片判斷之前就寫進歷史，存的是觀眾自己帶的 isImage。"""
+    from server.services import history as hist_svc
+    from server.services.filter_engine import filter_engine
+    from server.services.history import DanmuHistory
+    from server.services.replay import ReplayService
+
+    original = hist_svc.danmu_history
+    hist_svc.danmu_history = DanmuHistory(max_records=10)
+    rule_id = filter_engine.add_rule({"type": "keyword", "pattern": "evil", "action": "block"})
+    try:
+        resp = client.post("/fire", json={"text": "https://evil.test/a.png", "isImage": True})
+        assert resp.status_code == 400
+        record = hist_svc.danmu_history.get_records()[-1]
+        # 前提：紀錄裡的旗標確實是觀眾送來的那個
+        assert record["status"] == "blocked"
+        assert record["isImage"] is True
+        msg = ReplayService._build_message(record, "https://danmu.example.org/")
+        assert msg["isImage"] is False
+        assert not _legacy_would_render_image(msg["text"])
+    finally:
+        filter_engine.remove_rule(rule_id)
+        hist_svc.danmu_history = original
+
+
+def test_replay_after_turning_images_off_neutralizes_previously_allowed_images(client):
+    from server.services import history as hist_svc
+    from server.services.history import DanmuHistory
+    from server.services.replay import ReplayService
+
+    original = hist_svc.danmu_history
+    hist_svc.danmu_history = DanmuHistory(max_records=10)
+    try:
+        viewer_images.set_state({"enabled": True})
+        assert client.post("/fire", json={"text": "https://example.com/a.png"}).status_code == 200
+        record = hist_svc.danmu_history.get_records()[-1]
+        assert record["isImage"] is True
+        viewer_images.set_state({"enabled": False})
+        msg = ReplayService._build_message(record, "https://danmu.example.org/")
+        assert msg["isImage"] is False
+        assert not _legacy_would_render_image(msg["text"])
+    finally:
+        hist_svc.danmu_history = original
+
+
+def test_replay_of_an_old_sticker_record_still_shows_the_sticker(known_sticker):
+    """5.8.0 之前的貼圖紀錄：完整網址、帶 isImage、沒有任何新標記。設定關閉也照常。"""
+    from server.services.replay import ReplayService
+
+    record = {
+        "timestamp": "2026-10-01T00:00:00Z",
+        "text": "http://127.0.0.1:4000/static/stickers/fire.gif",
+        "isImage": True,
+    }
+    msg = ReplayService._build_message(record, "https://danmu.example.org/")
+    assert msg["isImage"] is True
+    assert msg["text"] == "https://danmu.example.org/static/stickers/fire.gif"
+
+
+def test_replay_route_rebuilds_stickers_on_the_request_origin(client, known_sticker):
+    from server.services.replay import replay_service
+
+    token = _login(client)
+    resp = client.post(
+        "/admin/replay",
+        json={
+            "records": [
+                {
+                    "timestamp": "2026-10-01T00:00:00Z",
+                    "text": "http://old-host/static/stickers/fire.gif",
+                    "isImage": True,
+                },
+                {
+                    "timestamp": "2026-10-01T00:00:01Z",
+                    "text": "https://evil.test/a.png",
+                    "isImage": True,
+                },
+            ],
+            "speedMultiplier": 50,
+        },
+        headers={"X-CSRF-Token": token},
     )
-    assert sticker["text"] == "http://host/static/stickers/fire.gif"
+    assert resp.status_code == 200
+    replay_service._thread.join(timeout=5)
+    msgs = ws_queue.dequeue_all()
+    sticker, external = msgs[0], msgs[1]
     assert sticker["isImage"] is True
+    assert sticker["text"] == "http://localhost/static/stickers/fire.gif"
+    assert external["isImage"] is False
+    assert not _legacy_would_render_image(external["text"])
 
 
 # ─── 後台路由 ─────────────────────────────────────────────────────────────

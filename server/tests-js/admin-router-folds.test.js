@@ -306,11 +306,21 @@ describe("merging a section header into the top bar settles", () => {
   });
 
   test("the borrowed action keeps its listener", async () => {
-    const { actionSlot } = await bootWithHeader();
+    boot("#/system/integrations");
+    await settle();
+    injectOverviewWithHeader("note");
+    // 在同步把動作借走之前就掛上監聽器、留住原本那個節點：同步若換成複製品，
+    // 頂欄裡的就不會是同一個節點，點了也不會有反應。
+    const original = document.getElementById("ext-primary");
     let clicks = 0;
-    document.getElementById("ext-primary").addEventListener("click", () => { clicks += 1; });
+    original.addEventListener("click", () => { clicks += 1; });
+    const actionSlot = document.querySelector(".admin-dash-grid [data-route-action]");
+    expect(actionSlot.contains(original)).toBe(false);
+    await settle(); await settle(); await settle();
     await quietWindow();
-    actionSlot.querySelector("#ext-primary").click();
+    const borrowed = actionSlot.querySelector("#ext-primary");
+    expect(borrowed).toBe(original);
+    borrowed.click();
     expect(clicks).toBe(1);
   });
 
