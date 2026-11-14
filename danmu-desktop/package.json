@@ -1,6 +1,6 @@
 {
   "name": "danmu-desktop",
-  "version": "5.6.0",
+  "version": "5.7.0",
   "description": "Danmu overlay controller for live streaming",
   "main": "dist/main.bundle.js",
   "scripts": {
