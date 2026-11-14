@@ -95,9 +95,10 @@
     grid.insertAdjacentHTML(
       "beforeend",
       `
-      <div id="${SECTION_ID}" class="admin-webhooks-page hud-page-stack lg:col-span-2" data-tpl="B">
+      <details id="${SECTION_ID}" class="admin-dsp2-fold lg:col-span-2" data-tpl="B">
+        <summary class="admin-ui-page-title">${ServerI18n.t("tabExtWebhooks")}</summary>
+        <div class="admin-webhooks-page hud-page-stack">
         <div class="admin-ui-page-head">
-          <h2 class="admin-ui-page-title">Webhooks</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("webhooksPageNote")}
           </p>
@@ -186,7 +187,8 @@
             <!-- populated by _renderDetail() -->
           </aside>
         </div>
-      </div>
+        </div>
+      </details>
     `
     );
 

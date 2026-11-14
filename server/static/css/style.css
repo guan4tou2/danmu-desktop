@@ -2888,16 +2888,6 @@ button:disabled,
   background: var(--color-accent);
 }
 
-.admin-soh-link { text-decoration: none; color: inherit; }
-.admin-soh-link:hover { background: var(--color-bg-elevated); }
-.admin-soh-link__sub {
-  font-size: var(--text-caption);
-  color: var(--color-text-secondary);
-}
-.admin-soh-link__chev {
-  margin-left: var(--space-2);
-  color: var(--color-text-secondary);
-}
 .hud-console-body {
   padding: var(--space-3) var(--space-3);
   font-family: var(--font-mono);

@@ -2,13 +2,14 @@
  * Admin · System Overview page (extracted from admin.js 2026-04-28
  * Group D-3 split, fourth pass).
  *
- * Owns sec-system-overview — 設計稿 08 · S1 的「入口頁」：頁首右側一顆狀態
- * chip、四格數字（運行時間／已連線／記憶體／版本）、一組設定列（公開網址・
- * 語言・深淺色）與四條導向列（備份／安全／擴充／關於）。
+ * Owns sec-system-overview — 系統頁的「概覽」分頁：頁首右側一顆狀態 chip、
+ * 四格數字（運行時間／已連線／記憶體／版本）與一組設定列（公開網址・語言・
+ * 深淺色）。2026-11-14：原本底下的四條導向列（備份／安全／擴充／關於）
+ * 移除——它們現在都是同一條分頁列上的分頁，導向列只是第二個入口。
  *
  * Renders into #settings-grid on `admin-panel-rendered`. Reads
- * /admin/metrics（uptime / mem / ws_clients / queue / 外掛與 webhook 計數）
- * 與 /admin/audience/stats（在場觀眾數）。
+ * /admin/metrics（uptime / mem / ws_clients / queue）與 /admin/audience/stats
+ * （在場觀眾數）。
  *
  * Globals: csrfFetch / showToast / DANMU_CONFIG.
  */
@@ -31,7 +32,6 @@
       <div id="${SECTION_ID}" class="admin-soh-v4 hud-page-stack lg:col-span-2" data-tpl="A">
         <div class="admin-ui-page-head">
           <h2 class="admin-ui-page-title">${ServerI18n.t("sohPageTitle")}</h2>
-          <p class="admin-ui-page-note">${ServerI18n.t("sohPageNote")}</p>
           <div class="admin-ui-page-actions">
             <span class="admin-soh-chip" data-soh-chip>
               <span class="admin-soh-chip__dot" data-soh-banner-dot></span>
@@ -87,20 +87,6 @@
               <button type="button" data-soh-mode="dark">${ServerI18n.t("sohAppearanceDark")}</button>
             </span>
           </div>
-        </div>
-
-        <div class="admin-ui-group">
-          ${[
-            { hash: "#/backup",       label: ServerI18n.t("adminNavBackup"),   sub: ServerI18n.t("sohLinkBackupSub"), attr: "" },
-            { hash: "#/security",     label: ServerI18n.t("adminNavSecurity"), sub: ServerI18n.t("sohLinkSecuritySub"), attr: "data-soh-sub=\"security\"" },
-            { hash: "#/integrations", label: ServerI18n.t("adminNavIntegrations"), sub: "—", attr: "data-soh-sub=\"integrations\"" },
-            { hash: "#/about",        label: ServerI18n.t("sohLinkAbout"),     sub: ServerI18n.t("sohLinkAboutSub"), attr: "" },
-          ].map((r) => `
-            <a class="admin-ui-group-row admin-soh-link" href="${r.hash}">
-              <span class="lbl">${r.label}</span>
-              <span class="val admin-soh-link__sub" ${r.attr}>${r.sub}</span>
-              <span class="admin-soh-link__chev" aria-hidden="true">›</span>
-            </a>`).join("")}
         </div>
       </div>`;
   }
@@ -183,28 +169,6 @@
         _setKpi("ver", `v${ver}`, ServerI18n.t("sohVersionSub"));
 
         _updateChip(data);
-
-        const extSub = document.querySelector('[data-soh-sub="integrations"]');
-        if (extSub) {
-          extSub.textContent = ServerI18n.t("sohLinkExtSub", {
-            webhooks: data.webhooks_count ?? 0,
-            plugins: data.plugins_loaded ?? 0,
-          });
-        }
-        // 連線密碼的開關狀態不在 /admin/metrics 的 security 摘要裡
-        // （那份只有 ip_allowlist / cors / tls），要問 ws-auth。
-        try {
-          const wa = await window.csrfFetch("/admin/ws-auth");
-          if (wa.ok) {
-            const state = await wa.json();
-            const secSub = document.querySelector('[data-soh-sub="security"]');
-            if (secSub) {
-              secSub.textContent = state.require_token
-                ? ServerI18n.t("sohLinkSecurityOn")
-                : ServerI18n.t("sohLinkSecurityOff");
-            }
-          }
-        } catch (_) {}
       } catch (_) { /* ignore */ }
     })();
 

@@ -401,9 +401,10 @@
     settingsGrid.insertAdjacentHTML(
       "beforeend",
       `
-      <div id="${SECTION_ID}" class="admin-scheduler-page hud-page-stack lg:col-span-2">
+      <details id="${SECTION_ID}" class="admin-dsp2-fold lg:col-span-2">
+        <summary class="admin-ui-page-title">${ServerI18n.t("tabExtScheduler")}</summary>
+        <div class="admin-scheduler-page hud-page-stack">
         <div class="admin-ui-page-head">
-          <h2 class="admin-ui-page-title">${ServerI18n.t("schPageTitle")}</h2>
           <p class="admin-ui-page-note">
             ${ServerI18n.t("schPageNote")}
           </p>
@@ -462,7 +463,8 @@
             ${window.AdminSkeletons ? window.AdminSkeletons.html("listRows", { rows: 3 }) : escapeHTML(ServerI18n.t("loadingJobs"))}
           </div>
         </div>
-      </div>
+        </div>
+      </details>
     `
     );
 

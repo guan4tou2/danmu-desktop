@@ -88,30 +88,34 @@
 
     // v7 S3 (2026-07-28): the system accordion retired — 16 leaves were
     // mostly duplicate doors to first-class routes. What genuinely lives
-    // here is now a 6-tab strip; everything else rehomed (see the legacy
-    // leaf map in admin.js applyRoute).
-    // 設計稿 08 · X1：擴充四合一（Webhook / 插件 / API 金鑰 / 定時發送）。
-    // 這四件事本來各自是一條路由，但它們是同一群人（IT）在同一個場合會碰的
-    // 東西；分成四個入口只是在逼使用者記住哪個功能住在哪一頁。
-    // sec-extensions-overview（Slido／Discord／OBS／Bookmarklet 目錄）歸在
-    // 「插件」分段：它本來是 route-level，四個分頁都看得到，等於每個分頁的
-    // 真正內容都被四張卡片推到摺線以下。稿上沒有這塊目錄，但 Slido 那張卡
-    // 帶著實際可用的下載與 Fire Token 設定，不能直接刪；插件是它最接近的家。
-    integrations: {
-      defaultTab: "webhooks",
-      tabs: [
-        { slug: "webhooks",   labelKey: "tabExtWebhooks", en: "WEBHOOKS", section: "sec-webhooks" },
-        { slug: "plugins",    labelKey: "tabExtPlugins", en: "PLUGINS",  sections: ["sec-plugins", "sec-extensions-overview"] },
-        { slug: "api-tokens", labelKey: "tabExtApiKeys", en: "API KEYS", section: "sec-api-tokens-overview" },
-        { slug: "scheduler",  labelKey: "tabExtScheduler", en: "SCHEDULER", section: "sec-scheduler" },
-      ],
-    },
-
+    // here is now a tab strip; everything else rehomed (see the legacy
+    // leaf map in admin.js).
+    //
+    // 2026-11-14 側欄收斂：「安全」「備份與還原」「擴充」三列併進「系統」。
+    // 三者本來同時出現在側欄與系統概覽的導向列，同一件事兩三個入口；現在
+    // 系統頁的分頁列是它們唯一的入口。
+    //
+    // 「擴充」底下原本又有一條四段的分頁列（Webhook／插件／API 金鑰／定時
+    // 發送）。疊成兩條長得一樣的分頁列分不出層級，攤平成九個分頁又太長，
+    // 所以改成：打開就是整合目錄（主持人會用的 Slido 與 Fire Token），
+    // 四塊給 IT 人員的內容各自是預設收合的 <details>（`folds`）。舊的分段
+    // slug 仍是有效的深連結——#/system/webhooks 會落在「擴充」並展開那一塊。
+    // `sections` 的順序就是畫面順序（同一個容器裡的區塊會照這個順序排）。
     system: {
       defaultTab: "overview",
       tabs: [
         { slug: "overview",  labelKey: "tabSystemOverview", en: "OVERVIEW",  section: "sec-system-overview" },
         { slug: "security",  labelKey: "tabSystemSecurity", en: "SECURITY",  section: "admin-security-v2-page" },
+        { slug: "backup",    labelKey: "adminNavBackup",
+          sections: ["admin-backup-v2-page", "sec-timeline-export"] },
+        { slug: "integrations", labelKey: "adminNavIntegrations",
+          sections: ["sec-extensions-overview", "sec-plugins", "sec-api-tokens-overview", "sec-webhooks", "sec-scheduler"],
+          folds: {
+            plugins: "sec-plugins",
+            "api-tokens": "sec-api-tokens-overview",
+            webhooks: "sec-webhooks",
+            scheduler: "sec-scheduler",
+          } },
         { slug: "firetoken", label: "Fire Token", en: "FIRETOKEN", section: "sec-firetoken-overview" },
         { slug: "wcag",      labelKey: "tabSystemWcag", en: "WCAG",      section: "sec-wcag-overview" },
         { slug: "about",     labelKey: "tabSystemAbout", en: "ABOUT",     section: "sec-about-overview" },
@@ -159,10 +163,20 @@
     },
   };
 
+  // 收合區塊的 slug（例如 system 的 webhooks）→ { tab, section }，不是區塊就回 null。
+  function foldFor(nav, slug) {
+    const cfg = TabConfig[nav];
+    if (!cfg || !slug) return null;
+    const tab = cfg.tabs.find((t) => t.folds && t.folds[slug]);
+    return tab ? { tab: tab.slug, section: tab.folds[slug] } : null;
+  }
+
   function resolveActiveTab(nav, requestedTab) {
     const cfg = TabConfig[nav];
     if (!cfg) return null;
     const has = (slug) => cfg.tabs.some((t) => t.slug === slug);
+    const fold = foldFor(nav, requestedTab);
+    if (fold) return fold.tab;
     const aliased = _tabAliases[nav]?.[requestedTab];
     if (aliased && has(aliased)) return aliased;
     if (requestedTab && has(requestedTab)) return requestedTab;
@@ -236,9 +250,17 @@
     if (!cfg || !container) return;
     cfg.tabs.forEach((tab) => {
       const isActive = tab.slug === activeTab;
+      const lastIn = new Map();
       _tabSections(tab).forEach((id) => {
         const sec = container.querySelector("#" + id);
-        if (sec) sec.style.display = isActive ? "" : "none";
+        if (!sec) return;
+        sec.style.display = isActive ? "" : "none";
+        // 有收合區塊的分頁，各模組是各自晚到才注入的，注入順序不等於畫面
+        // 該有的順序（目錄要在最上面）。同一個容器裡的照 sections 排；只在
+        // 順序不對時才搬，router 的 MutationObserver 不會因此一直重跑。
+        const last = lastIn.get(sec.parentElement);
+        if (isActive && tab.folds && last && last.nextElementSibling !== sec) last.after(sec);
+        lastIn.set(sec.parentElement, sec);
       });
     });
   }
@@ -246,6 +268,7 @@
   window.AdminTabs = {
     hasTabsFor,
     getConfig,
+    foldFor,
     resolveActiveTab,
     renderTabStrip,
     applyTabSectionVisibility,
