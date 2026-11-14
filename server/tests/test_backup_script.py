@@ -113,3 +113,26 @@ def test_unknown_option_is_refused(checkout):
     with pytest.raises(subprocess.CalledProcessError) as exc:
         _run(checkout, "--include-secrets")
     assert exc.value.returncode == 2
+
+
+@pytest.mark.parametrize("relative", [False, True], ids=["absolute", "relative"])
+def test_output_inside_an_archived_directory_does_not_include_itself(checkout, relative):
+    out = checkout / "server" / "runtime" / "snap.tar.gz"
+    out.write_bytes(b"an earlier archive with the same name")
+    _run(checkout, "server/runtime/snap.tar.gz" if relative else str(out))
+    names = _names(out)
+    assert "server/runtime/settings.json" in names
+    assert "server/runtime/snap.tar.gz" not in names
+    assert not [n for n in names if ".danmu-backup." in n]
+    assert not list((checkout / "server" / "runtime").glob(".danmu-backup.*"))
+
+
+def test_output_path_that_is_a_directory_is_refused(checkout):
+    target = checkout / "backups"
+    target.mkdir()
+    with pytest.raises(subprocess.CalledProcessError) as exc:
+        _run(checkout, str(target))
+    assert exc.value.returncode == 1
+    assert "directory" in exc.value.stderr
+    assert list(target.iterdir()) == []
+    assert not list(checkout.glob(".danmu-backup.*"))

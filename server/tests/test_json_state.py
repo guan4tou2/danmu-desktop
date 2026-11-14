@@ -163,7 +163,7 @@ def test_reset_with_path_redirects(tmp_path):
 def test_atomic_write_no_tmp_file_lingering_on_success(tmp_path):
     js = _make(tmp_path)
     js.update({"count": 1})
-    tmp_files = list(tmp_path.glob("*.tmp.*"))
+    tmp_files = list(tmp_path.glob("*.tmp.*")) + list(tmp_path.glob(".*.tmp"))
     assert tmp_files == []
 
 

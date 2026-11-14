@@ -21,7 +21,7 @@ import urllib.parse
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from server.config import Config
 
@@ -214,6 +214,16 @@ class WebhookConfig:
         )
 
 
+def _load_entry(entry: Any) -> WebhookConfig:
+    """One stored hook → WebhookConfig; TypeError/ValueError when unusable."""
+    if not isinstance(entry, dict):
+        raise TypeError("webhook entry is not an object")
+    for key in ("id", "url", "secret"):
+        if entry.get(key) is not None and not isinstance(entry.get(key), str):
+            raise TypeError(f"webhook {key} must be a string")
+    return WebhookConfig.from_dict(entry)
+
+
 # ── 出站 URL 的安全檢查（2026-09-08，2026-11-14 改為檢查解析結果）───────────
 #
 # webhook 的 URL 由管理員填，而伺服器會照著它發請求——典型的 SSRF 面。
@@ -221,7 +231,7 @@ class WebhookConfig:
 #
 #   * `169.254.0.0/16` 與 `fe80::/10` 裡最有價值的是 `169.254.169.254`
 #     （AWS/GCP/Azure/Oracle 的 instance metadata），從 webhook 的角度永遠
-#     不是合法目標。另外兩個不在 link-local 的 metadata 位址一併擋掉。
+#     不是合法目標。另外幾個不在 link-local 的 metadata 位址一併擋掉。
 #   * **私有網段（192.168/10/172.16）與 localhost 刻意放行**：這是自架軟體，
 #     「把彈幕轉發到同機或區網裡的一台服務」是真實且常見的用法。
 #
@@ -229,7 +239,11 @@ class WebhookConfig:
 # 十六進位、整數等寫法，網域名稱也可以指向任何位址。連線時直接連到檢查過的
 # 那幾個位址（不再解析第二次），也不跟隨轉址——轉址的目的地沒經過檢查。
 # 儲存時（register / update）與每次送出前都檢查。
-_BLOCKED_URL_REASON = "URL 指向 link-local 位址（例如雲端 metadata），不允許"
+_LINK_LOCAL_REASON = "URL 指向 link-local 位址，不允許"
+_METADATA_REASON = "URL 指向雲端 metadata 位址，不允許"
+_UNKNOWN_ADDRESS_REASON = "主機解析出無法辨識的位址，不允許"
+# Kept for callers that only need "refused".
+_BLOCKED_URL_REASON = _LINK_LOCAL_REASON
 
 # Cloud metadata endpoints outside link-local space: AWS, Oracle Cloud and
 # Google Compute Engine over IPv6, and Alibaba Cloud. Other private (ULA)
@@ -240,27 +254,36 @@ _METADATA_NETWORKS = (
     ipaddress.ip_network("fd20:ce::254/128"),  # Google Compute Engine
     ipaddress.ip_network("100.100.100.200/32"),  # Alibaba Cloud
 )
-# Well-known NAT64 prefix: the low 32 bits are the IPv4 destination.
+# Address forms whose low 32 bits stand for an IPv4 destination.
 _NAT64_NETWORK = ipaddress.ip_network("64:ff9b::/96")
+_IPV4_COMPATIBLE_NETWORK = ipaddress.ip_network("::/96")
+# Private (ULA) space, where clouds place IPv6 metadata endpoints that end in
+# the link-local IPv4 metadata address. Global unicast addresses are not
+# covered: their low bits are ordinary host bits.
+_ULA_NETWORK = ipaddress.ip_network("fc00::/7")
 
 
 class _ResolveError(ValueError):
     """The host did not resolve; distinct from a destination being refused."""
 
 
-def _blocked_address(ip: "ipaddress._BaseAddress") -> bool:
+def _blocked_reason(ip: "ipaddress._BaseAddress") -> Optional[str]:
+    """Why *ip* is refused as a webhook destination, or None if it is allowed."""
     if isinstance(ip, ipaddress.IPv6Address):
         embedded = ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
-        if ip.ipv4_mapped is not None or ip in _NAT64_NETWORK:
-            return _blocked_address(embedded)
-        # Clouds put their IPv6 metadata endpoint at an address whose low 32
-        # bits are the link-local IPv4 one; refuse that shape wherever it
-        # appears.
-        if embedded.is_link_local:
-            return True
+        if ip.ipv4_mapped is not None or ip in _NAT64_NETWORK or ip in _IPV4_COMPATIBLE_NETWORK:
+            return _blocked_reason(embedded)
+        if ip in _ULA_NETWORK and embedded.is_link_local:
+            return _METADATA_REASON
+    if any(ip in net for net in _METADATA_NETWORKS):
+        return _METADATA_REASON
     if ip.is_link_local:
-        return True
-    return any(ip in net for net in _METADATA_NETWORKS)
+        return _LINK_LOCAL_REASON
+    return None
+
+
+def _blocked_address(ip: "ipaddress._BaseAddress") -> bool:
+    return _blocked_reason(ip) is not None
 
 
 def _literal_address(host: str) -> Optional["ipaddress._BaseAddress"]:
@@ -310,8 +333,9 @@ def _check_destination(url: str) -> tuple:
     """
     scheme, host, port, target = _parse_target(url)
     literal = _literal_address(host)
-    if literal is not None and _blocked_address(literal):
-        raise ValueError(_BLOCKED_URL_REASON)
+    reason = _blocked_reason(literal) if literal is not None else None
+    if reason:
+        raise ValueError(reason)
     try:
         addrs = _resolve(host, port)
     except (OSError, UnicodeError) as exc:
@@ -322,9 +346,10 @@ def _check_destination(url: str) -> tuple:
         try:
             ip = ipaddress.ip_address(str(sockaddr[0]).split("%", 1)[0])
         except ValueError as exc:
-            raise ValueError(_BLOCKED_URL_REASON) from exc
-        if _blocked_address(ip):
-            raise ValueError(_BLOCKED_URL_REASON)
+            raise ValueError(_UNKNOWN_ADDRESS_REASON) from exc
+        reason = _blocked_reason(ip)
+        if reason:
+            raise ValueError(reason)
     return scheme, host, port, target, addrs
 
 
@@ -494,16 +519,45 @@ class WebhookService:
     # ── Persistence ──────────────────────────────────────────────────────
 
     def reload(self) -> None:
-        """Re-read the hooks from disk (after a backup restore replaced the file).
+        """Re-read the hooks from disk.
 
-        Without this, the next status update would write the pre-restore
-        list from memory back over the restored file.
+        Raises when the file exists but cannot be read as a list, so the
+        caller does not take an empty in-memory list for success; the
+        current list then stays in memory.
         """
         with self._lock:
+            previous = self._hooks
             self._hooks = {}
-            self._load()
+            try:
+                self._load(strict=True)
+            except Exception:
+                self._hooks = previous
+                raise
 
-    def _load(self) -> None:
+    def restore_hooks(self, build: Callable[[List[Dict[str, Any]]], List[Any]]) -> List[str]:
+        """Replace the whole list (backup restore) under the service lock.
+
+        ``build(current)`` gets the live hooks as dicts and returns the new
+        list. Reading, merging, writing the file and swapping the in-memory
+        list all happen under one lock, so a delivery finishing meanwhile
+        cannot write the old list back over the restored one. ``build`` must
+        not call back into this service (the lock is not reentrant).
+
+        Every entry must load as a WebhookConfig (ValueError/TypeError
+        otherwise); write errors (OSError) reach the caller and leave the
+        in-memory list unchanged. Returns the restored hook ids.
+        """
+        with self._lock:
+            current = [h.to_dict() for h in self._hooks.values()]
+            hooks: Dict[str, WebhookConfig] = {}
+            for entry in build(current):
+                hook = _load_entry(entry)
+                hooks[hook.id] = hook
+            self._write_hooks(hooks)
+            self._hooks = hooks
+            return list(hooks)
+
+    def _load(self, strict: bool = False) -> None:
         """Load webhooks from JSON file (called once at init, under no lock).
 
         Legacy migration: v4.7.0 moved default to server/runtime/webhooks.json.
@@ -536,23 +590,37 @@ class WebhookService:
                 return
         try:
             raw = json.loads(_WEBHOOKS_FILE.read_text(encoding="utf-8"))
-            for entry in raw:
-                hook = WebhookConfig.from_dict(entry)
-                self._hooks[hook.id] = hook
-            logger.info("Loaded %d webhook(s) from %s", len(self._hooks), _WEBHOOKS_FILE)
-        except Exception:
+            if not isinstance(raw, list):
+                raise ValueError("webhooks file is not a list")
+        except (OSError, ValueError):
+            if strict:
+                raise
             logger.exception("Failed to load webhooks from %s", _WEBHOOKS_FILE)
+            return
+        # One bad entry costs only that entry, not every hook after it.
+        for index, entry in enumerate(raw):
+            try:
+                hook = _load_entry(entry)
+            except (TypeError, ValueError) as exc:
+                logger.warning("Skipping webhook entry %d in %s: %s", index, _WEBHOOKS_FILE, exc)
+                continue
+            self._hooks[hook.id] = hook
+        logger.info("Loaded %d webhook(s) from %s", len(self._hooks), _WEBHOOKS_FILE)
+
+    def _write_hooks(self, hooks: Dict[str, "WebhookConfig"]) -> None:
+        """Write *hooks* to the store; raises on failure. Caller holds the lock."""
+        data = [h.to_dict() for h in hooks.values()]
+        # Owner-only: the file holds signing secrets and webhook URLs.
+        write_atomic(
+            _WEBHOOKS_FILE,
+            json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8"),
+            0o600,
+        )
 
     def _save(self) -> None:
         """Persist current hooks to JSON. Caller must hold self._lock."""
         try:
-            data = [h.to_dict() for h in self._hooks.values()]
-            # Owner-only: the file holds signing secrets and webhook URLs.
-            write_atomic(
-                _WEBHOOKS_FILE,
-                json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8"),
-                0o600,
-            )
+            self._write_hooks(self._hooks)
         except Exception:
             logger.exception("Failed to save webhooks to %s", _WEBHOOKS_FILE)
 

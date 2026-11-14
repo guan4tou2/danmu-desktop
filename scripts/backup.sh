@@ -55,6 +55,10 @@ for arg in "$@"; do
 done
 OUT="${OUT:-danmu-backup-$(date +%F).tar.gz}"
 
+if [[ -d "$OUT" ]]; then
+  echo "ERROR: output path is a directory; give a file name: $OUT" >&2
+  exit 1
+fi
 if [[ -d "$(dirname "$OUT")" ]]; then :; else
   echo "ERROR: output directory does not exist: $(dirname "$OUT")" >&2
   exit 1
@@ -103,7 +107,21 @@ echo "Writing $OUT"
 TMP_OUT="$(umask 077 && mktemp "$(dirname "$OUT")/.danmu-backup.XXXXXX")"
 trap 'rm -f "$TMP_OUT"' EXIT
 chmod 600 "$TMP_OUT"
-tar -czf "$TMP_OUT" "${EXIST_PATHS[@]}"
+
+# When OUT sits inside a directory being archived (server/runtime/ say), the
+# archive must not contain itself, an earlier archive of the same name, or
+# the temp file it is being written to.
+EXCLUDES=()
+ROOT_REAL="$(pwd -P)"
+OUT_DIR_REAL="$(cd "$(dirname "$OUT")" && pwd -P)"
+if [[ "$OUT_DIR_REAL/" == "$ROOT_REAL/"* ]]; then
+  OUT_REL="${OUT_DIR_REAL#"$ROOT_REAL"}"
+  OUT_REL="${OUT_REL#/}"
+  OUT_REL="${OUT_REL:+$OUT_REL/}"
+  EXCLUDES+=("--exclude=${OUT_REL}$(basename "$OUT")")
+  EXCLUDES+=("--exclude=${OUT_REL}$(basename "$TMP_OUT")")
+fi
+tar -czf "$TMP_OUT" ${EXCLUDES[@]+"${EXCLUDES[@]}"} "${EXIST_PATHS[@]}"
 mv -f "$TMP_OUT" "$OUT"
 trap - EXIT
 

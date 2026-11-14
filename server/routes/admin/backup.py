@@ -84,7 +84,9 @@ def backup_import():
     dry_run = (request.args.get("dry_run", "") or "").lower() in ("1", "true", "yes")
     result = backup_svc.unpack(raw, dry_run=dry_run)
 
-    if not dry_run and result.get("ok"):
+    # Audited whenever anything was written, including a restore whose files
+    # landed but whose services did not pick them up (restart_required).
+    if not dry_run and (result.get("ok") or result.get("applied")):
         audit_log.append(
             "backup",
             "import",
@@ -93,6 +95,8 @@ def backup_import():
                 "applied": result.get("applied", 0),
                 "skipped": len(result.get("skipped") or []),
                 "manifest_version": (result.get("manifest") or {}).get("version"),
+                "ok": bool(result.get("ok")),
+                "restart_required": bool(result.get("restart_required")),
             },
         )
     return _json_response(result)

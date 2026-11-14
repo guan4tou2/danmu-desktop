@@ -16,6 +16,22 @@ def test_cloud_metadata_ipv6_addresses_are_refused(addr):
 
 def test_ipv6_with_link_local_ipv4_in_low_bits_is_refused():
     assert webhook_mod._blocked_address(ipaddress.ip_address("fd12:3456::a9fe:1")) is True
+    reason = webhook_mod._blocked_reason(ipaddress.ip_address("fd12:3456::a9fe:1"))
+    assert reason == webhook_mod._METADATA_REASON
+
+
+def test_global_unicast_address_with_the_same_low_bits_is_allowed():
+    """Only private (ULA) space is read as a metadata-shaped address; in a
+    global unicast address the low 32 bits are ordinary host bits."""
+    assert webhook_mod._blocked_address(ipaddress.ip_address("2001:db8:1::a9fe:a9fe")) is False
+
+
+def test_refusal_message_names_the_actual_reason():
+    link_local = webhook_mod._blocked_reason(ipaddress.ip_address("fe80::1"))
+    metadata = webhook_mod._blocked_reason(ipaddress.ip_address("fd00:ec2::254"))
+    assert link_local == webhook_mod._LINK_LOCAL_REASON
+    assert metadata == webhook_mod._METADATA_REASON
+    assert webhook_mod._blocked_reason(ipaddress.ip_address("10.0.0.5")) is None
 
 
 @pytest.mark.parametrize(

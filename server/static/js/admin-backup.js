@@ -461,6 +461,8 @@
     read_failed: "backupSkipReadFailed",
     plugin_upload_disabled: "backupSkipPluginUploadDisabled",
     webhook_no_credentials: "backupSkipWebhookNoCredentials",
+    webhook_invalid: "backupSkipWebhookInvalid",
+    credential_invalid: "backupSkipCredentialInvalid",
   };
 
   // 憑證合併的說明：哪些 Webhook 更新了設定、哪些原樣保留、哪個讀不出來的
@@ -469,6 +471,8 @@
     webhook_updated: "backupMergeWebhookUpdated",
     webhook_kept: "backupMergeWebhookKept",
     unreadable_file_kept: "backupMergeUnreadableKept",
+    fire_token_legacy_ignored: "backupMergeFireTokenLegacy",
+    ws_auth_turned_off: "backupMergeWsAuthOff",
   };
 
   function mergedLines(merged) {
@@ -589,6 +593,7 @@
           lines.push(...mergedLines(result.merged));
         } else {
           lines.push("✗ " + ServerI18n.t("backupApplyFailedHeader"));
+          if (result.restart_required) lines.push(ServerI18n.t("backupRestartRequired"));
           lines.push(JSON.stringify(result.errors || result, null, 2));
         }
         out.textContent = lines.join("\n");

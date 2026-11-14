@@ -15,6 +15,7 @@ import pytest
 from server import config as config_module
 from server.config import Config
 from server.services import backup as backup_svc
+from server.tests.conftest import point_credential_stores
 
 
 def _tarball(members, *, symlinks=()):
@@ -54,6 +55,7 @@ def dirs(tmp_path, monkeypatch):
         ),
     )
     monkeypatch.setattr(config_module, "_HASH_FILE", d["runtime"] / "admin_password.hash")
+    point_credential_stores(monkeypatch, d["runtime"])
     d["root"] = root
     return d
 

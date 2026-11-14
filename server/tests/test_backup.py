@@ -9,6 +9,7 @@ import pytest
 
 from server.services import backup as backup_svc
 from server.services import factory_reset as factory_reset_svc
+from server.tests.conftest import point_credential_stores
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -51,6 +52,8 @@ def isolated_backup_dirs(tmp_path, monkeypatch):
             ("user_plugins", user_plugins, "user_plugins", "*"),
         ],
     )
+    # The webhook store seeded above is this site's store.
+    point_credential_stores(monkeypatch, runtime)
     return {
         "runtime": runtime,
         "effects": effects,

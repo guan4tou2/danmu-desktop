@@ -352,6 +352,10 @@ Restoring such a backup keeps the credentials the target server already
 has; webhooks the target server does not have are not restored. Tick
 "Include connection passwords and tokens" when moving a whole site, and
 store that file like a password. The admin password is never included.
+The webhook list is always stored in the backup as `runtime/webhooks.json`
+and restored to the file `WEBHOOKS_PATH` points at on the restoring server.
+If a restore writes files but the running server does not pick them up,
+the result says so; restart the server.
 
 ### Backup (scripts/backup.sh)
 
@@ -371,6 +375,10 @@ The archive is not encrypted and is written with mode `0600`. Even without
 `.env` it contains the admin password hash and the connection tokens, so
 anyone who has the file effectively has admin access: store it like the
 admin password and do not hand it out as a "settings template".
+
+The output must be a file path, not a directory. The archive is written to
+a temporary file next to it and moved into place when complete; an output
+inside one of the snapshotted directories is left out of the archive.
 
 
 ### Restore

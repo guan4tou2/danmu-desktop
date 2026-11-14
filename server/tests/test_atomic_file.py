@@ -74,3 +74,45 @@ def test_webhook_store_ignores_a_leftover_temp_file(tmp_path):
     assert _mode(store) == 0o600
     assert "s" in store.read_text()
     assert leftover.read_text() == "[]"
+
+
+def test_directory_is_synced_after_the_rename(tmp_path, monkeypatch):
+    synced = []
+    real_fsync = atomic_file.os.fsync
+
+    def record(fd):
+        synced.append(stat.S_ISDIR(os.fstat(fd).st_mode))
+        return real_fsync(fd)
+
+    monkeypatch.setattr(atomic_file.os, "fsync", record)
+    atomic_file.write_atomic(tmp_path / "secret.json", b"x", 0o600)
+    # The file's data first, then the directory holding the new name.
+    assert synced == [False, True]
+
+
+def test_a_directory_sync_failure_does_not_fail_the_write(tmp_path, monkeypatch):
+    real_fsync = atomic_file.os.fsync
+
+    def fail_for_directories(fd):
+        if stat.S_ISDIR(os.fstat(fd).st_mode):
+            raise OSError("fsync not supported for directories")
+        return real_fsync(fd)
+
+    monkeypatch.setattr(atomic_file.os, "fsync", fail_for_directories)
+    atomic_file.write_atomic(tmp_path / "secret.json", b"x", 0o600)
+    assert (tmp_path / "secret.json").read_bytes() == b"x"
+
+
+def test_filesystems_without_chmod_still_get_at_most_the_open_mode(tmp_path, monkeypatch):
+    import errno
+
+    def unsupported(fd, mode):
+        raise OSError(errno.EPERM, "Operation not permitted")
+
+    monkeypatch.setattr(atomic_file.os, "fchmod", unsupported)
+    old = os.umask(0o022)
+    try:
+        atomic_file.write_atomic(tmp_path / "secret.json", b"x", 0o600)
+    finally:
+        os.umask(old)
+    assert _mode(tmp_path / "secret.json") == 0o600

@@ -72,6 +72,37 @@ def _isolate_webhook_store(tmp_path, monkeypatch):
         webhook_mod._WEBHOOKS_FILE = original_file
 
 
+def point_credential_stores(monkeypatch, runtime, webhooks_name="webhooks.json"):
+    """Put the three credential stores in *runtime*, as on a real server.
+
+    Backup export and restore find credential files by these service paths;
+    tests that model a site in a temp directory call this for each site.
+    """
+    from server.services import fire_token as fire_token_mod
+    from server.services import ws_auth as ws_auth_mod
+
+    monkeypatch.setattr(fire_token_mod, "_STATE_FILE", runtime / "fire_token.json")
+    fire_token_mod.reset_for_tests()
+    ws_auth_mod._state.reset_for_tests(runtime / "ws_auth.json")
+    # _isolate_webhook_store restores the original path after the test.
+    webhook_mod._WEBHOOKS_FILE = runtime / webhooks_name
+    webhook_mod.WebhookService._instance = None
+
+
+@pytest.fixture(autouse=True)
+def _isolate_fire_token(tmp_path, monkeypatch):
+    """Per-test fire token store; a backup restore writes it through the
+    service, so no test may reach the checkout's runtime/fire_token.json."""
+    from server.services import fire_token as fire_token_mod
+
+    monkeypatch.setattr(fire_token_mod, "_STATE_FILE", tmp_path / "fire_token.json")
+    fire_token_mod.reset_for_tests()
+    try:
+        yield
+    finally:
+        fire_token_mod.reset_for_tests()
+
+
 @pytest.fixture(autouse=True)
 def _plugin_upload_allowed(monkeypatch):
     """Tests default to the development behaviour of ALLOW_PLUGIN_UPLOAD.

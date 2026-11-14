@@ -504,10 +504,12 @@ def test_write_state_chmod_600(tmp_path):
 def _force_permission_error(monkeypatch):
     """Patch os.open to always raise PermissionError for the ws_auth tmp file."""
     real_open = os.open
-    tmp_prefix = str(ws_auth._STATE_FILE.with_suffix("")) + ".tmp."
+    state_file = ws_auth._STATE_FILE
+    # atomic_file.write_atomic's temp file: ".<name>.<unique>.tmp" next to it.
+    tmp_prefix = str(state_file.with_name("." + state_file.name + "."))
 
     def guarded(path, *args, **kwargs):
-        if str(path).startswith(tmp_prefix):
+        if str(path).startswith(tmp_prefix) and str(path).endswith(".tmp"):
             raise PermissionError(13, "Permission denied", str(path))
         return real_open(path, *args, **kwargs)
 

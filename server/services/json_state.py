@@ -10,8 +10,8 @@ domain data; every mechanism was identical.
 
 This class collapses those mechanisms into one place. Each caller keeps
 its own domain-specific `default` factory and `normalize` validator;
-mechanism (RLock, atomic write, deepcopy on read, one-shot log on
-unwritable disk, pid+tid tmp suffix, optional 0o600 chmod) lives here.
+mechanism (RLock, atomic write through atomic_file, deepcopy on read,
+one-shot log on unwritable disk, optional 0o600 mode) lives here.
 
 Usage:
 
@@ -45,7 +45,6 @@ class doesn't know about it. It only handles the container.
 from __future__ import annotations
 
 import copy
-import errno
 import json
 import logging
 import os
@@ -53,6 +52,8 @@ import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
+
+from .atomic_file import write_atomic
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +163,21 @@ class JsonState:
         """
         with self._lock:
             self._cache = None
+
+    def replace(self, build: Callable[[], Any]) -> Dict[str, Any]:
+        """Replace the whole state with ``build()``, under the state's lock.
+
+        For callers that compute the new state from what is on disk now
+        (backup restore). ``build`` runs while the lock is held, so no other
+        writer can land in between. Unlike ``update``, nothing is swallowed:
+        ``normalize`` errors (ValueError) and write errors (OSError) reach
+        the caller, and the cache only changes once the file is written.
+        """
+        with self._lock:
+            normalized = self._normalize(build())
+            self._atomic_write(normalized)
+            self._cache = normalized
+            return copy.deepcopy(normalized)
 
     def update(self, patch: Dict[str, Any]) -> Dict[str, Any]:
         """Merge patch into current state, normalize, persist. Return new state.
@@ -277,30 +293,9 @@ class JsonState:
         return target
 
     def _atomic_write(self, state: Dict[str, Any]) -> None:
-        """tmp + rename atomic write. pid+tid suffix avoids multi-worker races."""
-        self._path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = self._path.with_suffix(f".tmp.{os.getpid()}.{threading.get_ident()}")
-        mode = 0o600 if self._secure else 0o644
-        flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
-        fd = os.open(tmp, flags, mode)
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as f:
-                json.dump(state, f, ensure_ascii=False, indent=2)
-            if self._secure:
-                try:
-                    os.chmod(tmp, 0o600)
-                except OSError as exc:
-                    # Windows / unusual FS — best-effort, log once.
-                    if exc.errno not in (errno.ENOSYS, errno.EPERM):
-                        raise
-                    logger.warning("chmod 0o600 not supported on %s: %s", tmp, exc)
-            tmp.replace(self._path)
-        except Exception:
-            try:
-                tmp.unlink()
-            except OSError:
-                pass
-            raise
+        """Atomic replace through a fresh temp file (see atomic_file)."""
+        data = json.dumps(state, ensure_ascii=False, indent=2).encode("utf-8")
+        write_atomic(self._path, data, 0o600 if self._secure else 0o644)
 
     def _log_write_failure_once(self, exc: Exception) -> None:
         """One-shot warn on unwritable runtime dir; subsequent failures go DEBUG.
