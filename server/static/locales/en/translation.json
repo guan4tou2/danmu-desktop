@@ -2960,6 +2960,7 @@
   "blkErrRegex": "That regex isn't valid",
   "blkErrUnsafe": "That regex could slow matching down, try another way",
   "blkErrTimeout": "That regex took too long and was stopped, try another way",
+  "blkErrBusy": "Too many regex checks are running, try again shortly",
   "blkErrNoSession": "No session is live, pick another duration",
   "blkErrNotSaved": "Couldn't save, the change didn't take effect",
   "blkErrConflict": "This rule just changed, try again",

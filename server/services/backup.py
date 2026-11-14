@@ -279,8 +279,20 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
         return out
 
     # Apply phase — atomic per-file via tmp + replace.
+    # 封鎖規則檔交給引擎：換檔與重新載入要在引擎的變更鎖裡一起做，不然中間提交的
+    # 後台編輯會用還原前的記憶體清單把剛還原的檔案蓋回去。
+    from . import filter_engine as _rules
+
+    rules_path = Path(_rules.filter_engine.path).resolve()
     wrote_fire_token = False
     for target, data in safe_writes:
+        if target.resolve() == rules_path:
+            try:
+                _rules.restore_rules_file(data)
+                out["applied"] += 1
+            except (ValueError, _rules.RuleSaveError) as exc:
+                out["errors"].append(f"restore {target.name}: {exc}")
+            continue
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
             tmp = target.with_suffix(target.suffix + ".tmp")
@@ -298,14 +310,6 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
         from . import fire_token
 
         fire_token.reload()
-
-    # 封鎖規則同理：引擎把規則放在記憶體裡。不重新讀的話，還原的規則要等重啟才生效，
-    # 而且下一次在後台改任何一條規則，就會用記憶體裡的舊清單把還原的檔案蓋回去。
-    from .filter_engine import filter_engine
-
-    rules_path = Path(filter_engine.path).resolve()
-    if any(t.resolve() == rules_path for t, _ in safe_writes):
-        filter_engine.reload()
 
     out["ok"] = len(out["errors"]) == 0
     return out

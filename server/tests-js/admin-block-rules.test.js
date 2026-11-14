@@ -279,6 +279,7 @@ describe("block rule list", () => {
       no_session: "blkErrNoSession",
       save_failed: "blkErrNotSaved",
       conflict: "blkErrConflict",
+      regex_busy: "blkErrBusy",
     };
     for (const [code, key] of Object.entries(codes)) {
       respond = (url) =>
@@ -289,5 +290,102 @@ describe("block rule list", () => {
       await flush();
       expect(window.showToast).toHaveBeenLastCalledWith(key, false);
     }
+  });
+
+  // ── 外部審查（第三輪） ────────────────────────────────────────
+
+  const pending = (url) => {
+    const gates = [];
+    respond = (u, body) => {
+      if (u !== url) return undefined;
+      return new Promise((resolve) => {
+        gates.push({ body, release: () => resolve({ ok: true, status: 200, json: async () => ({ rule_id: "n1" }) }) });
+      });
+    };
+    return gates;
+  };
+
+  test("regex patterns keep their spaces, keywords are still trimmed", async () => {
+    const match = document.getElementById("blockRuleMatch");
+    match.value = "regex";
+    match.dispatchEvent(new Event("change"));
+    pressEnter("foo ");
+    await flush();
+    expect(lastPost("/admin/filters/add").body).toMatchObject({ type: "regex", pattern: "foo " });
+
+    match.value = "keyword";
+    match.dispatchEvent(new Event("change"));
+    pressEnter("  詞  ");
+    await flush();
+    expect(lastPost("/admin/filters/add").body).toMatchObject({ type: "word", pattern: "詞" });
+  });
+
+  test("a save that comes back after another edit started leaves the new edit alone", async () => {
+    const gates = pending("/admin/filters/add");
+    pressEnter("first");
+    await flush();
+    document.querySelector('.block-rule-edit[data-rule-id="kw1"]').click();
+    expect(document.getElementById("blockRuleInput").value).toBe("legacy");
+
+    gates[0].release();
+    await flush();
+    expect(document.getElementById("blockRuleInput").value).toBe("legacy");
+    expect(document.getElementById("blockRuleCancel").hidden).toBe(false);
+  });
+
+  test("a quick rule switched off on its row is switched back on, not deleted", async () => {
+    rules = rules.map((r) => (r.id === "rx1" ? { ...r, enabled: false } : r));
+    await window.AdminBlockRules.refresh();
+    const chip = document.querySelector('[data-flt-quick-id="url"]');
+    expect(chip.classList.contains("is-active")).toBe(false);
+    calls = [];
+    chip.click();
+    await flush();
+    expect(calls.filter((c) => c.url === "/admin/filters/remove")).toHaveLength(0);
+    expect(lastPost("/admin/filters/update").body).toEqual({ rule_id: "rx1", updates: { enabled: true } });
+  });
+
+  test("toggling one rule quickly sends one update at a time and the last click wins", async () => {
+    const gates = pending("/admin/filters/update");
+    const flip = (checked) => {
+      const cb = document.querySelector('.filter-toggle-cb[data-rule-id="kw1"]');
+      cb.checked = checked;
+      cb.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    flip(false);
+    flip(true);
+    flip(false);
+    await flush();
+    expect(gates).toHaveLength(1);
+    expect(gates[0].body.updates).toEqual({ enabled: false });
+
+    gates[0].release();
+    await flush();
+    // 送完的跟最後想要的一樣（false），不再送
+    expect(gates).toHaveLength(1);
+
+    flip(true);
+    await flush();
+    flip(false);
+    await flush();
+    expect(gates).toHaveLength(2);
+    gates[1].release();
+    await flush();
+    expect(gates).toHaveLength(3);
+    expect(gates[2].body.updates).toEqual({ enabled: false });
+    gates[2].release();
+    await flush();
+  });
+
+  test("editing a fingerprint rule keeps the action it was stored with", async () => {
+    rules = rules.concat([
+      { id: "fp1", type: "fingerprint", pattern: "fp_x", action: "review", priority: 0, enabled: true, lifetime: "permanent" },
+    ]);
+    await window.AdminBlockRules.refresh();
+    document.querySelector('.block-rule-edit[data-rule-id="fp1"]').click();
+    expect(document.getElementById("blockRuleAction").value).toBe("block");
+    document.getElementById("blockRuleSubmit").click();
+    await flush();
+    expect(lastPost("/admin/filters/update").body.updates).toMatchObject({ type: "fingerprint", action: "review" });
   });
 });

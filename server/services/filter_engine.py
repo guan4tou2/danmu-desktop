@@ -38,6 +38,7 @@ import logging
 import os
 import re
 import shutil
+import tempfile
 import threading
 import time
 import uuid
@@ -147,6 +148,8 @@ def _error_code(texts: list[str]) -> str:
         return "invalid_regex"
     if "timed out" in joined:
         return "regex_timeout"
+    if "checks are running" in joined:
+        return "regex_busy"
     if "backtracking" in joined or "safety check" in joined:
         return "unsafe_regex"
     return "invalid"
@@ -306,6 +309,8 @@ class FilterEngine:
         """
         rule = self._validate(_client_fields(rule_data))
         with self._lock:
+            self._prune_expired()
+            self._confirm_session(rule)
             self._reject_duplicate_word(rule)
             self._compile_if_regex(rule)
             self._commit(self._rules + [rule])
@@ -319,6 +324,7 @@ class FilterEngine:
         """
         data = _client_fields(data)
         with self._lock:
+            self._prune_expired()
             rule = self._find(rule_id)
             if rule is None:
                 return False
@@ -330,6 +336,7 @@ class FilterEngine:
             merged = {**snapshot, **data}
         updated = self._validate(merged, rule_id=rule_id, existing=rule)
         with self._lock:
+            self._prune_expired()
             current = self._find(rule_id)
             if current is None:
                 return False
@@ -337,6 +344,7 @@ class FilterEngine:
                 raise RuleValidationError(
                     "The rule changed while this edit was being checked; try again.", "conflict"
                 )
+            self._confirm_session(updated, existing=current)
             self._reject_duplicate_word(updated, ignore_id=rule_id)
             self._compile_if_regex(updated)
             self._commit([updated if r.id == rule_id else r for r in self._rules])
@@ -411,6 +419,10 @@ class FilterEngine:
             raise RuleValidationError(
                 "Regex pattern failed safety check: could not run the check.", "unsafe_regex"
             ) from exc
+        except rule_regex.PatternCheckBusy as exc:
+            raise RuleValidationError(
+                "Too many regex checks are running; try again shortly.", "regex_busy"
+            ) from exc
         result = _regex_result(rule, sample_text, count, new_text)
         return result or FilterResult(action="pass", text=sample_text)
 
@@ -430,6 +442,9 @@ class FilterEngine:
         if duration_sec is not None:
             meta["duration_sec"] = duration_sec
         with self._lock:
+            # 到期但還沒被清掉的同名字不算「已經有」：不清的話這裡回 exists，下一次
+            # 比對時它被清掉，結果快捷封鎖回報成功、字卻沒在擋。
+            self._prune_expired()
             existing = next(
                 (r for r in self._rules if r.type == "word" and r.pattern == word), None
             )
@@ -462,10 +477,32 @@ class FilterEngine:
         return self._path
 
     def reload(self) -> None:
-        """重新從檔案讀規則（備份還原寫回規則檔之後呼叫）。"""
+        """重新從檔案讀規則。"""
         with self._lock:
             self._regex_cache.clear()
             self._load()
+
+    def restore_file(self, data: bytes) -> int:
+        """備份還原：在變更鎖裡換掉規則檔並重新讀進來，回傳讀進來的規則數。
+
+        「換檔」與「重新載入」之間不能有別的寫入：以前備份模組自己寫檔、之後才叫
+        reload()，中間若有主持人的編輯提交，會用還原前的記憶體清單把剛還原的檔案
+        蓋回去。舊格式（5.8）的內容照常轉換、留副本（_load）。
+
+        內容不是 JSON 陣列時丟 ValueError，現有的檔案與清單都不動；寫不進去丟
+        RuleSaveError。
+        """
+        try:
+            parsed = json.loads(data.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError) as exc:
+            raise ValueError(f"filter_rules.json is not valid JSON: {exc}") from exc
+        if not isinstance(parsed, list):
+            raise ValueError("filter_rules.json must be a JSON array")
+        with self._lock:
+            self._write_bytes(data)
+            self._regex_cache.clear()
+            self._load()
+            return len(self._rules)
 
     # ── Internal helpers ────────────────────────────────────────
 
@@ -586,9 +623,22 @@ class FilterEngine:
             expires_at=expires_at,
         )
 
+    def _confirm_session(self, rule: FilterRule, existing: Optional[FilterRule] = None) -> None:
+        """提交前（持有 _lock）再確認一次場次還在。
+
+        驗證在鎖外做，場次可能在這段空檔結束；close_session 是放掉場次鎖之後才清本場次
+        規則，這時才提交的規則會留到下一場結束。
+        """
+        if rule.lifetime != "session" or (existing is not None and existing.lifetime == "session"):
+            return
+        if not _session_live():
+            msg = "No session is live, so a rule cannot last until the session ends."
+            raise RuleValidationError(msg, "no_session", {"lifetime": [msg]})
+
     def _reject_duplicate_word(self, rule: FilterRule, ignore_id: Optional[str] = None) -> None:
         if rule.type != "word":
             return
+        self._prune_expired()  # 到期還沒清掉的同名字不算重複
         for other in self._rules:
             if other.id != ignore_id and other.type == "word" and other.pattern == rule.pattern:
                 raise RuleValidationError("This word is already blocked.", "duplicate")
@@ -845,17 +895,34 @@ class FilterEngine:
     def _write(self, rules: list[FilterRule]) -> None:
         """把 *rules* 原子地寫進規則檔；寫不進去時記警告並丟 RuleSaveError。"""
         data = [r.to_dict() for r in rules]
-        tmp_path = self._path + ".tmp"
+        self._write_bytes(json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8"))
+
+    def _write_bytes(self, payload: bytes) -> None:
+        """暫存檔＋os.replace。暫存檔名每次都不同（點開頭，備份打包會略過），不會和
+        別的寫入路徑撞名。"""
+        directory = os.path.dirname(os.path.abspath(self._path))
+        tmp_path = None
         try:
-            with open(tmp_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
+            os.makedirs(directory, exist_ok=True)
+            fd, tmp_path = tempfile.mkstemp(
+                dir=directory, prefix="." + os.path.basename(self._path) + ".", suffix=".tmp"
+            )
+            with os.fdopen(fd, "wb") as f:
+                f.write(payload)
+            # mkstemp 建的是 0600；沿用原檔的權限（沒有原檔就 0644），與以前的寫法一致。
+            try:
+                mode = os.stat(self._path).st_mode & 0o777
+            except OSError:
+                mode = 0o644
+            os.chmod(tmp_path, mode)
             os.replace(tmp_path, self._path)
         except OSError as exc:
             logger.warning("Block rules: could not write %s: %s", self._path, exc)
-            try:
-                os.unlink(tmp_path)
-            except OSError:
-                pass
+            if tmp_path:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
             raise RuleSaveError(
                 "The block rules file could not be written; the change was not saved."
             ) from exc
@@ -892,3 +959,13 @@ class FilterEngine:
 
 # Module-level singleton
 filter_engine = FilterEngine()
+
+
+def restore_rules_file(data: bytes) -> int:
+    """備份還原 ``runtime/filter_rules.json`` 的入口（services/backup.py 呼叫）。
+
+    *data* 是備份裡那個檔的原始內容。回傳還原後的規則數；內容不是 JSON 陣列丟
+    ValueError（不動現有規則），寫不進去丟 RuleSaveError。換檔與重新載入都在引擎的
+    變更鎖裡完成，見 FilterEngine.restore_file。
+    """
+    return filter_engine.restore_file(data)

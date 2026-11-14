@@ -2960,6 +2960,7 @@
   "blkErrRegex": "正規式寫法有誤",
   "blkErrUnsafe": "這個正規式可能拖慢比對，請換個寫法",
   "blkErrTimeout": "這條正規式跑太久，已經停掉，請換個寫法",
+  "blkErrBusy": "正在檢查的正規式太多了，請稍後再試",
   "blkErrNoSession": "現在沒有進行中的場次，請改選其他期限",
   "blkErrNotSaved": "沒有存檔成功，這次的改動沒有生效",
   "blkErrConflict": "這條規則剛被改過，請再試一次",

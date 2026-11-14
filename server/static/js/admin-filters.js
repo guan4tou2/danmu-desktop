@@ -161,6 +161,7 @@
   let _scope = "all";
   let _editing = null; // 正在編輯的規則（null = 新增）
   let _submitting = false; // 送出中：連按 Enter 不會送第二次
+  let _formSeq = 0; // 每次開始新增／編輯（含整頁重繪）加一，認出儲存是哪一次表單操作發起的
   // 有沒有進行中的場次（/admin/filters/list 的 session_live）。沒有時不提供「到本場次
   // 結束」：那時沒有場次可以結束，後端也不收。
   let _sessionLive = true;
@@ -383,12 +384,20 @@
   function readForm() {
     const match = el("blockRuleMatch").value;
     const action = el("blockRuleAction").value;
+    const raw = el("blockRuleInput").value || "";
     const body = {
       type: typeFor(match, action),
-      pattern: (el("blockRuleInput").value || "").trim(),
+      // 只修剪關鍵字與指紋。正規式原樣保留：「foo 」結尾的空白是規則的一部分，修掉的話
+      // 打開再儲存就連沒有空白的訊息也會命中。
+      pattern: match === "regex" ? raw : raw.trim(),
       action: action,
       priority: parseInt(el("blockRulePriority").value, 10) || 0,
     };
+    // 指紋與頻率規則不論存的動作是什麼，比對時一律封鎖（filter_engine._evaluate，5.8 也
+    // 一樣），所以畫面上只提供封鎖。編輯既有規則時沿用它存的動作，不要順手改掉。
+    if (_editing && _editing.type === body.type && (body.type === "fingerprint" || body.type === "rate_limit")) {
+      body.action = _editing.action || action;
+    }
     if (body.type === "replace") body.replacement = el("blockRuleReplacement").value || "";
     if (body.type === "rate_limit") {
       body.max_count = parseInt(el("blockRuleMaxCount").value, 10) || 5;
@@ -406,10 +415,12 @@
     if (code === "no_session") return t("blkErrNoSession");
     if (code === "save_failed") return t("blkErrNotSaved");
     if (code === "conflict") return t("blkErrConflict");
+    if (code === "regex_busy") return t("blkErrBusy");
     return t(fallbackKey);
   }
 
   function resetForm() {
+    _formSeq += 1;
     _editing = null;
     el("blockRuleInput").value = "";
     el("blockRuleReplacement").value = "";
@@ -427,6 +438,7 @@
   }
 
   function startEdit(rule) {
+    _formSeq += 1;
     _editing = rule;
     const view = viewOf(rule);
     el("blockRuleMatch").value = view.match;
@@ -465,6 +477,10 @@
       return;
     }
     const editing = _editing;
+    // 這次儲存屬於哪一次表單操作。等回應的期間主持人可以按取消、改編輯另一條，
+    // 整頁重繪也會換一份表單；回來時只有還是同一次操作才重設表單。
+    const formSeq = _formSeq;
+    const sameForm = () => formSeq === _formSeq;
     const url = editing ? "/admin/filters/update" : "/admin/filters/add";
     const payload = editing ? { rule_id: editing.id, updates: body } : body;
     const button = el("blockRuleSubmit");
@@ -479,7 +495,7 @@
       const data = await resp.json().catch(() => ({}));
       if (editing && resp.status === 404) {
         // 正在編輯的規則在別處被刪掉了：離開編輯模式、重抓清單，不要改成新增。
-        resetForm();
+        if (sameForm()) resetForm();
         await refresh();
         window.showToast(t("blkErrGone"), false);
         return;
@@ -488,7 +504,7 @@
         window.showToast(errorMessage(data, editing ? "updateRuleFailed" : "addRuleFailed"), false);
         return;
       }
-      resetForm();
+      if (sameForm()) resetForm();
       await refresh();
       if (editing) {
         window.showToast(t("blkUpdated"), true);
@@ -549,7 +565,12 @@
     }
   }
 
-  async function toggleRule(ruleId, enabled) {
+  // 同一條規則的開關排隊送：快速關了又開時，兩個更新同時送出可能以相反順序抵達，
+  // 結果規則停用、開關卻顯示啟用。一次只送一個，送完若最後想要的狀態跟剛送的不同，
+  // 再送一次——最後一次點的為準。
+  const _toggles = {}; // ruleId → { want, busy }
+
+  async function sendToggle(ruleId, enabled) {
     try {
       const resp = await window.csrfFetch("/admin/filters/update", {
         method: "POST",
@@ -559,16 +580,35 @@
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
         window.showToast(errorMessage(data, "updateRuleFailed"), false);
-        await refresh();
-        return;
+        return false;
       }
       const rule = _rules.find((r) => r.id === ruleId);
       if (rule) rule.enabled = enabled;
       renderQuick();
+      return true;
     } catch (err) {
       console.error("Toggle block rule error:", err);
       window.showToast(t("updateRuleFailed"), false);
-      await refresh();
+      return false;
+    }
+  }
+
+  async function toggleRule(ruleId, enabled) {
+    const state = _toggles[ruleId] || (_toggles[ruleId] = { want: enabled, busy: false });
+    state.want = enabled;
+    if (state.busy) return;
+    state.busy = true;
+    try {
+      let sent;
+      do {
+        sent = state.want;
+        if (!(await sendToggle(ruleId, sent))) {
+          await refresh(); // 失敗：以伺服器上的狀態重畫
+          break;
+        }
+      } while (state.want !== sent);
+    } finally {
+      delete _toggles[ruleId];
     }
   }
 
@@ -604,6 +644,15 @@
     if (!q) return;
     const label = t(q.key);
     const existing = quickRuleFor(q, _rules);
+    if (existing && existing.enabled === false) {
+      // 在列上被停用的那條：按鈕顯示成未開啟，按下去是重新啟用，不是刪掉它。
+      const ok = await sendToggle(existing.id, true);
+      if (ok) {
+        window.showToast(t("filtersToastEnabled", { label: label }), true);
+        await refresh();
+      }
+      return;
+    }
     if (existing) {
       const ok = await removeRule(existing.id).catch(() => false);
       window.showToast(ok ? t("filtersToastDisabled", { label: label }) : t("filtersToastDisableFailed"), ok);
@@ -811,6 +860,7 @@
     _editing = null;
     _scope = "all";
     _submitting = false;
+    _formSeq += 1;
     settingsGrid.insertAdjacentHTML("beforeend", buildSectionHtml());
     const section = document.getElementById("sec-blacklist");
     wire(section);

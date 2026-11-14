@@ -340,6 +340,8 @@ def _safe_compile_regex(pattern: str) -> None:
         raise ValidationError(f"Invalid regex: {exc}")
     except rule_regex.PatternCheckUnavailable:
         raise ValidationError("Regex pattern failed safety check: could not run the check.")
+    except rule_regex.PatternCheckBusy:
+        raise ValidationError("Too many regex checks are running; try again shortly.")
 
 
 # 封鎖規則（services/filter_engine.py）的型別、動作與期限。

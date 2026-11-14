@@ -17,6 +17,7 @@ import json
 import re
 import subprocess
 import sys
+import threading
 from typing import Optional
 
 FLAGS = re.IGNORECASE
@@ -37,29 +38,65 @@ PROBE_INPUTS = (
     ("search", "1" * 40 + "x"),  # 數字
 )
 
+# 同時存在的子行程上限。正式站的容器記憶體上限 512 MB、行程數上限 200；不設上限的話，
+# 一個已登入的 session 用腳本同時送幾十個新增請求，就會同時起幾十個 Python。主持人
+# 正常操作一次只會有一個，2 個足夠。
+MAX_CONCURRENT_CHECKS = 2
+
+# 排隊等空位最多等多久（秒）。前面每個檢查最多跑 PROBE_TIMEOUT_SEC；等這麼久還輪不到，
+# 代表有人在大量送請求，回一個明確的錯誤（PatternCheckBusy），不無限等下去。
+QUEUE_TIMEOUT_SEC = 5.0
+
+# 子行程自己的位址空間上限（位元組）。一條 pattern 不該需要幾百 MB；超過就讓它在子行程
+# 裡 MemoryError，不會去搶伺服器的記憶體。平台不支援（例如 macOS 不允許調低
+# RLIMIT_AS、或沒有 resource 模組）時略過，只靠逾時。
+CHILD_ADDRESS_SPACE_BYTES = 256 * 1024 * 1024
+
 # 子行程執行的程式。用 -I -S 啟動：不讀環境變數、不載入 site-packages、目前目錄不在
 # sys.path 上——它只需要標準函式庫的 re 與 json，也不會載到 server 套件或 gevent。
 _CHILD = r"""
 import json, re, sys
 job = json.loads(sys.stdin.read())
 try:
-    rx = re.compile(job["pattern"], job["flags"])
-except re.error as exc:
-    print(json.dumps({"ok": False, "message": str(exc)}))
-    sys.exit(0)
-for mode, text in job["probes"]:
-    (rx.match if mode == "match" else rx.search)(text)
-out = {"ok": True, "count": 0, "text": None}
-sample = job.get("sample")
-if sample is not None:
-    if job["mode"] == "replace":
-        new_text, count = rx.subn(job.get("replacement") or "", sample)
-        out.update(count=count, text=new_text)
-    else:
-        found = (rx.match if job["mode"] == "match" else rx.search)(sample)
-        out.update(count=1 if found else 0, text=sample)
+    import resource
+    limit = job["address_space"]
+    resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+except (ImportError, AttributeError, ValueError, OSError):
+    pass  # 不支援的平台：只靠逾時
+try:
+    try:
+        rx = re.compile(job["pattern"], job["flags"])
+    except re.error as exc:
+        print(json.dumps({"ok": False, "message": str(exc)}))
+        sys.exit(0)
+    for mode, text in job["probes"]:
+        (rx.match if mode == "match" else rx.search)(text)
+    out = {"ok": True, "count": 0, "text": None}
+    sample = job.get("sample")
+    if sample is not None:
+        if job["mode"] == "replace":
+            new_text, count = rx.subn(job.get("replacement") or "", sample)
+            out.update(count=count, text=new_text)
+        else:
+            found = (rx.match if job["mode"] == "match" else rx.search)(sample)
+            out.update(count=1 if found else 0, text=sample)
+except MemoryError:
+    out = {"ok": False, "memory": True}
 print(json.dumps(out))
 """
+
+_slots_guard = threading.Lock()
+_slots: Optional[threading.BoundedSemaphore] = None
+
+
+def _check_slots() -> threading.BoundedSemaphore:
+    """第一次用到時才建立：伺服器在 app.py 先做 gevent monkey-patch，這時拿到的是
+    gevent 的號誌（等待會讓出給其他連線）；在 import 時建立的話，可能早於 patch。"""
+    global _slots
+    with _slots_guard:
+        if _slots is None:
+            _slots = threading.BoundedSemaphore(MAX_CONCURRENT_CHECKS)
+        return _slots
 
 
 class PatternError(ValueError):
@@ -71,7 +108,11 @@ class PatternTimeout(Exception):
 
 
 class PatternCheckUnavailable(Exception):
-    """子行程起不來或回了看不懂的結果。寧可拒絕，也不在主行程裡冒險執行。"""
+    """子行程起不來、超過記憶體上限、或回了看不懂的結果。寧可拒絕，也不在主行程裡冒險執行。"""
+
+
+class PatternCheckBusy(Exception):
+    """同時進行的檢查已達上限，排隊 QUEUE_TIMEOUT_SEC 還輪不到。"""
 
 
 def compile_pattern(pattern: str) -> "re.Pattern[str]":
@@ -111,7 +152,11 @@ def vet_pattern(
     """在有硬性逾時的子行程裡編譯 *pattern*，跑探測輸入，必要時再跑 *sample*。
 
     回傳 sample 的 ``(命中次數, 結果文字)``；沒給 sample 時回 None。
-    丟 PatternError（寫法錯）、PatternTimeout（逾時）、PatternCheckUnavailable。
+    丟 PatternError（寫法錯）、PatternTimeout（逾時）、PatternCheckUnavailable、
+    PatternCheckBusy（同時進行的檢查已滿，排隊等不到）。
+
+    同一時間最多 MAX_CONCURRENT_CHECKS 個子行程；子行程的位址空間上限是
+    CHILD_ADDRESS_SPACE_BYTES（平台不支援就略過）。
 
     子行程用 ``subprocess.run`` 啟動。伺服器在 app.py 做了 gevent monkey-patch，這時
     它是 gevent 的版本：等待是合作式的，逾時一樣會殺掉子行程；沒有 patch 時（測試、
@@ -127,7 +172,11 @@ def vet_pattern(
         "sample": sample,
         "mode": mode,
         "replacement": replacement,
+        "address_space": CHILD_ADDRESS_SPACE_BYTES,
     }
+    slots = _check_slots()
+    if not slots.acquire(timeout=QUEUE_TIMEOUT_SEC):
+        raise PatternCheckBusy(f"more than {MAX_CONCURRENT_CHECKS} checks are already running")
     try:
         proc = subprocess.run(
             [sys.executable, "-I", "-S", "-c", _CHILD],
@@ -140,10 +189,14 @@ def vet_pattern(
         raise PatternTimeout(f"pattern ran longer than {timeout}s") from exc
     except OSError as exc:
         raise PatternCheckUnavailable(str(exc)) from exc
+    finally:
+        slots.release()
     try:
         out = json.loads(proc.stdout.strip().splitlines()[-1])
     except (ValueError, IndexError) as exc:
         raise PatternCheckUnavailable(proc.stderr.strip()[-200:] or "no output") from exc
+    if out.get("memory"):
+        raise PatternCheckUnavailable("the check ran out of memory")
     if not out.get("ok"):
         raise PatternError(out.get("message") or "invalid pattern")
     if sample is None:
