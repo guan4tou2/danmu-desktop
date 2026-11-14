@@ -341,14 +341,21 @@
     });
   }
 
+  let _refreshSeq = 0; // 每次抓清單加一：只有最新那一次的回應能換掉畫面上的清單
+
   async function refresh() {
+    // 回應不一定照送出的順序回來。較早那次若比較晚到，不能蓋掉較新的清單
+    // （例如剛新增的那條會從畫面上消失，直到下一次整理）。
+    const seq = ++_refreshSeq;
     try {
       const resp = await window.csrfFetch("/admin/filters/list");
       if (!resp.ok) throw new Error("HTTP " + resp.status);
       const data = await resp.json();
+      if (seq !== _refreshSeq) return;
       _rules = Array.isArray(data.rules) ? data.rules : [];
       _sessionLive = data.session_live !== false;
     } catch (err) {
+      if (seq !== _refreshSeq) return;
       console.error("Failed to fetch block rules:", err);
       window.showToast(t("fetchFiltersFailed"), false);
     }

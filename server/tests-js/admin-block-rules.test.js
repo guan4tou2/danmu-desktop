@@ -418,6 +418,28 @@ describe("block rule list", () => {
     expect(document.getElementById("blockRuleInput").value).toBe("changed");
   });
 
+  test("an older list response that arrives late does not replace a newer one", async () => {
+    const gates = [];
+    respond = (url) => {
+      if (url !== "/admin/filters/list") return undefined;
+      const snapshot = rules; // 這次請求送出時伺服器上的清單
+      return new Promise((resolve) => {
+        gates.push(() => resolve({ ok: true, json: async () => ({ rules: snapshot }) }));
+      });
+    };
+    const first = window.AdminBlockRules.refresh();
+    rules = rules.concat([{ id: "new1", type: "word", pattern: "剛加的", action: "block", priority: 0, enabled: true, lifetime: "permanent" }]);
+    const second = window.AdminBlockRules.refresh();
+    gates[1](); // 較新的那次先回來
+    await second;
+    expect(rowOf("new1")).not.toBeNull();
+    gates[0](); // 較舊的那次後到
+    await first;
+    await flush();
+    expect(rowOf("new1")).not.toBeNull();
+    respond = null;
+  });
+
   test("a re-render while a rule is being saved does not let it be reopened with stale values", async () => {
     const gates = pending("/admin/filters/update");
     editBtn("kw1").click();
