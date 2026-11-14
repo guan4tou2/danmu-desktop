@@ -477,8 +477,19 @@ def test_blacklist_empty_keyword_not_submitted(admin_page):
 
 def test_session_rule_is_cleared_from_the_list(admin_page):
     """期限選「到本場次結束」→ 清單上出現「清除本場次規則」，按下去那條就不見。"""
+    from server.services import session_service
+
+    # 沒有進行中的場次時，後台不提供「到本場次結束」這個期限（選項是隱藏的）。
+    # 測試預設是沒有場次，而頁面在 fixture 載入時就抓過一次規則清單，所以先開
+    # 場次再重新載入，讓清單回報 session_live。
+    session_service.open_session("browser-test")
+    admin_page.reload()
+    admin_page.wait_for_selector("#logoutButton", timeout=8000)
     _open_section(admin_page, "sec-blacklist")
     admin_page.wait_for_selector("#blockRuleInput", state="visible", timeout=5000)
+    admin_page.wait_for_selector(
+        '#blockRuleLifetime option[value="session"]:not([hidden])', state="attached", timeout=5000
+    )
     admin_page.select_option("#blockRuleLifetime", "session")
     admin_page.fill("#blockRuleInput", "session_only_kw")
     admin_page.click("#blockRuleSubmit")
