@@ -1,29 +1,40 @@
-from ..managers import blacklist_store
+"""封鎖字的薄轉接層。
+
+封鎖字現在是封鎖規則清單裡 ``type == "word"`` 的那些規則（services/filter_engine.py），
+這裡只把舊的呼叫方式（/admin/blacklist/*、/admin/live/block、/check_blacklist、/fire
+的第 2 段比對）轉過去。引擎每次都從模組屬性取，測試替換單例時才跟得上。
+"""
+
+from . import filter_engine as _engine_module
+
+
+def _engine():
+    return _engine_module.filter_engine
+
+
+def block_keyword(keyword: str) -> str:
+    """永久封鎖 *keyword*，回傳 added／enabled（原本停用，重新啟用）／exists。"""
+    return _engine().add_word(keyword)
 
 
 def add_keyword(keyword: str) -> bool:
-    return blacklist_store.add(keyword)
+    """封鎖 *keyword*；這次呼叫之後它才開始生效（新加或重新啟用）時回 True。"""
+    if not keyword:
+        return False
+    return block_keyword(keyword) != "exists"
 
 
 def remove_keyword(keyword: str) -> bool:
-    return blacklist_store.remove(keyword)
+    return _engine().remove_word(keyword)
 
 
 def list_keywords():
-    return blacklist_store.list()
+    return _engine().list_words()
 
 
 def matched_keyword(text: str) -> str:
-    """Return the first blacklisted keyword found in *text*, or "".
-
-    設計稿 10 · G2 的訊息表要在被擋的那一列標出「封鎖字「加line」」——所以
-    要知道**是哪個字**擋的，不只是「有沒有被擋」。
-    """
-    text_lower = text.lower()
-    for keyword in blacklist_store.snapshot():
-        if keyword.lower() in text_lower:
-            return keyword
-    return ""
+    """Return the first blocked word found in *text*, or ""."""
+    return _engine().match_word(text)
 
 
 def contains_keyword(text: str) -> bool:

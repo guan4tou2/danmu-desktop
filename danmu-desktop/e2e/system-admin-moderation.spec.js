@@ -20,7 +20,6 @@ const TAB_SECTION = {
   queue: "sec-modqueue",
   bans: "sec-modbans-overview",
   blacklist: "sec-blacklist",
-  filters: "sec-filters",
   ratelimit: "sec-ratelimit",
   fingerprints: "sec-fingerprints",
 };
@@ -124,15 +123,16 @@ test.describe("後台審核頁 · 真實 UI 操作", () => {
     await openTab("blacklist");
     const word = `e2e禁字${Date.now()}`;
 
-    await admin.locator("#newKeywordInput").fill(word);
-    await admin.locator("#addKeywordBtn").click();
+    // 封鎖規則合一（2026-11-14）：預設就是 關鍵字／封鎖／永久 → 封鎖字
+    await admin.locator("#blockRuleInput").fill(word);
+    await admin.locator("#blockRuleSubmit").click();
 
     // 真實效果：server 的黑名單清單要有這個字
     await expect
       .poll(async () => JSON.stringify((await adminApi("/admin/blacklist/get")).body), { timeout: 8000 })
       .toContain(word);
-    // UI 也要長出那一列（含 UNBAN 鈕）
-    const removeBtn = admin.locator(`#blacklistKeywords .removeKeywordBtn[data-keyword="${word}"]`);
+    // UI 也要長出那一列（含刪除鈕）
+    const removeBtn = admin.locator(`#blockRuleList .admin-block-row:has-text("${word}") .filter-delete-btn`);
     await expect(removeBtn).toBeVisible();
 
     try {
@@ -155,15 +155,17 @@ test.describe("後台審核頁 · 真實 UI 操作", () => {
 
   // ─── 敏感字（filters）tab ────────────────────────────────────────────
 
-  test("敏感字：沙盒測試命中 block → 新增 keyword 規則 → server 有 → UI 刪除", async () => {
-    await openTab("filters");
+  test("規則：沙盒測試命中送審 → 新增 keyword 規則 → server 有 → UI 刪除", async () => {
+    await openTab("blacklist");
     const pattern = `e2e敏感字${Date.now()}`;
 
     // 先用「測試」沙盒：testRule 讀的是**表單當下的值**（不是已存規則），
     // 而 addRule 成功後會清空 pattern 欄位 —— 所以順序必須是先測試再新增。
-    await admin.locator("#filterType").selectOption("keyword");
-    await admin.locator("#filterAction").selectOption("block");
-    await admin.locator("#filterPattern").fill(pattern);
+    // 送審：關鍵字＋送審是 keyword 規則（關鍵字＋封鎖會建成封鎖字）
+    await admin.locator("#blockRuleMatch").selectOption("keyword");
+    await admin.locator("#blockRuleAction").selectOption("review");
+    await admin.locator("#blockRuleInput").fill(pattern);
+    await admin.locator("#blockRuleMore summary").click();
     await admin.locator("#filterTestText").fill(`這句話裡面有 ${pattern} 應該被擋下來`);
 
     const [testResp] = await Promise.all([
@@ -172,14 +174,14 @@ test.describe("後台審核頁 · 真實 UI 操作", () => {
       ),
       admin.locator("#filterTestBtn").click(),
     ]);
-    expect((await testResp.json()).action).toBe("block");
+    expect((await testResp.json()).action).toBe("review");
     // 結果也要回饋到畫面上（BLOCKED / 已封鎖，語系不同字不同，只驗非空）
     await expect(admin.locator("#filterTestResult")).not.toBeEmpty();
 
     // 再真的新增這條規則
-    await admin.locator("#filterAddBtn").click();
+    await admin.locator("#blockRuleSubmit").click();
 
-    const ruleRow = admin.locator(`#filterRulesList .hud-rule-row:has-text("${pattern}")`);
+    const ruleRow = admin.locator(`#blockRuleList .admin-block-row:has-text("${pattern}")`);
     let ruleId = null;
     try {
       await expect

@@ -719,11 +719,31 @@ def _restore_credential(kind: str, incoming: Any, path: str, omitted: bool, targ
 #
 # Currently empty, so every other restored runtime file keeps being served
 # from the copy its service loaded at startup until the server restarts; the
-# restore reports that as ``restart_required`` (see DEPLOYMENT.md). The
-# filter-rules reload ("runtime/filter_rules.json" → the filter engine) is
-# being added on a separate branch and plugs in here; the table and the
-# apply-phase loop below stay so that lands as a one-line addition.
+# restore reports that as ``restart_required`` (see DEPLOYMENT.md). The block
+# rules file is not listed either: the filter engine replaces and reloads it
+# itself (_restore_block_rules), like the credential stores.
 _RELOAD_AFTER_RESTORE: Dict[str, Callable[[], None]] = {}
+
+
+def _is_block_rules_file(target: Path) -> bool:
+    from . import filter_engine as rules
+
+    return _same_file(target, Path(rules.filter_engine.path))
+
+
+def _restore_block_rules(data: bytes) -> None:
+    """Hand the block rules file to the filter engine.
+
+    The engine swaps the file and reloads it inside its own mutation lock, so
+    an admin edit committed in between cannot write the pre-restore list back
+    over the restored file, and undoes the swap if the content will not load.
+    Raises whatever the engine raises (ValueError for content it refuses,
+    RuleSaveError when the file cannot be written).
+    """
+    from . import filter_engine as rules
+
+    rules.restore_rules_file(data)
+
 
 # Archive areas whose files a running server has already read into memory:
 # runtime state (settings, rules, layers, widgets, …) and plugin code, both
@@ -1071,6 +1091,16 @@ def unpack(tarball_bytes: bytes, dry_run: bool = True) -> Dict[str, Any]:
             out["skipped"].extend(dropped)
             out["merged"].extend(notes)
             out["applied"] += 1
+            continue
+        if _is_block_rules_file(target):
+            try:
+                _restore_block_rules(data)
+            except Exception as exc:  # one file must not abort the whole restore
+                if not isinstance(exc, ValueError) and type(exc).__name__ != "RuleSaveError":
+                    logger.exception("backup: restore of %s failed", member)
+                out["errors"].append(f"restore {member}: {exc}")
+                continue
+            out["applied"] += 1  # live at once: the engine has already reloaded it
             continue
         try:
             _write_file(target, data, 0o644)

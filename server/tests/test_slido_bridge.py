@@ -25,8 +25,8 @@ from unittest.mock import patch
 
 import pytest
 
-from server import state
 from server.services import fire_sources, fire_token, live_feed_buffer, slido_status, ws_queue
+from server.services.blacklist import add_keyword, remove_keyword
 from server.services.history import DanmuHistory
 from server.services.ws_state import update_ws_client_count
 
@@ -114,14 +114,14 @@ def test_slido_question_reaches_overlay_feed_and_history(client, history, token_
 
 def test_slido_question_is_blocked_by_blacklist(client, history, lane):
     _, headers = lane
-    state.blacklist.add("Placeholder")
+    add_keyword("Placeholder")
     try:
         resp = client.post("/fire", json=_slido_payload(502), headers=headers)
         assert resp.status_code == 400
         assert ws_queue.dequeue_all() == []
         assert history.get_records()[0]["status"] == "blocked"
     finally:
-        state.blacklist.discard("Placeholder")
+        remove_keyword("Placeholder")
 
 
 def test_slido_question_is_blocked_by_filter_rule(client, lane):
@@ -194,12 +194,12 @@ def test_token_lane_skips_captcha_but_not_content_gates(client, token_headers):
         assert (
             client.post("/fire", json=_slido_payload(502), headers=token_headers).status_code == 200
         )
-        state.blacklist.add("anonymous")
+        add_keyword("anonymous")
         try:
             blocked = client.post("/fire", json=_slido_payload(503), headers=token_headers)
             assert blocked.status_code == 400
         finally:
-            state.blacklist.discard("anonymous")
+            remove_keyword("anonymous")
 
 
 # ─── anonymous questions stay anonymous (owner decision D3) ─────────────────

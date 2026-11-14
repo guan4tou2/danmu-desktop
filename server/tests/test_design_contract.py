@@ -1318,22 +1318,17 @@ def test_timeline_export_lives_on_the_backup_page(zh):
 
 
 def test_blacklist_still_boots_after_the_replay_tab_removal():
-    """刪掉「重播」分頁時差點連黑名單的 boot 一起刪掉。
+    """刪掉「重播」分頁時差點連黑名單的 boot 一起刪掉（按鈕沒綁 listener，畫面正常但按了沒反應）。
 
-    `admin-history.js` 的 `admin-panel-rendered` handler 原本同時做四件事
-    （fetchBlacklist / fetchDanmuHistory / _initHistoryEventListeners /
-    _initHistoryTabs），而它夾在要移除的 `_initHistoryTabs` 定義後面——整段
-    刪掉之後，黑名單的新增／移除按鈕一顆 listener 都沒綁：畫面看起來完全正常，
-    按了沒反應，也沒有任何錯誤訊息。CI 的 test_browser_admin 兩條黑名單測試
-    抓到（本機跑不動 browser 模組，見 docs/agent-ops）。
+    2026-11-14 封鎖規則合一之後，黑名單不再是 admin-history.js 的獨立區塊，而是
+    admin-filters.js 那份清單裡的封鎖字；那支檔整支刪除。這裡改釘新的接線：
+    區塊被 admin.js 重繪掉時會重新注入，新增入口與 Enter 都綁著同一個送出函式。
     """
-    js = _strip_comments(_read("server/static/js/admin-history.js"))
-    assert 'document.addEventListener("admin-panel-rendered"' in js
-    assert "fetchBlacklist();" in js
-    assert "_initHistoryEventListeners();" in js
-    # 歷史那半確實走了，不是靠留著它才通過
-    assert "fetchDanmuHistory" not in js
-    assert "_initHistoryTabs" not in js
+    assert not (REPO / "server/static/js/admin-history.js").exists()
+    js = _strip_comments(_read("server/static/js/admin-filters.js"))
+    assert '!document.getElementById("sec-blacklist")' in js
+    assert 'el("blockRuleSubmit").addEventListener("click", submit)' in js
+    assert 'e.key === "Enter"' in js and "submit();" in js
 
 
 def test_hud_css_is_gone_and_nothing_links_it():

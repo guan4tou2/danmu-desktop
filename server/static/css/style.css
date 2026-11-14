@@ -2764,21 +2764,6 @@ button:disabled,
   display: inline-block;
 }
 
-.hud-banned-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-1);
-  border-bottom: 1px solid color-mix(in srgb, var(--admin-line) 55%, transparent);
-}
-.hud-banned-row:last-child {
-  border-bottom: none;
-}
-
-.hud-rules-body {
-  max-height: 360px;
-  overflow-y: auto;
-}
 .hud-rule-row {
   padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid color-mix(in srgb, var(--admin-line) 55%, transparent);
@@ -6515,42 +6500,6 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 /* ─── Admin Live Filters (P2-1, design v4 2026-05-18) ────────────────
    Quick-filter chips bar wired to /admin/filters backend. Lives ABOVE
    the existing rules library; the library still owns custom regex. */
-.admin-flt-v4__explain {
-  display: flex; align-items: center; gap: var(--space-2);
-  padding: var(--space-2) var(--space-4); border-radius: var(--radius-md-sm);
-  background: color-mix(in srgb, var(--color-text-secondary) 4%, transparent);
-  border: 1px solid var(--color-border-soft);
-  font-size: var(--text-caption); color: var(--color-text-muted);
-  margin-bottom: var(--space-3);
-}
-.admin-flt-v4__amber-kicker {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption); letter-spacing: 1.5px; font-weight: 700;
-  color: var(--color-ink-warning);
-}
-.admin-flt-v4__dim-kicker {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption); letter-spacing: 1.5px;
-  color: var(--color-text-muted);
-}
-.admin-flt-v4__spacer { flex: 1; }
-
-.admin-flt-v4__card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-soft);
-  border-radius: var(--radius-md-sm); overflow: hidden;
-  margin-bottom: var(--space-3);
-}
-.admin-flt-v4__head {
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--color-border-soft);
-}
-.admin-flt-v4__kicker {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption); letter-spacing: 1.5px;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-}
 .admin-flt-v4__quick {
   display: flex; gap: var(--space-2); padding: var(--space-3) var(--space-4); flex-wrap: wrap;
 }
@@ -6590,14 +6539,6 @@ body.admin-rcb-exhausted .admin-app-shell { opacity: 0.3; }
 }
 .admin-flt-v4__qchip.is-active .admin-flt-v4__qchip-label {
   color: var(--color-ink-accent); font-weight: 600;
-}
-.admin-flt-v4__qchip-hits {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption); letter-spacing: 0.3px;
-  color: var(--color-text-muted);
-}
-.admin-flt-v4__qchip.is-active .admin-flt-v4__qchip-hits {
-  color: var(--color-ink-accent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -17221,20 +17162,155 @@ body.is-light .admin-login-wordmark.is-on-light,
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   審核 › 封鎖字：規則表的窄螢幕重排（2026-10-29）
+   審核 › 封鎖字：一份清單（2026-11-14 封鎖規則合一）
 
-   原本 6 欄（pattern / 型別 / 動作 / 優先 / 開關 / 刪除）是 inline
-   grid-template-columns，在 375px 上被壓成 6 條細縫，pattern 幾乎讀不到，
-   而 inline style 讓任何 media query 都蓋不掉。改由 class 承載欄寬，
-   窄螢幕時 pattern 獨佔一列、其餘控制項縮成第二列。
+   新增列：輸入框＋加入；下面一列是三個選項（命中方式／動作／期限）。
+   清單每一列：樣式文字、三個選項的目前值、開關、編輯、刪除。窄螢幕時
+   樣式文字獨佔一列，其餘縮到第二列。
    ────────────────────────────────────────────────────────────────────── */
-.admin-flt-v4__grid { grid-template-columns: 1.6fr 80px 80px 60px 60px 40px; }
+.admin-block-add { display: flex; flex-direction: column; gap: var(--space-2); }
+.admin-block-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+.admin-block-options > .admin-ui-select { width: auto; min-width: 0; }
+.admin-block-options > .admin-ui-input { flex: 1 1 160px; }
+.admin-block-num {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-footnote);
+  color: var(--color-text-secondary);
+}
+.admin-block-num > .admin-ui-input { width: 88px; }
+.admin-block-listhead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+/* 範圍篩選的標籤不斷行（「全／部」被擠成兩行）；放不下時這一列自己橫向捲動 */
+.admin-block-listhead > .admin-ui-seg {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: thin;
+}
+.admin-block-listhead > .admin-ui-seg > .seg-item {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.admin-block-scope-count {
+  margin-left: var(--space-1);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.admin-block-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+}
+.admin-block-row__pattern {
+  font-family: var(--font-mono);
+  font-size: var(--text-footnote);
+  color: var(--color-text-strong);
+  word-break: break-all;
+}
+.admin-block-row__meta {
+  display: inline-flex;
+  gap: var(--space-3);
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+.admin-block-row__action[data-action="block"] { color: var(--color-ink-error); }
+.admin-block-row__action[data-action="replace"] { color: var(--color-ink-warning); }
+.admin-block-row__action[data-action="allow"] { color: var(--color-ink-success); }
+.admin-block-row__action[data-action="review"] { color: var(--color-ink-accent); }
+.admin-block-row__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  cursor: pointer;
+}
+.admin-block-empty {
+  padding: var(--space-3) 0;
+  text-align: center;
+  font-size: var(--text-footnote);
+  color: var(--color-text-muted);
+}
+.admin-block-more { display: flex; flex-direction: column; gap: var(--space-3); }
+.admin-block-test-result {
+  font-size: var(--text-footnote);
+  color: var(--color-text-strong);
+}
+.admin-block-test-result[data-verdict="block"] { color: var(--color-ink-error); }
+.admin-block-test-result[data-verdict="replace"] { color: var(--color-ink-warning); }
+.admin-block-test-result[data-verdict="allow"] { color: var(--color-ink-success); }
+.admin-block-test-result[data-verdict="review"] { color: var(--color-ink-accent); }
+#filterLiveLog {
+  max-height: 200px;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  line-height: 1.7;
+}
+.admin-filter-log-row {
+  display: grid;
+  grid-template-columns: 64px 56px minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: baseline;
+  padding: var(--space-1) 0;
+  border-bottom: 1px dashed var(--hud-line);
+}
+.admin-filter-log-row__time,
+.admin-filter-log-row__rule { color: var(--color-text-muted); }
+.admin-filter-log-row__action { font-weight: 700; color: var(--color-text-secondary); }
+.admin-filter-log-row[data-action="BLOCK"] .admin-filter-log-row__action { color: var(--color-ink-error); }
+.admin-filter-log-row[data-action="REVIEW"] .admin-filter-log-row__action { color: var(--color-ink-accent); }
+.admin-filter-log-row[data-action="ALLOW"] .admin-filter-log-row__action { color: var(--color-ink-success); }
+.admin-filter-log-row[data-action="REPLACE"] .admin-filter-log-row__action,
+.admin-filter-log-row[data-action="MASK"] .admin-filter-log-row__action { color: var(--color-ink-warning); }
+.admin-filter-log-row__text {
+  min-width: 0;
+  color: var(--color-text-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 收合區本身不能被一行很長的紀錄撐寬（flex 子元素預設 min-width: auto） */
+#blockRuleLog,
+#blockRuleMore { min-width: 0; max-width: 100%; }
 
 @media (max-width: 600px) {
-  .admin-flt-v4__grid {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    row-gap: var(--space-2);
+  .admin-block-row { grid-template-columns: minmax(0, 1fr) auto auto auto; row-gap: var(--space-2); }
+  .admin-block-row__pattern { grid-column: 1 / -1; }
+  /* 命中紀錄：時間＋動作一列，文字與規則換到下一列並在列內換行 */
+  .admin-filter-log-row { grid-template-columns: auto minmax(0, 1fr); row-gap: 0; }
+  .admin-filter-log-row__text {
+    grid-column: 1 / -1;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
-  .admin-flt-v4__grid > :first-child { grid-column: 1 / -1; }
-  .admin-flt-v4__head-row { display: none; }
+}
+
+/* 手機：這一區所有可點元素至少 44px 高（--control-h 在 767px 以下是 48px）。桌面不變。 */
+@media (max-width: 767px) {
+  #sec-blacklist .admin-ui-input,
+  #sec-blacklist .admin-ui-select,
+  #sec-blacklist .admin-ui-action,
+  #sec-blacklist .admin-ui-chip,
+  #sec-blacklist .admin-flt-v4__qchip,
+  #sec-blacklist .admin-ui-seg > .seg-item,
+  #sec-blacklist .filter-delete-btn,
+  #sec-blacklist .admin-block-row__toggle,
+  #sec-blacklist .admin-dsp2-fold > summary {
+    min-height: var(--control-h);
+  }
+  #sec-blacklist .filter-delete-btn,
+  #sec-blacklist .admin-block-row__toggle { min-width: var(--control-h); }
 }

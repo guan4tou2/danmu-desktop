@@ -22,13 +22,13 @@ def reset_engine(tmp_path):
 
 
 def test_keyword_rule_blocks_matching_text(reset_engine):
+    """關鍵字＋封鎖存成封鎖字（word），在第 2 段（match_word）擋下，不在 check()。"""
     engine = reset_engine
-    engine.add_rule({"type": "keyword", "pattern": "spam", "action": "block"})
+    rule_id = engine.add_rule({"type": "keyword", "pattern": "spam", "action": "block"})
 
-    result = engine.check("this is spam content")
-    assert result.action == "block"
-    assert result.reason
-    assert result.rule_id
+    assert engine.get_rule(rule_id)["type"] == "word"
+    assert engine.check("this is spam content").action == "pass"
+    assert engine.match_word("this is spam content") == "spam"
 
 
 # ── 2. Keyword rule passes non-matching text ────────────────
@@ -199,7 +199,7 @@ def test_priority_ordering_block_wins_when_lower(reset_engine):
     )
     engine.add_rule(
         {
-            "type": "keyword",
+            "type": "regex",
             "pattern": "hello",
             "action": "block",
             "priority": 1,
@@ -217,13 +217,11 @@ def test_remove_rule_no_longer_blocks(reset_engine):
     engine = reset_engine
     rule_id = engine.add_rule({"type": "keyword", "pattern": "spam", "action": "block"})
 
-    result = engine.check("spam")
-    assert result.action == "block"
+    assert engine.match_word("spam") == "spam"
 
     assert engine.remove_rule(rule_id) is True
 
-    result = engine.check("spam")
-    assert result.action == "pass"
+    assert engine.match_word("spam") == ""
 
 
 def test_remove_nonexistent_rule_returns_false(reset_engine):
@@ -237,13 +235,11 @@ def test_update_rule_disable(reset_engine):
     engine = reset_engine
     rule_id = engine.add_rule({"type": "keyword", "pattern": "spam", "action": "block"})
 
-    result = engine.check("spam")
-    assert result.action == "block"
+    assert engine.match_word("spam") == "spam"
 
     engine.update_rule(rule_id, {"enabled": False})
 
-    result = engine.check("spam")
-    assert result.action == "pass"
+    assert engine.match_word("spam") == ""
 
 
 def test_update_rule_enable(reset_engine):
@@ -257,26 +253,24 @@ def test_update_rule_enable(reset_engine):
         }
     )
 
-    result = engine.check("spam")
-    assert result.action == "pass"
+    assert engine.match_word("spam") == ""
 
     engine.update_rule(rule_id, {"enabled": True})
 
-    result = engine.check("spam")
-    assert result.action == "block"
+    assert engine.match_word("spam") == "spam"
 
 
 def test_update_rule_change_pattern(reset_engine):
     engine = reset_engine
     rule_id = engine.add_rule({"type": "keyword", "pattern": "foo", "action": "block"})
 
-    assert engine.check("foo").action == "block"
-    assert engine.check("bar").action == "pass"
+    assert engine.match_word("foo") == "foo"
+    assert engine.match_word("bar") == ""
 
     engine.update_rule(rule_id, {"pattern": "bar"})
 
-    assert engine.check("foo").action == "pass"
-    assert engine.check("bar").action == "block"
+    assert engine.match_word("foo") == ""
+    assert engine.match_word("bar") == "bar"
 
 
 def test_update_nonexistent_rule_returns_false(reset_engine):
@@ -351,8 +345,8 @@ def test_test_rule_invalid_regex_raises(reset_engine):
 
 def test_list_rules_returns_all(reset_engine):
     engine = reset_engine
-    id1 = engine.add_rule({"type": "keyword", "pattern": "a", "action": "block", "priority": 2})
-    id2 = engine.add_rule({"type": "keyword", "pattern": "b", "action": "block", "priority": 1})
+    id1 = engine.add_rule({"type": "regex", "pattern": "a", "action": "block", "priority": 2})
+    id2 = engine.add_rule({"type": "regex", "pattern": "b", "action": "block", "priority": 1})
 
     rules = engine.list_rules()
     assert len(rules) == 2
@@ -372,10 +366,10 @@ def test_keyword_case_insensitive(reset_engine):
     engine = reset_engine
     engine.add_rule({"type": "keyword", "pattern": "Spam", "action": "block"})
 
-    assert engine.check("SPAM").action == "block"
-    assert engine.check("spam").action == "block"
-    assert engine.check("SpAm").action == "block"
-    assert engine.check("no match").action == "pass"
+    assert engine.match_word("SPAM") == "Spam"
+    assert engine.match_word("spam") == "Spam"
+    assert engine.match_word("SpAm") == "Spam"
+    assert engine.match_word("no match") == ""
 
 
 def test_regex_case_insensitive(reset_engine):
@@ -422,9 +416,9 @@ def test_multiple_rules_different_patterns(reset_engine):
     engine.add_rule({"type": "keyword", "pattern": "foo", "action": "block"})
     engine.add_rule({"type": "keyword", "pattern": "bar", "action": "block"})
 
-    assert engine.check("foo").action == "block"
-    assert engine.check("bar").action == "block"
-    assert engine.check("baz").action == "pass"
+    assert engine.match_word("foo") == "foo"
+    assert engine.match_word("bar") == "bar"
+    assert engine.match_word("baz") == ""
 
 
 # ── Additional edge cases ───────────────────────────────────

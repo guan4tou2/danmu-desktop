@@ -118,7 +118,7 @@
         src: "Moderation",
         ts: ts,
         title: ServerI18n.t("notifTitleFilterHit", { action: action }),
-        desc: ServerI18n.t("notifDescFilterHit", { rule: e.rule_id || "?", text: (e.text || "").slice(0, 60) }),
+        desc: ServerI18n.t("notifDescFilterHit", { rule: e.rule_id || "?", text: (e.text_excerpt || "").slice(0, 60) }),
         raw: e,
       };
     });

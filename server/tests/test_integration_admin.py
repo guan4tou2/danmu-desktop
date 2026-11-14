@@ -2,8 +2,8 @@
 
 import pytest
 
-from server import state
 from server.services import ws_queue
+from server.services.blacklist import add_keyword
 from server.services.ws_state import update_ws_client_count
 
 
@@ -42,7 +42,7 @@ def test_blacklist_add_then_fire_blocked(client):
 
 def test_blacklist_remove_then_fire_passes(client):
     """Admin 移除黑名單關鍵字後，之前被擋的字應可正常發送"""
-    state.blacklist.add("tempword")
+    add_keyword("tempword")
     token = _login(client)
     resp = client.post(
         "/admin/blacklist/remove",

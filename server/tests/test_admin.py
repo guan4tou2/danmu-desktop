@@ -2,7 +2,7 @@
 
 import json
 
-from server import state
+from server.services.blacklist import add_keyword, list_keywords, remove_keyword
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -108,7 +108,7 @@ def test_blacklist_add_and_list(client):
     assert res.status_code == 200
     data = json.loads(res.data)
     assert data["message"] == "Keyword added"
-    assert "spam" in state.blacklist
+    assert "spam" in list_keywords()
 
 
 def test_blacklist_add_duplicate(client):
@@ -134,12 +134,12 @@ def test_blacklist_add_validates_keyword(client):
 
 
 def test_blacklist_remove(client):
-    state.blacklist.add("remove-me")
+    add_keyword("remove-me")
     res = authed_post(client, "/admin/blacklist/remove", {"keyword": "remove-me"})
     assert res.status_code == 200
     data = json.loads(res.data)
     assert data["message"] == "Keyword removed"
-    assert "remove-me" not in state.blacklist
+    assert "remove-me" not in list_keywords()
 
 
 def test_blacklist_remove_not_found(client):
@@ -150,7 +150,8 @@ def test_blacklist_remove_not_found(client):
 
 
 def test_blacklist_get(client):
-    state.blacklist.update({"word1", "word2"})
+    add_keyword("word1")
+    add_keyword("word2")
     login(client)
     res = client.get("/admin/blacklist/get")
     assert res.status_code == 200
@@ -903,13 +904,12 @@ def test_blocked_danmu_is_recorded_with_the_rule_that_caught_it(client):
     """
     login(client)
     from server.services import history as history_service
-    from server.services.blacklist import blacklist_store
     from server.services.ws_state import update_ws_client_count
 
     # 沒有顯示層連著的話 /fire 一律 503，根本走不到過濾那一段。
     update_ws_client_count(1)
     history_service.danmu_history.clear()
-    blacklist_store.add("加line")
+    add_keyword("加line")
     try:
         client.post("/fire", json={"text": "今天好熱鬧", "color": "ffffff", "fingerprint": "fp_a"})
         blocked = client.post(
@@ -917,7 +917,7 @@ def test_blocked_danmu_is_recorded_with_the_rule_that_caught_it(client):
         )
         assert blocked.status_code == 400
     finally:
-        blacklist_store.remove("加line")
+        remove_keyword("加line")
         update_ws_client_count(0)
 
     records = history_service.danmu_history.get_recent(hours=1, limit=100)

@@ -2,10 +2,18 @@
 
 from flask import current_app, request
 
-from ...services.blacklist import add_keyword, list_keywords, remove_keyword
+from ...services.blacklist import block_keyword, list_keywords, remove_keyword
+from ...services.filter_engine import RuleSaveError, RuleValidationError
 from ...services.security import rate_limit
 from ...services.validation import BlacklistKeywordSchema, validate_request
 from . import _json_response, admin_bp, require_csrf, require_login, sanitize_log_string
+
+# block_keyword 的結果 → 回給呼叫端的訊息（反映實際發生的事）
+_ADD_MESSAGES = {
+    "added": "Keyword added",
+    "enabled": "Keyword was disabled and is blocked again",
+    "exists": "Keyword already exists",
+}
 
 
 @admin_bp.route("/blacklist/add", methods=["POST"])
@@ -18,11 +26,14 @@ def add_to_blacklist_route():
     if errors:
         return _json_response({"error": "Validation failed", "details": errors}, 400)
     keyword = validated_data["keyword"]
-    if add_keyword(keyword):
-        current_app.logger.info(f"Blacklist keyword added: {sanitize_log_string(keyword)}")
-        return _json_response({"message": "Keyword added"})
-    current_app.logger.info(f"Blacklist keyword already exists: {sanitize_log_string(keyword)}")
-    return _json_response({"message": "Keyword already exists"})
+    try:
+        status = block_keyword(keyword)
+    except RuleValidationError as e:
+        return _json_response({"error": str(e), "code": e.code, "details": e.details}, 400)
+    except RuleSaveError as e:
+        return _json_response({"error": str(e), "code": e.code}, 500)
+    current_app.logger.info(f"Blacklist keyword {status}: {sanitize_log_string(keyword)}")
+    return _json_response({"message": _ADD_MESSAGES[status], "status": status})
 
 
 @admin_bp.route("/blacklist/remove", methods=["POST"])
@@ -35,7 +46,11 @@ def remove_from_blacklist_route():
     if errors:
         return _json_response({"error": "Validation failed", "details": errors}, 400)
     keyword = validated_data["keyword"]
-    if remove_keyword(keyword):
+    try:
+        removed = remove_keyword(keyword)
+    except RuleSaveError as e:
+        return _json_response({"error": str(e), "code": e.code}, 500)
+    if removed:
         current_app.logger.info(f"Blacklist keyword removed: {sanitize_log_string(keyword)}")
         return _json_response({"message": "Keyword removed"})
     current_app.logger.warning(f"Blacklist keyword not found: {sanitize_log_string(keyword)}")

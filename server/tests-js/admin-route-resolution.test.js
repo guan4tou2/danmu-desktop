@@ -58,6 +58,12 @@ describe("admin hash routes", () => {
     ["#/system/audit", "history", "audit", null],
     ["#/system/audience", "history", "audience", null],
     ["#/system/search", "history", "search", null],
+    // 封鎖規則合一：黑名單、過濾規則的舊網址都落在同一份清單
+    ["#/moderation", "moderation", "blacklist", null],
+    ["#/moderation/blacklist", "moderation", "blacklist", null],
+    ["#/moderation/filters", "moderation", "blacklist", null],
+    ["#/blacklist", "moderation", "blacklist", null],
+    ["#/filters", "moderation", "blacklist", null],
     // 其他頁的轉址表沒有被這批動到
     ["#/dashboard", "live", null, null],
     ["#/messages", "live", null, null],

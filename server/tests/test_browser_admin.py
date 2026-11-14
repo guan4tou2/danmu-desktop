@@ -146,7 +146,6 @@ SECTION_TO_ROUTE = {
     # under their own sub-route hashes (#/moderation/blacklist etc.) since
     # the default lands on queue.
     "sec-blacklist": "moderation/blacklist",
-    "sec-filters": "moderation/filters",
     "sec-effects": "effects",
     "sec-effects-mgmt": "effects",
     "sec-plugins": "plugins",
@@ -394,81 +393,113 @@ def test_settings_color_toggle_calls_api(admin_page):
 
 
 def test_blacklist_section_loads(admin_page):
-    """黑名單區塊應可展開並含輸入框"""
+    """封鎖規則清單：一個輸入框、一個加入鈕、三個選項（命中方式／動作／期限）。"""
     _open_section(admin_page, "sec-blacklist")
-    admin_page.wait_for_selector("#newKeywordInput", state="visible", timeout=5000)
-    assert admin_page.is_visible("#newKeywordInput")
-    assert admin_page.is_visible("#addKeywordBtn")
+    admin_page.wait_for_selector("#blockRuleInput", state="visible", timeout=5000)
+    assert admin_page.is_visible("#blockRuleSubmit")
+    for sel in ("#blockRuleMatch", "#blockRuleAction", "#blockRuleLifetime"):
+        assert admin_page.is_visible(sel), sel
+    assert admin_page.locator("#blockRuleMatch").input_value() == "keyword"
+    assert admin_page.locator("#blockRuleAction").input_value() == "block"
+    assert admin_page.locator("#blockRuleLifetime").input_value() == "permanent"
 
 
 def test_blacklist_add_keyword_appears_in_list(admin_page):
-    """透過 UI 新增關鍵字後，應出現在黑名單列表中"""
+    """打字、按 Enter：封鎖字出現在同一份清單，舊的黑名單 API 也看得到。"""
     _open_section(admin_page, "sec-blacklist")
-    admin_page.wait_for_selector("#newKeywordInput", state="visible", timeout=5000)
+    admin_page.wait_for_selector("#blockRuleInput", state="visible", timeout=5000)
 
     responses = []
     admin_page.on(
         "response",
-        lambda r: responses.append(r) if "/admin/blacklist/add" in r.url else None,
+        lambda r: responses.append(r) if "/admin/filters/add" in r.url else None,
     )
 
-    admin_page.fill("#newKeywordInput", "browser_test_kw")
-    admin_page.click("#addKeywordBtn")
+    admin_page.fill("#blockRuleInput", "browser_test_kw")
+    admin_page.press("#blockRuleInput", "Enter")
     admin_page.wait_for_timeout(800)
 
-    add_resp = [r for r in responses if "/admin/blacklist/add" in r.url]
+    add_resp = [r for r in responses if "/admin/filters/add" in r.url]
     assert len(add_resp) >= 1
     assert add_resp[0].status == 200
 
-    admin_page.wait_for_selector('[data-keyword="browser_test_kw"]', timeout=3000)
-    assert admin_page.is_visible('[data-keyword="browser_test_kw"]')
+    row = admin_page.locator('#blockRuleList .admin-block-row:has-text("browser_test_kw")')
+    row.wait_for(timeout=3000)
+    assert row.get_attribute("data-rule-type") == "word"
+    words = admin_page.evaluate(
+        "() => fetch('/admin/blacklist/get', {credentials: 'same-origin'}).then(r => r.json())"
+    )
+    assert "browser_test_kw" in words
 
 
 def test_blacklist_remove_keyword_disappears(admin_page):
-    """點擊移除按鈕後，關鍵字應從列表消失"""
+    """點刪除、在確認面板按確認後，那一列從清單消失。"""
     _open_section(admin_page, "sec-blacklist")
-    admin_page.wait_for_selector("#newKeywordInput", state="visible", timeout=5000)
+    admin_page.wait_for_selector("#blockRuleInput", state="visible", timeout=5000)
 
-    # 先新增
-    admin_page.fill("#newKeywordInput", "remove_via_browser")
-    admin_page.click("#addKeywordBtn")
-    admin_page.wait_for_selector('[data-keyword="remove_via_browser"]', timeout=3000)
+    admin_page.fill("#blockRuleInput", "remove_via_browser")
+    admin_page.click("#blockRuleSubmit")
+    row = admin_page.locator('#blockRuleList .admin-block-row:has-text("remove_via_browser")')
+    row.wait_for(timeout=3000)
 
-    # 再移除。移除確認以前是原生 confirm()（靠 page.on("dialog") 自動接受），
-    # 現在走 HUD modal —— 要實際按下面板上的確認鍵。
     responses = []
     admin_page.on(
         "response",
-        lambda r: responses.append(r) if "/admin/blacklist/remove" in r.url else None,
+        lambda r: responses.append(r) if "/admin/filters/remove" in r.url else None,
     )
-    admin_page.locator('[data-keyword="remove_via_browser"]').click()
+    row.locator(".filter-delete-btn").click()
     admin_page.wait_for_selector(".admin-hud-modal__btn--confirm", state="visible", timeout=5000)
     admin_page.locator(".admin-hud-modal__btn--confirm").click()
     admin_page.wait_for_timeout(800)
 
-    remove_resp = [r for r in responses if "/admin/blacklist/remove" in r.url]
+    remove_resp = [r for r in responses if "/admin/filters/remove" in r.url]
     assert len(remove_resp) >= 1
     assert remove_resp[0].status == 200
-    admin_page.wait_for_selector(
-        '[data-keyword="remove_via_browser"]', state="detached", timeout=3000
-    )
+    row.wait_for(state="detached", timeout=3000)
 
 
 def test_blacklist_empty_keyword_not_submitted(admin_page):
-    """空關鍵字點 Add 不應送出 API 請求"""
+    """空白時按加入不送出 API 請求"""
     _open_section(admin_page, "sec-blacklist")
-    admin_page.wait_for_selector("#newKeywordInput", state="visible", timeout=5000)
+    admin_page.wait_for_selector("#blockRuleInput", state="visible", timeout=5000)
 
     responses = []
     admin_page.on(
         "response",
-        lambda r: responses.append(r) if "/admin/blacklist/add" in r.url else None,
+        lambda r: responses.append(r) if "/admin/filters/add" in r.url else None,
     )
-    admin_page.fill("#newKeywordInput", "")
-    admin_page.click("#addKeywordBtn")
+    admin_page.fill("#blockRuleInput", "")
+    admin_page.click("#blockRuleSubmit")
     admin_page.wait_for_timeout(500)
 
     assert len(responses) == 0, "empty keyword should not call API"
+
+
+def test_session_rule_is_cleared_from_the_list(admin_page):
+    """期限選「到本場次結束」→ 清單上出現「清除本場次規則」，按下去那條就不見。"""
+    from server.services import session_service
+
+    # 沒有進行中的場次時，後台不提供「到本場次結束」這個期限（選項是隱藏的）。
+    # 測試預設是沒有場次，而頁面在 fixture 載入時就抓過一次規則清單，所以先開
+    # 場次再重新載入，讓清單回報 session_live。
+    session_service.open_session("browser-test")
+    admin_page.reload()
+    admin_page.wait_for_selector("#logoutButton", timeout=8000)
+    _open_section(admin_page, "sec-blacklist")
+    admin_page.wait_for_selector("#blockRuleInput", state="visible", timeout=5000)
+    admin_page.wait_for_selector(
+        '#blockRuleLifetime option[value="session"]:not([hidden])', state="attached", timeout=5000
+    )
+    admin_page.select_option("#blockRuleLifetime", "session")
+    admin_page.fill("#blockRuleInput", "session_only_kw")
+    admin_page.click("#blockRuleSubmit")
+    row = admin_page.locator('#blockRuleList .admin-block-row:has-text("session_only_kw")')
+    row.wait_for(timeout=3000)
+
+    admin_page.click("#blockRuleClearSession")
+    admin_page.wait_for_selector(".admin-hud-modal__btn--confirm", state="visible", timeout=5000)
+    admin_page.locator(".admin-hud-modal__btn--confirm").click()
+    row.wait_for(state="detached", timeout=3000)
 
 
 # ─── 修改密碼表單 ─────────────────────────────────────────────────────────────
@@ -1435,8 +1466,8 @@ def test_friction_rules_reflow_at_375(admin_page):
         ),
     )
     page.reload()
-    _open_section(page, "sec-filters")
-    row = page.locator(".hud-rule-row[data-rule-id='qa']")
+    _open_section(page, "sec-blacklist")
+    row = page.locator(".admin-block-row[data-rule-id='qa']")
     expect(row).to_be_visible()
     boxes = row.evaluate("""el => [...el.children].map(c => {
           const b=c.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right};

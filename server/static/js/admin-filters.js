@@ -1,22 +1,34 @@
 /**
- * Admin Filter Rules Section
+ * Admin · 封鎖規則（審核 › 封鎖字）
  *
- * Manages content filtering rules (keyword, regex, replace, rate_limit)
- * from the admin dashboard. Loaded as a separate <script defer> in admin.html.
+ * 一份清單、一個新增入口。原本這個分頁疊了三套東西：字串黑名單（admin-history.js）、
+ * 「臨時規則」快捷鍵、「規則庫」表單（本檔）。後端合併成同一份規則清單之後
+ * （services/filter_engine.py），畫面也只剩一份：每條規則選命中方式、動作、期限。
  *
- * Globals used: csrfFetch, showToast, ServerI18n
+ * 最常見的情況是「打字、按 Enter」——三個下拉的預設值是關鍵字／封鎖／永久，
+ * 建出來的就是一個封鎖字（type "word"，與舊黑名單同樣的判定）。
+ *
+ * API：/admin/filters/{list,add,update,remove,test,events,clear-session}
+ * Globals: csrfFetch, showToast, ServerI18n, AdminUtils, HudConfirm, AdminQuickAction, AdminTabs
  */
 (function () {
   "use strict";
 
-  var loadDetailsState = window.AdminUtils.loadDetailsState;
-  var saveDetailsState = window.AdminUtils.saveDetailsState;
   var escapeHtml = window.AdminUtils.escapeHtml;
 
-  const RULE_TYPES = ["keyword", "regex", "replace", "rate_limit"];
-  // 2026-10-29：`review` 補進來。後端 _build_rule 的白名單早就有它
-  // （services/filter_engine.py），但前端這份沒跟上，於是「送審」這個
-  // 動作在 UI 上根本不存在。
+  function t(key, params) {
+    return window.ServerI18n ? window.ServerI18n.t(key, params) : key;
+  }
+
+  // ── 規則 ↔ 畫面上的三個選項 ──────────────────────────────────
+
+  const MATCHES = ["keyword", "regex", "rate_limit", "fingerprint"];
+  const MATCH_LABEL_KEY = {
+    keyword: "ulWord",
+    regex: "ulRegex",
+    rate_limit: "ulRate",
+    fingerprint: "blkMatchFingerprint",
+  };
   const ACTIONS = ["block", "replace", "allow", "review"];
   const ACTION_LABEL_KEY = {
     block: "fltActBlock",
@@ -24,795 +36,912 @@
     allow: "fltActAllow",
     review: "fltActReview",
   };
+  // 引擎實際會命中的組合。其他組合以前選得到，存得進去，但永遠不會命中
+  // （例如關鍵字＋替換），這裡不再提供。
+  const ACTIONS_FOR_MATCH = {
+    keyword: ["block", "allow", "review"],
+    regex: ["block", "replace", "allow", "review"],
+    rate_limit: ["block"],
+    fingerprint: ["block"],
+  };
+  const PLACEHOLDER_KEY = {
+    keyword: "modAddWordPlaceholder",
+    regex: "blkPhRegex",
+    rate_limit: "blkPhRate",
+    fingerprint: "blkPhFingerprint",
+  };
+  // 期限下拉：永久、到本場次結束、三個限時長度（與訊息抽屜的封禁時長同一組）
+  const LIFETIMES = [
+    { value: "permanent", key: "msgDrawerPermanent" },
+    { value: "session", key: "blkLifeSession" },
+    { value: "3600", key: "msgDrawerDurationHour1" },
+    { value: "86400", key: "msgDrawerDurationHour24" },
+    { value: "604800", key: "msgDrawerDurationDay7" },
+  ];
 
-  // ── Helpers ──────────────────────────────────────────────────
-
-  function isDetailsOpen(id) {
-    var state = loadDetailsState();
-    return state[id] !== undefined ? state[id] : false;
-  }
-
-  function t(key, fallback) {
-    if (typeof ServerI18n !== "undefined" && ServerI18n.t) {
-      const val = ServerI18n.t(key);
-      if (val && val !== key) return val;
+  /** 儲存的規則 → 畫面上的命中方式與動作 */
+  function viewOf(rule) {
+    switch (rule.type) {
+      case "word": return { match: "keyword", action: "block" };
+      case "keyword": return { match: "keyword", action: rule.action };
+      case "replace": return { match: "regex", action: "replace" };
+      case "regex": return { match: "regex", action: rule.action };
+      case "rate_limit": return { match: "rate_limit", action: "block" };
+      case "fingerprint": return { match: "fingerprint", action: "block" };
+      default: return { match: "keyword", action: rule.action || "block" };
     }
-    return fallback || key;
   }
 
-  // ── Type / Action badge rendering ────────────────────────────
+  /**
+   * 畫面上的命中方式＋動作 → 儲存的 type。
+   * 「關鍵字＋封鎖」一律是封鎖字（word）；伺服器也會把 keyword＋block 存成 word
+   * （services/filter_engine.py 開頭）。
+   */
+  function typeFor(match, action) {
+    if (match === "keyword") return action === "block" ? "word" : "keyword";
+    if (match === "regex") return action === "replace" ? "replace" : "regex";
+    return match;
+  }
 
-  const TYPE_PILL = {
-    keyword: "is-cyan",
-    regex: "is-cyan",
-    replace: "is-amber",
-    rate_limit: "is-danger",
-  };
+  /** 期限下拉的值 → 送給後端的欄位 */
+  function lifetimePayload(value) {
+    if (value === "permanent" || value === "session") return { lifetime: value };
+    if (value === "keep") return { lifetime: "timed" };
+    return { lifetime: "timed", duration_sec: parseInt(value, 10) };
+  }
 
-  const ACTION_COLOR = {
-    block: "var(--hud-crimson)",
-    replace: "var(--hud-amber)",
-    allow: "var(--hud-lime)",
-    review: "var(--color-ink-accent)",
-  };
+  function fmtUntil(epochSec) {
+    const d = new Date(epochSec * 1000);
+    const pad = (n) => String(n).padStart(2, "0");
+    const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const now = new Date();
+    if (d.toDateString() === now.toDateString()) return time;
+    return `${d.getMonth() + 1}/${d.getDate()} ${time}`;
+  }
 
-  // ── Section HTML ─────────────────────────────────────────────
+  function lifetimeLabel(rule) {
+    if (rule.lifetime === "session") return t("blkLifeSession");
+    if (rule.lifetime === "timed" && rule.expires_at) return t("blkLifeUntil", { time: fmtUntil(rule.expires_at) });
+    return t("msgDrawerPermanent");
+  }
+
+  function patternLabel(rule) {
+    if (rule.type === "rate_limit") {
+      return t("blkRateSummary", { n: rule.max_count || 5, s: rule.window_sec || 60 });
+    }
+    if (rule.type === "replace") return `${rule.pattern}  →  ${rule.replacement || ""}`;
+    return rule.pattern;
+  }
+
+  // 四個快捷規則。以前它們送出時多帶一個 name 欄位，後端一律 400，所以從來沒開成功過；
+  // 現在用「同樣的正規式＋動作」認出已開啟的那條。場次進行中開啟時是本場次規則——它們原本
+  // 的定位就是「直播中臨時開、結束後清掉」；沒有場次時是永久的，關掉才會消失。
+  // 寫法是 Python 的正規式（後端比對），每條都要通過後端的回溯檢查：同一條式子裡，加了
+  // 量詞的群組或字元類別後面不能再出現量詞，所以「至少 3 個連續大寫」寫成三個 [A-Z]。
+  // 判定釘在 server/tests/test_block_rules_hardening.py 的快捷規則那一段。
+  const QUICK = [
+    { id: "url", key: "fltPresetUrl", pattern: "https?://[^\\s]+", action: "block" },
+    {
+      // 全大寫：沒有小寫字母、至少 8 個大寫字母、其中有一段 3 個以上連續的大寫。
+      // 純標點（!!!!!!!!）與短字重複（OK OK OK）不算。(?-i:…)：引擎一律不分大小寫，
+      // 不關掉的話「hello world」也算全大寫。
+      id: "allcaps",
+      key: "fltPresetAllcaps",
+      pattern: "^(?-i:(?!.*[a-z])(?=.*[A-Z][A-Z][A-Z])(?:.*?[A-Z]){8})",
+      action: "review",
+    },
+    { id: "repeat", key: "fltPresetRepeat", pattern: "(.)\\1{6,}", action: "review" },
+    {
+      // 只有表情：每個字都是表情（或表情之間的空白、連接字元），而且不能全是空白。
+      // 「表情」= U+1F000–1FAFF 的圖形、BMP 裡預設就以表情顯示的那些（✅ ⚡ ⭐ ❌…），
+      // 或其他符號後面接 U+FE0F（❤️ ✔️ ©️）。取捨：★、✔、→ 這類沒帶 FE0F 的文字符號
+      // 不算表情——寧可漏擋一則全是符號的訊息，也不封鎖用符號畫分隔線、打勾的人。
+      id: "emojionly",
+      key: "blkPresetEmojiOnly",
+      pattern:
+        "^(?!\\s*$)(?:[\\U0001F000-\\U0001FAFF]\\uFE0F?" +
+        "|[\\u231A\\u231B\\u23E9-\\u23EC\\u23F0\\u23F3\\u25FD\\u25FE\\u2614\\u2615\\u2648-\\u2653" +
+        "\\u267F\\u2693\\u26A1\\u26AA\\u26AB\\u26BD\\u26BE\\u26C4\\u26C5\\u26CE\\u26D4\\u26EA" +
+        "\\u26F2\\u26F3\\u26F5\\u26FA\\u26FD\\u2705\\u270A\\u270B\\u2728\\u274C\\u274E" +
+        "\\u2753-\\u2755\\u2757\\u2795-\\u2797\\u27B0\\u27BF\\u2B1B\\u2B1C\\u2B50\\u2B55]" +
+        "|[\\u00A9\\u00AE\\u203C\\u2049\\u2122\\u2139\\u2194-\\u21AA\\u2300-\\u23FF" +
+        "\\u25AA-\\u25FE\\u2600-\\u27BF\\u2B00-\\u2BFF\\u3030\\u303D\\u3297\\u3299]\\uFE0F" +
+        "|[0-9#*]\\uFE0F?\\u20E3|\\u200D|\\s)+$",
+      action: "block",
+    },
+  ];
+
+  function quickRuleFor(q, rules) {
+    return rules.find((r) => r.type === "regex" && r.pattern === q.pattern && r.action === q.action);
+  }
+
+  // ── 狀態 ─────────────────────────────────────────────────────
+
+  let _rules = [];
+  let _scope = "all";
+  let _editing = null; // 正在編輯的規則（null = 新增）
+  let _submitting = false; // 送出中：連按 Enter 不會送第二次
+  // 儲存還在送出的規則。每筆儲存自己加、自己拿掉，整頁重繪不清：重繪後清單可能比
+  // 那筆儲存先回來，這時打開同一條會載入舊值、再存就把剛才的修改蓋回去。
+  const _savingIds = new Set();
+  let _formSeq = 0; // 每次開始新增／編輯（含整頁重繪）加一，認出儲存是哪一次表單操作發起的
+  let _saveSeq = 0; // 每次送出儲存加一：收尾時只有「目前這一次」能清掉送出中的狀態
+  // 有沒有進行中的場次（/admin/filters/list 的 session_live）。沒有時不提供「到本場次
+  // 結束」：那時沒有場次可以結束，後端也不收。
+  let _sessionLive = true;
+
+  // ── 版面 ─────────────────────────────────────────────────────
+
+  function optionList(values, labelOf, selected) {
+    return values
+      .map((v) => `<option value="${escapeHtml(v)}"${v === selected ? " selected" : ""}>${escapeHtml(labelOf(v))}</option>`)
+      .join("");
+  }
 
   function buildSectionHtml() {
     return `
-      <div id="sec-filters" class="hud-page-stack lg:col-span-2">
-        <!-- v4 P2-1 chrome (added 2026-05-19) — was missing kicker/title.
-             Page used to render straight into hud-stats-strip without a
-             section header. -->
-        <!-- 頁首由同分頁的 sec-blacklist 提供，這裡不再重複一份 -->
-
-        <!-- v8（2026-08-19 設計稿 07 · R3）：四格 KPI 條撤掉。這個 section
-             現在與 sec-blacklist 同在「封鎖字」分頁裡，兩張 KPI 條會前後
-             相疊；而稿上這頁只有「輸入 → 命中時怎麼處理 → 清單」三件事。
-             data-mod-stat 契約以隱藏節點保留，admin-moderation.js 照常寫入。 -->
-        <span hidden data-mod-stat="rules">—</span><span hidden data-mod-stat="masked">—</span>
-        <span hidden data-mod-stat="blocked">—</span><span hidden data-mod-stat="blacklist">—</span>
-
-        <!-- 2026-05-18 design v4 P2-1: Quick Filters bar \u2014 one-shot
-             preset toggles built on top of /admin/filters backend.
-             Each toggle creates / removes a regex rule. The existing
-             custom rules library below is the same regex store. -->
-        <div class="admin-flt-v4__explain">
-          <span class="admin-flt-v4__amber-kicker">⚡ ${ServerI18n.t("fltTempRules")}</span>
-          ${ServerI18n.t("fltTempRulesDesc")}
-          <span class="admin-flt-v4__spacer"></span>
-          <span class="admin-flt-v4__dim-kicker">${ServerI18n.t("fltVsBlacklist")}</span>
+      <div id="sec-blacklist" class="hud-page-stack lg:col-span-2" data-tpl="B">
+        <div class="admin-ui-page-head">
+          <h2 class="admin-ui-page-title">${escapeHtml(t("modBlockedWordsTitle"))}</h2>
         </div>
-        <div class="admin-flt-v4__card">
-          <div class="admin-flt-v4__head">
-            <span class="admin-flt-v4__kicker">${ServerI18n.t("fltQuickKickerTail")}</span>
+
+        <div class="admin-block-add" data-block-add>
+          <div class="admin-mod-addrow">
+            <input type="text" id="blockRuleInput" class="admin-ui-input admin-ui-grow"
+              placeholder="${escapeHtml(t("modAddWordPlaceholder"))}" aria-label="${escapeHtml(t("ulPattern"))}" />
+            <button id="blockRuleSubmit" type="button" class="admin-ui-action is-primary admin-filter-action">${escapeHtml(t("modAddWordBtn"))}</button>
+            <button id="blockRuleCancel" type="button" class="admin-ui-action admin-filter-action" hidden>${escapeHtml(t("cancel"))}</button>
           </div>
-          <div class="admin-flt-v4__quick" data-flt-quick>
-            ${[
-              { id: "url",       label: ServerI18n.t("fltPresetUrl"),       pattern: "https?://[^\\s]+", action: "block" },
-              // 2026-10-29：這兩個原本送 action:"mask"，而後端白名單只收
-              // block / replace / allow / review —— 點下去必定 400，等於四個
-              // 快捷規則有兩個是壞的。改成 review：全大寫與重複字元是
-              // 「可疑但不確定」，送人看比直接封掉合理，也讓審核佇列有內容。
-              { id: "allcaps",   label: ServerI18n.t("fltPresetAllcaps"),       pattern: "^[A-Z\\W\\s]{8,}$", action: "review" },
-              { id: "repeat",    label: ServerI18n.t("fltPresetRepeat"),     pattern: "(.)\\1{6,}", action: "review" },
-              { id: "emojionly", label: "Emoji-only",  pattern: "^[\\p{Emoji}\\s]+$", action: "block" },
-            ].map((q) => `
-              <button type="button" class="admin-flt-v4__qchip" data-flt-quick-id="${q.id}" data-flt-pattern="${q.pattern}" data-flt-action="${q.action}" data-flt-label="${q.label}">
-                <span class="admin-flt-v4__qchip-toggle"><span class="admin-flt-v4__qchip-knob"></span></span>
-                <span class="admin-flt-v4__qchip-label">${q.label}</span>
-                <span class="admin-flt-v4__qchip-hits" data-flt-quick-hits="${q.id}">\u2014</span>
+          <div class="admin-block-options">
+            <select id="blockRuleMatch" class="admin-ui-select" aria-label="${escapeHtml(t("blkMatchLabel"))}">
+              ${optionList(MATCHES, (m) => t(MATCH_LABEL_KEY[m]), "keyword")}
+            </select>
+            <select id="blockRuleAction" class="admin-ui-select" aria-label="${escapeHtml(t("blkActionLabel"))}">
+              ${optionList(ACTIONS, (a) => t(ACTION_LABEL_KEY[a]), "block")}
+            </select>
+            <select id="blockRuleLifetime" class="admin-ui-select" aria-label="${escapeHtml(t("blkLifetimeLabel"))}">
+              ${LIFETIMES.map((l) => `<option value="${l.value}">${escapeHtml(t(l.key))}</option>`).join("")}
+            </select>
+            <input type="text" id="blockRuleReplacement" class="admin-ui-input" hidden
+              placeholder="${escapeHtml(t("fltColReplacement"))}" aria-label="${escapeHtml(t("fltColReplacement"))}" />
+            <label class="admin-block-num" data-block-rate hidden>
+              <span>${escapeHtml(t("fltColMaxCount"))}</span>
+              <input type="number" id="blockRuleMaxCount" class="admin-ui-input" value="5" min="1" max="100" />
+            </label>
+            <label class="admin-block-num" data-block-rate hidden>
+              <span>${escapeHtml(t("fltColWindowSec"))}</span>
+              <input type="number" id="blockRuleWindowSec" class="admin-ui-input" value="60" min="1" max="3600" />
+            </label>
+          </div>
+        </div>
+
+        <div class="admin-flt-v4__quick" data-flt-quick>
+          ${QUICK.map((q) => `
+            <button type="button" class="admin-flt-v4__qchip" data-flt-quick-id="${q.id}" aria-pressed="false">
+              <span class="admin-flt-v4__qchip-toggle"><span class="admin-flt-v4__qchip-knob"></span></span>
+              <span class="admin-flt-v4__qchip-label">${escapeHtml(t(q.key))}</span>
+            </button>`).join("")}
+        </div>
+
+        <div class="admin-block-listhead">
+          <span class="admin-ui-seg" id="blockRuleScope" role="tablist">
+            ${["all"].concat(MATCHES).map((s) => `
+              <button type="button" class="seg-item${s === "all" ? " is-active" : ""}" data-scope="${s}">
+                ${escapeHtml(s === "all" ? t("fltChipAll") : t(MATCH_LABEL_KEY[s]))}
+                <span class="admin-block-scope-count" data-scope-count="${s}">0</span>
               </button>`).join("")}
-          </div>
+          </span>
+          <button id="blockRuleClearSession" type="button" class="admin-ui-chip" hidden>${escapeHtml(t("blkClearSession"))}</button>
         </div>
-
-        <div class="hud-page-grid-2" style="grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr)">
-          <!-- LEFT: Rules library -->
-          <div class="hud-inspector" style="min-height:auto">
-            <div class="hud-inspector-head">
-              <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("fltRuleLib")}</span>
-              <span class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("fltOrderMatters")}</span>
-              <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color: var(--color-ink-accent);letter-spacing:0.1em">${ServerI18n.t("fltActionsHead")}</span>
-            </div>
-            <div class="hud-filter-row" id="filterTypeChips" style="padding:10px 14px;border-bottom:1px solid var(--hud-line-strong)">
-              <span class="hud-filter-chip is-active" data-filter-scope="all">${ServerI18n.t("fltChipAll")} <span data-filter-count="all">0</span></span>
-              <span class="hud-filter-chip" data-filter-scope="keyword">${ServerI18n.t("ulWord")} <span data-filter-count="keyword">0</span></span>
-              <span class="hud-filter-chip" data-filter-scope="regex">${ServerI18n.t("ulRegex")} <span data-filter-count="regex">0</span></span>
-              <span class="hud-filter-chip" data-filter-scope="replace">${ServerI18n.t("ulReplace")} <span data-filter-count="replace">0</span></span>
-              <span class="hud-filter-chip" data-filter-scope="rate_limit">${ServerI18n.t("ulRate")} <span data-filter-count="rate_limit">0</span></span>
-            </div>
-            <div class="hud-table-head admin-flt-v4__grid admin-flt-v4__head-row" style="border-bottom:1px solid var(--hud-line-strong);padding:8px 14px">
-              <span>${ServerI18n.t("ulPattern")}</span>
-              <span>${ServerI18n.t("ulType")}</span>
-              <span>${ServerI18n.t("ulAction")}</span>
-              <span>P</span>
-              <span>${ServerI18n.t("ulStatus")}</span>
-              <span style="text-align:right"></span>
-            </div>
-            <div id="filterRulesList" class="hud-rules-body"></div>
-
-            <!-- Live moderation log -->
-            <div style="border-top:1px solid var(--hud-line-strong)">
-              <div class="hud-inspector-head" style="border-bottom:1px solid var(--hud-line-strong)">
-                <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${ServerI18n.t("fltLiveLog")}</span>
-                <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.1em">${ServerI18n.t("fltAutoScroll")}</span>
-              </div>
-              <div class="hud-console-body" id="filterLiveLog" style="max-height:200px;padding:10px 14px;font-family:var(--font-mono);font-size:11px;line-height:1.7">
-                <div style="color:var(--color-text-muted);text-align:center;padding:10px">' + ServerI18n.t("fltNoEvents") + '</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- RIGHT: Add + Test -->
-          <div style="display:flex;flex-direction:column;gap:14px">
-            <div class="hud-inspector" style="min-height:auto">
-              <div class="hud-inspector-head">
-                <span style="font-size:13px;font-weight:600;color:var(--color-text-strong)">${t("addFilterRule", "Add Rule")}</span>
-
-              </div>
-              <div id="filterRuleForm" style="padding:14px;display:flex;flex-direction:column;gap:10px">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                  <div>
-                    <label for="filterType" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("mlType")}</label>
-                    <select id="filterType" class="admin-ui-select">
-                      <option value="keyword">keyword</option>
-                      <option value="regex">regex</option>
-                      <option value="replace">replace</option>
-                      <option value="rate_limit">rate_limit</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label for="filterAction" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("mlAction")}</label>
-                    <select id="filterAction" class="admin-ui-select">
-                      <option value="block">${ServerI18n.t("fltActBlock")}</option>
-                      <option value="replace">${ServerI18n.t("fltActReplace")}</option>
-                      <option value="allow">${ServerI18n.t("fltActAllow")}</option>
-                      <!-- 2026-10-29：review 是後端第四種動作（送進審核佇列），
-                           但下拉一直沒有它 —— 於是佇列只能靠手改 JSON 才會
-                           有東西，而它的預設分頁永遠是 All Clear。 -->
-                      <option value="review">${ServerI18n.t("fltActReview")}</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label for="filterPattern" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("mlPattern")}</label>
-                  <input type="text" id="filterPattern" placeholder="${t("filterPatternPlaceholder", "Enter pattern...")}"
-                    class="admin-ui-input" />
-                </div>
-                <div id="filterReplacementRow" class="hidden">
-                  <label for="filterReplacement" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("fltColReplacement")}</label>
-                  <input type="text" id="filterReplacement" placeholder="${t("filterReplacementPlaceholder", "Replacement text...")}"
-                    class="admin-ui-input" />
-                </div>
-                <div id="filterRateLimitRow" class="hidden" style="display:none;grid-template-columns:1fr 1fr;gap:8px">
-                  <div>
-                    <label for="filterMaxCount" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("fltColMaxCount")}</label>
-                    <input type="number" id="filterMaxCount" value="5" min="1" max="1000"
-                      class="admin-ui-input" />
-                  </div>
-                  <div>
-                    <label for="filterWindowSec" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("fltColWindowSec")}</label>
-                    <input type="number" id="filterWindowSec" value="60" min="1" max="86400"
-                      class="admin-ui-input" />
-                  </div>
-                </div>
-                <div>
-                  <label for="filterPriority" class="admin-v3-card-kicker" style="margin:0">${ServerI18n.t("uiColPriority")} · ${ServerI18n.t("fltPriorityTail")}</label>
-                  <input type="number" id="filterPriority" value="0" min="-9999" max="9999"
-                    class="admin-ui-input" />
-                </div>
-                <button id="filterAddBtn" type="button" class="admin-ui-action is-primary admin-filter-action" style="margin-top:4px">
-                  + ${t("addRule", "Add Rule")}
-                </button>
-              </div>
-            </div>
-
-            <div class="hud-inspector" style="min-height:auto">
-              <div class="hud-inspector-head">
-                <span class="admin-v3-card-kicker" style="margin:0">${t("testRule", "Test Rule")}</span>
-              </div>
-              <div style="padding:14px;display:flex;flex-direction:column;gap:8px">
-                <input id="filterTestText" type="text" placeholder="${t("sampleText", "Sample text...")}"
-                  class="admin-ui-input" />
-                <button id="filterTestBtn" type="button" class="admin-ui-action admin-filter-action" style="align-self:flex-start">${t("testBtn", "Test")}</button>
-                <div id="filterTestResult" style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong);letter-spacing:0.02em"></div>
-              </div>
-            </div>
-          </div>
+        <div class="admin-ui-group" data-block-list-group>
+          <div id="blockRuleList" class="admin-mod-wordlist"></div>
         </div>
+        <div data-block-empty hidden></div>
+
+        <details class="admin-dsp2-fold" id="blockRuleMore">
+          <summary>${escapeHtml(t("blkMoreTitle"))}</summary>
+          <div class="admin-block-more">
+            <label class="admin-block-num">
+              <span>${escapeHtml(t("uiColPriority"))} · ${escapeHtml(t("fltPriorityTail"))}</span>
+              <input type="number" id="blockRulePriority" class="admin-ui-input" value="0" min="0" max="9999" />
+            </label>
+            <div class="admin-mod-addrow">
+              <input id="filterTestText" type="text" class="admin-ui-input admin-ui-grow"
+                placeholder="${escapeHtml(t("sampleText"))}" aria-label="${escapeHtml(t("sampleText"))}" />
+              <button id="filterTestBtn" type="button" class="admin-ui-action admin-filter-action">${escapeHtml(t("testBtn"))}</button>
+            </div>
+            <div id="filterTestResult" class="admin-block-test-result" aria-live="polite"></div>
+          </div>
+        </details>
+
+        <details class="admin-dsp2-fold" id="blockRuleLog">
+          <summary>${escapeHtml(t("fltLiveLog"))}</summary>
+          <div class="hud-console-body" id="filterLiveLog"></div>
+        </details>
       </div>`;
   }
 
-  // ── Render a single rule row ─────────────────────────────────
-
-  let _currentFilter = "all";
+  // ── 清單 ─────────────────────────────────────────────────────
 
   function renderRuleRow(rule) {
-    const typePill = TYPE_PILL[rule.type] || "is-default";
-    const actionCol = ACTION_COLOR[rule.action] || "var(--color-text-muted)";
-    // v8（2026-08-19）：規則型別標籤改吃 i18n——WORD/REGEX/REPLACE
-    // 是內部型別名，不該直接當標籤給主持人看。
-    const TYPE_KEY = { keyword: "ulWord", regex: "ulRegex", replace: "ulReplace", rate_limit: "ulRate" };
-    const typeLabel = ServerI18n.t(TYPE_KEY[rule.type] || "ulWord");
-
-    let patternText = rule.pattern;
-    if (rule.type === "replace" && rule.replacement !== undefined) {
-      patternText = `${rule.pattern}  \u2192  ${rule.replacement}`;
-    }
-    if (rule.type === "rate_limit") {
-      const mc = rule.max_count || 5;
-      const ws = rule.window_sec || 60;
-      patternText = `${rule.pattern}  \u00b7  ${mc}/${ws}s`;
-    }
-
-    const dim = rule.enabled ? "" : "opacity:0.45;";
-    // 動作標籤也吃 i18n：raw `block` / `review` 是內部列舉值，不該是
-    // 主持人讀的字（與上面 typeLabel 同一個理由）。
-    const actionLabel = ACTION_LABEL_KEY[rule.action]
-      ? ServerI18n.t(ACTION_LABEL_KEY[rule.action])
-      : rule.action;
-
+    const view = viewOf(rule);
+    const id = escapeHtml(rule.id);
     return `
-      <div class="hud-table-row hud-rule-row admin-flt-v4__grid" style="${dim}" data-rule-id="${escapeHtml(rule.id)}" data-rule-type="${escapeHtml(rule.type)}">
-        <span style="font-family:var(--font-mono);font-size:13px;color:var(--color-text-strong);word-break:break-all">${escapeHtml(patternText)}</span>
-        <span class="hud-pill ${typePill}">${typeLabel}</span>
-        <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;padding:2px 6px;border-radius:3px;background:${actionCol};color:#000;font-weight:700;width:fit-content">${escapeHtml(actionLabel)}</span>
-        <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">P${escapeHtml(String(rule.priority))}</span>
-        <label class="relative inline-block" style="width:32px;align-self:center" title="${escapeHtml(rule.enabled ? t("enabled", "Enabled") : t("disabled", "Disabled"))}">
-          <input type="checkbox" class="sr-only filter-toggle-cb" data-rule-id="${escapeHtml(rule.id)}" ${rule.enabled ? "checked" : ""} />
-          <span class="admin-filter-toggle-dot ${rule.enabled ? "is-on" : "is-off"}" style="cursor:pointer"></span>
+      <div class="hud-rule-row admin-block-row${rule.enabled ? "" : " is-off"}" data-rule-id="${id}" data-rule-type="${escapeHtml(rule.type)}"
+        style="${rule.enabled ? "" : "opacity:0.45"}">
+        <span class="admin-block-row__pattern">${escapeHtml(patternLabel(rule))}</span>
+        <span class="admin-block-row__meta">
+          <span>${escapeHtml(t(MATCH_LABEL_KEY[view.match]))}</span>
+          <span class="admin-block-row__action" data-action="${escapeHtml(view.action)}">${escapeHtml(t(ACTION_LABEL_KEY[view.action] || "fltActBlock"))}</span>
+          <span>${escapeHtml(lifetimeLabel(rule))}</span>
+        </span>
+        <label class="admin-block-row__toggle" title="${escapeHtml(rule.enabled ? t("enabled") : t("disabled"))}">
+          <input type="checkbox" class="sr-only filter-toggle-cb" data-rule-id="${id}" ${rule.enabled ? "checked" : ""} />
+          <span class="admin-filter-toggle-dot ${rule.enabled ? "is-on" : "is-off"}"></span>
         </label>
-        <button class="filter-delete-btn" type="button" data-rule-id="${escapeHtml(rule.id)}" title="${t("deleteRule", "Delete")}" aria-label="${t("deleteRule", "Delete")}">${window.AdminUtils.closeIcon}</button>
+        <button class="admin-ui-chip block-rule-edit" type="button" data-rule-id="${id}">${escapeHtml(t("blkEdit"))}</button>
+        <button class="filter-delete-btn" type="button" data-rule-id="${id}" title="${escapeHtml(t("deleteRule"))}" aria-label="${escapeHtml(t("deleteRule"))}">${window.AdminUtils.closeIcon}</button>
       </div>`;
   }
 
-  function applyFilterChips(rules) {
-    const counts = { all: rules.length, keyword: 0, regex: 0, replace: 0, rate_limit: 0 };
-    rules.forEach((r) => { if (counts[r.type] != null) counts[r.type]++; });
+  function renderList() {
+    const list = document.getElementById("blockRuleList");
+    if (!list) return;
+    const counts = { all: _rules.length, keyword: 0, regex: 0, rate_limit: 0, fingerprint: 0 };
+    _rules.forEach((r) => { counts[viewOf(r).match] += 1; });
     Object.keys(counts).forEach((k) => {
-      const el = document.querySelector(`[data-filter-count="${k}"]`);
-      if (el) el.textContent = counts[k];
+      const el = document.querySelector(`[data-scope-count="${k}"]`);
+      if (el) el.textContent = String(counts[k]);
     });
-    const rulesStatEl = document.querySelector('[data-mod-stat="rules"]');
-    if (rulesStatEl) rulesStatEl.textContent = counts.all;
+    if (window.AdminTabs && window.AdminTabs.setTabCount) {
+      window.AdminTabs.setTabCount("moderation", "blacklist", _rules.length || "");
+    }
+    const sessionCount = _rules.filter((r) => r.lifetime === "session").length;
+    const clearBtn = document.getElementById("blockRuleClearSession");
+    if (clearBtn) clearBtn.hidden = sessionCount === 0;
+
+    const visible = _scope === "all" ? _rules : _rules.filter((r) => viewOf(r).match === _scope);
+    list.innerHTML = visible.map(renderRuleRow).join("");
+    renderEmpty(visible.length === 0);
+    renderQuick();
   }
 
-  // Fetch blacklist size for the moderation overview strip. Mask/block 24h
-  // counts aren't tracked server-side yet, so those tiles stay as "—".
-  async function refreshBlacklistStat() {
-    const el = document.querySelector('[data-mod-stat="blacklist"]');
-    if (!el) return;
-    try {
-      const r = await fetch("/admin/blacklist/get", { credentials: "same-origin" });
-      if (!r.ok) return;
-      const data = await r.json();
-      const arr = Array.isArray(data) ? data : (data.keywords || []);
-      el.textContent = String(arr.length);
-    } catch (_) { /* silent */ }
+  // 空清單用同頁其他分頁（待審佇列、被封鎖的觀眾）一樣的 AdminEmpty 卡。卡片放在清單
+  // 群組外面：清單的每個子元素都套了列的版型（.admin-mod-wordlist > *），卡片放進去會
+  // 被壓成一列、內距歸零。
+  function renderEmpty(isEmpty) {
+    const group = document.querySelector("[data-block-list-group]");
+    const host = document.querySelector("[data-block-empty]");
+    if (!group || !host) return;
+    group.hidden = isEmpty;
+    host.hidden = !isEmpty;
+    host.innerHTML = "";
+    if (!isEmpty) return;
+    if (window.AdminEmpty) {
+      const card = window.AdminEmpty.renderCustom({
+        icon: "⊘",
+        title: t("blkEmpty"),
+        accent: "var(--color-ink-error)",
+      });
+      card.dataset.emptyKind = "filters";
+      host.appendChild(card);
+    } else {
+      host.innerHTML = `<div class="admin-block-empty" data-empty-kind="filters">${escapeHtml(t("blkEmpty"))}</div>`;
+    }
   }
 
-  // ── API interactions ─────────────────────────────────────────
+  function renderQuick() {
+    QUICK.forEach((q) => {
+      const chip = document.querySelector(`[data-flt-quick-id="${q.id}"]`);
+      if (!chip) return;
+      const hit = quickRuleFor(q, _rules);
+      const active = !!hit && hit.enabled !== false;
+      chip.classList.toggle("is-active", active);
+      chip.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  }
 
-  async function fetchRules() {
+  let _refreshSeq = 0; // 每次抓清單加一：只有最新那一次的回應能換掉畫面上的清單
+
+  async function refresh() {
+    // 回應不一定照送出的順序回來。較早那次若比較晚到，不能蓋掉較新的清單
+    // （例如剛新增的那條會從畫面上消失，直到下一次整理）。
+    const seq = ++_refreshSeq;
     try {
-      const resp = await csrfFetch("/admin/filters/list");
+      const resp = await window.csrfFetch("/admin/filters/list");
       if (!resp.ok) throw new Error("HTTP " + resp.status);
       const data = await resp.json();
-      return data.rules || [];
+      if (seq !== _refreshSeq) return;
+      _rules = Array.isArray(data.rules) ? data.rules : [];
+      _sessionLive = data.session_live !== false;
     } catch (err) {
-      console.error("Failed to fetch filter rules:", err);
-      showToast(t("fetchFiltersFailed", "Failed to load filter rules"), false);
-      return [];
+      if (seq !== _refreshSeq) return;
+      console.error("Failed to fetch block rules:", err);
+      window.showToast(t("fetchFiltersFailed"), false);
     }
+    renderList();
+    syncLifetime();
   }
 
-  async function refreshRulesList() {
-    const list = document.getElementById("filterRulesList");
-    if (!list) return;
-    list.innerHTML = `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">${t("loading", "Loading...")}</div>`;
-    const rules = await fetchRules();
-    applyFilterChips(rules);
-    refreshBlacklistStat();
-    if (rules.length === 0) {
-      // 2026-07-07 (C7): named empty state (icon + copy + primary action)
-      // instead of a bare text line. Falls back to the original text when
-      // AdminEmpty hasn't loaded.
-      if (window.AdminEmpty) {
-        const el = window.AdminEmpty.render("filters");
-        el.setAttribute("data-empty-kind", "filters");
-        list.innerHTML = "";
-        list.appendChild(el);
-      } else {
-        list.innerHTML = `<div data-empty-kind="filters" style="padding:18px 14px;text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted);letter-spacing:0.05em">${t("noFilterRules", "No filter rules configured.")}</div>`;
-      }
-      return;
+  /** 沒有進行中的場次時藏起「到本場次結束」（正在編輯的那條本來就是時例外）。 */
+  function syncLifetime() {
+    const life = el("blockRuleLifetime");
+    if (!life) return;
+    const opt = life.querySelector('option[value="session"]');
+    const allowed = _sessionLive || !!(_editing && _editing.lifetime === "session");
+    if (opt) {
+      opt.hidden = !allowed;
+      opt.disabled = !allowed;
     }
-    const visible = _currentFilter === "all" ? rules : rules.filter((r) => r.type === _currentFilter);
-    list.innerHTML = visible.map(renderRuleRow).join("");
+    if (!allowed && life.value === "session") life.value = "permanent";
   }
 
-  async function addRule() {
-    const typeEl = document.getElementById("filterType");
-    const actionEl = document.getElementById("filterAction");
-    const patternEl = document.getElementById("filterPattern");
-    const replacementEl = document.getElementById("filterReplacement");
-    const priorityEl = document.getElementById("filterPriority");
-    const maxCountEl = document.getElementById("filterMaxCount");
-    const windowSecEl = document.getElementById("filterWindowSec");
+  // ── 新增／編輯 ───────────────────────────────────────────────
 
-    const ruleType = typeEl.value;
-    const pattern = (patternEl.value || "").trim();
+  function el(id) { return document.getElementById(id); }
 
-    if (!pattern) {
-      showToast(t("patternRequired", "Pattern is required"), false);
-      patternEl.focus();
-      return;
-    }
+  function syncOptions() {
+    const match = el("blockRuleMatch").value;
+    const actionEl = el("blockRuleAction");
+    const allowed = ACTIONS_FOR_MATCH[match];
+    Array.from(actionEl.options).forEach((o) => { o.disabled = allowed.indexOf(o.value) === -1; });
+    if (allowed.indexOf(actionEl.value) === -1) actionEl.value = allowed[0];
+    actionEl.disabled = allowed.length === 1;
+    el("blockRuleInput").placeholder = t(PLACEHOLDER_KEY[match]);
+    el("blockRuleReplacement").hidden = actionEl.value !== "replace";
+    document.querySelectorAll("[data-block-rate]").forEach((n) => { n.hidden = match !== "rate_limit"; });
+  }
 
+  function readForm() {
+    const match = el("blockRuleMatch").value;
+    const action = el("blockRuleAction").value;
+    const raw = el("blockRuleInput").value || "";
     const body = {
-      type: ruleType,
-      pattern: pattern,
-      action: actionEl.value,
-      priority: parseInt(priorityEl.value, 10) || 0,
+      type: typeFor(match, action),
+      // 只修剪關鍵字與指紋。正規式原樣保留：「foo 」結尾的空白是規則的一部分，修掉的話
+      // 打開再儲存就連沒有空白的訊息也會命中。
+      pattern: match === "regex" ? raw : raw.trim(),
+      action: action,
+      priority: parseInt(el("blockRulePriority").value, 10) || 0,
     };
-
-    if (ruleType === "replace") {
-      body.replacement = replacementEl.value || "";
+    // 指紋與頻率規則不論存的動作是什麼，比對時一律封鎖（filter_engine._evaluate，5.8 也
+    // 一樣），所以畫面上只提供封鎖。編輯既有規則時沿用它存的動作，不要順手改掉。
+    if (_editing && _editing.type === body.type && (body.type === "fingerprint" || body.type === "rate_limit")) {
+      body.action = _editing.action || action;
     }
-    if (ruleType === "rate_limit") {
-      body.max_count = parseInt(maxCountEl.value, 10) || 5;
-      body.window_sec = parseFloat(windowSecEl.value) || 60;
+    if (body.type === "replace") body.replacement = el("blockRuleReplacement").value || "";
+    if (body.type === "rate_limit") {
+      body.max_count = parseInt(el("blockRuleMaxCount").value, 10) || 5;
+      body.window_sec = parseFloat(el("blockRuleWindowSec").value) || 60;
     }
+    return Object.assign(body, lifetimePayload(el("blockRuleLifetime").value));
+  }
 
+  function errorMessage(data, fallbackKey) {
+    const code = data && data.code;
+    if (code === "duplicate") return t("blkErrDuplicate");
+    if (code === "invalid_regex") return t("blkErrRegex");
+    if (code === "unsafe_regex") return t("blkErrUnsafe");
+    if (code === "regex_timeout") return t("blkErrTimeout");
+    if (code === "no_session") return t("blkErrNoSession");
+    if (code === "save_failed") return t("blkErrNotSaved");
+    if (code === "conflict") return t("blkErrConflict");
+    if (code === "regex_busy") return t("blkErrBusy");
+    return t(fallbackKey);
+  }
+
+  function resetForm() {
+    _formSeq += 1;
+    _editing = null;
+    el("blockRuleInput").value = "";
+    el("blockRuleReplacement").value = "";
+    el("blockRuleMatch").value = "keyword";
+    el("blockRuleAction").value = "block";
+    const life = el("blockRuleLifetime");
+    const keep = life.querySelector('option[value="keep"]');
+    if (keep) keep.remove();
+    life.value = "permanent";
+    el("blockRulePriority").value = "0";
+    el("blockRuleSubmit").textContent = t("modAddWordBtn");
+    el("blockRuleCancel").hidden = true;
+    syncOptions();
+    syncLifetime();
+  }
+
+  function startEdit(rule) {
+    _formSeq += 1;
+    _editing = rule;
+    const view = viewOf(rule);
+    el("blockRuleMatch").value = view.match;
+    syncOptions();
+    el("blockRuleAction").value = view.action;
+    el("blockRuleInput").value = rule.pattern || "";
+    el("blockRuleReplacement").value = rule.replacement || "";
+    el("blockRuleMaxCount").value = String(rule.max_count || 5);
+    el("blockRuleWindowSec").value = String(rule.window_sec || 60);
+    el("blockRulePriority").value = String(rule.priority || 0);
+    const life = el("blockRuleLifetime");
+    const oldKeep = life.querySelector('option[value="keep"]');
+    if (oldKeep) oldKeep.remove();
+    if (rule.lifetime === "timed" && rule.expires_at) {
+      const keep = document.createElement("option");
+      keep.value = "keep";
+      keep.textContent = lifetimeLabel(rule);
+      life.insertBefore(keep, life.firstChild);
+      life.value = "keep";
+    } else {
+      life.value = rule.lifetime === "session" ? "session" : "permanent";
+    }
+    syncOptions();
+    syncLifetime();
+    el("blockRuleSubmit").textContent = t("blkSave");
+    el("blockRuleCancel").hidden = false;
+    el("blockRuleInput").focus();
+  }
+
+  async function submit() {
+    if (_submitting) return;
+    const body = readForm();
+    if (!body.pattern && body.type !== "rate_limit") {
+      window.showToast(t("patternRequired"), false);
+      el("blockRuleInput").focus();
+      return;
+    }
+    const editing = _editing;
+    // 這次儲存屬於哪一次表單操作。等回應的期間主持人可以按取消、改編輯另一條，
+    // 整頁重繪也會換一份表單；回來時只有還是同一次操作才重設表單。
+    const formSeq = _formSeq;
+    const sameForm = () => formSeq === _formSeq;
+    const url = editing ? "/admin/filters/update" : "/admin/filters/add";
+    const payload = editing ? { rule_id: editing.id, updates: body } : body;
+    const button = el("blockRuleSubmit");
+    // 整頁重繪會把 _submitting 清掉、允許下一次儲存；前一次回來收尾時不能把下一次的
+    // 送出中狀態一起清掉（否則同一筆會被送兩次）。
+    const saveSeq = ++_saveSeq;
+    _submitting = true;
+    if (editing) _savingIds.add(editing.id);
+    if (button) button.disabled = true;
     try {
-      const resp = await csrfFetch("/admin/filters/add", {
+      const resp = await window.csrfFetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(payload),
       });
-      const data = await resp.json();
-      if (!resp.ok) {
-        showToast(data.error || t("addRuleFailed", "Failed to add rule"), false);
+      const data = await resp.json().catch(() => ({}));
+      if (editing && resp.status === 404) {
+        // 正在編輯的規則在別處被刪掉了：離開編輯模式、重抓清單，不要改成新增。
+        if (sameForm()) resetForm();
+        await refresh();
+        window.showToast(t("blkErrGone"), false);
         return;
       }
-      showToast(t("ruleAdded", "Rule added"), true);
-      patternEl.value = "";
-      replacementEl.value = "";
-      await refreshRulesList();
+      if (!resp.ok) {
+        window.showToast(errorMessage(data, editing ? "updateRuleFailed" : "addRuleFailed"), false);
+        return;
+      }
+      if (sameForm()) resetForm();
+      await refresh();
+      if (editing) {
+        window.showToast(t("blkUpdated"), true);
+      } else if (window.AdminQuickAction && data.rule_id) {
+        window.AdminQuickAction.fire({
+          label: t("blkAdded", { pattern: body.pattern || patternLabel(body) }),
+          undo: {
+            label: t("histUndo"),
+            run: async () => {
+              const r = await removeRule(data.rule_id);
+              if (!r) throw new Error("remove failed");
+            },
+          },
+        });
+      } else {
+        window.showToast(t("ruleAdded"), true);
+      }
     } catch (err) {
-      console.error("Add filter rule error:", err);
-      showToast(t("addRuleFailed", "Failed to add rule"), false);
+      console.error("Save block rule error:", err);
+      window.showToast(t(editing ? "updateRuleFailed" : "addRuleFailed"), false);
+    } finally {
+      if (editing) _savingIds.delete(editing.id);
+      if (saveSeq === _saveSeq) _submitting = false;
+      // 整頁重繪過的話，這顆按鈕已經不是畫面上那顆；畫面上那顆本來就沒被停用。
+      if (button) button.disabled = false;
     }
+  }
+
+  async function removeRule(ruleId) {
+    const resp = await window.csrfFetch("/admin/filters/remove", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rule_id: ruleId }),
+    });
+    if (resp.ok) await refresh();
+    return resp.ok;
   }
 
   async function deleteRule(ruleId) {
+    const rule = _rules.find((r) => r.id === ruleId);
     const ok = await window.HudConfirm?.open({
       icon: "⊘",
-      title: ServerI18n.t("filtersDeleteTitle"),
-      subtitle: ServerI18n.t("cfmSubDeleteFilterRule"),
+      title: t("filtersDeleteTitle"),
       severity: "danger",
-      body: t("confirmDeleteRule", "Delete this filter rule?"),
-      confirmLabel: ServerI18n.t("filtersDeleteConfirm"),
+      bodyText: rule ? patternLabel(rule) : "",
+      confirmLabel: t("filtersDeleteConfirm"),
     });
     if (!ok) return;
     try {
-      const resp = await csrfFetch("/admin/filters/remove", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rule_id: ruleId }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) {
-        showToast(data.error || t("deleteRuleFailed", "Failed to delete rule"), false);
-        return;
+      if (await removeRule(ruleId)) {
+        if (_editing && _editing.id === ruleId) resetForm();
+        window.showToast(t("ruleDeleted"), true);
+      } else {
+        window.showToast(t("deleteRuleFailed"), false);
       }
-      showToast(t("ruleDeleted", "Rule deleted"), true);
-      await refreshRulesList();
     } catch (err) {
-      console.error("Delete filter rule error:", err);
-      showToast(t("deleteRuleFailed", "Failed to delete rule"), false);
+      console.error("Delete block rule error:", err);
+      window.showToast(t("deleteRuleFailed"), false);
     }
   }
 
-  async function toggleRule(ruleId, enabled) {
+  // 同一條規則的開關排隊送：快速關了又開時，兩個更新同時送出可能以相反順序抵達，
+  // 結果規則停用、開關卻顯示啟用。一次只送一個，送完若最後想要的狀態跟剛送的不同，
+  // 再送一次——最後一次點的為準。
+  const _toggles = {}; // ruleId → { want, busy }
+
+  async function sendToggle(ruleId, enabled) {
     try {
-      const resp = await csrfFetch("/admin/filters/update", {
+      const resp = await window.csrfFetch("/admin/filters/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rule_id: ruleId, updates: { enabled: enabled } }),
       });
-      const data = await resp.json();
+      const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        showToast(data.error || t("updateRuleFailed", "Failed to update rule"), false);
-        await refreshRulesList();
-        return;
+        window.showToast(errorMessage(data, "updateRuleFailed"), false);
+        return false;
       }
+      const rule = _rules.find((r) => r.id === ruleId);
+      if (rule) rule.enabled = enabled;
+      renderQuick();
+      return true;
     } catch (err) {
-      console.error("Toggle filter rule error:", err);
-      showToast(t("updateRuleFailed", "Failed to update rule"), false);
-      await refreshRulesList();
+      console.error("Toggle block rule error:", err);
+      window.showToast(t("updateRuleFailed"), false);
+      return false;
     }
   }
 
-  async function testRule() {
-    const textEl = document.getElementById("filterTestText");
-    const resultEl = document.getElementById("filterTestResult");
-    const typeEl = document.getElementById("filterType");
-    const actionEl = document.getElementById("filterAction");
-    const patternEl = document.getElementById("filterPattern");
-    const replacementEl = document.getElementById("filterReplacement");
-    const maxCountEl = document.getElementById("filterMaxCount");
-    const windowSecEl = document.getElementById("filterWindowSec");
+  /** 把清單上那一列畫成 *enabled*（送的期間若有重新整理，列會被畫成切換前的狀態）。 */
+  function syncRow(ruleId, enabled) {
+    const row = Array.from(document.querySelectorAll("#blockRuleList .admin-block-row"))
+      .find((r) => r.dataset.ruleId === ruleId);
+    if (!row) return;
+    const cb = row.querySelector(".filter-toggle-cb");
+    if (cb) cb.checked = enabled;
+    const dot = row.querySelector(".admin-filter-toggle-dot");
+    if (dot) {
+      dot.classList.toggle("is-on", enabled);
+      dot.classList.toggle("is-off", !enabled);
+    }
+    row.classList.toggle("is-off", !enabled);
+    row.style.opacity = enabled ? "" : "0.45";
+  }
 
-    const sampleText = (textEl.value || "").trim();
-    if (!sampleText) {
-      showToast(t("sampleTextRequired", "Enter sample text to test"), false);
+  /**
+   * 回傳 true（伺服器已是 *enabled*）、false（失敗，已重新整理）、null（前一個還在送，
+   * 這次的狀態排進佇列，由那一輪送出）。
+   */
+  async function toggleRule(ruleId, enabled) {
+    const state = _toggles[ruleId] || (_toggles[ruleId] = { want: enabled, busy: false });
+    state.want = enabled;
+    if (state.busy) return null;
+    state.busy = true;
+    try {
+      let sent;
+      do {
+        sent = state.want;
+        if (!(await sendToggle(ruleId, sent))) {
+          await refresh(); // 失敗：以伺服器上的狀態重畫
+          return false;
+        }
+      } while (state.want !== sent);
+      syncRow(ruleId, sent);
+      return true;
+    } finally {
+      delete _toggles[ruleId];
+    }
+  }
+
+  async function clearSessionRules() {
+    const n = _rules.filter((r) => r.lifetime === "session").length;
+    const ok = await window.HudConfirm?.open({
+      icon: "⊘",
+      title: t("blkClearSessionTitle"),
+      // 一次刪掉多條規則：危險操作，預設焦點落在「取消」（HudConfirm 依 danger 決定）
+      severity: "danger",
+      bodyText: t("blkClearSessionBody", { n: n }),
+      confirmLabel: t("blkClearSession"),
+    });
+    if (!ok) return;
+    try {
+      const resp = await window.csrfFetch("/admin/filters/clear-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      window.showToast(t("blkClearedSession", { n: data.removed || 0 }), true);
+      await refresh();
+    } catch (err) {
+      console.error("Clear session rules error:", err);
+      window.showToast(t("deleteRuleFailed"), false);
+    }
+  }
+
+  async function toggleQuick(id) {
+    const q = QUICK.find((x) => x.id === id);
+    if (!q) return;
+    const label = t(q.key);
+    const existing = quickRuleFor(q, _rules);
+    if (existing && existing.enabled === false) {
+      // 在列上被停用的那條：按鈕顯示成未開啟，按下去是重新啟用，不是刪掉它。
+      // 走跟列上開關同一條佇列；失敗時 toggleRule 會重新整理清單。
+      const ok = await toggleRule(existing.id, true);
+      if (ok) {
+        window.showToast(t("filtersToastEnabled", { label: label }), true);
+        await refresh();
+      }
+      return;
+    }
+    if (existing) {
+      const ok = await removeRule(existing.id).catch(() => false);
+      window.showToast(ok ? t("filtersToastDisabled", { label: label }) : t("filtersToastDisableFailed"), ok);
+      return;
+    }
+    try {
+      const resp = await window.csrfFetch("/admin/filters/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "regex",
+          pattern: q.pattern,
+          action: q.action,
+          priority: 50,
+          lifetime: _sessionLive ? "session" : "permanent",
+        }),
+      });
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        window.showToast(t("filtersToastEnableFailed", { msg: errorMessage(data, "addRuleFailed") }), false);
+        return;
+      }
+      window.showToast(t("filtersToastEnabled", { label: label }), true);
+      await refresh();
+    } catch (err) {
+      window.showToast(t("filtersToastEnableFailed", { msg: "" }), false);
+    }
+  }
+
+  // ── 測試 ─────────────────────────────────────────────────────
+
+  async function testRule() {
+    const textEl = el("filterTestText");
+    const resultEl = el("filterTestResult");
+    const sample = (textEl.value || "").trim();
+    if (!sample) {
+      window.showToast(t("sampleTextRequired"), false);
       textEl.focus();
       return;
     }
-
-    const pattern = (patternEl.value || "").trim();
-    if (!pattern) {
-      showToast(t("patternRequired", "Pattern is required"), false);
-      patternEl.focus();
+    const rule = readForm();
+    if (!rule.pattern && rule.type !== "rate_limit") {
+      window.showToast(t("patternRequired"), false);
+      el("blockRuleInput").focus();
       return;
     }
-
-    const ruleType = typeEl.value;
-    const rule = {
-      type: ruleType,
-      pattern: pattern,
-      action: actionEl.value,
-    };
-    if (ruleType === "replace") {
-      rule.replacement = replacementEl.value || "";
-    }
-    if (ruleType === "rate_limit") {
-      rule.max_count = parseInt(maxCountEl.value, 10) || 5;
-      rule.window_sec = parseFloat(windowSecEl.value) || 60;
-    }
-
-    resultEl.innerHTML = `<span style="color:var(--color-text-muted)">${t("testing", "Testing...")}</span>`;
-
+    resultEl.textContent = t("testing");
     try {
-      const resp = await csrfFetch("/admin/filters/test", {
+      const resp = await window.csrfFetch("/admin/filters/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rule: rule, text: sampleText }),
+        body: JSON.stringify({ rule: rule, text: sample }),
       });
-      const data = await resp.json();
+      const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        resultEl.innerHTML = `<span style="color: var(--color-ink-error)">${escapeHtml(data.error || "Test failed")}</span>`;
+        resultEl.textContent = errorMessage(data, "testError");
         return;
       }
-
-      let resultHtml = "";
-      if (data.action === "block") {
-        resultHtml = `<span style="color: var(--color-ink-error);font-weight:600">${t("blocked", "BLOCKED")}</span>`;
-      } else if (data.action === "replace") {
-        resultHtml = `<span style="color: var(--color-ink-warning);font-weight:600">${t("replaced", "REPLACED")}</span>` +
-          ` <span style="color:var(--color-text-secondary)">\u2192 ${escapeHtml(data.text)}</span>`;
-      } else if (data.action === "allow") {
-        resultHtml = `<span style="color: var(--color-ink-success);font-weight:600">${t("allowed", "ALLOWED")}</span>`;
-      } else if (data.action === "review") {
-        // 2026-10-29：review 沒接這條分支的話會落到 else，顯示成
-        // 「No match (pass)」——命中卻說沒命中，是測試面板最不該有的謊。
-        resultHtml = `<span style="color: var(--color-ink-accent);font-weight:600">${ServerI18n.t("fltActReview")}</span>`;
-      } else {
-        resultHtml = `<span style="color:var(--color-text-muted)">${t("noMatch", "No match (pass)")}</span>`;
-      }
-
-      if (data.reason) {
-        resultHtml += `<br/><span style="font-size:11px;color:var(--color-text-muted)">${escapeHtml(data.reason)}</span>`;
-      }
-
-      resultEl.innerHTML = resultHtml;
+      // 伺服器回的 reason 是英文的內部說明，不顯示；結果用翻譯好的字。
+      const verdict = {
+        block: t("blocked"),
+        replace: t("replaced"),
+        allow: t("allowed"),
+        review: t("fltActReview"),
+      }[data.action] || t("noMatch");
+      resultEl.dataset.verdict = data.action || "pass";
+      resultEl.textContent = data.action === "replace" ? `${verdict} → ${data.text || ""}` : verdict;
     } catch (err) {
-      console.error("Test filter rule error:", err);
-      resultEl.innerHTML = `<span style="color: var(--color-ink-error)">${t("testError", "Test error")}</span>`;
+      console.error("Test block rule error:", err);
+      resultEl.textContent = t("testError");
     }
   }
 
-  // ── Dynamic form field visibility ────────────────────────────
-
-  function updateFormVisibility() {
-    const typeEl = document.getElementById("filterType");
-    const replacementRow = document.getElementById("filterReplacementRow");
-    const rateLimitRow = document.getElementById("filterRateLimitRow");
-    if (!typeEl) return;
-
-    const ruleType = typeEl.value;
-    if (replacementRow) {
-      replacementRow.style.display = ruleType === "replace" ? "" : "none";
-    }
-    if (rateLimitRow) {
-      rateLimitRow.style.display = ruleType === "rate_limit" ? "grid" : "none";
-    }
-  }
-
-  function wireFilterChips() {
-    const chipRow = document.getElementById("filterTypeChips");
-    if (!chipRow) return;
-    chipRow.addEventListener("click", (e) => {
-      const chip = e.target.closest(".hud-filter-chip");
-      if (!chip) return;
-      _currentFilter = chip.dataset.filterScope || "all";
-      chipRow.querySelectorAll(".hud-filter-chip").forEach((c) => {
-        c.classList.toggle("is-active", c.dataset.filterScope === _currentFilter);
-      });
-      refreshRulesList();
-    });
-  }
-
-  // ── Live moderation log ──────────────────────────────────────
-  // Server has no dedicated filter-match WS event today, so we surface
-  // the last 6 danmu_live entries with the shared AdminIdentity stack so
-  // operators can spot/block in context. (P3-1 audience-identity adoption.)
+  // ── 命中紀錄 ─────────────────────────────────────────────────
 
   const LIVE_LOG_MAX = 6;
-  /** @type {{seq:number, ts:number, action:string, rule_id:string|null, pattern:string, text_excerpt:string, source:string|null}[]} */
-  const _liveLogBuffer = [];
-  let _liveLogBound = false;
-  let _liveLogTimer = 0;
-  let _liveLogLastSeq = 0;
+  const _log = [];
+  let _logSeq = 0;
+  let _logStop = null;
 
   function fmtLogTime(ts) {
-    const d = new Date(ts * 1000);  // ts is epoch seconds from server
+    const d = new Date(ts * 1000); // epoch seconds from server
     const pad = (n) => String(n).padStart(2, "0");
     return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
 
-  function actionColor(action) {
-    const a = (action || "").toUpperCase();
-    if (a === "BLOCK") return "var(--hud-crimson)";
-    if (a === "MASK" || a === "REPLACE") return "var(--hud-amber)";
-    if (a === "REVIEW") return "var(--color-primary)";
-    if (a === "ALLOW") return "var(--hud-lime)";
-    return "var(--color-text-muted)";
-  }
+  const LOG_ACTION_KEY = {
+    BLOCK: "fltActBlock",
+    REPLACE: "fltActReplace",
+    MASK: "fltActReplace",
+    ALLOW: "fltActAllow",
+    REVIEW: "fltActReview",
+  };
 
   function renderLiveLog() {
-    const log = document.getElementById("filterLiveLog");
+    const log = el("filterLiveLog");
     if (!log) return;
-    if (_liveLogBuffer.length === 0) {
-      log.innerHTML = `<div style="color:var(--color-text-muted);text-align:center;padding:10px">${ServerI18n.t("fltNoEvents")}</div>`;
+    if (_log.length === 0) {
+      log.innerHTML = `<div class="admin-block-empty">${escapeHtml(t("fltNoEvents"))}</div>`;
       return;
     }
-    log.innerHTML = _liveLogBuffer.map((e) => {
-      const ts = fmtLogTime(e.ts);
-      const action = (e.action || "").toUpperCase();
-      const ac = actionColor(action);
-      const text = (e.text_excerpt || "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
-      const pattern = (e.pattern || "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
-      const source = (e.source || "").slice(0, 16);
-      const sourceLabel = source ? `\u00b7 ${source}` : "";
-      return `<div class="admin-filter-log-row" style="display:grid;grid-template-columns:64px 70px 1fr;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--hud-line)">
-        <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-muted)">${ts}</span>
-        <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:1px;font-weight:700;color:${ac}">${action}</span>
-        <span style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\u300c${text}\u300d<span style="color:var(--color-text-muted)"> \u2014 \u898f\u5247 ${pattern} ${sourceLabel}</span></span>
+    // 每一個欄位都來自伺服器，其中 text_excerpt 與 source 是觀眾可以控制的——全部跳脫。
+    log.innerHTML = _log.map((e) => {
+      const action = String(e.action || "").toUpperCase();
+      const actionLabel = LOG_ACTION_KEY[action] ? t(LOG_ACTION_KEY[action]) : action;
+      const source = String(e.source || "").slice(0, 16);
+      return `<div class="admin-filter-log-row" data-action="${escapeHtml(action)}">
+        <span class="admin-filter-log-row__time">${escapeHtml(fmtLogTime(e.ts))}</span>
+        <span class="admin-filter-log-row__action">${escapeHtml(actionLabel)}</span>
+        <span class="admin-filter-log-row__text">「${escapeHtml(e.text_excerpt || "")}」<span class="admin-filter-log-row__rule"> — ${escapeHtml(t("blkLogRule", { pattern: e.pattern || "" }))}${source ? " · " + escapeHtml(source) : ""}</span></span>
       </div>`;
     }).join("");
   }
 
   async function pollFilterEvents() {
     try {
-      const r = await fetch(`/admin/filters/events?since=${_liveLogLastSeq}`, { credentials: "same-origin" });
+      const r = await fetch(`/admin/filters/events?since=${_logSeq}`, { credentials: "same-origin" });
       if (!r.ok) return;
       const data = await r.json();
-      // Always update 24h stat tiles even if no new events (counts may have
-      // dropped off as old events age out of the 24h window).
-      if (data.counts_24h) {
-        const setStat = (key, val) => {
-          const el = document.querySelector(`[data-mod-stat="${key}"]`);
-          if (el) el.textContent = val != null ? String(val) : "—";
-        };
-        setStat("masked", data.counts_24h.MASK || 0);
-        setStat("blocked", data.counts_24h.BLOCK || 0);
-      }
       if (!Array.isArray(data.events) || data.events.length === 0) return;
-      // Server returns newest-first; merge into front (newest first), cap at LIVE_LOG_MAX.
-      _liveLogBuffer.unshift(...data.events);
-      while (_liveLogBuffer.length > LIVE_LOG_MAX) _liveLogBuffer.pop();
-      _liveLogLastSeq = data.latest_seq || _liveLogLastSeq;
-      if (document.getElementById("filterLiveLog")) renderLiveLog();
+      // Server returns newest-first; merge into front, cap at LIVE_LOG_MAX.
+      _log.unshift(...data.events);
+      while (_log.length > LIVE_LOG_MAX) _log.pop();
+      _logSeq = data.latest_seq || _logSeq;
+      renderLiveLog();
     } catch (_) { /* silent */ }
   }
 
-  function wireLiveLog() {
-    if (_liveLogBound) return;
-    _liveLogBound = true;
-    pollFilterEvents();
-    _liveLogTimer = setInterval(pollFilterEvents, 4000);
-  }
+  // ── 接線 ─────────────────────────────────────────────────────
 
-  // ── 2026-05-18 design v4 P2-1: Quick Filters chips ───────────────
-  // Each chip toggles a regex rule via /admin/filters/{add,remove}.
-  // Active rule ids are cached in `_quickRuleIds` and named with a
-  // sentinel prefix so we can recognise them on rule list refresh.
-  const _quickRuleIds = Object.create(null);  // id → rule_id
-  const QUICK_NAME_PREFIX = "[QUICK]";
+  function wire(section) {
+    el("blockRuleMatch").addEventListener("change", syncOptions);
+    el("blockRuleAction").addEventListener("change", syncOptions);
+    el("blockRuleSubmit").addEventListener("click", submit);
+    el("blockRuleCancel").addEventListener("click", resetForm);
+    el("blockRuleInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.isComposing) {
+        e.preventDefault();
+        submit();
+      }
+    });
+    el("filterTestBtn").addEventListener("click", testRule);
+    el("filterTestText").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.isComposing) {
+        e.preventDefault();
+        testRule();
+      }
+    });
+    el("blockRuleClearSession").addEventListener("click", clearSessionRules);
 
-  function _findQuickRuleByLabel(rules, label) {
-    return rules.find((r) => (r.name || "").startsWith(QUICK_NAME_PREFIX + " " + label));
-  }
+    section.querySelector("[data-flt-quick]").addEventListener("click", (e) => {
+      const chip = e.target.closest("[data-flt-quick-id]");
+      if (chip) toggleQuick(chip.dataset.fltQuickId);
+    });
 
-  async function _refreshQuickFromRules() {
-    const rules = await fetchRules().catch(() => []);
-    document.querySelectorAll(".admin-flt-v4__qchip").forEach((chip) => {
-      const label = chip.dataset.fltLabel;
-      const hit = _findQuickRuleByLabel(rules, label);
-      const active = !!hit && hit.enabled !== false;
-      chip.classList.toggle("is-active", active);
-      if (hit) _quickRuleIds[chip.dataset.fltQuickId] = hit.id || hit.rule_id;
-      else delete _quickRuleIds[chip.dataset.fltQuickId];
+    const scope = el("blockRuleScope");
+    scope.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-scope]");
+      if (!btn) return;
+      _scope = btn.dataset.scope;
+      scope.querySelectorAll("[data-scope]").forEach((b) => b.classList.toggle("is-active", b === btn));
+      renderList();
+    });
+
+    const rulesList = el("blockRuleList");
+    // 開關的唯一真相是那顆 sr-only checkbox：色點包在 <label> 裡，點它、或用鍵盤在
+    // checkbox 上按空白鍵，都會觸發這裡的 change，視覺也一併在這裡更新。
+    // （2026-09-08：另外手動翻 checkbox 的 click 分支會跟 label 的預設行為打架，
+    // 規則停用後再也點不回來。）
+    rulesList.addEventListener("change", (e) => {
+      const cb = e.target.closest(".filter-toggle-cb");
+      if (!cb) return;
+      toggleRule(cb.dataset.ruleId, cb.checked);
+      const row = cb.closest(".admin-block-row");
+      const dot = row?.querySelector(".admin-filter-toggle-dot");
+      if (dot) {
+        dot.classList.toggle("is-on", cb.checked);
+        dot.classList.toggle("is-off", !cb.checked);
+      }
+      if (row) row.style.opacity = cb.checked ? "" : "0.45";
+    });
+    rulesList.addEventListener("click", (e) => {
+      const del = e.target.closest(".filter-delete-btn");
+      if (del) return deleteRule(del.dataset.ruleId);
+      const edit = e.target.closest(".block-rule-edit");
+      if (edit) {
+        const rule = _rules.find((r) => r.id === edit.dataset.ruleId);
+        // 這一條的儲存還在送：現在打開會載入送出前的舊值，再存一次就把剛才的修改蓋回去。
+        // 等它回來（清單會重新整理）再編輯。
+        if (rule && !_savingIds.has(rule.id)) startEdit(rule);
+      }
+    });
+
+    if (_logStop) _logStop();
+    _logStop = window.AdminUtils.pollWhileVisible({
+      el: () => el("filterLiveLog"),
+      intervalMs: 4000,
+      tick: pollFilterEvents,
     });
   }
-
-  async function _toggleQuickFilter(chip) {
-    const id = chip.dataset.fltQuickId;
-    const pattern = chip.dataset.fltPattern;
-    const action = chip.dataset.fltAction;
-    const label = chip.dataset.fltLabel;
-    const existing = _quickRuleIds[id];
-    if (existing) {
-      // turn off
-      const r = await csrfFetch("/admin/filters/remove", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rule_id: existing }),
-      });
-      if (r.ok) {
-        delete _quickRuleIds[id];
-        chip.classList.remove("is-active");
-        showToast(ServerI18n.t("filtersToastDisabled", { label: label }), true);
-      } else {
-        showToast(ServerI18n.t("filtersToastDisableFailed"), false);
-      }
-    } else {
-      // turn on
-      const r = await csrfFetch("/admin/filters/add", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "regex",
-          name: `${QUICK_NAME_PREFIX} ${label}`,
-          pattern,
-          action,
-          enabled: true,
-          priority: 50,
-        }),
-      });
-      if (r.ok) {
-        const data = await r.json().catch(() => ({}));
-        if (data.rule_id) _quickRuleIds[id] = data.rule_id;
-        chip.classList.add("is-active");
-        showToast(ServerI18n.t("filtersToastEnabled", { label: label }), true);
-      } else {
-        const body = await r.json().catch(() => ({}));
-        showToast(ServerI18n.t("filtersToastEnableFailed", { msg: body.error || "" }), false);
-      }
-    }
-    // Refresh the rule list too so the regex table reflects the toggle.
-    if (typeof renderRules === "function") renderRules();
-  }
-
-  function wireQuickFilters() {
-    const wrap = document.querySelector("[data-flt-quick]");
-    if (!wrap) return;
-    wrap.addEventListener("click", (e) => {
-      const chip = e.target.closest(".admin-flt-v4__qchip");
-      if (!chip) return;
-      _toggleQuickFilter(chip);
-    });
-    _refreshQuickFromRules();
-  }
-
-  // ── Initialization ───────────────────────────────────────────
 
   function init() {
-    // Find the settings grid to inject the section
     const settingsGrid = document.getElementById("settings-grid");
-    if (!settingsGrid) return; // Not on admin page or not logged in
-
+    if (!settingsGrid) return;
+    // 整頁重繪後重建的表單是「新增」模式、分頁回到「全部」——模組狀態要跟著回去，
+    // 否則按下新增會把剛才編輯中的那條規則覆寫掉。
+    _editing = null;
+    _scope = "all";
+    _submitting = false;
+    _saveSeq += 1; // 還在路上的那次儲存回來時，不再碰這份新表單的送出狀態
+    _formSeq += 1;
     settingsGrid.insertAdjacentHTML("beforeend", buildSectionHtml());
-
-    wireFilterChips();
-    wireQuickFilters();
-
-    // Type selector changes form visibility
-    const typeEl = document.getElementById("filterType");
-    if (typeEl) {
-      typeEl.addEventListener("change", updateFormVisibility);
-    }
-
-    // Add Rule button
-    const addBtn = document.getElementById("filterAddBtn");
-    if (addBtn) {
-      addBtn.addEventListener("click", addRule);
-    }
-
-    // Test button
-    const testBtn = document.getElementById("filterTestBtn");
-    if (testBtn) {
-      testBtn.addEventListener("click", testRule);
-    }
-
-    // Enter key on test text input
-    const testTextEl = document.getElementById("filterTestText");
-    if (testTextEl) {
-      testTextEl.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          testRule();
-        }
-      });
-    }
-
-    // Enter key on pattern input triggers add
-    const patternEl = document.getElementById("filterPattern");
-    if (patternEl) {
-      patternEl.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          addRule();
-        }
-      });
-    }
-
-    // Event delegation for toggle and delete in rules list
-    const rulesList = document.getElementById("filterRulesList");
-    if (rulesList) {
-      // 開關的唯一真相是那顆 sr-only checkbox：色點包在 <label> 裡，點它、
-      // 或用鍵盤在 checkbox 上按空白鍵，都會觸發這裡的 change。視覺也一併在
-      // 這裡更新。
-      //
-      // 2026-09-08 修掉一個一直都在的 bug：原本另外有一個 click 分支手動做
-      // `cb.checked = !cb.checked`。事件處理器跑在預設行為**之前**，所以
-      // label 隨後又把 checkbox 翻回去——結果 checkbox 永遠停在 true，
-      // 每次點都送出「停用」，**規則停用後再也點不回來**。而且視覺更新只寫在
-      // click 分支裡，用鍵盤切換的人看到的色點永遠是舊的。
-      rulesList.addEventListener("change", (e) => {
-        const cb = e.target.closest(".filter-toggle-cb");
-        if (!cb) return;
-        toggleRule(cb.dataset.ruleId, cb.checked);
-        const row = cb.closest(".hud-rule-row");
-        const dot = row?.querySelector(".admin-filter-toggle-dot");
-        if (dot) {
-          dot.classList.toggle("is-on", cb.checked);
-          dot.classList.toggle("is-off", !cb.checked);
-        }
-        if (row) row.style.opacity = cb.checked ? "" : "0.45";
-      });
-
-      rulesList.addEventListener("click", (e) => {
-        const btn = e.target.closest(".filter-delete-btn");
-        if (btn) deleteRule(btn.dataset.ruleId);
-      });
-    }
-
-    // Initial load
-    refreshRulesList();
-    wireLiveLog();
+    const section = document.getElementById("sec-blacklist");
+    wire(section);
+    syncOptions();
     renderLiveLog();
+    refresh();
   }
+
+  // 其他頁面（訊息流、訊息詳情、紀錄）也會加封鎖字；切回這個分頁時重新抓一次清單。
+  // 只在「進入」分頁的那一次抓：admin-route-applied 在版面同步時也會觸發，
+  // 每次都抓的話會跟自己的重繪互相餵食。
+  let _onTab = false;
+  document.addEventListener("admin-route-applied", (e) => {
+    const here = !!(e.detail && e.detail.route === "moderation" && e.detail.leaf === "blacklist");
+    if (here && !_onTab && document.getElementById("blockRuleList")) refresh();
+    _onTab = here;
+  });
 
   // admin.js rebuilds the entire DOM via innerHTML on every renderControlPanel()
   // call, so we keep observing and re-inject when our section is wiped out.
   function bootstrap() {
     if (!window.DANMU_CONFIG?.session?.logged_in) return;
-    const observer = new MutationObserver(() => {
-      if (document.getElementById("settings-grid") && !document.getElementById("sec-filters")) {
-        init();
-      }
-    });
+    const ready = () => document.getElementById("settings-grid") && !document.getElementById("sec-blacklist");
+    const observer = new MutationObserver(() => { if (ready()) init(); });
     observer.observe(document.getElementById("app-container") || document.body, {
       childList: true,
       subtree: true,
     });
-
-    // Also check immediately
-    if (document.getElementById("settings-grid") && !document.getElementById("sec-filters")) {
-      init();
-    }
+    if (ready()) init();
   }
+
+  window.AdminBlockRules = {
+    viewOf: viewOf,
+    typeFor: typeFor,
+    lifetimePayload: lifetimePayload,
+    ACTIONS_FOR_MATCH: ACTIONS_FOR_MATCH,
+    QUICK: QUICK,
+    refresh: refresh,
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", bootstrap);

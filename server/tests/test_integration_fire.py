@@ -8,6 +8,7 @@ import pytest
 from server import state
 from server.managers import settings_store
 from server.services import ws_queue
+from server.services.blacklist import add_keyword, remove_keyword
 from server.services.history import DanmuHistory
 from server.services.ws_state import update_ws_client_count
 
@@ -129,26 +130,25 @@ def test_fire_fingerprint_does_reach_the_admin_live_feed(client):
 
 
 def test_fire_blacklisted_text_blocked_and_not_enqueued(client):
-    state.blacklist.add("BANNED")
+    add_keyword("BANNED")
     try:
         resp = client.post("/fire", json={"text": "this is BANNED text"})
         assert resp.status_code == 400
         assert ws_queue.dequeue_all() == []
     finally:
-        state.blacklist.discard("BANNED")
+        remove_keyword("BANNED")
 
 
 def test_fire_non_blacklisted_text_passes(client):
-    state.blacklist.add("BADWORD")
+    add_keyword("BADWORD")
     try:
         resp = client.post("/fire", json={"text": "this is fine"})
         assert resp.status_code == 200
     finally:
-        state.blacklist.discard("BADWORD")
+        remove_keyword("BADWORD")
 
 
 def test_fire_empty_blacklist_always_passes(client):
-    state.blacklist.clear()
     resp = client.post("/fire", json={"text": "anything goes"})
     assert resp.status_code == 200
     assert len(ws_queue.dequeue_all()) == 1
