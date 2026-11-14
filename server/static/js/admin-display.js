@@ -240,7 +240,7 @@
   // 顯示層頁的收合區：大螢幕本身怎麼排。觀眾永遠碰不到，所以不進樣式表。
   function layoutTemplate() {
     return `
-      <details id="${LAYOUT_ID}" class="admin-dsp2-fold lg:col-span-2" data-dsp-fold>
+      <details id="${LAYOUT_ID}" class="admin-dsp2-fold lg:col-span-2" data-dsp-fold data-tpl="C">
         <summary class="admin-ui-page-title">${escapeHtml(t("overlayLayoutFoldTitle"))}</summary>
         <div class="admin-dsp2-page hud-page-stack">
           <div class="admin-ui-group-label">${escapeHtml(t("dlGroupLayout"))}</div>

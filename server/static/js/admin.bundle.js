@@ -718,7 +718,7 @@
           </div>
         </div>
       </div>`}function u(){return`
-      <details id="${h}" class="admin-dsp2-fold lg:col-span-2" data-dsp-fold>
+      <details id="${h}" class="admin-dsp2-fold lg:col-span-2" data-dsp-fold data-tpl="C">
         <summary class="admin-ui-page-title">${$(k("overlayLayoutFoldTitle"))}</summary>
         <div class="admin-dsp2-page hud-page-stack">
           <div class="admin-ui-group-label">${$(k("dlGroupLayout"))}</div>

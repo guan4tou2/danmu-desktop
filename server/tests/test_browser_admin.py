@@ -369,12 +369,20 @@ def test_settings_color_toggle_calls_api(admin_page):
 
     # v5: toggle is a button with data-toggle-key, not a checkbox #toggle-Color.
     color_toggle = admin_page.locator('[data-toggle-key="Color"]')
-    color_toggle.click()
-    admin_page.wait_for_timeout(500)
+    before = color_toggle.get_attribute("aria-pressed")
+    try:
+        color_toggle.click()
+        admin_page.wait_for_timeout(500)
 
-    set_resp = [r for r in responses if "/admin/Set" in r.url]
-    assert len(set_resp) >= 1
-    assert set_resp[0].status == 200
+        set_resp = [r for r in responses if "/admin/Set" in r.url]
+        assert len(set_resp) >= 1
+        assert set_resp[0].status == 200
+    finally:
+        # 切回去：這個開關關著時，色票編輯器會收起來，後面的測試找不到它。
+        toggle = admin_page.locator('[data-toggle-key="Color"]')
+        if toggle.get_attribute("aria-pressed") != before:
+            with admin_page.expect_response(lambda r: "/admin/Set" in r.url):
+                toggle.click()
 
 
 # ─── 黑名單管理 ───────────────────────────────────────────────────────────────
@@ -1301,23 +1309,34 @@ def test_admin_palette_edits_and_picker_policy_sync_to_open_viewer(admin_page, l
 @pytest.mark.parametrize("width", [320, 782, 1440])
 @pytest.mark.parametrize("theme", ["light", "dark"])
 def test_palette_visual_layout_preview_and_reduced_motion(admin_page, width, theme):
+    from server.managers import settings_store
+
+    # 色票編輯器只在顏色「觀眾可改」開著時露出；從原廠設定開始，不靠前面的測試
+    # 留下什麼狀態。
+    original_settings = settings_store.get_options()
+    settings_store.reset()
     page = admin_page
-    page.set_viewport_size({"width": width, "height": 1000})
-    page.emulate_media(reduced_motion="reduce")
-    page.evaluate("theme => localStorage.setItem('theme-mode', theme)", theme)
-    page.reload()
-    page.evaluate("location.hash = '#/viewer'")
-    editor = page.locator("[data-admin-color-palette]")
-    expect(editor).to_be_visible()
-    button = editor.locator("[data-palette-preview]").nth(1)
-    color = button.get_attribute("data-palette-preview")
-    button.click()
-    expect(button).to_have_attribute("aria-pressed", "true")
-    expect(editor.locator("[data-palette-preview-code]")).to_have_text(color)
-    assert (
-        editor.locator("[data-palette-preview-text]").evaluate("el => el.getAnimations().length")
-        == 0
-    )
+    try:
+        page.set_viewport_size({"width": width, "height": 1000})
+        page.emulate_media(reduced_motion="reduce")
+        page.evaluate("theme => localStorage.setItem('theme-mode', theme)", theme)
+        page.reload()
+        page.evaluate("location.hash = '#/viewer'")
+        editor = page.locator("[data-admin-color-palette]")
+        expect(editor).to_be_visible()
+        button = editor.locator("[data-palette-preview]").nth(1)
+        color = button.get_attribute("data-palette-preview")
+        button.click()
+        expect(button).to_have_attribute("aria-pressed", "true")
+        expect(editor.locator("[data-palette-preview-code]")).to_have_text(color)
+        assert (
+            editor.locator("[data-palette-preview-text]").evaluate(
+                "el => el.getAnimations().length"
+            )
+            == 0
+        )
+    finally:
+        settings_store.restore_options(original_settings)
     assert editor.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
 
     def _assert_touch_target(locator):
