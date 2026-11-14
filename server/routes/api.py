@@ -22,7 +22,8 @@ from ..services.plugin_manager import plugin_manager
 from ..services.poll import poll_service
 from ..services.security import (
     enforce_fire_rate_limits,
-    is_fire_admin,
+    enforce_invalid_token_limit,
+    fire_token_state,
     rate_limit,
     require_csrf,
     verify_captcha,
@@ -268,17 +269,31 @@ def fire():
         client_ip = _extract_client_ip()
         user_agent = request.headers.get("User-Agent", "")
 
-        # Integration source tag — Slido / Discord / OBS / bookmarklet identify
-        # themselves via X-Fire-Source header (preferred) or UA prefix hint.
-        # Recorded into a 200-entry ring buffer so the admin Extensions catalog
-        # can light up status dots and the Fire Token page's IP list works.
         from ..services import fire_sources
 
-        explicit_source = request.headers.get("X-Fire-Source", "")
-        source_label = fire_sources.detect(user_agent, explicit_source)
-        fire_sources.record(source_label, fingerprint, client_ip, user_agent)
+        token_state = fire_token_state()
+        admin_client = token_state == "valid"
+        if token_state == "invalid":
+            # A token was sent but is wrong, revoked or disabled. Refuse
+            # instead of silently downgrading to the public lane, so revoking
+            # really stops an extension and it can tell why. Throttled on its
+            # own bucket: charging the viewers' per-IP / global buckets here
+            # (before captcha) let junk tokens lock out a whole venue.
+            enforce_invalid_token_limit()
+            return _json_response({"error": "Invalid fire token"}, 401)
 
-        admin_client = is_fire_admin()
+        # Integration (Slido / Discord / OBS / bookmarklet) is only believed
+        # with a valid token and a known name: X-Fire-Source and the UA are
+        # caller-controlled. It labels the admin feed / history (never the
+        # overlay) and lights the Extensions catalog dots via fire_sources,
+        # which also feeds the Fire Token page's IP list.
+        explicit_source = request.headers.get("X-Fire-Source", "")
+        integration = fire_sources.trusted_integration(
+            fire_sources.detect(user_agent, explicit_source), admin_client
+        )
+        fire_sources.record(integration or "web", fingerprint, client_ip, user_agent)
+        if integration:
+            data["integration"] = integration
 
         # Captcha gate (public only; admin lane skips).
         if not admin_client:
@@ -316,8 +331,12 @@ def fire():
         #
         # **封鎖與限流仍然適用**（在這行之前）：被停權的人不該能投票，
         # 也不該能靠洗票刷排行。這裡只跳過「內容」那一段。
+        #
+        # 整合來源（Slido 等）的訊息不是觀眾在這裡投票：Slido 上有人問「A」
+        # 不該變成一票，所以它們不進投票判定，內容過濾照常套用。
         is_poll_vote = (
-            poll_service.state == "active"
+            integration is None
+            and poll_service.state == "active"
             and text_content.strip().upper() in poll_service.get_option_keys()
         )
 
@@ -354,6 +373,7 @@ def fire():
                     nickname=str(data.get("nickname") or "")[:64],
                     rule_name=rule_name,
                     pattern=rule_name,
+                    integration=integration or "",
                 )
                 mod_queue.start_reaper()
                 return _json_response(
@@ -393,8 +413,8 @@ def fire():
 
         poll_vote_meta = None
 
-        # Check if text is a poll vote
-        if poll_service.state == "active":
+        # Check if text is a poll vote (viewers only — see is_poll_vote above)
+        if integration is None and poll_service.state == "active":
             text_upper = text_content.strip().upper()
             option_keys = poll_service.get_option_keys()
             if text_upper in option_keys:
@@ -747,3 +767,25 @@ def check_blacklist():
         )
     except Exception as exc:
         return _log_and_internal_error("Error checking blacklist", exc, as_json=True)
+
+
+# The Slido extension's status heartbeat. Same credential as its /fire
+# calls (X-Fire-Token), so only an extension the operator configured can
+# write the status line shown on the Extensions page.
+@api_bp.route("/integrations/slido/status", methods=["POST"])
+@rate_limit("slido_status", "API_RATE_LIMIT", "API_RATE_WINDOW")
+def slido_status_report():
+    from ..services import slido_status
+
+    token_state = fire_token_state()
+    if token_state != "valid":
+        if token_state == "invalid":
+            # Lets the admin card say "token rejected" instead of falling
+            # back to "waiting" — the extension can no longer report itself.
+            slido_status.note_rejected()
+        return _json_response({"error": "Fire token required"}, 401)
+    try:
+        report = slido_status.record(request.get_json(silent=True))
+    except ValueError:
+        return _json_response({"error": "Invalid status report"}, 400)
+    return _json_response({"status": "OK", "state": report["state"]}, 200)

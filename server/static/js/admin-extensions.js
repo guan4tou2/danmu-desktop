@@ -25,7 +25,9 @@
     {
       id: "slido",
       name: "Slido Extension",
-      version: "v0.2.0",
+      // Filled from /admin/integrations/slido/status (read from the zip the
+      // server actually serves), so label and download can never disagree.
+      version: "—",
       icon: "▦",
       color: "var(--color-ink-accent)",
       // D-4：頂層常數，模組 parse 時 ServerI18n 尚未 init——存 key，
@@ -35,11 +37,12 @@
       sourceMatch: "slido",
       install: {
         steps: [
-          { kind: "download", labelKey: "extSlidoStepDownload", href: "/static/extensions/danmu-slido-extension-0.2.0.zip" },
-          { kind: "config",   labelKey: "extSlidoStepConfig" },
+          { kind: "download", labelKey: "extSlidoStepDownload" },
+          { kind: "config",   labelKey: "extSlidoStepConfig", showOrigin: true },
         ],
       },
       hasFireTokenUI: true,
+      hasLiveStatus: true,
     },
     {
       id: "discord",
@@ -78,7 +81,39 @@
     plainToken: null,       // raw token, only set right after regenerate
     sources: [],            // [{source, last_seen, count}]
     sourcesTimer: 0,
+    slidoStatus: null,      // {report, stale, token_rejected, extension} from /admin/integrations/slido/status
   };
+
+  const SLIDO_ERRORS = [
+    "rate_limited", "screen_full", "no_overlay", "rejected", "captcha_required",
+    "token_invalid", "feed_unrecognized", "tracking_full", "server_unreachable",
+  ];
+
+  // One line, three looks: waiting (muted), receiving (green), error (red).
+  // Pure so the jest suite can pin every state without a server.
+  function slidoStatusView(status) {
+    const report = status && !status.stale ? status.report : null;
+    // A heartbeat with a revoked / wrong token can't report itself; the
+    // server remembers the rejection so the card does not just say
+    // "waiting". Anyone can trigger that, so a fresh valid report wins.
+    if (!report && status && status.token_rejected) {
+      return { tone: "is-error", text: ServerI18n.t("extSlidoErr_token_invalid") };
+    }
+    if (!report) return { tone: "", text: ServerI18n.t("extSlidoStatusNone") };
+    if (report.state === "error") {
+      const code = SLIDO_ERRORS.includes(report.error) ? report.error : "rejected";
+      return { tone: "is-error", text: ServerI18n.t("extSlidoErr_" + code) };
+    }
+    return {
+      tone: "is-live",
+      text: ServerI18n.t("extSlidoStatusWatching", {
+        sent: report.sent || 0,
+        held: report.held || 0,
+        blocked: report.blocked || 0,
+        skipped: report.late_skipped || 0,
+      }),
+    };
+  }
 
   function buildSection() {
     return `
@@ -106,9 +141,14 @@
           <ol class="admin-ext-install-steps">
             ${ext.install.steps.map((s) => {
               if (s.kind === "download") {
-                return `<li><a class="admin-ext-step-link" href="${s.href}" target="_blank" rel="noopener noreferrer">${escapeHtml(ServerI18n.t(s.labelKey))} ↓</a></li>`;
+                // Hidden until the server says which zip it has: never show
+                // a link that would 404.
+                return `<li data-ext-download-step hidden><a class="admin-ext-step-link" data-ext-download download>${escapeHtml(ServerI18n.t(s.labelKey))} ↓</a></li>`;
               }
-              return `<li>${escapeHtml(ServerI18n.t(s.labelKey))}</li>`;
+              const origin = s.showOrigin
+                ? ` <code class="admin-ext-step-code">${escapeHtml(window.location.origin)}</code>`
+                : "";
+              return `<li>${escapeHtml(ServerI18n.t(s.labelKey))}${origin}</li>`;
             }).join("")}
           </ol>
         </div>`
@@ -137,11 +177,14 @@
           <span class="admin-ext-icon" style="color:${ext.color}">${ext.icon}</span>
           <div class="admin-ext-title">
             <div class="name">${escapeHtml(ext.name)}</div>
-            <div class="meta"><span class="ver">${escapeHtml(ext.version)}</span></div>
+            <div class="meta"><span class="ver" data-ext-version>${escapeHtml(ext.version)}</span></div>
           </div>
           ${flag}
         </div>
         <p class="admin-ext-desc">${escapeHtml(ServerI18n.t(ext.descKey))}</p>
+        ${ext.hasLiveStatus
+          ? `<p class="admin-ext-live-status" data-slido-status role="status" aria-live="polite">${escapeHtml(ServerI18n.t("extSlidoStatusNone"))}</p>`
+          : ""}
         ${installSection}
         ${tokenSection}
       </article>`;
@@ -166,6 +209,20 @@
       _state.sources = Array.isArray(data.sources) ? data.sources : [];
       _renderSourceLights();
     } catch (_) { /* silent */ }
+  }
+
+  async function _fetchSlidoStatus() {
+    try {
+      const r = await fetch("/admin/integrations/slido/status", { credentials: "same-origin" });
+      if (!r.ok) return;
+      _state.slidoStatus = await r.json();
+      _renderSlidoStatus();
+    } catch (_) { /* silent — the line keeps its last known value */ }
+  }
+
+  function _refresh() {
+    _fetchSources();
+    _fetchSlidoStatus();
   }
 
   async function _regenerateToken() {
@@ -258,6 +315,28 @@
     });
   }
 
+  function _renderSlidoStatus() {
+    const el = document.querySelector("[data-slido-status]");
+    if (!el) return;
+    const view = slidoStatusView(_state.slidoStatus);
+    el.textContent = view.text;
+    el.classList.toggle("is-live", view.tone === "is-live");
+    el.classList.toggle("is-error", view.tone === "is-error");
+
+    const info = _state.slidoStatus && _state.slidoStatus.extension;
+    const card = el.closest(".admin-ext-card");
+    const step = card && card.querySelector("[data-ext-download-step]");
+    const link = card && card.querySelector("[data-ext-download]");
+    const ver = card && card.querySelector("[data-ext-version]");
+    if (info && info.download_url && info.version) {
+      if (link) link.setAttribute("href", info.download_url);
+      if (step) step.hidden = false;
+      if (ver) ver.textContent = "v" + info.version;
+    } else if (step) {
+      step.hidden = true;
+    }
+  }
+
   // ── init ───────────────────────────────────────────────────────────
 
   function init() {
@@ -289,10 +368,12 @@
       _state.stopPoll = window.AdminUtils.pollWhileVisible({
         el: function () { return document.getElementById(PAGE_ID); },
         intervalMs: SOURCE_REFRESH_MS,
-        tick: _fetchSources,
+        tick: _refresh,
       });
     }
   }
+
+  window.AdminExtensions = { slidoStatusView };
 
   document.addEventListener("DOMContentLoaded", () => {
     if (!window.DANMU_CONFIG || !window.DANMU_CONFIG.session || !window.DANMU_CONFIG.session.logged_in) return;

@@ -202,6 +202,8 @@ class DanmuHistory:
             "fontInfo": danmu_data.get("fontInfo"),
             "clientIp": danmu_data.get("clientIp"),
             "fingerprint": danmu_data.get("fingerprint"),
+            # 經 fire token 驗證的整合來源（例如 "slido"）；其他一律空字串。
+            "integration": str(danmu_data.get("integration") or "")[:32],
         }
 
         with self._lock:

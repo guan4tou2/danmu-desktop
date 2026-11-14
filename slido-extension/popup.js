@@ -1,11 +1,22 @@
 const DEFAULTS = {
   enabled: true,
   serverUrl: "http://localhost:4000",
-  mode: "live",
   includeAuthor: true,
-  minIntervalMs: 800,
-  maxTextLen: 100,
+  minIntervalMs: 3000,
   fireToken: "",
+};
+
+const ERROR_TEXT = {
+  token_missing: "Fire token required",
+  token_invalid: "Fire token rejected",
+  captcha_required: "Captcha required (set a fire token)",
+  rate_limited: "Rate-limited by the danmu server",
+  screen_full: "Screen full",
+  no_overlay: "No overlay connected",
+  rejected: "Rejected by the danmu server",
+  feed_unrecognized: "Slido format not recognized",
+  tracking_full: "Too many questions in this event to track; forwarding stopped",
+  server_unreachable: "Danmu server unreachable",
 };
 
 const $ = (id) => document.getElementById(id);
@@ -22,19 +33,16 @@ async function load() {
   $("enabled").checked = !!s.enabled;
   $("serverUrl").value = s.serverUrl;
   $("fireToken").value = s.fireToken || "";
-  $("mode").value = s.mode;
   $("includeAuthor").checked = !!s.includeAuthor;
   $("minIntervalMs").value = s.minIntervalMs;
-  $("maxTextLen").value = s.maxTextLen;
 
   try {
     const res = await chrome.runtime.sendMessage({ type: "get_stats" });
-    if (res?.ok) {
-      const { forwarded, skipped, errors, lastError } = res.stats;
-      setStatus(
-        `forwarded ${forwarded} · skipped ${skipped} · errors ${errors}` +
-          (lastError ? ` · ${lastError}` : ""),
-      );
+    if (res?.ok && res.stats) {
+      const { sent, held, blocked, failed, dropped, error } = res.stats;
+      const skipped = res.stats.late_skipped || 0;
+      const counts = `sent ${sent} · held ${held} · blocked ${blocked} · failed ${failed} · dropped ${dropped} · skipped ${skipped}`;
+      setStatus(error ? `${ERROR_TEXT[error] || error} · ${counts}` : counts, error ? "err" : "");
     }
   } catch {
     // Service worker might be asleep; no stats yet.
@@ -46,13 +54,8 @@ async function save() {
     enabled: $("enabled").checked,
     serverUrl: $("serverUrl").value.trim() || DEFAULTS.serverUrl,
     fireToken: $("fireToken").value.trim(),
-    mode: $("mode").value,
     includeAuthor: $("includeAuthor").checked,
-    minIntervalMs: Math.max(0, parseInt($("minIntervalMs").value, 10) || 0),
-    maxTextLen: Math.min(
-      100,
-      Math.max(10, parseInt($("maxTextLen").value, 10) || 100),
-    ),
+    minIntervalMs: Math.min(10000, Math.max(500, parseInt($("minIntervalMs").value, 10) || DEFAULTS.minIntervalMs)),
   };
   await chrome.storage.local.set({ settings });
   setStatus("Saved.", "ok");
@@ -65,7 +68,7 @@ async function testFire() {
   try {
     const res = await chrome.runtime.sendMessage({ type: "test_connection" });
     if (res?.ok) setStatus("Connected — a test danmu should appear on the overlay.", "ok");
-    else setStatus(`Failed: ${res?.error || "unknown error"}`, "err");
+    else setStatus(`Failed: ${ERROR_TEXT[res?.error] || res?.error || "unknown error"}`, "err");
   } catch (err) {
     setStatus(`Failed: ${err.message || err}`, "err");
   } finally {

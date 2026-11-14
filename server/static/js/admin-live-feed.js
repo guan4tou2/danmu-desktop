@@ -16,6 +16,8 @@
   const TEXT_PREVIEW_LEN = 80;
   const FP_DISPLAY_LEN = 8;
   const SECTION_ID = "sec-live-feed";
+  // fire_sources.KNOWN_INTEGRATIONS → brand names shown on the chip.
+  const INTEGRATION_LABELS = { slido: "Slido", discord: "Discord", obs: "OBS", bookmarklet: "Bookmarklet" };
 
   /** @type {{ ts: number, data: object, muted?: boolean, id: string }[]} */
   let entries = [];
@@ -150,6 +152,17 @@
       badge.className = "admin-ui-chip admin-live-feed-tag";
       badge.textContent = d.layout;
       row.appendChild(badge);
+    }
+
+    // Integration (e.g. Slido) — server only sets it for token-verified
+    // senders. Same chip as the layout tag; brand names stay in English.
+    // Anything not in the list gets no chip rather than a raw code.
+    const integrationLabel = INTEGRATION_LABELS[d.integration];
+    if (integrationLabel) {
+      const src = document.createElement("span");
+      src.className = "admin-ui-chip admin-live-feed-tag";
+      src.textContent = integrationLabel;
+      row.appendChild(src);
     }
 
     // Text preview

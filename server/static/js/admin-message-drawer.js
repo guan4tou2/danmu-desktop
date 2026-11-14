@@ -129,8 +129,10 @@
       if (!r.ok) return;
       const data = await r.json();
       const records = Array.isArray(data.records) ? data.records : [];
+      // Full-value match. The 8-char prefix is only for display: matching on
+      // it mixed up senders sharing a prefix (e.g. "slido:12…").
       const matching = records.find(function (rec) {
-        return (rec.fingerprint || "").startsWith(fp.slice(0, 8));
+        return rec.fingerprint === fp;
       });
       _state.fingerprintRecord = matching || null;
       _render();
@@ -150,7 +152,7 @@
     }
     _state.sameFpEntries = entries.filter(function (e) {
       const efp = (e.data && e.data.fingerprint) || e.fingerprint || "";
-      return efp && efp.startsWith(fp.slice(0, 8));
+      return efp === fp;
     }).slice(0, 8); // keep latest 8
   }
 

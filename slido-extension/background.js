@@ -1,162 +1,199 @@
-// Service worker: receives candidate messages from content scripts, dedups
-// them, applies filters, and POSTs to the danmu-desktop /fire endpoint.
+// Service worker: glue between the Slido tabs, chrome.storage and the
+// danmu server. All decisions (what counts as a question, what is new,
+// pacing, outcome mapping) live in core.js so they can be tested offline.
+import "./core.js";
+
+const Core = globalThis.SlidoDanmuCore;
 
 const DEFAULTS = {
   enabled: true,
   serverUrl: "http://localhost:4000",
-  mode: "live",          // "live" | "dry-run"
   includeAuthor: true,
-  minIntervalMs: 800,    // per-message send floor (rate limit)
-  dedupTtlMs: 5 * 60_000,
-  maxTextLen: 100,       // server FireRequestSchema caps at 100
-  color: "",             // empty = server/theme default
-  opacity: null,
-  size: null,
-  speed: null,
-  fireToken: "",         // X-Fire-Token — bypasses public rate limits + captcha
+  // 3 s keeps the bridge under the public /fire per-IP ceiling (20/min)
+  // when no fire token is configured.
+  minIntervalMs: 3000,
+  fireToken: "",
 };
+const HEARTBEAT_MS = 30_000;
 
-const seen = new Map();        // key -> timestamp
-let lastSendAt = 0;
-let recentStats = { forwarded: 0, skipped: 0, errors: 0, lastError: "" };
+let settings = { ...DEFAULTS };
+let bridge = null;
+let lastHeartbeatAt = 0;
+let lastReportedState = "";
 
-async function getSettings() {
+function intervalOf(s) {
+  return Math.max(500, Number(s.minIntervalMs) || DEFAULTS.minIntervalMs);
+}
+
+async function loadSettings() {
   const stored = await chrome.storage.local.get(["settings"]);
-  return { ...DEFAULTS, ...(stored.settings || {}) };
+  settings = { ...DEFAULTS, ...(stored.settings || {}) };
+  return settings;
 }
 
-function pruneSeen(ttl) {
-  const cutoff = Date.now() - ttl;
-  for (const [k, t] of seen) {
-    if (t < cutoff) seen.delete(k);
-  }
+function serverBase() {
+  return String(settings.serverUrl || DEFAULTS.serverUrl).replace(/\/+$/, "");
 }
 
-function stableKey(cand) {
-  if (cand.id) return `id:${cand.id}`;
-  // Fall back to content hash-ish key. Good enough for 5-min dedup.
-  const text = (cand.text || "").slice(0, 160).trim().toLowerCase();
-  const author = (cand.author || "").slice(0, 40).trim().toLowerCase();
-  return `t:${author}|${text}`;
+function headers() {
+  const h = { "Content-Type": "application/json", "X-Fire-Source": Core.SOURCE };
+  if (settings.fireToken) h["X-Fire-Token"] = settings.fireToken;
+  return h;
 }
 
-function truncate(text, max) {
-  if (!text) return text;
-  const s = String(text).replace(/\s+/g, " ").trim();
-  if (s.length <= max) return s;
-  return s.slice(0, Math.max(1, max - 1)) + "…";
-}
-
-function composeDanmuText(cand, settings) {
-  const base = truncate(cand.text || "", settings.maxTextLen);
-  if (!settings.includeAuthor || !cand.author) return base;
-  const prefix = `${cand.author}: `;
-  const room = settings.maxTextLen - prefix.length;
-  if (room < 4) return base; // not worth prefixing
-  return prefix + truncate(cand.text, room);
-}
-
-function buildPayload(text, settings) {
-  const payload = { text };
-  if (settings.color) payload.color = settings.color;
-  if (Number.isInteger(settings.opacity)) payload.opacity = settings.opacity;
-  if (Number.isInteger(settings.size)) payload.size = settings.size;
-  if (Number.isInteger(settings.speed)) payload.speed = settings.speed;
-  payload.fingerprint = "slido-extension";
-  return payload;
-}
-
-async function postFire(serverUrl, payload, fireToken) {
-  const url = serverUrl.replace(/\/+$/, "") + "/fire";
-  const headers = { "Content-Type": "application/json" };
-  if (fireToken) headers["X-Fire-Token"] = fireToken;
-  const resp = await fetch(url, {
+// Reads the *current* settings on every call, so changing the server URL
+// or token never needs a new bridge (which would lose its queue).
+async function postFire(payload) {
+  const resp = await fetch(serverBase() + "/fire", {
     method: "POST",
-    headers,
+    headers: headers(),
     body: JSON.stringify(payload),
-    // credentials intentionally omitted: /fire is public, no cookies needed.
   });
-  if (!resp.ok) {
-    const body = await resp.text().catch(() => "");
-    throw new Error(`HTTP ${resp.status}: ${body.slice(0, 200)}`);
-  }
-  return true;
+  const body = await resp.text().catch(() => "");
+  return { status: resp.status, body: body.slice(0, 300) };
 }
 
-async function handleCandidates(candidates) {
-  const settings = await getSettings();
-  if (!settings.enabled) return;
-  if (!Array.isArray(candidates) || !candidates.length) return;
+// chrome.storage.session survives service-worker restarts (MV3 kills idle
+// workers after ~30 s); without it a restart would forget which questions
+// were already handled and each event's start point (armedAt).
+async function getBridge() {
+  if (bridge) return bridge;
+  await loadSettings();
+  const s = await chrome.storage.session.get(["handled", "tabs"]);
+  bridge = Core.createBridge({
+    post: postFire,
+    minIntervalMs: intervalOf(settings),
+    includeAuthor: settings.includeAuthor !== false,
+    handled: s.handled && typeof s.handled === "object" ? s.handled : {},
+    tabs: s.tabs && typeof s.tabs === "object" ? s.tabs : {},
+    active: settings.enabled !== false,
+    // Without a token, Slido questions would go out on the public lane:
+    // unlabelled, counted as poll votes, captcha-gated. Observe only.
+    tokenSet: !!settings.fireToken,
+  });
+  return bridge;
+}
 
-  pruneSeen(settings.dedupTtlMs);
+async function persist(b) {
+  await chrome.storage.session.set({ handled: b.handled(), tabs: b.tabs() });
+}
 
-  for (const cand of candidates) {
-    const key = stableKey(cand);
-    if (seen.has(key)) {
-      recentStats.skipped++;
-      continue;
-    }
-    seen.set(key, Date.now());
-
-    const text = composeDanmuText(cand, settings);
-    if (!text) {
-      recentStats.skipped++;
-      continue;
-    }
-
-    // Per-message rate-limit floor (server also rate-limits; this avoids
-    // hammering it when Slido dumps a backlog on page load).
-    const now = Date.now();
-    const gap = now - lastSendAt;
-    if (gap < settings.minIntervalMs) {
-      await new Promise((r) => setTimeout(r, settings.minIntervalMs - gap));
-    }
-    lastSendAt = Date.now();
-
-    const payload = buildPayload(text, settings);
-
-    if (settings.mode === "dry-run") {
-      console.info("[slido-danmu] dry-run", payload);
-      recentStats.forwarded++;
-      continue;
-    }
-
-    try {
-      await postFire(settings.serverUrl, payload, settings.fireToken);
-      recentStats.forwarded++;
-    } catch (err) {
-      recentStats.errors++;
-      recentStats.lastError = String(err.message || err);
-      console.warn("[slido-danmu] POST failed", err);
-    }
+async function heartbeat(force) {
+  if (!bridge || !settings.fireToken || settings.enabled === false) return;
+  const snap = bridge.snapshot();
+  const due = Date.now() - lastHeartbeatAt >= HEARTBEAT_MS;
+  if (!force && !due && snap.state === lastReportedState) return;
+  lastHeartbeatAt = Date.now();
+  lastReportedState = snap.state;
+  try {
+    const resp = await fetch(serverBase() + "/integrations/slido/status", {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(snap),
+    });
+    if (resp.status === 401) bridge.noteError("token_invalid");
+  } catch (err) {
+    console.warn("[slido-danmu] status report failed", err);
   }
 }
 
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg && msg.type === "slido_candidates") {
-    handleCandidates(msg.candidates).catch((err) =>
-      console.warn("[slido-danmu] handler error", err),
-    );
+// Messages are handled one at a time: a page's "opened" mark must land
+// before that page's first question list is used as its baseline.
+let chain = Promise.resolve();
+function serial(fn) {
+  chain = chain.then(fn, fn);
+  return chain;
+}
+
+async function handleBody(msg, tabId) {
+  const kind = Core.classifyUrl(msg.url);
+  if (!kind) return;
+  const b = await getBridge();
+  // Ingested even while switched off: ids are learned, nothing is queued.
+  b.ingest(kind, String(msg.body || ""), String(tabId), msg.url, typeof msg.date === "string" ? msg.date : "");
+  await persist(b);
+  heartbeat(false)
+    .then(() => b.idle())
+    .then(() => persist(b))
+    .then(() => heartbeat(false))
+    .catch(() => {});
+}
+
+async function handlePageOpen(tabId) {
+  const b = await getBridge();
+  b.openPage(String(tabId));
+  await persist(b);
+  await heartbeat(true);
+}
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local" || !changes.settings) return;
+  settings = { ...DEFAULTS, ...(changes.settings.newValue || {}) };
+  if (!bridge) return;
+  bridge.configure({
+    minIntervalMs: intervalOf(settings),
+    includeAuthor: settings.includeAuthor !== false,
+    tokenSet: !!settings.fireToken,
+  });
+  bridge.setActive(settings.enabled !== false);
+});
+
+// A closed tab's state would otherwise keep its last status (e.g. a
+// feed_unrecognized) alive for the rest of the browser session.
+if (chrome.tabs && chrome.tabs.onRemoved) {
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    serial(async () => {
+      const b = await getBridge();
+      b.closeTab(String(tabId));
+      await persist(b);
+    }).catch(() => {});
+  });
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  const tabId = sender && sender.tab ? sender.tab.id : -1;
+  if (msg && msg.type === "slido_body") {
+    serial(() => handleBody(msg, tabId)).catch((err) => console.warn("[slido-danmu] handler error", err));
     sendResponse({ ok: true });
-    return true;
+    return false;
+  }
+  if (msg && msg.type === "slido_page_open") {
+    serial(() => handlePageOpen(tabId)).catch((err) => console.warn("[slido-danmu] page-open error", err));
+    sendResponse({ ok: true });
+    return false;
+  }
+  if (msg && msg.type === "slido_ping") {
+    // The worker may have been restarted since the last event; rebuild the
+    // bridge from session storage so the open tab keeps reporting.
+    getBridge()
+      .then(() => heartbeat(false))
+      .catch(() => {});
+    sendResponse({ ok: true });
+    return false;
   }
   if (msg && msg.type === "get_stats") {
-    sendResponse({ ok: true, stats: recentStats, seenSize: seen.size });
-    return true;
+    sendResponse({ ok: true, stats: bridge ? bridge.snapshot() : null });
+    return false;
   }
   if (msg && msg.type === "test_connection") {
-    getSettings().then(async (settings) => {
+    loadSettings().then(async () => {
+      if (!settings.fireToken) {
+        sendResponse({ ok: false, error: "token_missing" });
+        return;
+      }
       try {
-        await postFire(
-          settings.serverUrl,
-          { text: "Slido → Danmu connected ✓", fingerprint: "slido-extension" },
-          settings.fireToken,
+        const res = await postFire({ text: "Slido → Danmu connected ✓", fingerprint: "slido:test" });
+        const verdict = Core.classifyFireResponse(res.status, res.body);
+        sendResponse(
+          verdict.outcome === "sent"
+            ? { ok: true }
+            : { ok: false, error: verdict.error || `HTTP ${res.status}` },
         );
-        sendResponse({ ok: true });
       } catch (err) {
         sendResponse({ ok: false, error: String(err.message || err) });
       }
     });
     return true;
   }
+  return false;
 });

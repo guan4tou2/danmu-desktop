@@ -3758,6 +3758,13 @@ summary:focus-visible {
   margin: 0;
   font-size: var(--text-footnote); color: var(--color-text-muted); line-height: 1.6;
 }
+/* Slido 卡的一行狀態：擴充功能的心跳回報（見 services/slido_status.py） */
+.admin-ext-live-status {
+  margin: 0;
+  font-size: var(--text-footnote); color: var(--color-text-muted); line-height: 1.6;
+}
+.admin-ext-live-status.is-live { color: var(--color-ink-success); }
+.admin-ext-live-status.is-error { color: var(--color-ink-danger); }
 
 .admin-ext-install {
   padding: var(--space-2);
@@ -3777,6 +3784,13 @@ summary:focus-visible {
   font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 0.04em;
 }
 .admin-ext-step-link:hover { text-decoration: underline; }
+/* 擴充功能 popup 要填的 Server URL：直接給出本站網址，可選取複製 */
+.admin-ext-step-code {
+  font-family: var(--font-mono); font-size: var(--text-caption);
+  color: var(--color-ink-accent);
+  user-select: all;
+  overflow-wrap: anywhere;
+}
 
 .admin-ext-token {
   padding: var(--space-3);

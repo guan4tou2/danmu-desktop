@@ -16,11 +16,14 @@ POST /admin/integrations/fire-token/revoke
 GET  /admin/integrations/sources/recent
     Distinct fire sources seen in the last 5 minutes (window query
     overrideable). Each entry has ``source / last_seen / count``.
+GET  /admin/integrations/slido/status
+    Last heartbeat from the Slido extension
+    (``{report, age_sec, stale, token_rejected, extension}``).
 """
 
 from flask import current_app, request
 
-from ...services import fire_sources, fire_token
+from ...services import fire_sources, fire_token, slido_status
 from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login
 
@@ -85,6 +88,20 @@ def get_recent_sources():
             ],
         }
     )
+
+
+@admin_bp.route("/integrations/slido/status", methods=["GET"])
+@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
+@require_login
+def get_slido_status():
+    """Latest heartbeat from the Slido extension; ``stale`` once it goes quiet.
+
+    Also carries ``extension`` ({version, download_url} of the packaged zip)
+    so the card's version label and download link come from one place.
+    """
+    payload = slido_status.get_public()
+    payload["extension"] = slido_status.extension_info()
+    return _json_response(payload)
 
 
 @admin_bp.route("/integrations/fire-token/audit", methods=["GET"])

@@ -55,6 +55,9 @@ def _broadcast_live_feed(data):
         # 沒有它，主持人唯一的手段是把整屏清空或永久封鎖——
         # 用過度手段解暫時需求（見 docs/audits/admin-ux-friction-2026-10-29.md F2）。
         "message_id": data.get("message_id", ""),
+        # Trusted integration that sent it (e.g. "slido"); empty otherwise.
+        # Not the overlay's "source" marker (admin broadcast uses that).
+        "integration": data.get("integration", ""),
     }
     try:
         live_feed_buffer.append(snapshot)
