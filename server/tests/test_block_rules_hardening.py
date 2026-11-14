@@ -1327,7 +1327,9 @@ def test_a_rules_file_with_such_a_pattern_loads_with_that_rule_switched_off(tmp_
     assert {r.id: r.enabled for r in restarted._rules} == {"w": True, "r": False}
 
 
-def _boom():
+def _boom(*args, **kwargs):
+    # 收任何參數：替身的簽名對不上時，呼叫端拿到的是 TypeError，測試照樣會過，
+    # 卻沒有走到要驗的那條路。用到它的測試都比對訊息裡的 "boom"。
     raise RuntimeError("boom")
 
 
@@ -1351,17 +1353,22 @@ def test_a_restore_that_fails_while_loading_is_undone(monkeypatch, failure):
     legacy_copy = Path(str(path) + engine_module.LEGACY_BACKUP_SUFFIX)
     assert not legacy_copy.exists()
     real_load = filter_engine._load
+    loaded = []
 
-    def load_then_fail():
-        real_load()  # 真的讀進來（含舊格式轉換與留副本），然後才出事
+    def load_then_fail(**kwargs):
+        real_load(**kwargs)  # 真的讀進來（含舊格式轉換與留副本），然後才出事
+        loaded.append([r.pattern for r in filter_engine._rules])
+        assert legacy_copy.exists()  # 載入時確實留了副本，下面才驗得到它被收掉
         if failure == "raises":
             raise RuntimeError("boom")
         filter_engine._rules = []
 
     monkeypatch.setattr(filter_engine, "_load", load_then_fail)
-    with pytest.raises(ValueError, match="nothing was restored"):
+    expected = r"\(boom\)" if failure == "raises" else "only 0 of 1 rules loaded"
+    with pytest.raises(ValueError, match=expected + ".*nothing was restored"):
         engine_module.restore_rules_file(_legacy_rules_bytes())
 
+    assert loaded == [["舊"]]  # 走的是「讀進來之後才失敗」那條路
     assert path.read_bytes() == before
     assert [r["pattern"] for r in filter_engine.list_rules()] == ["現有"]
     assert filter_engine.match_word("現有") == "現有"
@@ -1375,7 +1382,7 @@ def test_a_failed_restore_onto_no_file_leaves_no_file(monkeypatch):
     filter_engine._rules = []  # 不 reload()：預設路徑上沒有檔案時會去搬舊位置的規則檔
 
     monkeypatch.setattr(filter_engine, "_load", _boom)
-    with pytest.raises(ValueError, match="nothing was restored"):
+    with pytest.raises(ValueError, match=r"\(boom\).*nothing was restored"):
         engine_module.restore_rules_file(_legacy_rules_bytes())
     assert not path.exists()
     assert filter_engine.list_rules() == []
@@ -1388,7 +1395,7 @@ def test_an_existing_pre_unified_copy_survives_a_failed_restore(monkeypatch):
     legacy_copy.write_text("[]", encoding="utf-8")
 
     monkeypatch.setattr(filter_engine, "_load", _boom)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"\(boom\)"):
         engine_module.restore_rules_file(_legacy_rules_bytes())
     assert legacy_copy.read_text(encoding="utf-8") == "[]"
 
@@ -1410,6 +1417,7 @@ def test_when_the_old_file_cannot_be_put_back_it_is_a_save_error(monkeypatch, ca
         with pytest.raises(engine_module.RuleSaveError, match="could not be put back"):
             engine_module.restore_rules_file(_legacy_rules_bytes())
     assert "could not put" in caplog.text
+    assert len(writes) == 2  # 載入確實失敗在 boom，才會走到寫回舊檔
     assert [r["pattern"] for r in filter_engine.list_rules()] == ["現有"]  # 記憶體仍是還原前的
 
 
@@ -1576,6 +1584,34 @@ def test_a_rule_made_session_scoped_again_belongs_to_the_session_live_then():
     filter_engine.update_rule(rule_id, {"lifetime": "session"})
     assert filter_engine.get_rule(rule_id)["session_id"] == second
     assert [r.id for r in _restart()._rules] == [rule_id]  # 第二場進行中重啟，它還在
+
+
+def test_closing_a_session_leaves_the_rules_of_a_session_opened_in_the_same_instant(monkeypatch):
+    """close_session 放掉場次鎖之後才清規則。別人剛好在這個空檔開了下一場並加了規則
+    時，只清結束的那一場的。"""
+    session_service.open_session("第一場")
+    filter_engine.add_rule(_session_rule("第一場的"))
+    real_archive = session_service._append_archive
+
+    def someone_opens_the_next_session(record):
+        real_archive(record)
+        session_service.open_session("第二場")
+        filter_engine.add_rule(_session_rule("第二場的"))
+
+    monkeypatch.setattr(session_service, "_append_archive", someone_opens_the_next_session)
+    session_service.close_session()
+
+    assert [r["pattern"] for r in filter_engine.list_rules()] == ["第二場的"]
+    stored = json.loads(Path(filter_engine.path).read_text(encoding="utf-8"))
+    assert [e["pattern"] for e in stored] == ["第二場的"]
+
+
+def test_clearing_by_hand_removes_every_session_rule():
+    session_service.open_session("場")
+    filter_engine.add_rule(_session_rule())
+    filter_engine.add_rule({"type": "word", "pattern": "永久"})
+    assert filter_engine.clear_session_rules() == 1
+    assert [r["pattern"] for r in filter_engine.list_rules()] == ["永久"]
 
 
 def test_editing_a_session_rule_does_not_change_which_session_it_belongs_to():

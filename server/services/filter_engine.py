@@ -494,9 +494,18 @@ class FilterEngine:
         寫不進去只記警告——場次已經結束，這些規則不能因為磁碟的問題繼續擋下一場的
         訊息。檔案裡殘留的那幾條，下一次寫檔時清掉；在那之前重啟的話，它們記著的是
         已經結束的那一場的 id，啟動時不會被載入（_load）。
+
+        自動清除留下「此刻進行中那一場」的規則：close_session 是放掉場次鎖之後才來
+        清的，別人若剛好在這個空檔開了下一場並加了規則，那幾條屬於新的一場，不能
+        一起清掉。平常這時沒有場次，結果就是全部清掉。
         """
         with self._lock:
-            kept = [r for r in self._rules if r.lifetime != "session"]
+            keep_live = None if must_save else self._live_session_id_now()
+            kept = [
+                r
+                for r in self._rules
+                if r.lifetime != "session" or (keep_live is not None and r.session_id == keep_live)
+            ]
             removed = len(self._rules) - len(kept)
             if removed:
                 if must_save:
@@ -1101,6 +1110,16 @@ class FilterEngine:
         if not live:
             return False
         return not rule.session_id or not session_id or rule.session_id == session_id
+
+    @staticmethod
+    def _live_session_id_now() -> Optional[str]:
+        """進行中場次的 id；沒有場次、場次沒有 id、或問不到時回 None。"""
+        try:
+            live, session_id = _live_session()
+        except Exception as exc:
+            logger.warning("Block rules: could not tell which session is live: %s", exc)
+            return None
+        return session_id if live else None
 
     @staticmethod
     def _stamp_session(rules: list[FilterRule]) -> None:
