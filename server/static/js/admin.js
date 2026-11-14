@@ -1503,15 +1503,31 @@ document.addEventListener("DOMContentLoaded", () => {
         ?.textContent?.trim().replace(/\s+/g, " ");
       const noteSlot = shell.querySelector("[data-route-note]");
       const actionSlot = shell.querySelector("[data-route-action]");
-      // 先把上一條路由借走的動作還回去。搬 DOM 節點不會弄丟 listener，
-      // 所以來回搬是安全的；用 clone 反而會讓按鈕變成死的。
-      if (actionSlot) {
-        Array.prototype.slice.call(actionSlot.children).forEach((node) => {
+      // 2026-11-14：這一步必須冪等。插槽在 MutationObserver 監看的範圍內，
+      // 而那個 observer 會排下一輪同步——以前每輪都把動作搬回去再搬過來、
+      // 每輪都重寫 note 的 innerHTML，內容沒變也算變動，於是同步自己觸發
+      // 自己，前景分頁每個畫格跑一次、永不停止。現在先算出「該借哪個動作、
+      // note 該是什麼」，只有和現況不同時才動 DOM。
+      //
+      // 動作是搬節點而不是 clone：搬 DOM 節點不會弄丟 listener，clone 會讓
+      // 按鈕變成死的。已經借在插槽裡的動作不在它的頁首裡，所以找某個頁首的
+      // 動作時也要看插槽裡「家是這個頁首」的那一個。
+      const borrowed = actionSlot ? Array.prototype.slice.call(actionSlot.children) : [];
+      const actionsOf = (head) => head.querySelector(".admin-ui-page-actions")
+        || borrowed.find((node) => node._adminHomeHead === head) || null;
+      const syncActionSlot = (wanted, home) => {
+        if (!actionSlot) return;
+        borrowed.forEach((node) => {
+          if (node === wanted) return;
           if (node._adminHomeHead) node._adminHomeHead.appendChild(node);
           else node.remove();
         });
-      }
-      if (!routeTitle) return;
+        if (wanted && wanted.parentNode !== actionSlot) {
+          wanted._adminHomeHead = home;
+          actionSlot.appendChild(wanted);
+        }
+      };
+      if (!routeTitle) { syncActionSlot(null, null); return; }
       // 2026-07-30（全掃後定案）：分頁式路由（審核/素材庫/觀眾頁/系統/紀錄）
       // 的 section page-head 一律是多餘——分頁列本身就是 section 的標題，
       // 麵包屑也已寫出位置。實測 30 個 tab section 的標題全部是 tab 標籤的
@@ -1536,6 +1552,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const cfgTitle = (ADMIN_ROUTES[currentRoute]?.title || "")
         .trim().replace(/\s+/g, " ");
       let mergedNote = null;
+      let wantedAction = null;
+      let wantedActionHome = null;
       heads.forEach((head) => {
         const titleEl = head.querySelector(".admin-ui-page-title");
         const t = titleEl && titleEl.textContent.trim().replace(/\s+/g, " ");
@@ -1550,17 +1568,21 @@ document.addEventListener("DOMContentLoaded", () => {
           // 動作與 note 分開找：分頁式路由上，同時可見的頁首可能有好幾個
           // （擴充頁的目錄卡片頁首排在 Webhook 分頁的頁首前面），而帶著
           // 主要動作的通常不是第一個。綁在一起找會讓動作永遠取不到。
-          const actions = head.querySelector(".admin-ui-page-actions");
-          if (actions && actionSlot && !actionSlot.children.length) {
-            actions._adminHomeHead = head;
-            actionSlot.appendChild(actions);
+          const actions = actionsOf(head);
+          if (actions && !wantedAction) {
+            wantedAction = actions;
+            wantedActionHome = head;
           }
         }
         head.classList.add("is-merged-into-topbar");
       });
+      syncActionSlot(wantedAction, wantedActionHome);
       if (noteSlot) {
-        noteSlot.innerHTML = mergedNote || "";
-        noteSlot.hidden = !mergedNote;
+        const html = mergedNote || "";
+        // innerHTML 讀回來的是序列化結果；mergedNote 本身也是從另一個元素的
+        // innerHTML 讀來的，兩邊同一種序列化，相同內容就會逐字相等。
+        if (noteSlot.innerHTML !== html) noteSlot.innerHTML = html;
+        if (noteSlot.hidden !== !mergedNote) noteSlot.hidden = !mergedNote;
       }
     }
 

@@ -48,22 +48,47 @@ function injectWebhooksFold() {
        <div>body</div></details>`);
 }
 
-describe("fold deep links survive a full page load", () => {
-  beforeAll(() => {
-    window.fetch = jest.fn((url) => url === "/get_settings"
-      ? Promise.resolve({ ok: true, json: async () => ({}) })
-      : new Promise(() => {}));
-    window.AdminUtils = { loadDetailsState: () => ({}), saveDetailsState() {}, escapeHtml: String };
-    window.DANMU_CONFIG = { session: { logged_in: true } };
-    window.showToast = jest.fn();
-    jest.spyOn(console, "info").mockImplementation(() => {});
-    // jsdom 沒有版面：藏在 display:none 底下的元素沒有 rect，其餘當成有畫出來。
-    Element.prototype.getClientRects = function () {
-      for (let n = this; n; n = n.parentElement) if (n.style && n.style.display === "none") return [];
-      return [{}];
-    };
-    Element.prototype.scrollIntoView = function () { scrolled.push(this.id); };
+// 整個檔案共用的環境替身。每條測試都自己 boot()、自己注入區塊，不依賴前一條
+// 留下的頁面狀態——用 `jest -t` 單獨跑任何一條都要能過。
+beforeAll(() => {
+  window.fetch = jest.fn((url) => url === "/get_settings"
+    ? Promise.resolve({ ok: true, json: async () => ({}) })
+    : new Promise(() => {}));
+  window.AdminUtils = { loadDetailsState: () => ({}), saveDetailsState() {}, escapeHtml: String };
+  window.DANMU_CONFIG = { session: { logged_in: true } };
+  window.showToast = jest.fn();
+  jest.spyOn(console, "info").mockImplementation(() => {});
+  // jsdom 沒有版面：藏在 display:none 底下的元素沒有 rect，其餘當成有畫出來。
+  Element.prototype.getClientRects = function () {
+    for (let n = this; n; n = n.parentElement) if (n.style && n.style.display === "none") return [];
+    return [{}];
+  };
+  Element.prototype.scrollIntoView = function () { scrolled.push(this.id); };
+  // jsdom 的 offsetParent 永遠是 null；_dedupSectionTitles 靠它判斷「這一屏
+  // 真正可見的頁首」。照瀏覽器的語意：自己或祖先 display:none 時為 null。
+  Object.defineProperty(HTMLElement.prototype, "offsetParent", {
+    configurable: true,
+    get() {
+      for (let n = this; n; n = n.parentElement) if (n.style && n.style.display === "none") return null;
+      return this.parentElement;
+    },
   });
+});
+
+beforeEach(() => {
+  scrolled.length = 0;
+  sessionStorage.clear();
+});
+
+// 開機到 #/system/webhooks、等區塊晚到注入並展開——下面幾條測試的共同起點。
+async function bootWithWebhooksFoldOpen() {
+  boot("#/system/webhooks");
+  await settle(); await settle();
+  injectWebhooksFold();
+  await settle(); await settle();
+}
+
+describe("fold deep links survive a full page load", () => {
 
   test("the real i18n runtime re-applies the route from updateUI", () => {
     const src = fs.readFileSync(path.resolve(__dirname, "../static/js/i18n.js"), "utf8");
@@ -72,7 +97,6 @@ describe("fold deep links survive a full page load", () => {
   });
 
   test("a fold injected after boot (and after updateUI) still opens, hash untouched", async () => {
-    scrolled.length = 0;
     boot("#/system/webhooks");
     await settle(); await settle();
     const shell = document.querySelector(".admin-dash-grid");
@@ -91,6 +115,8 @@ describe("fold deep links survive a full page load", () => {
   });
 
   test("_adminNavigateTo keeps the fold: same hash, no second scroll, still open", async () => {
+    await bootWithWebhooksFoldOpen();
+    expect(scrolled).toEqual(["sec-webhooks"]);
     window._adminNavigateTo();
     await settle();
     expect(window.location.hash).toBe("#/system/webhooks");
@@ -100,16 +126,17 @@ describe("fold deep links survive a full page load", () => {
   });
 
   test("switching language keeps the fold and relabels its title", async () => {
+    await bootWithWebhooksFoldOpen();
     window.ServerI18n.setLang("en");
     await settle();
     const fold = document.getElementById("sec-webhooks");
     expect(window.location.hash).toBe("#/system/webhooks");
     expect(fold.open).toBe(true);
     expect(fold.querySelector("summary").textContent).toBe(en.tabExtWebhooks);
-    window.ServerI18n.setLang("zh");
   });
 
   test("navigating to another tab drops the fold from the route", async () => {
+    await bootWithWebhooksFoldOpen();
     document.querySelector('.admin-tabs-btn[data-tab="security"]').click();
     await settle();
     expect(window.location.hash).toBe("#/system/security");
@@ -118,8 +145,6 @@ describe("fold deep links survive a full page load", () => {
   });
 
   test("an old block URL loaded directly also opens once the block arrives", async () => {
-    scrolled.length = 0;
-    sessionStorage.clear();
     boot("#/integrations/webhooks");
     await settle(); await settle();
     expect(window.location.hash).toBe("#/system/webhooks");
@@ -171,8 +196,6 @@ describe("full page load in a tab where requestAnimationFrame never fires", () =
     ["#/assets", "sec-emojis", "assets-grid", null],
     ["#/live", "sec-live-feed", "moderation-grid", null],
   ])("%s: the container shows once %s arrives", async (hash, sectionId, containerId, foldId) => {
-    scrolled.length = 0;
-    sessionStorage.clear();
     boot(hash);
     await settleLong();
     const grid = document.getElementById("settings-grid");
@@ -200,9 +223,10 @@ describe("full page load in a tab where requestAnimationFrame never fires", () =
 // 各自再排一輪。rAF 正常的前景分頁才會發生，所以背景分頁的實機驗證看不到。
 describe("a module that re-renders on every sync does not multiply the syncs", () => {
   test("syncs stay at one per animation frame", async () => {
-    sessionStorage.clear();
     boot("#/system/overview");
-    await settle();
+    // 等開機那幾輪同步跑完再開始數。單獨跑這條時是冷啟動，開機收尾比較慢，
+    // 只等一輪會把開機時就排好（在 rAF 被包起來之前）的同步也算進來。
+    await settle(); await settle(); await settle();
     const grid = document.getElementById("settings-grid");
     let syncs = 0;
     let frames = 0;
@@ -225,5 +249,96 @@ describe("a module that re-renders on every sync does not multiply the syncs", (
     expect(syncs).toBeGreaterThan(0);
     // 每一輪只會有一個回呼真的執行；rAF 先到，所以同步次數不會超過畫格數。
     expect(syncs).toBeLessThanOrEqual(frames + 1);
+  });
+});
+
+// 2026-11-14 第四輪：頁首併進頂欄的那一步（_dedupSectionTitles）每次同步都重寫
+// [data-route-note] 的內容、把借來的動作搬回原處再搬過來——即使什麼都沒變。
+// 這些都是 MutationObserver 看得到的變動，於是同步 → 變動 → 再排一輪同步，
+// 前景分頁每個畫格跑一次、永不停止。同步必須冪等：沒變就不動 DOM。
+describe("merging a section header into the top bar settles", () => {
+  const quietWindow = () => new Promise((r) => setTimeout(r, 400));
+
+  function injectOverviewWithHeader(note) {
+    document.getElementById("settings-grid").insertAdjacentHTML("beforeend",
+      `<div id="sec-extensions-overview">
+         <div class="admin-ui-page-head">
+           <h2 class="admin-ui-page-title">${zh.adminNavIntegrations}</h2>
+           <p class="admin-ui-page-note">${note}</p>
+           <div class="admin-ui-page-actions"><button type="button" id="ext-primary">+</button></div>
+         </div>
+         <div>body</div>
+       </div>`);
+  }
+
+  async function countRouteApplied(during) {
+    let applied = 0;
+    const count = () => { applied += 1; };
+    document.addEventListener("admin-route-applied", count);
+    try { await during(); } finally { document.removeEventListener("admin-route-applied", count); }
+    return applied;
+  }
+
+  async function bootWithHeader() {
+    boot("#/system/integrations");
+    await settle();
+    injectOverviewWithHeader('Connect <a href="#/system/webhooks">Webhook</a> &amp; more');
+    await settle(); await settle(); await settle();
+    const shell = document.querySelector(".admin-dash-grid");
+    return {
+      note: shell.querySelector("[data-route-note]"),
+      actionSlot: shell.querySelector("[data-route-action]"),
+      head: document.querySelector("#sec-extensions-overview .admin-ui-page-head"),
+    };
+  }
+
+  test("once settled, no further syncs run while nothing changes", async () => {
+    const { note, actionSlot } = await bootWithHeader();
+    expect(note.hidden).toBe(false);
+    expect(note.textContent).toBe("Connect Webhook & more");
+    expect(actionSlot.querySelector("#ext-primary")).not.toBeNull();
+    expect(await countRouteApplied(quietWindow)).toBe(0);
+  });
+
+  test("the borrowed action keeps its listener", async () => {
+    const { actionSlot } = await bootWithHeader();
+    let clicks = 0;
+    document.getElementById("ext-primary").addEventListener("click", () => { clicks += 1; });
+    await quietWindow();
+    actionSlot.querySelector("#ext-primary").click();
+    expect(clicks).toBe(1);
+  });
+
+  test("a real content change still updates the top bar, then settles again", async () => {
+    const { note, head } = await bootWithHeader();
+    head.querySelector(".admin-ui-page-note").textContent = "Updated note";
+    await settle(); await settle();
+    expect(note.textContent).toBe("Updated note");
+    expect(await countRouteApplied(quietWindow)).toBe(0);
+  });
+
+  test("leaving the tab returns the action home; coming back borrows it again", async () => {
+    const { note, actionSlot, head } = await bootWithHeader();
+    document.querySelector('.admin-tabs-btn[data-tab="security"]').click();
+    await settle(); await settle();
+    expect(actionSlot.children.length).toBe(0);
+    expect(head.querySelector("#ext-primary")).not.toBeNull();
+    expect(note.hidden).toBe(true);
+    expect(await countRouteApplied(quietWindow)).toBe(0);
+
+    document.querySelector('.admin-tabs-btn[data-tab="integrations"]').click();
+    await settle(); await settle();
+    expect(actionSlot.querySelector("#ext-primary")).not.toBeNull();
+    expect(note.textContent).toBe("Connect Webhook & more");
+    expect(await countRouteApplied(quietWindow)).toBe(0);
+  });
+
+  test("switching language keeps the merged header and settles", async () => {
+    const { note, actionSlot } = await bootWithHeader();
+    window.ServerI18n.setLang("en");
+    await settle(); await settle();
+    expect(note.textContent).toBe("Connect Webhook & more");
+    expect(actionSlot.querySelector("#ext-primary")).not.toBeNull();
+    expect(await countRouteApplied(quietWindow)).toBe(0);
   });
 });

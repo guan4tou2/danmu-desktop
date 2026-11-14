@@ -2973,5 +2973,13 @@
   "offlineBannerTitle": "オフライン · サーバーに接続できません",
   "offlineMetaReconnecting": "再接続中 · {sec} 秒 · 未送信の下書き {n} 件",
   "eoffDraftLabel": "未送信の下書き（{n} 件）",
-  "eoffDraftFoot": "再接続後も自動送信されません。送信するかは自分で決められます"
+  "eoffDraftFoot": "再接続後も自動送信されません。送信するかは自分で決められます",
+  "viGroupLabel": "視聴者の画像",
+  "viAllowExternal": "視聴者の外部画像を許可",
+  "viHosts": "許可するサイト",
+  "viHostsPlaceholder": "空欄＝すべてのサイト。1行に1つ（例：cdn.example.com）",
+  "viExtensions": "許可する形式",
+  "viErrInvalidHost": "サイトの形式が正しくありません：{host}",
+  "viErrTooManyHosts": "サイトは最大 {max} 件までです",
+  "viewerImageNotAllowed": "この画像リンクは送信できません"
 }

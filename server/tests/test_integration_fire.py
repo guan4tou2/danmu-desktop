@@ -158,6 +158,10 @@ def test_fire_empty_blacklist_always_passes(client):
 
 
 def test_fire_valid_image_url_enqueued(client):
+    # 外部圖片預設關閉（services/viewer_images.py）；這條驗的是開啟後的既有行為。
+    from server.services import viewer_images
+
+    viewer_images.set_state({"enabled": True})
     resp = client.post(
         "/fire",
         json={

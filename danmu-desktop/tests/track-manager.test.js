@@ -349,23 +349,50 @@ describe("showdanmu", () => {
     expect(container.children.length).toBe(0);
   });
 
-  test("creates img element for valid image URLs", async () => {
-    window.showdanmu("https://example.com/image.png");
+  // isImage is the 15th positional argument (after messageId).
+  const showImage = (url, isImage) =>
+    window.showdanmu(
+      url, undefined, undefined, undefined, undefined, undefined, undefined,
+      undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+      isImage
+    );
+
+  test("creates img element only when the server marks it as an image", async () => {
+    showImage("https://example.com/image.png", true);
     await new Promise((r) => setTimeout(r, 0));
 
     const img = document.querySelector("img.danmu");
     expect(img).not.toBeNull();
     expect(img.getAttribute("src")).toBe("https://example.com/image.png");
+    expect(img.style.maxWidth).toBe("200px");
+    expect(img.style.maxHeight).toBe("120px");
+    expect(img.style.objectFit).toBe("contain");
   });
 
-  test("shows error for image URL without valid protocol", async () => {
-    window.showdanmu("ftp://example.com/image.png");
+  test("image-looking text without the isImage flag stays text", async () => {
+    window.showdanmu("https://example.com/image.png");
     await new Promise((r) => setTimeout(r, 0));
 
-    // Should be treated as text, not an image
+    expect(document.querySelector("img.danmu")).toBeNull();
     const h1 = document.querySelector("h1.danmu");
-    // ftp URL doesn't match the imgs regex, so it becomes text
     expect(h1).not.toBeNull();
+    expect(h1.textContent).toBe("https://example.com/image.png");
+  });
+
+  test("a truthy non-boolean isImage does not create an image", async () => {
+    showImage("https://example.com/image.png", "true");
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.querySelector("img.danmu")).toBeNull();
+  });
+
+  test("shows error for flagged image URL without valid protocol", async () => {
+    showImage("ftp://example.com/image.png", true);
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(document.querySelector("img.danmu")).toBeNull();
+    const h1 = document.querySelector("h1.danmu");
+    expect(h1).not.toBeNull();
+    expect(h1.textContent).toContain("Invalid image URL");
   });
 
   test("handles invalid speed by defaulting", async () => {

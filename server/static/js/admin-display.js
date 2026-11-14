@@ -102,6 +102,15 @@
     paletteNotice: null,
   };
 
+  // 觀眾外部圖片的副檔名勾選框（與 services/viewer_images.py 的
+  // SUPPORTED_EXTENSIONS 同序；jpg 同時代表 .jpg 與 .jpeg）。標籤是格式名稱，不翻譯。
+  const VI_EXTENSIONS = [
+    { value: "png", label: "PNG" },
+    { value: "jpg", label: "JPG" },
+    { value: "gif", label: "GIF" },
+    { value: "webp", label: "WebP" },
+  ];
+
   const PICK_SET_KEYS = ["Color", "FontFamily", "Layout"];
 
   function isAllowlistKey(key) { return PICK_SET_KEYS.indexOf(key) !== -1; }
@@ -233,6 +242,39 @@
                 <button type="button" data-dl-opt="15">15%</button>
                 <button type="button" data-dl-opt="25">25%</button>
                 <button type="button" data-dl-opt="40">40%</button>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2026-11-14：觀眾外部圖片。預設關閉；判斷在伺服器（/fire），
+             這裡只讀寫 /admin/viewer-images。關閉時網站與格式兩列收起來。 -->
+        <div data-dsp-only="audience" id="viewer-images-group">
+          <div class="admin-ui-group-label">${escapeHtml(t("viGroupLabel"))}</div>
+          <div class="admin-ui-group">
+            <label class="admin-ui-group-row" for="viewer-images-enabled">
+              <span class="lbl">${escapeHtml(t("viAllowExternal"))}</span>
+              <span class="val">
+                <input type="checkbox" class="admin-ui-checkbox" id="viewer-images-enabled" data-vi-toggle />
+              </span>
+            </label>
+            <div class="admin-ui-group-row is-tall" data-vi-row style="display:none;flex-wrap:wrap">
+              <label class="lbl" for="viewer-images-hosts">${escapeHtml(t("viHosts"))}</label>
+              <span class="val" style="flex:1 1 240px;min-width:0">
+                <textarea id="viewer-images-hosts" class="admin-ui-input" rows="3" spellcheck="false"
+                  autocapitalize="off" autocomplete="off" style="resize:vertical;min-height:64px"
+                  placeholder="${escapeHtml(t("viHostsPlaceholder"))}"></textarea>
+              </span>
+            </div>
+            <div class="admin-ui-group-row" data-vi-row style="display:none;flex-wrap:wrap" role="group"
+                 aria-labelledby="viewer-images-ext-label">
+              <span class="lbl" id="viewer-images-ext-label">${escapeHtml(t("viExtensions"))}</span>
+              <span class="val" id="viewer-images-extensions" style="flex-wrap:wrap;gap:12px">
+                ${VI_EXTENSIONS.map((ext) => `
+                <label style="display:inline-flex;align-items:center;gap:6px;min-height:44px">
+                  <input type="checkbox" class="admin-ui-checkbox" data-vi-ext="${ext.value}" />
+                  <span>${ext.label}</span>
+                </label>`).join("")}
               </span>
             </div>
           </div>
@@ -1339,6 +1381,91 @@
       const out = page.querySelector(`[data-dl-value="${key}"]`);
       if (out) out.textContent = rg.value + "%";
     });
+
+    // ── 觀眾外部圖片（2026-11-14）── 走 /admin/viewer-images
+    page.addEventListener("change", (e) => {
+      if (e.target.closest("[data-vi-toggle]")) {
+        postViewerImages({ enabled: e.target.checked });
+        return;
+      }
+      if (e.target.closest("[data-vi-ext]")) {
+        const picked = Array.from(page.querySelectorAll("[data-vi-ext]"))
+          .filter((el) => el.checked)
+          .map((el) => el.getAttribute("data-vi-ext"));
+        postViewerImages({ extensions: picked });
+        return;
+      }
+      if (e.target.id === "viewer-images-hosts") {
+        const hosts = e.target.value.split(/[\s,]+/).filter(Boolean);
+        postViewerImages({ hosts });
+      }
+    });
+  }
+
+  // ── 觀眾外部圖片狀態 ──────────────────────────────────────────────────
+  let _viState = null;
+
+  function renderViewerImages() {
+    const page = document.getElementById(PAGE_ID);
+    if (!page || !_viState) return;
+    const toggle = page.querySelector("[data-vi-toggle]");
+    if (toggle) toggle.checked = !!_viState.enabled;
+    page.querySelectorAll("[data-vi-row]").forEach((row) => {
+      row.style.display = _viState.enabled ? "" : "none";
+    });
+    const hosts = page.querySelector("#viewer-images-hosts");
+    // 正在輸入時不要把使用者打到一半的內容蓋掉
+    if (hosts && document.activeElement !== hosts) {
+      hosts.value = (_viState.hosts || []).join("\n");
+    }
+    const exts = _viState.extensions || [];
+    page.querySelectorAll("[data-vi-ext]").forEach((el) => {
+      el.checked = exts.indexOf(el.getAttribute("data-vi-ext")) !== -1;
+    });
+  }
+
+  async function fetchViewerImages() {
+    try {
+      const res = await fetch("/admin/viewer-images", { credentials: "same-origin" });
+      if (!res.ok) return;
+      _viState = await res.json();
+      renderViewerImages();
+    } catch (e) {
+      console.warn("[admin-display] viewer-images fetch failed:", e);
+    }
+  }
+
+  function _viErrorMessage(body) {
+    const code = body && body.code;
+    if (code === "invalid_host") return t("viErrInvalidHost", { host: String(body.detail || "") });
+    if (code === "too_many_hosts") return t("viErrTooManyHosts", { max: body.max });
+    return t("updateFailed");
+  }
+
+  async function postViewerImages(patch) {
+    try {
+      const res = await window.csrfFetch("/admin/viewer-images", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      let body = null;
+      try { body = await res.json(); } catch (_) { body = null; }
+      if (!res.ok) {
+        window.showToast && window.showToast(_viErrorMessage(body), false);
+        // 輸入框保留使用者打的內容讓他改；開關與勾選框打回伺服器的值
+        if (!("hosts" in patch)) renderViewerImages();
+        return;
+      }
+      _viState = body;
+      const hosts = document.getElementById("viewer-images-hosts");
+      if (hosts && "hosts" in patch) hosts.value = (_viState.hosts || []).join("\n");
+      renderViewerImages();
+    } catch (e) {
+      renderViewerImages();
+      console.warn("[admin-display] viewer-images update failed:", e);
+      window.showToast && window.showToast(t("updateFailed"), false);
+    }
   }
 
   // ── 顯示層排版狀態 ────────────────────────────────────────────────────
@@ -1532,6 +1659,7 @@
     if (fresh) fresh.open = wasOpen;
     renderRows();
     renderDisplayLayer();
+    renderViewerImages();
   }
 
   function syncVisibility() {
@@ -1855,6 +1983,7 @@
     syncVisibility();
     if (!_state.options) await Promise.all([fetchSettings(), fetchFonts()]);
     fetchDisplayLayer();
+    fetchViewerImages();
     renderRows();
   }
 

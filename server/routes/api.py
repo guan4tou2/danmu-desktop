@@ -10,6 +10,7 @@ from ..services import fingerprint_tracker
 from ..services import history as history_service
 from ..services import messaging, moderation_bans
 from ..services import themes as theme_svc
+from ..services import viewer_images
 from ..services.blacklist import contains_keyword, matched_keyword
 from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
@@ -39,7 +40,6 @@ from ..services.validation import BlacklistCheckSchema, FireRequestSchema, valid
 from ..services.viewer_colors import resolve_viewer_color
 from ..services.webhook import webhook_service
 from ..services.ws_state import get_ws_client_count
-from ..utils import is_valid_image_url
 from ..utils import json_response as _json_response
 from ..utils import sanitize_log_string
 
@@ -405,8 +405,21 @@ def fire():
             _record_history_if_enabled(data, fingerprint, client_ip, blocked_by=blocked_keyword)
             return _json_response({"error": "Content contains blocked keywords"}, 400)
 
-        if data.get("isImage") and not is_valid_image_url(data["text"]):
+        # 外部圖片政策（services/viewer_images.py）。判斷一律在這裡做：新版
+        # 顯示端只認 isImage，舊版顯示端仍會用正則把圖片網址文字轉成圖片，
+        # 所以不在允許範圍的圖片網址必須在這裡擋下，不能原樣轉送。貼圖是
+        # 之後 _resolve_danmu_style 才由伺服器自己產生的，不經過這一段。
+        image_verdict, _image_reason = viewer_images.classify(
+            data.get("text", ""), bool(data.get("isImage"))
+        )
+        if image_verdict == viewer_images.INVALID:
             return _json_response({"error": "Invalid image url"}, 400)
+        if image_verdict == viewer_images.BLOCKED:
+            return _json_response(
+                {"error": "This image link isn't allowed", "reason": "image_not_allowed"},
+                400,
+            )
+        data["isImage"] = image_verdict == viewer_images.IMAGE
 
         # Plugin system: on_fire hook
         plugin_ctx = dict(data)
