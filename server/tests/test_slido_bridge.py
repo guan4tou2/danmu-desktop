@@ -402,15 +402,20 @@ def test_pre_upgrade_token_restored_from_backup_is_ignored(tmp_path, monkeypatch
     old_host.mkdir()
     new_host.mkdir()
     (old_host / "fire_token.json").write_text(json.dumps(LEGACY_STATE))
+    monkeypatch.setattr(fire_token, "_STATE_FILE", old_host / "fire_token.json")
     monkeypatch.setattr(backup_svc, "_INCLUDE_DIRS", [("runtime", old_host, "runtime", "*.json")])
-    blob = backup_svc.pack()
+    blob = backup_svc.pack(include_credentials=True)
 
+    monkeypatch.setattr(fire_token, "_STATE_FILE", new_host / "fire_token.json")
+    fire_token.reset_for_tests()
     monkeypatch.setattr(backup_svc, "_INCLUDE_DIRS", [("runtime", new_host, "runtime", "*.json")])
     result = backup_svc.unpack(blob, dry_run=False)
     assert result["applied"] >= 1, result
-    assert json.loads((new_host / "fire_token.json").read_text()) == LEGACY_STATE
+    # The old token counts as "no token in this backup": it is not restored.
+    assert [n["code"] for n in result["merged"]] == ["fire_token_legacy_ignored"]
+    restored = json.loads((new_host / "fire_token.json").read_text())
+    assert restored["token"] == "" and restored["format"] == 2
 
-    monkeypatch.setattr(fire_token, "_STATE_FILE", new_host / "fire_token.json")
     fire_token.reset_for_tests()
     assert fire_token.verify("legacy-token-from-v5-2") is False
     assert fire_token.get_public_state()["has_token"] is False
@@ -436,7 +441,7 @@ def test_restoring_a_backup_reloads_the_token_immediately(tmp_path, monkeypatch)
     fire_token.reset_for_tests()
     backed_up = fire_token.regenerate()["token"]
     monkeypatch.setattr(backup_svc, "_INCLUDE_DIRS", [("runtime", old_host, "runtime", "*.json")])
-    blob = backup_svc.pack()
+    blob = backup_svc.pack(include_credentials=True)
 
     # The live server has since rotated to another token (and cached it).
     monkeypatch.setattr(fire_token, "_STATE_FILE", new_host / "fire_token.json")

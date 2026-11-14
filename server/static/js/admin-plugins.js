@@ -251,6 +251,7 @@
 
         const data = await res.json();
         const plugins = data.plugins || [];
+        applyUploadState(data.upload_allowed !== false);
 
         if (plugins.length === 0) {
           listEl.innerHTML =
@@ -273,6 +274,19 @@
           ServerI18n.t("loadPluginsFailed") +
           "</span></div>";
       }
+    }
+
+    // 2026-11-14：部署設定 ALLOW_PLUGIN_UPLOAD 關掉時，伺服器拒絕上傳
+    // （/admin/plugins/list 回 upload_allowed:false）。按鈕停用並換成說明它
+    // 為什麼不能按的字；已安裝的外掛照常列出、可以開關與重新載入。
+    function applyUploadState(allowed) {
+      const btn = document.getElementById("pluginsUploadBtn");
+      if (!btn) return;
+      btn.disabled = !allowed;
+      btn.toggleAttribute("data-upload-disabled", !allowed);
+      btn.textContent = ServerI18n.t(allowed ? "pluginsUploadBtnLabel" : "pluginsUploadDisabled");
+      if (allowed) btn.removeAttribute("title");
+      else btn.title = "ALLOW_PLUGIN_UPLOAD";
     }
 
     function renderPluginsStats(plugins) {

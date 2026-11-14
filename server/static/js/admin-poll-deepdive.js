@@ -249,10 +249,7 @@
       rows.push([o.label || ("option_" + (i + 1)), votes, pct]);
     });
     const csv = rows.map(function (r) {
-      return r.map(function (c) {
-        const s = String(c);
-        return s.includes(",") || s.includes('"') ? '"' + s.replace(/"/g, '""') + '"' : s;
-      }).join(",");
+      return r.map(window.AdminUtils.csvCell).join(",");
     }).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);

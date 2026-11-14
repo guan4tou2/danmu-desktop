@@ -4,25 +4,29 @@ Webhook 整合服務
 支援 outbound webhooks（事件 -> HTTP POST）與 inbound 簽名驗證。
 格式：json / discord / slack
 持久化：webhooks.json
-執行緒安全，使用 urllib.request（無額外依賴）。
+執行緒安全，使用標準函式庫的 http.client（無額外依賴）。
 """
 
 import hashlib
 import hmac
+import http.client
 import ipaddress
 import json
 import logging
+import socket
+import ssl
 import threading
 import time
-import urllib.error
 import urllib.parse
-import urllib.request
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from server.config import Config
+
+from . import atomic_file
+from .atomic_file import write_atomic
 
 logger = logging.getLogger(__name__)
 
@@ -211,40 +215,259 @@ class WebhookConfig:
         )
 
 
-# ── 出站 URL 的安全檢查（2026-09-08）────────────────────────────────────────
+def _load_entry(entry: Any) -> WebhookConfig:
+    """One stored hook → WebhookConfig; TypeError/ValueError when unusable."""
+    if not isinstance(entry, dict):
+        raise TypeError("webhook entry is not an object")
+    for key in ("id", "url", "secret"):
+        if entry.get(key) is not None and not isinstance(entry.get(key), str):
+            raise TypeError(f"webhook {key} must be a string")
+    try:
+        return WebhookConfig.from_dict(entry)
+    except OverflowError as exc:
+        # A non-finite count (e.g. 1e999 from a hand-edited file) cannot be
+        # made an int; treat the entry as unusable rather than letting it
+        # abort the whole load.
+        raise ValueError(f"webhook field out of range: {exc}") from exc
+
+
+# ── 出站 URL 的安全檢查（2026-09-08，2026-11-14 改為檢查解析結果）───────────
 #
 # webhook 的 URL 由管理員填，而伺服器會照著它發請求——典型的 SSRF 面。
-# 這裡**刻意只擋 link-local**，不擋私有網段：
+# 這裡**刻意只擋 link-local 與雲端 metadata**，不擋私有網段與 localhost：
 #
 #   * `169.254.0.0/16` 與 `fe80::/10` 裡最有價值的是 `169.254.169.254`
 #     （AWS/GCP/Azure/Oracle 的 instance metadata），從 webhook 的角度永遠
-#     不是合法目標。正式環境就跑在 VPS 上，這條是有意義的。
-#   * **私有網段（192.168/10/172.16）刻意放行**：這是自架軟體，「把彈幕轉發到
-#     區網裡的一台服務」是真實且常見的用法，擋掉會弄壞正常情境。
+#     不是合法目標。另外幾個不在 link-local 的 metadata 位址一併擋掉。
+#   * **私有網段（192.168/10/172.16）與 localhost 刻意放行**：這是自架軟體，
+#     「把彈幕轉發到同機或區網裡的一台服務」是真實且常見的用法。
 #
-# 這不是「防住有惡意的管理員」——管理員本來就能上傳 .py 擴充（設計上的 RCE）。
-# 這是防呆與防禦縱深：擋掉一個誤填或被社交工程騙出去的 metadata 位址。
-_BLOCKED_URL_REASON = "URL 指向 link-local 位址（例如雲端 metadata），不允許"
+# 判斷的對象是**主機解析出來的每一個位址**，不是 URL 字面：IPv4 有八進位、
+# 十六進位、整數等寫法，網域名稱也可以指向任何位址。連線時直接連到檢查過的
+# 那幾個位址（不再解析第二次），也不跟隨轉址——轉址的目的地沒經過檢查。
+# 儲存時（register / update）與每次送出前都檢查。
+_LINK_LOCAL_REASON = "URL 指向 link-local 位址，不允許"
+_METADATA_REASON = "URL 指向雲端 metadata 位址，不允許"
+_UNKNOWN_ADDRESS_REASON = "主機解析出無法辨識的位址，不允許"
+
+# Cloud metadata endpoints outside link-local space: AWS, Oracle Cloud and
+# Google Compute Engine over IPv6, and Alibaba Cloud. Other private (ULA)
+# addresses stay allowed.
+_METADATA_NETWORKS = (
+    ipaddress.ip_network("fd00:ec2::254/128"),  # AWS
+    ipaddress.ip_network("fd00:c1::a9fe:a9fe/128"),  # Oracle Cloud
+    ipaddress.ip_network("fd20:ce::254/128"),  # Google Compute Engine
+    ipaddress.ip_network("100.100.100.200/32"),  # Alibaba Cloud
+)
+# Address forms whose low 32 bits stand for an embedded IPv4 destination: the
+# resolver (or a translator) will send the packet to that IPv4 address, so it
+# is checked as IPv4. ``::/96`` (IPv4-compatible), ``::ffff:0:0/96``
+# (IPv4-mapped) and ``::ffff:0:0:0/96`` (IPv4-translated, SIIT) all embed in
+# the low 32 bits; the two NAT64 prefixes are the well-known one and the
+# RFC 8215 local range.
+_NAT64_LOCAL_NETWORK = ipaddress.ip_network("64:ff9b:1::/48")
+_EMBEDDED_IPV4_NETWORKS = (
+    ipaddress.ip_network("::/96"),
+    ipaddress.ip_network("::ffff:0:0/96"),
+    ipaddress.ip_network("::ffff:0:0:0/96"),
+    ipaddress.ip_network("64:ff9b::/96"),
+    _NAT64_LOCAL_NETWORK,
+)
+# Private (ULA) space, where clouds place IPv6 metadata endpoints that end in
+# the link-local IPv4 metadata address. Global unicast addresses are not
+# covered: their low bits are ordinary host bits.
+_ULA_NETWORK = ipaddress.ip_network("fc00::/7")
+
+
+class _ResolveError(ValueError):
+    """The host did not resolve; distinct from a destination being refused."""
+
+
+def _embedded_ipv4(ip: ipaddress.IPv6Address) -> list:
+    """The IPv4 destinations an address in _EMBEDDED_IPV4_NETWORKS can stand for.
+
+    Everywhere but the local NAT64 range the IPv4 address is the low 32 bits.
+    Inside ``64:ff9b:1::/48`` an operator may run the translator with any
+    prefix length that fits (RFC 6052: /48, /56, /64 or /96), and each length
+    puts the IPv4 bits somewhere else (bits 64-71 are always skipped). Which
+    one is in use cannot be known from here, so every position is returned
+    and the address is refused if any of them is a refused destination.
+    """
+    packed = ip.packed
+    low = ipaddress.IPv4Address(packed[12:16])
+    if ip not in _NAT64_LOCAL_NETWORK:
+        return [low]
+    return [
+        ipaddress.IPv4Address(packed[6:8] + packed[9:11]),  # /48
+        ipaddress.IPv4Address(packed[7:8] + packed[9:12]),  # /56
+        ipaddress.IPv4Address(packed[9:13]),  # /64
+        low,  # /96
+    ]
+
+
+def _blocked_reason(ip: "ipaddress._BaseAddress") -> Optional[str]:
+    """Why *ip* is refused as a webhook destination, or None if it is allowed."""
+    if isinstance(ip, ipaddress.IPv6Address):
+        embedded = ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
+        if ip.ipv4_mapped is not None or any(ip in net for net in _EMBEDDED_IPV4_NETWORKS):
+            for candidate in _embedded_ipv4(ip):
+                reason = _blocked_reason(candidate)
+                if reason is not None:
+                    return reason
+            return None
+        if ip in _ULA_NETWORK and embedded.is_link_local:
+            return _METADATA_REASON
+    if any(ip in net for net in _METADATA_NETWORKS):
+        return _METADATA_REASON
+    if ip.is_link_local:
+        return _LINK_LOCAL_REASON
+    return None
+
+
+def _blocked_address(ip: "ipaddress._BaseAddress") -> bool:
+    return _blocked_reason(ip) is not None
+
+
+def _literal_address(host: str) -> Optional["ipaddress._BaseAddress"]:
+    """The address a numeric host denotes, including legacy IPv4 forms."""
+    try:
+        return ipaddress.ip_address(host.split("%", 1)[0])
+    except ValueError:
+        pass
+    try:
+        # inet_aton accepts what the resolver accepts: 0251.0376.0251.0376,
+        # 0xa9fea9fe, 2852039166, 169.254.43518 …
+        return ipaddress.IPv4Address(socket.inet_aton(host))
+    except (OSError, ValueError):
+        return None
+
+
+def _resolve(host: str, port: int) -> List[tuple]:
+    """``[(family, sockaddr), …]`` for *host*. Tests replace this."""
+    infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM, proto=socket.IPPROTO_TCP)
+    return [(family, sockaddr) for family, _type, _proto, _name, sockaddr in infos]
+
+
+def _parse_target(url: str) -> tuple:
+    """``(scheme, host, port, request_target)``; ValueError when unusable."""
+    try:
+        parts = urllib.parse.urlsplit(url)
+        port = parts.port
+    except ValueError as exc:  # 畸形 IPv6、非數字的 port
+        raise ValueError("URL 格式無效") from exc
+    scheme = (parts.scheme or "").lower()
+    if scheme not in ("http", "https"):
+        raise ValueError("URL 只接受 http 或 https")
+    host = parts.hostname or ""
+    if not host:
+        raise ValueError("URL 缺少主機名稱")
+    port = port or (443 if scheme == "https" else 80)
+    target = (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
+    return scheme, host, port, target
+
+
+def _check_destination(url: str) -> tuple:
+    """Resolve *url*'s host and refuse it if any address is blocked.
+
+    Returns ``(scheme, host, port, request_target, addrs)``; the caller
+    connects only to ``addrs``. Raises ValueError (``_ResolveError`` when the
+    name does not resolve).
+    """
+    scheme, host, port, target = _parse_target(url)
+    literal = _literal_address(host)
+    reason = _blocked_reason(literal) if literal is not None else None
+    if reason:
+        raise ValueError(reason)
+    try:
+        addrs = _resolve(host, port)
+    except (OSError, UnicodeError) as exc:
+        raise _ResolveError(f"無法解析主機：{host}") from exc
+    if not addrs:
+        raise _ResolveError(f"無法解析主機：{host}")
+    for _family, sockaddr in addrs:
+        try:
+            ip = ipaddress.ip_address(str(sockaddr[0]).split("%", 1)[0])
+        except ValueError as exc:
+            raise ValueError(_UNKNOWN_ADDRESS_REASON) from exc
+        reason = _blocked_reason(ip)
+        if reason:
+            raise ValueError(reason)
+    return scheme, host, port, target, addrs
 
 
 def _reject_link_local(url: str) -> None:
-    """Raise ValueError if *url* points at a link-local address.
+    """Save-time check (register / update).
 
-    只看字面的 host：不做 DNS 解析。解析了也擋不住 DNS rebinding（發請求時
-    會再解析一次），徒增一次同步查詢與一個掛住的可能。字面檢查擋的是誤填。
+    A host that does not resolve right now is accepted — the service it
+    names may simply not be up yet — because every delivery checks again.
     """
     try:
-        host = urllib.parse.urlparse(url).hostname or ""
-    except ValueError as exc:  # urlparse 對畸形 IPv6 會丟這個
-        raise ValueError("URL 格式無效") from exc
-    if not host:
-        raise ValueError("URL 缺少主機名稱")
+        _check_destination(url)
+    except _ResolveError as exc:
+        logger.info("webhook URL host does not resolve yet: %s", exc)
+
+
+def _connect_any(addrs: List[tuple], timeout: float) -> socket.socket:
+    """Open a TCP connection to the first reachable checked address."""
+    last_exc: Optional[OSError] = None
+    for family, sockaddr in addrs:
+        sock = socket.socket(family, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        try:
+            sock.connect(sockaddr)
+            return sock
+        except OSError as exc:
+            sock.close()
+            last_exc = exc
+    raise last_exc or OSError("no address to connect to")
+
+
+class _PinnedHTTPConnection(http.client.HTTPConnection):
+    """HTTP connection to pre-checked addresses; Host header stays the name."""
+
+    def __init__(self, host: str, port: int, addrs: List[tuple], timeout: float):
+        super().__init__(host, port, timeout=timeout)
+        self._pinned = addrs
+
+    def connect(self) -> None:
+        self.sock = _connect_any(self._pinned, self.timeout)
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """Like _PinnedHTTPConnection; TLS still verifies the URL's host name."""
+
+    def __init__(self, host: str, port: int, addrs: List[tuple], timeout: float):
+        super().__init__(host, port, timeout=timeout, context=ssl.create_default_context())
+        self._pinned = addrs
+
+    def connect(self) -> None:
+        sock = _connect_any(self._pinned, self.timeout)
+        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+
+
+def _post(url: str, body: bytes, headers: Dict[str, str], timeout: float) -> int:
+    """POST once to a checked destination; return the HTTP status.
+
+    Redirects are not followed: a 3xx is returned like any other status.
+    The outcome is the status line; the response body is never read, so a
+    slow or broken body cannot turn a delivered 2xx into a failure (and a
+    duplicate delivery on retry). The connection is not reused, so closing
+    it without draining is fine.
+    """
+    scheme, host, port, target, addrs = _check_destination(url)
+    conn_cls = _PinnedHTTPSConnection if scheme == "https" else _PinnedHTTPConnection
+    conn = conn_cls(host, port, addrs, timeout)
     try:
-        ip = ipaddress.ip_address(host.strip("[]"))
-    except ValueError:
-        return  # 是網域名稱，不是字面 IP —— 放行
-    if ip.is_link_local:
-        raise ValueError(_BLOCKED_URL_REASON)
+        conn.request("POST", target, body=body, headers=headers)
+        resp = conn.getresponse()
+        status = resp.status
+        try:
+            resp.close()
+        except OSError:
+            pass
+        return status
+    finally:
+        conn.close()
 
 
 class WebhookService:
@@ -337,8 +560,49 @@ class WebhookService:
 
     # ── Persistence ──────────────────────────────────────────────────────
 
-    def _load(self) -> None:
-        """Load webhooks from JSON file (called once at init, under no lock).
+    def reload(self) -> None:
+        """Re-read the hooks from disk.
+
+        Raises when the file exists but cannot be read as a list, so the
+        caller does not take an empty in-memory list for success; the
+        current list then stays in memory.
+        """
+        with self._lock:
+            previous = self._hooks
+            self._hooks = {}
+            try:
+                self._load(strict=True)
+            except Exception:
+                self._hooks = previous
+                raise
+
+    def restore_hooks(self, build: Callable[[List[Dict[str, Any]]], List[Any]]) -> List[str]:
+        """Replace the whole list (backup restore) under the service lock.
+
+        ``build(current)`` gets the live hooks as dicts and returns the new
+        list. Reading, merging, writing the file and swapping the in-memory
+        list all happen under one lock, so a delivery finishing meanwhile
+        cannot write the old list back over the restored one. ``build`` must
+        not call back into this service (the lock is not reentrant).
+
+        Every entry must load as a WebhookConfig (ValueError/TypeError
+        otherwise); write errors (OSError) reach the caller and leave the
+        in-memory list unchanged. Returns the restored hook ids.
+        """
+        with self._lock:
+            current = [h.to_dict() for h in self._hooks.values()]
+            hooks: Dict[str, WebhookConfig] = {}
+            for entry in build(current):
+                hook = _load_entry(entry)
+                hooks[hook.id] = hook
+            self._write_hooks(hooks)
+            self._hooks = hooks
+            return list(hooks)
+
+    def _load(self, strict: bool = False) -> None:
+        """Load webhooks from JSON file. Called at init (no lock) and from
+        reload() (under the lock); it only touches ``self._hooks``, which the
+        reload() caller has just reset.
 
         Legacy migration: v4.7.0 moved default to server/runtime/webhooks.json.
         Migration only runs when _WEBHOOKS_FILE is the current default
@@ -370,20 +634,43 @@ class WebhookService:
                 return
         try:
             raw = json.loads(_WEBHOOKS_FILE.read_text(encoding="utf-8"))
-            for entry in raw:
-                hook = WebhookConfig.from_dict(entry)
-                self._hooks[hook.id] = hook
-            logger.info("Loaded %d webhook(s) from %s", len(self._hooks), _WEBHOOKS_FILE)
-        except Exception:
+            if not isinstance(raw, list):
+                raise ValueError("webhooks file is not a list")
+        except (OSError, ValueError):
+            if strict:
+                raise
             logger.exception("Failed to load webhooks from %s", _WEBHOOKS_FILE)
+            return
+        # One bad entry costs only that entry, not every hook after it.
+        for index, entry in enumerate(raw):
+            try:
+                hook = _load_entry(entry)
+            except (TypeError, ValueError) as exc:
+                logger.warning("Skipping webhook entry %d in %s: %s", index, _WEBHOOKS_FILE, exc)
+                continue
+            self._hooks[hook.id] = hook
+        logger.info("Loaded %d webhook(s) from %s", len(self._hooks), _WEBHOOKS_FILE)
+
+    def _write_hooks(self, hooks: Dict[str, "WebhookConfig"]) -> None:
+        """Write *hooks* to the store; raises on failure. Caller holds the lock.
+
+        A single ``write_atomic(path, data, mode)`` call. Whether it fsyncs is
+        decided by the caller's thread (see ``_update_status`` and
+        ``atomic_file.fsync_suppressed``), not by an extra argument here, so the
+        call shape stays stable for callers and tests that wrap write_atomic.
+        """
+        data = [h.to_dict() for h in hooks.values()]
+        # Owner-only: the file holds signing secrets and webhook URLs.
+        write_atomic(
+            _WEBHOOKS_FILE,
+            json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8"),
+            0o600,
+        )
 
     def _save(self) -> None:
         """Persist current hooks to JSON. Caller must hold self._lock."""
         try:
-            data = [h.to_dict() for h in self._hooks.values()]
-            tmp = _WEBHOOKS_FILE.with_suffix(".tmp")
-            tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-            tmp.replace(_WEBHOOKS_FILE)
+            self._write_hooks(self._hooks)
         except Exception:
             logger.exception("Failed to save webhooks to %s", _WEBHOOKS_FILE)
 
@@ -537,26 +824,39 @@ class WebhookService:
         attempts = hook.retry_count + 1 if max_attempts is None else max(1, max_attempts)
         started = time.time()
 
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "DanmuDesktop-Webhook/1.0",
+        }
+        if signature:
+            headers["X-Webhook-Signature"] = signature
+
+        tried = 0
         for attempt in range(attempts):
             if attempt > 0:
                 backoff = 2 ** (attempt - 1)  # 1s, 2s, 4s, ...
                 time.sleep(backoff)
 
+            tried = attempt + 1
             try:
-                req = urllib.request.Request(
-                    hook.url,
-                    data=payload_bytes,
-                    method="POST",
-                    headers={
-                        "Content-Type": "application/json",
-                        "User-Agent": "DanmuDesktop-Webhook/1.0",
-                    },
-                )
-                if signature:
-                    req.add_header("X-Webhook-Signature", signature)
-
-                with urllib.request.urlopen(req, timeout=_REQUEST_TIMEOUT) as resp:
-                    status = resp.status
+                # Resolves and checks the destination again on every attempt,
+                # then connects only to the checked addresses.
+                status = _post(hook.url, payload_bytes, headers, _REQUEST_TIMEOUT)
+            except _ResolveError as exc:
+                last_exc, last_status = exc, None
+            except ssl.SSLError as exc:
+                # TLS failures (certificate verification included, which is
+                # also a ValueError) are connection failures: retry as usual.
+                last_exc, last_status = exc, None
+            except ValueError as exc:
+                # Destination refused (or URL unusable): retrying cannot help.
+                last_exc, last_status = exc, None
+                logger.warning("Webhook %s not sent: %s", hook.id, exc)
+                break
+            except Exception as exc:
+                last_exc, last_status = exc, None
+            else:
+                if 200 <= status < 300:
                     self._update_status(hook.id, status, None, ok=True)
                     duration_ms = int((time.time() - started) * 1000)
                     self._log_delivery(
@@ -576,17 +876,17 @@ class WebhookService:
                         attempt + 1,
                     )
                     return  # success
+                last_status = status
+                note = " (redirect not followed)" if 300 <= status < 400 else ""
+                last_exc = RuntimeError(f"HTTP {status}{note}")
 
-            except Exception as exc:
-                last_exc = exc
-                last_status = getattr(exc, "code", None)
-                logger.warning(
-                    "Webhook %s attempt %d/%d failed: %s",
-                    hook.id,
-                    attempt + 1,
-                    attempts,
-                    exc,
-                )
+            logger.warning(
+                "Webhook %s attempt %d/%d failed: %s",
+                hook.id,
+                attempt + 1,
+                attempts,
+                last_exc,
+            )
 
         # all retries exhausted
         error_msg = str(last_exc) if last_exc else "unknown error"
@@ -598,11 +898,11 @@ class WebhookService:
             event=event,
             code=last_status,
             duration_ms=duration_ms,
-            retries=attempts - 1,
+            retries=max(0, tried - 1),
             ok=False,
             dropped=True,
         )
-        logger.error("Webhook %s failed after %d attempts: %s", hook.id, attempts, error_msg)
+        logger.error("Webhook %s failed after %d attempt(s): %s", hook.id, tried, error_msg)
 
     def _update_status(
         self,
@@ -611,7 +911,12 @@ class WebhookService:
         error: Optional[str],
         ok: Optional[bool] = None,
     ) -> None:
-        """Persist last_status / last_error + bump success/fail counters."""
+        """Persist last_status / last_error + bump success/fail counters.
+
+        This runs after every delivery, so it must not fsync on the gevent
+        hub: a lost status counter is harmless. Config changes (register /
+        update / restore) still write durably.
+        """
         with self._lock:
             hook = self._hooks.get(hook_id)
             if hook is None:
@@ -623,7 +928,9 @@ class WebhookService:
                 hook.success_count += 1
             elif ok is False:
                 hook.fail_count += 1
-            self._save()
+            # Losable status write: no fsync on the gevent hub per delivery.
+            with atomic_file.fsync_suppressed():
+                self._save()
 
     # ── Payload formatting ───────────────────────────────────────────────
 

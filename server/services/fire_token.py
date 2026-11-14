@@ -18,16 +18,16 @@ that, only a masked prefix is exposed via ``get_state()``.
 
 from __future__ import annotations
 
-import errno
 import json
 import logging
-import os
 import secrets
 import threading
 import time as _time
 from collections import deque
 from pathlib import Path
-from typing import Any, Deque, Dict, List, Optional
+from typing import Any, Callable, Deque, Dict, List, Optional
+
+from .atomic_file import write_atomic
 
 logger = logging.getLogger(__name__)
 
@@ -94,30 +94,34 @@ def recent_audit(limit: int = 20) -> List[Dict[str, Any]]:
 
 
 def _write_state(state: Dict) -> None:
-    """Atomic write via tmp + replace. Caller holds _lock.
+    """Atomic owner-only replace (see atomic_file). Caller holds _lock."""
+    write_atomic(_STATE_FILE, json.dumps(state, indent=2).encode("utf-8"), 0o600)
 
-    Mirrors ws_auth._write_state hardening: 0o600 mode at open time, pid/tid
-    suffix to avoid multi-worker rename races.
+
+def parse_state(raw: Any) -> Optional[Dict]:
+    """The state the loader makes of *raw* (parsed JSON).
+
+    Returns None for a token written before the current format, which is
+    deliberately not honoured. Raises ValueError when *raw* is not a state
+    this module can load.
     """
-    _STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    tmp = _STATE_FILE.with_suffix(f".tmp.{os.getpid()}.{threading.get_ident()}")
-    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
-    fd = os.open(tmp, flags, 0o600)
+    if not isinstance(raw, dict):
+        raise ValueError("fire token state must be an object")
+    if raw.get("format") != _FORMAT and raw.get("token"):
+        return None
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(state, f, indent=2)
-        try:
-            os.chmod(tmp, 0o600)
-        except OSError as exc:
-            if exc.errno not in (errno.ENOSYS, errno.EPERM):
-                raise
-        os.replace(tmp, _STATE_FILE)
-    except Exception:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
-        raise
+        return {
+            "format": _FORMAT,
+            "enabled": bool(raw.get("enabled", False)),
+            "token": str(raw.get("token", "")),
+            "rotated_at": float(raw.get("rotated_at", 0.0) or 0.0),
+            # v5.2: track creation time for the "建立時間" stat.
+            # Migrate legacy state that lacks created_at by reusing
+            # rotated_at (best guess for first rotation = creation).
+            "created_at": float(raw.get("created_at", raw.get("rotated_at", 0.0)) or 0.0),
+        }
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"fire token state has an invalid field: {exc}") from exc
 
 
 def _load_state() -> Dict:
@@ -129,31 +133,24 @@ def _load_state() -> Dict:
         try:
             with open(_STATE_FILE, "r", encoding="utf-8") as f:
                 raw = json.load(f)
-            if isinstance(raw, dict) and raw.get("format") != _FORMAT and raw.get("token"):
-                # Pre-format-2 token: keep the file untouched (it is only
-                # overwritten when the operator regenerates) but do not honour it.
-                logger.warning(
-                    "fire_token: token in %s predates the /fire admin lane and is "
-                    "ignored — generate a new one on the Extensions page",
-                    _STATE_FILE,
-                )
-                _state = dict(_DEFAULT_STATE)
-                return _state
             if isinstance(raw, dict):
-                _state = {
-                    "format": _FORMAT,
-                    "enabled": bool(raw.get("enabled", False)),
-                    "token": str(raw.get("token", "")),
-                    "rotated_at": float(raw.get("rotated_at", 0.0) or 0.0),
-                    # v5.2: track creation time for the "建立時間" stat.
-                    # Migrate legacy state that lacks created_at by reusing
-                    # rotated_at (best guess for first rotation = creation).
-                    "created_at": float(raw.get("created_at", raw.get("rotated_at", 0.0)) or 0.0),
-                }
+                parsed = parse_state(raw)
+                if parsed is None:
+                    # Pre-format-2 token: keep the file untouched (it is only
+                    # overwritten when the operator regenerates) but do not
+                    # honour it.
+                    logger.warning(
+                        "fire_token: token in %s predates the /fire admin lane and is "
+                        "ignored — generate a new one on the Extensions page",
+                        _STATE_FILE,
+                    )
+                    _state = dict(_DEFAULT_STATE)
+                    return _state
+                _state = parsed
                 return _state
         except FileNotFoundError:
             pass
-        except (json.JSONDecodeError, OSError) as exc:
+        except (ValueError, OSError) as exc:
             logger.warning("fire_token: failed to read state: %s — using defaults", exc)
         _state = dict(_DEFAULT_STATE)
         try:
@@ -278,13 +275,29 @@ def verify(presented: str) -> bool:
 
 
 def reload() -> None:
-    """Forget the cached state so the next read comes from disk.
-
-    Called after a backup restore wrote fire_token.json.
-    """
+    """Forget the cached state so the next read comes from disk."""
     global _state
     with _lock:
         _state = None
+
+
+def restore(build: Callable[[], Any]) -> Dict:
+    """Replace the state with ``build()`` (backup restore), under the lock.
+
+    ``build`` runs while the lock is held, so no rotate / toggle lands
+    between reading the current file and writing the new one. The result
+    must be a state the loader honours (ValueError otherwise); write errors
+    (OSError) reach the caller, and the live state only changes once the
+    file is written.
+    """
+    global _state
+    with _lock:
+        state = parse_state(build())
+        if state is None:
+            raise ValueError("fire token predates the current format")
+        _write_state(state)
+        _state = state
+        return dict(state)
 
 
 def reset_for_tests() -> None:

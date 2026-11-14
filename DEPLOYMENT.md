@@ -303,7 +303,7 @@ to the host by the default `docker-compose.yml`:
 | `./server/runtime/plugins_state.json` | `/app/server/runtime/plugins_state.json` | Enabled/disabled plugins |
 | `./server/runtime/ws_auth.json` | `/app/server/runtime/ws_auth.json` | WS token auth state (chmod 0o600, v4.8.0+) |
 | `./server/runtime/admin_password.hash` | `/app/server/runtime/admin_password.hash` | Changed admin password, bcrypt hash (chmod 0o600) |
-| `./server/user_plugins/` | `/app/server/user_plugins/` | Custom user plugins (drop `.py` files here) |
+| `./server/user_plugins/` | `/app/server/user_plugins/` | Custom user plugins (drop `.py` files here; admin upload needs `ALLOW_PLUGIN_UPLOAD`) |
 | `./server/user_fonts/` | `/app/server/user_fonts/` | Uploaded user fonts |
 | `./server/static/` | `/app/server/static/` | Uploaded stickers / emojis (plus bundled assets) |
 | `./server/logs/` | `/app/server/logs/` | Server logs (optional for backup) |
@@ -343,16 +343,53 @@ The user-generated bind-mounted paths in the table above are the source of
 truth. `server/logs/` is bind-mounted for operational access but can be
 omitted from backups unless you need audit / debug history.
 
+### Backup from the admin UI
+
+Admin → Backup downloads the runtime settings, effects and plugins. By
+default it leaves out the connection credentials: the /fire integration
+token, the display WebSocket token, and each webhook's secret and URL.
+Restoring such a backup keeps the credentials the target server already
+has; webhooks the target server does not have are not restored. Tick
+"Include connection passwords and tokens" when moving a whole site, and
+store that file like a password. The admin password is never included.
+The webhook list is always stored in the backup as `runtime/webhooks.json`
+and restored to the file `WEBHOOKS_PATH` points at on the restoring server.
+
+**Restart after restoring.** The three connection credentials — the /fire
+token, the display WebSocket token and the webhook list — take effect the
+moment they are restored: each service swaps the new state in as it writes
+the file, under its own lock. Every other restored file is read into memory
+when the server starts (settings, filter rules, the display layer, widgets,
+theme overrides, plugin state, rate-limit rules, the uploaded-image index),
+so the running server keeps serving the old copy until you restart it. After
+restoring anything other than the connection credentials, restart the server
+(`docker compose restart server`, or your process manager). The restore result
+says so (`restart_required`, shown in the admin page and recorded in the audit
+log). Until the restart, changing one of those settings in the admin page
+writes the pre-restore copy back over the restored file.
+
 ### Backup (scripts/backup.sh)
 
 ```bash
 ./scripts/backup.sh                        # writes danmu-backup-YYYY-MM-DD.tar.gz
 ./scripts/backup.sh /path/to/output.tgz    # custom filename
+./scripts/backup.sh --include-env          # also include .env (or BACKUP_INCLUDE_ENV=1)
 BACKUP_SKIP_STATIC=1 ./scripts/backup.sh   # skip bundled static assets
 ```
 
-Snapshots: `server/runtime/`, `server/user_plugins/`, `server/user_fonts/`,
-`server/static/`, and `.env`.
+Snapshots: `server/runtime/`, `server/user_plugins/`, `server/user_fonts/`
+and `server/static/`. `.env` is only included with `--include-env` (or
+`BACKUP_INCLUDE_ENV=1`), because it holds `SECRET_KEY` and possibly the
+plain-text admin password; keep a copy of it some other way.
+
+The archive is not encrypted and is written with mode `0600`. Even without
+`.env` it contains the admin password hash and the connection tokens, so
+anyone who has the file effectively has admin access: store it like the
+admin password and do not hand it out as a "settings template".
+
+The output must be a file path, not a directory. The archive is written to
+a temporary file next to it and moved into place when complete; an output
+inside one of the snapshotted directories is left out of the archive.
 
 
 ### Restore
@@ -416,6 +453,8 @@ Before exposing to the internet:
   Reconnect each desktop and verify a test danmu. Fresh installs without
   explicit WS environment settings are secure by default since v4.8.0;
   verify the persisted runtime setting on every existing deployment.
+- [ ] `ALLOW_PLUGIN_UPLOAD` — leave blank (off in production) unless you
+  need to upload plugins from the admin UI on this server
 
 Run `./setup.sh check` to validate your `.env` against these rules.
 
@@ -443,6 +482,7 @@ Key variables:
 | `REDIS_PASSWORD` | `changeme` | Redis auth password |
 | `WS_REQUIRE_TOKEN` | see note | **First-boot seed only since v4.8.0.** After first boot, authoritative state lives in `server/runtime/ws_auth.json` and is controlled from the admin UI. If this env var and `WS_AUTH_TOKEN` are unset or blank on a fresh install, the server seeds secure-on with a generated token. Explicit `false` is respected and never flipped back on. |
 | `WS_AUTH_TOKEN` | — | Same as above — first-boot seed only. The admin UI is authoritative after the runtime file exists. |
+| `ALLOW_PLUGIN_UPLOAD` | off in production, on otherwise | Whether the admin UI may write Python plugins onto the server: plugin upload, and the plugin files inside a backup restore. Plugins run inside the server process with its permissions, so a stolen admin session would otherwise amount to code execution. Blank means the default. Plugins already in `server/user_plugins/` keep loading and can still be enabled, disabled, reloaded and uninstalled. To install one while it is off, copy the `.py` file into `server/user_plugins/` on the host and press Reload on the admin plugins page. |
 
 ---
 

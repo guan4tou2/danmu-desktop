@@ -3,6 +3,8 @@
 Three endpoints:
 
   GET  /admin/backup/export       → streams a .tar.gz of runtime state
+                                    (?include_credentials=1 keeps the
+                                    connection tokens/secrets in it)
   POST /admin/backup/import       → multipart `file`; with ?dry_run=true
                                     returns the would-write manifest;
                                     without dry_run actually applies it.
@@ -31,12 +33,19 @@ def backup_export():
     effects/plugins, all small JSON + tiny .dme YAMLs), this completes
     in well under a second. No streaming or chunked transfer needed.
     """
-    raw = backup_svc.pack()
+    # Connection credentials (Fire/WS tokens, webhook secrets and URLs) only
+    # when the operator asks for them, e.g. to move the whole site.
+    include_credentials = (request.args.get("include_credentials", "") or "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    raw = backup_svc.pack(include_credentials=include_credentials)
     audit_log.append(
         "backup",
         "export",
         actor="admin",
-        meta={"bytes": len(raw)},
+        meta={"bytes": len(raw), "credentials": include_credentials},
     )
     # Filename embeds an ISO-ish timestamp so multiple snapshots from
     # the same day don't collide in the operator's Downloads folder.
@@ -75,7 +84,9 @@ def backup_import():
     dry_run = (request.args.get("dry_run", "") or "").lower() in ("1", "true", "yes")
     result = backup_svc.unpack(raw, dry_run=dry_run)
 
-    if not dry_run and result.get("ok"):
+    # Audited whenever anything was written, including a restore whose files
+    # landed but whose services did not pick them up (restart_required).
+    if not dry_run and (result.get("ok") or result.get("applied")):
         audit_log.append(
             "backup",
             "import",
@@ -84,6 +95,8 @@ def backup_import():
                 "applied": result.get("applied", 0),
                 "skipped": len(result.get("skipped") or []),
                 "manifest_version": (result.get("manifest") or {}).get("version"),
+                "ok": bool(result.get("ok")),
+                "restart_required": bool(result.get("restart_required")),
             },
         )
     return _json_response(result)
@@ -177,34 +190,11 @@ def backup_manifest():
     no actual tarball construction. Cheap (~ms) so the FE can call it
     on page load to show "your snapshot would be N MB / M files".
     """
-    from pathlib import Path
-
-    from server.services.backup import _INCLUDE_DIRS
-
-    included = []
-    total = 0
-    for label, src_dir, prefix, glob in _INCLUDE_DIRS:
-        if not src_dir.exists():
-            continue
-        for fp in sorted(Path(src_dir).rglob(glob)):
-            if not fp.is_file() or fp.name.endswith(".tmp") or fp.name.startswith("."):
-                continue
-            try:
-                sz = fp.stat().st_size
-            except OSError:
-                continue
-            total += sz
-            included.append(
-                {
-                    "label": label,
-                    "path": f"{prefix}/{fp.relative_to(src_dir).as_posix()}",
-                    "size": sz,
-                }
-            )
+    included = backup_svc.inventory()
     return _json_response(
         {
             "file_count": len(included),
-            "total_bytes": total,
+            "total_bytes": sum(f["size"] for f in included),
             "files": included,
         }
     )
