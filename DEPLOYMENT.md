@@ -356,17 +356,20 @@ The webhook list is always stored in the backup as `runtime/webhooks.json`
 and restored to the file `WEBHOOKS_PATH` points at on the restoring server.
 
 **Restart after restoring.** The three connection credentials — the /fire
-token, the display WebSocket token and the webhook list — take effect the
-moment they are restored: each service swaps the new state in as it writes
-the file, under its own lock. Every other restored file is read into memory
-when the server starts (settings, filter rules, the display layer, widgets,
-theme overrides, plugin state, rate-limit rules, the uploaded-image index),
-so the running server keeps serving the old copy until you restart it. After
-restoring anything other than the connection credentials, restart the server
-(`docker compose restart server`, or your process manager). The restore result
-says so (`restart_required`, shown in the admin page and recorded in the audit
-log). Until the restart, changing one of those settings in the admin page
-writes the pre-restore copy back over the restored file.
+token, the display WebSocket token and the webhook list — and the block rules
+take effect the moment they are restored: each service swaps the new state in
+as it writes the file, under its own lock. Every other restored file is read
+into memory when the server starts (settings, the session state, the display
+layer, widgets, theme overrides, plugin state, rate-limit rules, the
+uploaded-image index), so the running server keeps serving the old copy until
+you restart it. After restoring anything other than those four, restart the
+server (`docker compose restart server`, or your process manager). The restore
+result says so (`restart_required`, shown in the admin page and recorded in
+the audit log). Until the restart, changing one of those settings in the admin
+page writes the pre-restore copy back over the restored file. Restart before
+opening a session, too: block rules that last "until the session ends" belong
+to the session recorded in the backup, and a session opened before the restart
+is a different one, so those rules are not loaded after it.
 
 ### Backup (scripts/backup.sh)
 

@@ -1578,6 +1578,20 @@ def test_a_rule_made_session_scoped_again_belongs_to_the_session_live_then():
     assert [r.id for r in _restart()._rules] == [rule_id]  # 第二場進行中重啟，它還在
 
 
+def test_editing_a_session_rule_does_not_change_which_session_it_belongs_to():
+    """閒置時整筆編輯一條還原進來的本場次規則：它仍屬於原本那一場，不會變成沒有歸屬
+    而在下一場重啟時被載入。"""
+    data = json.dumps([_stored("sess", "session", session_id="sess_earlier")]).encode()
+    assert engine_module.restore_rules_file(data) == 1
+    form = {"type": "keyword", "pattern": "改過", "action": "review", "lifetime": "session"}
+    assert filter_engine.update_rule("sess", form) is True
+    assert filter_engine.get_rule("sess")["pattern"] == "改過"
+    assert filter_engine.get_rule("sess")["session_id"] == "sess_earlier"
+
+    session_service.open_session("下一場")
+    assert _restart()._rules == []
+
+
 def test_a_backup_taken_mid_session_keeps_its_session_rules_on_an_idle_server(
     tmp_path, monkeypatch
 ):

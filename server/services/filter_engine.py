@@ -451,6 +451,10 @@ class FilterEngine:
                     "The rule changed while this edit was being checked; try again.", "conflict"
                 )
             self._confirm_session(updated, existing=current)
+            if updated.lifetime == "session":
+                # 編輯不改變一條規則屬於哪一場；原本不是本場次規則的，_commit 會記上
+                # 現在這一場。
+                updated.session_id = current.session_id
             self._reject_duplicate_word(updated, ignore_id=rule_id)
             self._compile_if_regex(updated)
             self._commit([updated if r.id == rule_id else r for r in self._rules])
