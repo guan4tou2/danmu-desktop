@@ -2,27 +2,63 @@
 # backup.sh — snapshot Danmu Fire runtime state into a dated tarball.
 #
 # Covers everything documented in DEPLOYMENT.md § Data persistence:
-#   - server/runtime/  (filter_rules, settings, webhooks, plugins_state)
+#   - server/runtime/  (filter_rules, settings, webhooks, plugins_state,
+#     the admin password hash and the connection tokens)
 #   - server/user_plugins/  (custom user plugin .py files)
 #   - server/user_fonts/  (uploaded user fonts)
 #   - server/static/  (uploaded stickers, emojis, plus bundled static assets)
-#   - .env  (deploy configuration)
+#   - .env  ONLY when asked for (--include-env or BACKUP_INCLUDE_ENV=1):
+#     it holds SECRET_KEY and possibly the plain-text admin password
+#
+# The archive is not encrypted and is written with mode 0600. Even without
+# .env it contains the admin password hash and the integration tokens, so
+# treat it like the admin password.
 #
 # Usage:
-#   ./scripts/backup.sh                 # writes danmu-backup-YYYY-MM-DD.tar.gz
-#   ./scripts/backup.sh /path/to/out    # writes to a specific file
+#   ./scripts/backup.sh                       # writes danmu-backup-YYYY-MM-DD.tar.gz
+#   ./scripts/backup.sh /path/to/out          # writes to a specific file
+#   ./scripts/backup.sh --include-env [OUT]   # also include .env
+#   BACKUP_INCLUDE_ENV=1 ./scripts/backup.sh  # same, via environment
 #   BACKUP_SKIP_STATIC=1 ./scripts/backup.sh  # skip bundled static assets
 #
 # Restore: tar -xzf <file>.tar.gz  then restart the stack with the same
-# --profile (+ any -f override files) used at deploy time.
+# --profile (+ any -f override files) used at deploy time. Without .env in
+# the archive, copy the deployment's .env over separately.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_PATH="$REPO_ROOT/scripts/$(basename "${BASH_SOURCE[0]}")"
 cd "$REPO_ROOT"
 
-OUT="${1:-danmu-backup-$(date +%F).tar.gz}"
+INCLUDE_ENV="${BACKUP_INCLUDE_ENV:-0}"
+OUT=""
+for arg in "$@"; do
+  case "$arg" in
+    --include-env) INCLUDE_ENV=1 ;;
+    -h|--help)
+      sed -n '2,26p' "$SCRIPT_PATH" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    -*)
+      echo "ERROR: unknown option: $arg" >&2
+      exit 2
+      ;;
+    *)
+      if [[ -n "$OUT" ]]; then
+        echo "ERROR: more than one output path given" >&2
+        exit 2
+      fi
+      OUT="$arg"
+      ;;
+  esac
+done
+OUT="${OUT:-danmu-backup-$(date +%F).tar.gz}"
 
+if [[ -d "$OUT" ]]; then
+  echo "ERROR: output path is a directory; give a file name: $OUT" >&2
+  exit 1
+fi
 if [[ -d "$(dirname "$OUT")" ]]; then :; else
   echo "ERROR: output directory does not exist: $(dirname "$OUT")" >&2
   exit 1
@@ -40,8 +76,12 @@ if [[ "${BACKUP_SKIP_STATIC:-0}" != "1" ]]; then
   PATHS+=("server/static")
 fi
 
-if [[ -f ".env" ]]; then
-  PATHS+=(".env")
+if [[ "$INCLUDE_ENV" == "1" ]]; then
+  if [[ -f ".env" ]]; then
+    PATHS+=(".env")
+  else
+    echo "WARN: --include-env given but there is no .env" >&2
+  fi
 fi
 
 # Sanity check: warn on missing paths, skip from archive.
@@ -60,7 +100,43 @@ if [[ ${#EXIST_PATHS[@]} -eq 0 ]]; then
 fi
 
 echo "Writing $OUT"
-tar -czf "$OUT" "${EXIST_PATHS[@]}"
+# Write to a fresh owner-only temp file next to OUT and move it into place
+# only after tar succeeds. An existing OUT (whatever its mode) is never
+# truncated in place, and a failed run leaves neither a partial archive nor
+# the temp file behind.
+TMP_OUT="$(umask 077 && mktemp "$(dirname "$OUT")/.danmu-backup.XXXXXX")"
+trap 'rm -f "$TMP_OUT"' EXIT
+chmod 600 "$TMP_OUT"
+
+# tar reads an --exclude pattern as a glob, so a name with glob characters
+# (d[1].tgz, a*.tgz) would match the wrong files — or not the archive itself.
+# Escape *, ?, [, ] and backslash so the pattern matches the literal name.
+_glob_escape() {
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//\*/\\*}"
+  s="${s//\?/\\?}"
+  s="${s//\[/\\[}"
+  s="${s//\]/\\]}"
+  printf '%s' "$s"
+}
+
+# When OUT sits inside a directory being archived (server/runtime/ say), the
+# archive must not contain itself, an earlier archive of the same name, or
+# the temp file it is being written to.
+EXCLUDES=()
+ROOT_REAL="$(pwd -P)"
+OUT_DIR_REAL="$(cd "$(dirname "$OUT")" && pwd -P)"
+if [[ "$OUT_DIR_REAL/" == "$ROOT_REAL/"* ]]; then
+  OUT_REL="${OUT_DIR_REAL#"$ROOT_REAL"}"
+  OUT_REL="${OUT_REL#/}"
+  OUT_REL="${OUT_REL:+$OUT_REL/}"
+  EXCLUDES+=("--exclude=$(_glob_escape "${OUT_REL}$(basename "$OUT")")")
+  EXCLUDES+=("--exclude=$(_glob_escape "${OUT_REL}$(basename "$TMP_OUT")")")
+fi
+tar -czf "$TMP_OUT" ${EXCLUDES[@]+"${EXCLUDES[@]}"} "${EXIST_PATHS[@]}"
+mv -f "$TMP_OUT" "$OUT"
+trap - EXIT
 
 SIZE=$(du -h "$OUT" | cut -f1)
 TOTAL=$(tar -tzf "$OUT" | wc -l | tr -d ' ')
@@ -79,3 +155,4 @@ done
 if (( TOTAL > 20 )); then
   echo "  ... ($((TOTAL - 20)) more)"
 fi
+echo "NOTE: $OUT is unencrypted and grants admin access to this server; keep it private (mode 0600)."

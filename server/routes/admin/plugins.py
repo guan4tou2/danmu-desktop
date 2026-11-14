@@ -10,6 +10,11 @@ from werkzeug.utils import secure_filename
 
 from ... import config
 from ...services import audit_log
+from ...services.code_policy import (
+    UPLOAD_DISABLED_CODE,
+    UPLOAD_DISABLED_MESSAGE,
+    code_upload_allowed,
+)
 from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login
 
@@ -158,7 +163,14 @@ def upload_plugin():
     Step 2 manifest preview. Without `dry_run`, the file is atomically
     written to `server/user_plugins/<filename>` and `plugin_manager.reload()`
     is invoked so the new plugin hot-loads without a restart.
+
+    Refused with 403 when the deployment turned code upload off
+    (``ALLOW_PLUGIN_UPLOAD``). Dry-run is refused too: there would be nothing
+    the operator could go on to install.
     """
+    if not code_upload_allowed():
+        return _json_response({"error": UPLOAD_DISABLED_MESSAGE, "code": UPLOAD_DISABLED_CODE}, 403)
+
     file = request.files.get("file")
     if file is None or not (file.filename or "").strip():
         return _json_response({"error": "No file provided"}, 400)
@@ -378,7 +390,12 @@ def uninstall_plugin():
 def list_plugins():
     from ...services.plugin_manager import plugin_manager
 
-    return _json_response({"plugins": plugin_manager.list_plugins()})
+    return _json_response(
+        {
+            "plugins": plugin_manager.list_plugins(),
+            "upload_allowed": code_upload_allowed(),
+        }
+    )
 
 
 @admin_bp.route("/plugins/enable", methods=["POST"])

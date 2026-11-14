@@ -311,7 +311,9 @@
         r.status || "",
         r.text || "",
         r.delivery_reason || "",
-      ].map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; });
+      ].map(function (v) {
+        return '"' + window.AdminUtils.csvSafeText(v).replace(/"/g, '""') + '"';
+      });
       lines.push(row.join(","));
     });
     var blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });

@@ -62,6 +62,12 @@
               <span class="sub" id="bk2-pack-detail">${t("backupPackContentList")}</span>
             </span>
           </div>
+          <label class="admin-ui-group-row" for="bk2-pack-include-credentials">
+            <span class="lbl">${t("backupIncludeCredentials")}</span>
+            <span class="val">
+              <input type="checkbox" class="admin-ui-checkbox" id="bk2-pack-include-credentials" />
+            </span>
+          </label>
           <div class="admin-ui-group-row is-tall">
             <span class="lbl">${t("backupSecSettingsSnap")}
               <span class="sub">${t("backupSettingsSnapshotDesc")}</span>
@@ -417,7 +423,10 @@
   function exportFullPack() {
     // Navigate to the streaming endpoint — browser handles the download
     // headers (Content-Disposition: attachment; filename=...).
-    window.location.href = "/admin/backup/export";
+    // 預設不含連線密碼與 token（Fire／WS token、Webhook 密鑰與網址）；
+    // 勾選才帶上，給整站搬家用。
+    const withCreds = document.getElementById("bk2-pack-include-credentials")?.checked;
+    window.location.href = "/admin/backup/export" + (withCreds ? "?include_credentials=1" : "");
     window.showToast?.(ServerI18n.t("backupDownloadingFullSnapshot"), true);
   }
 
@@ -441,6 +450,47 @@
   function exportAssetPack() {
     window.location.href = "/admin/backup/assets/export";
     window.showToast?.(ServerI18n.t("backupDownloadingAssetPack"), true);
+  }
+
+  // 2026-11-14：還原只收匯出會產生的檔案；伺服器對每個略過的檔給 code，
+  // 這裡換成目前語言的理由。沒有 code 的舊回應退回伺服器的英文 reason。
+  const SKIP_REASON_KEYS = {
+    unsafe_path: "backupSkipUnsafePath",
+    not_backup_file: "backupSkipNotBackupFile",
+    admin_password: "backupSkipAdminPassword",
+    read_failed: "backupSkipReadFailed",
+    plugin_upload_disabled: "backupSkipPluginUploadDisabled",
+    webhook_no_credentials: "backupSkipWebhookNoCredentials",
+    webhook_invalid: "backupSkipWebhookInvalid",
+    credential_invalid: "backupSkipCredentialInvalid",
+    webhook_store_mismatch: "backupSkipWebhookStoreMismatch",
+  };
+
+  // 憑證合併的說明：哪些 Webhook 更新了設定、哪些原樣保留、哪個讀不出來的
+  // 憑證檔先另存了一份。
+  const MERGE_NOTE_KEYS = {
+    webhook_updated: "backupMergeWebhookUpdated",
+    webhook_kept: "backupMergeWebhookKept",
+    unreadable_file_kept: "backupMergeUnreadableKept",
+    fire_token_legacy_ignored: "backupMergeFireTokenLegacy",
+    ws_auth_turned_off: "backupMergeWsAuthOff",
+  };
+
+  function mergedLines(merged) {
+    if (!merged || !merged.length) return [];
+    return [""].concat(ServerI18n.t("backupMergedHeader")).concat(
+      merged.map((n) => {
+        const key = n && MERGE_NOTE_KEYS[n.code];
+        return "  " + n.path + " — " + (key ? ServerI18n.t(key) : n.reason);
+      })
+    );
+  }
+
+  function skippedLines(skipped) {
+    return (skipped || []).map((s) => {
+      const key = s && SKIP_REASON_KEYS[s.code];
+      return "  " + s.path + " — " + (key ? ServerI18n.t(key) : s.reason);
+    });
   }
 
   async function dryRunFullPack() {
@@ -481,6 +531,7 @@
         const m = result.manifest || {};
         lines.push("manifest version: " + (m.version || "?"));
         lines.push("generated_at: " + (m.generated_at ? new Date(m.generated_at * 1000).toISOString() : "—"));
+        if (result.credentials === "omitted") lines.push(ServerI18n.t("backupCredentialsKept"));
         lines.push("");
         lines.push("Will write " + (result.members?.length || 0) + " files:");
         (result.members || []).forEach((m) => {
@@ -490,8 +541,9 @@
         if (result.skipped?.length) {
           lines.push("");
           lines.push("Skipped " + result.skipped.length + " entries:");
-          result.skipped.forEach((s) => lines.push("  " + s.path + " — " + s.reason));
+          lines.push(...skippedLines(result.skipped));
         }
+        lines.push(...mergedLines(result.merged));
         out.textContent = lines.join("\n");
       }
       _pendingPackFile = file;
@@ -535,17 +587,24 @@
           lines.push("✓ " + ServerI18n.t("backupApplyCompleteHeader"));
           lines.push("");
           lines.push("Applied " + (result.applied || 0) + " files");
+          // 寫進去了但執行中的伺服器還握著啟動時讀的那份：不重啟的話，之後在後台
+          // 改同一項設定會把還原前的內容寫回去。成功時也要講。
+          if (result.restart_required) lines.push("⚠ " + ServerI18n.t("backupRestartRequired"));
           if (result.skipped?.length) {
-            lines.push("Skipped " + result.skipped.length + " (see above)");
+            lines.push("Skipped " + result.skipped.length + " entries:");
+            lines.push(...skippedLines(result.skipped));
           }
+          lines.push(...mergedLines(result.merged));
         } else {
           lines.push("✗ " + ServerI18n.t("backupApplyFailedHeader"));
+          if (result.restart_required) lines.push(ServerI18n.t("backupRestartRequired"));
           lines.push(JSON.stringify(result.errors || result, null, 2));
         }
         out.textContent = lines.join("\n");
       }
       if (result.ok) {
-        window.showToast?.(ServerI18n.t("backupPackAppliedRestartHint", { n: result.applied }), true);
+        const toastKey = result.restart_required ? "backupPackAppliedRestartHint" : "backupPackApplied";
+        window.showToast?.(ServerI18n.t(toastKey, { n: result.applied }), true);
         _pendingPackFile = null;
         const applyBtn = document.getElementById("bk2-pack-apply");
         if (applyBtn) applyBtn.disabled = true;

@@ -465,7 +465,7 @@
   // render and after any re-render (admin.js rebuilds DOM on route swap).
   document.addEventListener("click", (e) => {
     const btn = e.target.closest("#pluginsUploadBtn");
-    if (btn) {
+    if (btn && !btn.disabled) {
       e.preventDefault();
       open();
     }

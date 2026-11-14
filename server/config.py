@@ -62,6 +62,18 @@ def save_runtime_hash(hashed: str) -> None:
         Path(temporary).unlink(missing_ok=True)
 
 
+def _env_flag(name: str, default: bool) -> bool:
+    """Read a boolean env var; unset or blank means *default*.
+
+    Blank counts as unset because docker-compose passes ``${NAME:-}`` through
+    as an empty string, and an empty value must not silently mean "false".
+    """
+    raw = (os.getenv(name) or "").strip().lower()
+    if not raw:
+        return default
+    return raw in {"1", "true", "yes", "on"}
+
+
 class Config:
     """Central place for server configuration."""
 
@@ -73,7 +85,7 @@ class Config:
     # Priority: runtime hash file > ADMIN_PASSWORD_HASHED env var > plaintext ADMIN_PASSWORD
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
     APP_NAME = "Danmu Fire"
-    APP_VERSION = "5.8.0"
+    APP_VERSION = "5.9.0"
     PORT = int(os.getenv("PORT", "8080"))
     ENV = os.getenv("ENV", "development").lower()
     MAX_CONTENT_LENGTH = 15 * 1024 * 1024  # 15 MB uploads
@@ -214,6 +226,17 @@ class Config:
     SOUNDS_DIR = os.getenv(
         "SOUNDS_DIR",
         str(Path(__file__).parent / "static" / "sounds"),
+    )
+
+    # Whether the admin UI may write Python code onto the server: plugin
+    # upload, and the plugin files inside a backup restore. Plugins run inside
+    # the server process, so on a public deployment a stolen admin session
+    # would otherwise become code execution. Off by default in production,
+    # on in development. Plugins already in user_plugins/ keep loading, and
+    # can still be enabled, disabled, reloaded and uninstalled either way.
+    ALLOW_PLUGIN_UPLOAD = _env_flag(
+        "ALLOW_PLUGIN_UPLOAD",
+        default=ENV not in {"production", "prod"},
     )
 
     # Plugins configuration
