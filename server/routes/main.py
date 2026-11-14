@@ -24,11 +24,7 @@ from ..services.security import (
     verify_password,
 )
 from ..services.settings import get_options
-from ..services.viewer_colors import (
-    DEFAULT_COLOR_PRESETS,
-    allows_color_picker,
-    get_color_palette,
-)
+from ..services.viewer_colors import DEFAULT_COLOR_PRESETS, allows_color_picker, get_color_palette
 from ..utils import json_response as _json_response
 from ..utils import sanitize_log_string
 
