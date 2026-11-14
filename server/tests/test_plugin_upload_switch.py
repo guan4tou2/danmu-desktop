@@ -88,15 +88,19 @@ def _run_config(env_overrides):
 @pytest.mark.parametrize(
     "env, expected",
     [
-        ({"ENV": "production", "ALLOW_PLUGIN_UPLOAD": ""}, "False"),
-        ({"ENV": "prod", "ALLOW_PLUGIN_UPLOAD": ""}, "False"),
-        ({"ENV": "production", "ALLOW_PLUGIN_UPLOAD": "true"}, "True"),
+        ({"ENV": "production", "ALLOW_PLUGIN_UPLOAD": ""}, "True"),
+        ({"ENV": "prod", "ALLOW_PLUGIN_UPLOAD": ""}, "True"),
         ({"ENV": "development", "ALLOW_PLUGIN_UPLOAD": ""}, "True"),
+        ({"ENV": "production", "ALLOW_PLUGIN_UPLOAD": "false"}, "False"),
+        ({"ENV": "production", "ALLOW_PLUGIN_UPLOAD": "0"}, "False"),
         ({"ENV": "development", "ALLOW_PLUGIN_UPLOAD": "false"}, "False"),
+        ({"ENV": "production", "ALLOW_PLUGIN_UPLOAD": "true"}, "True"),
     ],
 )
-def test_switch_defaults_follow_env(env, expected):
-    """Blank means the default, so compose's ``${ALLOW_PLUGIN_UPLOAD:-}`` is off in production."""
+def test_upload_is_on_unless_the_deployment_turns_it_off(env, expected):
+    """On in every environment by default: the admin UI is how an operator
+    without shell access installs a plugin. Blank counts as unset, so
+    compose's ``${ALLOW_PLUGIN_UPLOAD:-}`` keeps the default."""
     assert _run_config(env) == expected
 
 

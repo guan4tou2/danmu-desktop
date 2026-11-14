@@ -85,7 +85,7 @@ class Config:
     # Priority: runtime hash file > ADMIN_PASSWORD_HASHED env var > plaintext ADMIN_PASSWORD
     ADMIN_PASSWORD_HASHED = load_runtime_hash() or os.getenv("ADMIN_PASSWORD_HASHED", "")
     APP_NAME = "Danmu Fire"
-    APP_VERSION = "5.9.0"
+    APP_VERSION = "5.9.1"
     PORT = int(os.getenv("PORT", "8080"))
     ENV = os.getenv("ENV", "development").lower()
     MAX_CONTENT_LENGTH = 15 * 1024 * 1024  # 15 MB uploads
@@ -229,15 +229,15 @@ class Config:
     )
 
     # Whether the admin UI may write Python code onto the server: plugin
-    # upload, and the plugin files inside a backup restore. Plugins run inside
-    # the server process, so on a public deployment a stolen admin session
-    # would otherwise become code execution. Off by default in production,
-    # on in development. Plugins already in user_plugins/ keep loading, and
-    # can still be enabled, disabled, reloaded and uninstalled either way.
-    ALLOW_PLUGIN_UPLOAD = _env_flag(
-        "ALLOW_PLUGIN_UPLOAD",
-        default=ENV not in {"production", "prod"},
-    )
+    # upload, and the plugin files inside a backup restore. On by default:
+    # the admin is the person running the server, uploading a plugin is a
+    # deliberate, logged-in action, and the admin UI is how someone without
+    # shell access installs one. Plugins run inside the server process, so a
+    # deployment where the admin login is shared or handed to someone else can
+    # set ALLOW_PLUGIN_UPLOAD=false to lock this down. Plugins already in
+    # user_plugins/ keep loading, and can still be enabled, disabled,
+    # reloaded and uninstalled either way.
+    ALLOW_PLUGIN_UPLOAD = _env_flag("ALLOW_PLUGIN_UPLOAD", default=True)
 
     # Plugins configuration
     PLUGINS_DIR = os.getenv(
