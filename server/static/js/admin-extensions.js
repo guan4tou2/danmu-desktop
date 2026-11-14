@@ -86,7 +86,7 @@
 
   const SLIDO_ERRORS = [
     "rate_limited", "screen_full", "no_overlay", "rejected", "captcha_required",
-    "token_invalid", "feed_unrecognized", "server_unreachable",
+    "token_invalid", "feed_unrecognized", "tracking_full", "server_unreachable",
   ];
 
   // One line, three looks: waiting (muted), receiving (green), error (red).
@@ -110,6 +110,7 @@
         sent: report.sent || 0,
         held: report.held || 0,
         blocked: report.blocked || 0,
+        skipped: report.late_skipped || 0,
       }),
     };
   }

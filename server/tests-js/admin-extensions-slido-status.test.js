@@ -50,12 +50,14 @@ describe("Slido card", () => {
     expect(line().getAttribute("role")).toBe("status");
   });
 
-  test("view: fresh watching report shows sent / held / blocked; stale or missing shows waiting", () => {
+  test("view: fresh watching report shows sent / held / blocked / skipped; stale or missing shows waiting", () => {
     const view = window.AdminExtensions.slidoStatusView;
-    const report = { state: "watching", error: "", sent: 3, held: 2, blocked: 1 };
+    // skipped = late_skipped: unknown questions seen after the start and
+    // skipped as history (not the baseline backlog, which is `skipped`).
+    const report = { state: "watching", error: "", sent: 3, held: 2, blocked: 1, skipped: 200, late_skipped: 4 };
     expect(view({ report, stale: false })).toEqual({
       tone: "is-live",
-      text: 'extSlidoStatusWatching{"sent":3,"held":2,"blocked":1}',
+      text: 'extSlidoStatusWatching{"sent":3,"held":2,"blocked":1,"skipped":4}',
     });
     expect(view({ report, stale: true }).text).toBe("extSlidoStatusNone");
     expect(view(null).text).toBe("extSlidoStatusNone");
@@ -63,7 +65,7 @@ describe("Slido card", () => {
 
   test("view: each known error has its own message, unknown ones never leak raw text", () => {
     const view = window.AdminExtensions.slidoStatusView;
-    for (const code of ["screen_full", "captcha_required", "token_invalid", "no_overlay"]) {
+    for (const code of ["screen_full", "captcha_required", "token_invalid", "no_overlay", "tracking_full"]) {
       expect(view({ report: { state: "error", error: code }, stale: false }))
         .toEqual({ tone: "is-error", text: "extSlidoErr_" + code });
     }
@@ -87,7 +89,7 @@ describe("Slido card", () => {
     expect(line().classList.contains("is-error")).toBe(true);
 
     await poll({ report: { state: "watching", error: "", sent: 5, held: 0, blocked: 0 }, stale: false });
-    expect(line().textContent).toBe('extSlidoStatusWatching{"sent":5,"held":0,"blocked":0}');
+    expect(line().textContent).toBe('extSlidoStatusWatching{"sent":5,"held":0,"blocked":0,"skipped":0}');
     expect(line().classList.contains("is-live")).toBe(true);
     expect(line().classList.contains("is-error")).toBe(false);
   });
