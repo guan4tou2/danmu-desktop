@@ -105,11 +105,11 @@ def _isolate_fire_token(tmp_path, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _plugin_upload_allowed(monkeypatch):
-    """Tests default to the development behaviour of ALLOW_PLUGIN_UPLOAD.
+    """Tests run with ALLOW_PLUGIN_UPLOAD at its default, on.
 
-    Its default follows ENV, which python-dotenv may pick up from a ``.env``
-    found above the checkout; pin it so results do not depend on the host.
-    Tests that exercise the switch set it themselves.
+    python-dotenv may pick the variable up from a ``.env`` found above the
+    checkout; pin it so results do not depend on the host. Tests that
+    exercise the switch set it themselves.
     """
     monkeypatch.setattr(Config, "ALLOW_PLUGIN_UPLOAD", True)
 
