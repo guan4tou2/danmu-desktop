@@ -673,7 +673,8 @@
           data.layoutConfig || null,
           data.nickname || null,
           data.emojis || null,
-          data.message_id || null
+          data.message_id || null,
+          data.isImage === true
         ).then(function (confirmed) {
           if (confirmed === true && typeof data.message_id === "string" &&
               ws === messageSocket && messageSocket.readyState === WebSocket.OPEN) {
@@ -755,7 +756,7 @@
   }
 
   // ── showdanmu ──────────────────────────────────────────────────────────────
-  function showdanmu(text, opacity, color, size, speed, fontInfo, textStyles, displayArea, effectCss, layout, layoutConfig, nickname, emojis, messageId) {
+  function showdanmu(text, opacity, color, size, speed, fontInfo, textStyles, displayArea, effectCss, layout, layoutConfig, nickname, emojis, messageId, isImage) {
     return new Promise(function (resolve) {
     layout = layout || "scroll";
     layoutConfig = layoutConfig || null;
@@ -775,8 +776,6 @@
 
     markActivity();
 
-    var imgs = /^https?:\/\/([^\s/]+\/)*[^\s/]+\.(gif|png|jpeg|jpg)$/i;
-
     // Wrapper handles translateX animation; inner element handles effect animation
     var wrapper = document.createElement("div");
     wrapper.className = "danmu-wrapper";
@@ -785,18 +784,31 @@
     // 沒有這個屬性，撤回只能退化成整屏 clear。
     if (messageId) wrapper.setAttribute("data-message-id", String(messageId));
 
-    var danmu;
-    if (imgs.test(text)) {
-      danmu = document.createElement("img");
-      danmu.className = "danmu";
+    // 2026-11-14：只有伺服器明確標成圖片（isImage）才建 <img>。以前看到
+    // 「長得像圖片網址」的文字就轉成圖片，等於讓任何觀眾決定大螢幕載入哪張
+    // 外部圖片；能不能放行現在由伺服器依後台設定判斷（貼圖也由伺服器標示）。
+    var imageSrc = null;
+    if (isImage === true) {
       try {
         var parsed = new URL(text);
         if (parsed.protocol === "https:" || parsed.protocol === "http:") {
-          danmu.setAttribute("src", parsed.href);
+          imageSrc = parsed.href;
         }
-      } catch (e) { /* invalid URL, src intentionally left unset */ }
+      } catch (e) { /* invalid URL → 當成文字顯示 */ }
+    }
+
+    var danmu;
+    if (imageSrc) {
+      danmu = document.createElement("img");
+      danmu.className = "danmu";
+      danmu.setAttribute("src", imageSrc);
       danmu.width = size * 2;
       danmu.style.position = "relative";
+      // 與 Electron 顯示端（track-manager.js）同一組上限：極端長寬比的圖片
+      // 不能在捲動期間蓋住整個畫面。
+      danmu.style.maxWidth = "200px";
+      danmu.style.maxHeight = "120px";
+      danmu.style.objectFit = "contain";
     } else {
       danmu = document.createElement("h1");
       danmu.className = "danmu";

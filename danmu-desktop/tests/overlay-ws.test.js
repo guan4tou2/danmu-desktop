@@ -278,6 +278,18 @@ describe("danmu dispatch and admin messages", () => {
     expect(args[0]).toBe("hello");
     expect(args[2]).toBe("#ffffff");
     expect(args[4]).toBeCloseTo(4.6);
+    expect(args[14]).toBe(false);
+  });
+
+  test("passes the server's isImage flag through, and only a literal true", () => {
+    window.showdanmu = jest.fn();
+    const ws = startClient();
+    openAndSettle(ws);
+    ws.simulateMessage({ text: "https://example.com/s.png", isImage: true });
+    ws.simulateMessage({ text: "https://example.com/t.png" });
+    ws.simulateMessage({ text: "https://example.com/u.png", isImage: "true" });
+    const flags = window.showdanmu.mock.calls.map((c) => c[14]);
+    expect(flags).toEqual([true, false, false]);
   });
 
   test.each([0.5, 0.6, 1, 1.1, 1.2, 2.3, 3])("network speed %s keeps browser/desktop animation timing in sync", (speed) => {

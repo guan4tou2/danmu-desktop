@@ -129,19 +129,26 @@ _init() {
     _REDIS=true
   fi
 
-  local _desktop=false _ws_token_required=false ws_token=""
+  # _ws_token_choice: "on" / "off" from the prompt below, or "default" when
+  # the desktop hints are skipped — WS_REQUIRE_TOKEN then stays blank and the
+  # server's first boot turns token auth on with a generated token (copy it
+  # from Admin → Security).
+  local _desktop=false _ws_token_required=false _ws_token_choice=default ws_token=""
   read -rp "Configure Danmu Desktop client connection hints? [Y/n]: " use_desktop
   if [ "${use_desktop,,}" != "n" ]; then
     _desktop=true
     echo ""
     _info "WebSocket uses the same HTTPS/web port at /ws."
     _info "Token auth protects /ws from anyone on the network connecting."
-    _info "Default N assumes LAN-only / firewall-protected. Enable if the web"
-    _info "entrypoint is exposed to the public internet."
-    read -rp "Require a shared token for /ws? [y/N]: " use_token
-    if [ "${use_token,,}" = "y" ]; then
+    _info "Default Y: every display must present the token. Answer N only when"
+    _info "the web port is reachable from a trusted LAN / firewall only."
+    read -rp "Require a shared token for /ws? [Y/n]: " use_token
+    if [ "${use_token,,}" != "n" ]; then
       _ws_token_required=true
+      _ws_token_choice=on
       ws_token=$(python3 -c 'import secrets; print(secrets.token_hex(32))' 2>/dev/null || openssl rand -hex 32)
+    else
+      _ws_token_choice=off
     fi
   fi
 
@@ -389,10 +396,13 @@ _init() {
     _set_env RATE_LIMIT_BACKEND "memory"
   fi
 
-  # Desktop client: optionally enable WS token auth
-  if [ "$_desktop" = "true" ] && [ "$_ws_token_required" = "true" ]; then
+  # Desktop client: WS token auth. Only the first boot reads these; after
+  # that server/runtime/ws_auth.json (Admin → Security) is authoritative.
+  if [ "$_ws_token_choice" = "on" ]; then
     _set_env WS_REQUIRE_TOKEN "true"
     _set_env WS_AUTH_TOKEN    "$ws_token"
+  elif [ "$_ws_token_choice" = "off" ]; then
+    _set_env WS_REQUIRE_TOKEN "false"
   fi
 
   # Advanced overrides — only written if non-empty

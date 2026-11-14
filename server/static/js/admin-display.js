@@ -102,6 +102,15 @@
     paletteNotice: null,
   };
 
+  // 觀眾外部圖片的副檔名勾選框（與 services/viewer_images.py 的
+  // SUPPORTED_EXTENSIONS 同序；jpg 同時代表 .jpg 與 .jpeg）。標籤是格式名稱，不翻譯。
+  const VI_EXTENSIONS = [
+    { value: "png", label: "PNG" },
+    { value: "jpg", label: "JPG" },
+    { value: "gif", label: "GIF" },
+    { value: "webp", label: "WebP" },
+  ];
+
   const PICK_SET_KEYS = ["Color", "FontFamily", "Layout"];
 
   function isAllowlistKey(key) { return PICK_SET_KEYS.indexOf(key) !== -1; }
@@ -233,6 +242,39 @@
                 <button type="button" data-dl-opt="15">15%</button>
                 <button type="button" data-dl-opt="25">25%</button>
                 <button type="button" data-dl-opt="40">40%</button>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2026-11-14：觀眾外部圖片。預設關閉；判斷在伺服器（/fire），
+             這裡只讀寫 /admin/viewer-images。關閉時網站與格式兩列收起來。 -->
+        <div data-dsp-only="audience" id="viewer-images-group">
+          <div class="admin-ui-group-label">${escapeHtml(t("viGroupLabel"))}</div>
+          <div class="admin-ui-group">
+            <label class="admin-ui-group-row" for="viewer-images-enabled">
+              <span class="lbl">${escapeHtml(t("viAllowExternal"))}</span>
+              <span class="val">
+                <input type="checkbox" class="admin-ui-checkbox" id="viewer-images-enabled" data-vi-toggle />
+              </span>
+            </label>
+            <div class="admin-ui-group-row is-tall" data-vi-row style="display:none;flex-wrap:wrap">
+              <label class="lbl" for="viewer-images-hosts">${escapeHtml(t("viHosts"))}</label>
+              <span class="val" style="flex:1 1 240px;min-width:0">
+                <textarea id="viewer-images-hosts" class="admin-ui-input" rows="3" spellcheck="false"
+                  autocapitalize="off" autocomplete="off" style="resize:vertical;min-height:64px"
+                  placeholder="${escapeHtml(t("viHostsPlaceholder"))}"></textarea>
+              </span>
+            </div>
+            <div class="admin-ui-group-row" data-vi-row style="display:none;flex-wrap:wrap" role="group"
+                 aria-labelledby="viewer-images-ext-label">
+              <span class="lbl" id="viewer-images-ext-label">${escapeHtml(t("viExtensions"))}</span>
+              <span class="val" id="viewer-images-extensions" style="flex-wrap:wrap;gap:12px">
+                ${VI_EXTENSIONS.map((ext) => `
+                <label style="display:inline-flex;align-items:center;gap:6px;min-height:44px">
+                  <input type="checkbox" class="admin-ui-checkbox" data-vi-ext="${ext.value}" />
+                  <span>${ext.label}</span>
+                </label>`).join("")}
               </span>
             </div>
           </div>
@@ -1339,6 +1381,147 @@
       const out = page.querySelector(`[data-dl-value="${key}"]`);
       if (out) out.textContent = rg.value + "%";
     });
+
+    // ── 觀眾外部圖片（2026-11-14）── 走 /admin/viewer-images
+    page.addEventListener("change", (e) => {
+      if (e.target.closest("[data-vi-toggle]")) {
+        postViewerImages({ enabled: e.target.checked });
+        return;
+      }
+      if (e.target.closest("[data-vi-ext]")) {
+        const picked = Array.from(page.querySelectorAll("[data-vi-ext]"))
+          .filter((el) => el.checked)
+          .map((el) => el.getAttribute("data-vi-ext"));
+        postViewerImages({ extensions: picked });
+        return;
+      }
+      if (e.target.id === "viewer-images-hosts") {
+        const hosts = e.target.value.split(/[\s,]+/).filter(Boolean);
+        postViewerImages({ hosts });
+      }
+    });
+  }
+
+  // ── 觀眾外部圖片狀態 ──────────────────────────────────────────────────
+  //
+  // PATCH 只送變動的欄位，伺服器逐欄合併（JsonState.update）。為了讓最後存下
+  // 來的一定是使用者最後看到的狀態，寫入一律**單線排隊**：
+  //   · 同一時間只有一個 PATCH 在途（_viInFlight）。在途期間的變更合併進
+  //     _viPending（同一欄位後蓋前，值都是當下從畫面讀的），前一個完成才送，
+  //     所以抵達伺服器的順序就是操作的順序。
+  //   · 畫面顯示的是「伺服器確認的狀態 + 在途 + 排隊中」疊起來的結果
+  //     （_viEffective），任何回應都不會把還沒確認的操作改回去。
+  //   · 任何一個 PATCH 失敗：顯示錯誤、丟掉排在它後面的變更、重抓伺服器狀態
+  //     把畫面對齊。被拒的網站清單留在欄位裡讓使用者改。
+  //   · GET（初次載入、失敗後對齊）只在沒有任何寫入在途或排隊、而且發出後
+  //     使用者沒再動過時才套用。
+  //   · 網站欄位另有基準值：上次由伺服器寫進去、或上次送出時的內容。只有欄位
+  //     仍等於基準值、不在輸入中、也沒有網站變更在途或排隊時才回填伺服器的
+  //     正規化結果——送出 A 後又開始打 B，A 的回應不會把 B 蓋掉。
+  let _viState = null;
+  let _viInFlight = null;
+  let _viPending = {};
+  let _viEdits = 0; // 使用者每做一次變更 +1；GET 用它判斷回應是否已過時
+  let _viHostsBaseline = ""; // 模板裡的欄位一開始是空的
+  const _viHostsText = (state) => ((state && state.hosts) || []).join("\n");
+
+  function _viEffective() {
+    return Object.assign({}, _viState || {}, _viInFlight || {}, _viPending);
+  }
+
+  function renderViewerImages() {
+    const page = document.getElementById(PAGE_ID);
+    if (!page || !_viState) return;
+    const view = _viEffective();
+    const toggle = page.querySelector("[data-vi-toggle]");
+    if (toggle) toggle.checked = !!view.enabled;
+    _viShowRows(page, !!view.enabled);
+    const hosts = page.querySelector("#viewer-images-hosts");
+    const hostsUnconfirmed = (_viInFlight && "hosts" in _viInFlight) || "hosts" in _viPending;
+    if (hosts && !hostsUnconfirmed && document.activeElement !== hosts
+        && hosts.value === _viHostsBaseline) {
+      hosts.value = _viHostsText(_viState);
+      _viHostsBaseline = hosts.value;
+    }
+    const exts = view.extensions || [];
+    page.querySelectorAll("[data-vi-ext]").forEach((el) => {
+      el.checked = exts.indexOf(el.getAttribute("data-vi-ext")) !== -1;
+    });
+  }
+
+  function _viShowRows(page, on) {
+    page.querySelectorAll("[data-vi-row]").forEach((row) => {
+      row.style.display = on ? "" : "none";
+    });
+  }
+
+  async function _viSend(doFetch) {
+    try {
+      const res = await doFetch();
+      let body = null;
+      try { body = await res.json(); } catch (_) { body = null; }
+      return { ok: !!(res.ok && body), body };
+    } catch (e) {
+      console.warn("[admin-display] viewer-images request failed:", e);
+      return { ok: false, body: null };
+    }
+  }
+
+  async function fetchViewerImages() {
+    const editsAtStart = _viEdits;
+    const result = await _viSend(() => fetch("/admin/viewer-images", { credentials: "same-origin" }));
+    const idle = !_viInFlight && !Object.keys(_viPending).length;
+    if (result.ok && idle && editsAtStart === _viEdits) {
+      _viState = result.body;
+      renderViewerImages();
+    }
+  }
+
+  function _viErrorMessage(body) {
+    const code = body && body.code;
+    if (code === "invalid_host") return t("viErrInvalidHost", { host: String(body.detail || "") });
+    if (code === "too_many_hosts") return t("viErrTooManyHosts", { max: body.max });
+    return t("updateFailed");
+  }
+
+  function postViewerImages(patch) {
+    _viEdits += 1;
+    const hostsField = document.getElementById("viewer-images-hosts");
+    if ("hosts" in patch && hostsField) _viHostsBaseline = hostsField.value;
+    if ("enabled" in patch) {
+      const page = document.getElementById(PAGE_ID);
+      if (page) _viShowRows(page, !!patch.enabled); // 樂觀顯示
+    }
+    Object.assign(_viPending, patch);
+    if (!_viInFlight) _viFlush();
+  }
+
+  async function _viFlush() {
+    if (_viInFlight || !Object.keys(_viPending).length) return;
+    const patch = _viPending;
+    _viPending = {};
+    _viInFlight = patch;
+    const result = await _viSend(() => window.csrfFetch("/admin/viewer-images", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    }));
+    _viInFlight = null;
+    if (result.ok) {
+      _viState = result.body;
+      renderViewerImages(); // 排隊中的變更疊在上面，不會被改回去
+      _viFlush();
+      return;
+    }
+    // 失敗：排在後面的變更是疊在這次失敗之上的，一併丟掉，重抓伺服器狀態對齊。
+    const dropped = _viPending;
+    _viPending = {};
+    window.showToast && window.showToast(_viErrorMessage(result.body), false);
+    // 被拒的網站清單留在欄位裡讓使用者改：基準值設成不可能相等，之後的回應
+    // 都不會回填，直到他再送出一次。
+    if ("hosts" in patch || "hosts" in dropped) _viHostsBaseline = null;
+    renderViewerImages(); // 先回到最後一次確認過的狀態，重抓的結果回來再對齊
+    fetchViewerImages();
   }
 
   // ── 顯示層排版狀態 ────────────────────────────────────────────────────
@@ -1532,6 +1715,8 @@
     if (fresh) fresh.open = wasOpen;
     renderRows();
     renderDisplayLayer();
+    _viHostsBaseline = ""; // 模板重畫後網站欄位是空的
+    renderViewerImages();
   }
 
   function syncVisibility() {
@@ -1855,6 +2040,7 @@
     syncVisibility();
     if (!_state.options) await Promise.all([fetchSettings(), fetchFonts()]);
     fetchDisplayLayer();
+    fetchViewerImages();
     renderRows();
   }
 

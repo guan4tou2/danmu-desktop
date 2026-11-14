@@ -130,7 +130,10 @@ def test_fire_color_arrives_without_hash(client, ws_server_port):
 
 
 def test_fire_image_flag_preserved(client, ws_server_port):
-    """isImage=True 應原封不動傳到 overlay"""
+    """isImage=True 應原封不動傳到 overlay（外部圖片預設關閉，這裡先打開）"""
+    from server.services import viewer_images
+
+    viewer_images.set_state({"enabled": True})
     with connect(f"ws://127.0.0.1:{ws_server_port}/ws") as ws:
         assert _wait_overlay_registered()
 

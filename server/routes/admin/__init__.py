@@ -69,6 +69,7 @@ from . import (  # noqa: E402, F401
     stickers,
     themes,
     uploads,
+    viewer_images,
     webhooks,
     widgets,
     ws_auth,

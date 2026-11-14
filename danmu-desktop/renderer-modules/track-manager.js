@@ -127,6 +127,7 @@ function initTrackManager() {
    * @param {object} textStyles - 描邊 / 陰影設定
    * @param {object} displayArea - 顯示區域 { top, height }（百分比）
    * @param {object|null} effectCss - server 解析的特效 {keyframes,animation,styleId} 或 null
+   * @param {boolean} isImage - 伺服器明確標成圖片時才為 true（只有這時才建 <img>）
    */
   window.showdanmu = function (
     string,
@@ -148,7 +149,8 @@ function initTrackManager() {
     layoutConfig = null,
     nickname = null,
     emojis = null,
-    messageId = null
+    messageId = null,
+    isImage = false
   ) {
     console.log("[showdanmu] Received:", {
       string: sanitizeLog(string),
@@ -161,7 +163,10 @@ function initTrackManager() {
     });
 
     const parentElement = document.getElementById("danmubody");
-    const imgs = /^https?:\/\/([^\s/]+\/)*[^\s/]+\.(gif|png|jpeg|jpg|webp)$/i;
+    // 2026-11-14：只有伺服器明確標成圖片（isImage === true）才建 <img>，不再
+    // 用正則猜文字是不是圖片網址——能不能放行由伺服器依後台設定判斷，貼圖也
+    // 由伺服器標示（與 server/static/js/overlay.js 同一契約）。
+    const wantsImage = isImage === true;
     const protocolCheck = /^(http:|https:)/i;
 
     // ── 建立 wrapper（負責 translateX 動畫，與 inner 特效動畫分離，互不衝突）
@@ -172,7 +177,7 @@ function initTrackManager() {
     if (messageId) wrapper.setAttribute("data-message-id", String(messageId));
 
     let danmu;
-    if (imgs.test(string) && protocolCheck.test(string)) {
+    if (wantsImage && protocolCheck.test(string)) {
       danmu = document.createElement("img");
       danmu.className = "danmu";
       danmu.setAttribute("src", string);
@@ -181,7 +186,7 @@ function initTrackManager() {
       danmu.style.maxWidth = "200px";
       danmu.style.maxHeight = "120px";
       danmu.style.objectFit = "contain";
-    } else if (imgs.test(string) && !protocolCheck.test(string)) {
+    } else if (wantsImage && !protocolCheck.test(string)) {
       console.warn(
         "[showdanmu] Invalid protocol for image URL:",
         sanitizeLog(string),

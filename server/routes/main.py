@@ -17,6 +17,7 @@ from ..services.admin_session import start_admin_session
 from ..services.security import (
     hash_password,
     issue_csrf_token,
+    limit_public_body,
     rate_limit,
     require_csrf,
     verify_password,
@@ -94,6 +95,7 @@ def _wants_json() -> bool:
 
 @main_bp.route("/login", methods=["POST"])
 @rate_limit("login", "LOGIN_RATE_LIMIT", "LOGIN_RATE_WINDOW")
+@limit_public_body
 def login():
     password = request.form.get("password", "")
     admin_password = current_app.config["ADMIN_PASSWORD"]

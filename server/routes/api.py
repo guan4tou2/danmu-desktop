@@ -10,6 +10,7 @@ from ..services import fingerprint_tracker
 from ..services import history as history_service
 from ..services import messaging, moderation_bans
 from ..services import themes as theme_svc
+from ..services import viewer_images
 from ..services.blacklist import contains_keyword, matched_keyword
 from ..services.effects import load_all as load_all_effects
 from ..services.effects import render_effects
@@ -23,7 +24,10 @@ from ..services.poll import poll_service
 from ..services.security import (
     enforce_fire_rate_limits,
     enforce_invalid_token_limit,
+    enforce_public_body_limit,
     fire_token_state,
+    limit_public_body,
+    precheck_fire_limits,
     rate_limit,
     require_csrf,
     verify_captcha,
@@ -36,7 +40,6 @@ from ..services.validation import BlacklistCheckSchema, FireRequestSchema, valid
 from ..services.viewer_colors import resolve_viewer_color
 from ..services.webhook import webhook_service
 from ..services.ws_state import get_ws_client_count
-from ..utils import is_valid_image_url
 from ..utils import json_response as _json_response
 from ..utils import sanitize_log_string
 
@@ -247,6 +250,14 @@ def fire():
             503,
         )
 
+    # Before the body is read: refuse IPs the admin denied or whose bucket is
+    # already empty (peek only — the buckets are still charged further down,
+    # at the same points as before), then bound the body size. The token
+    # state comes from a header, so it is known without parsing anything.
+    token_state = fire_token_state()
+    precheck_fire_limits(token_state)
+    enforce_public_body_limit()
+
     try:
         data, error_response = _parse_and_validate(
             FireRequestSchema,
@@ -271,7 +282,6 @@ def fire():
 
         from ..services import fire_sources
 
-        token_state = fire_token_state()
         admin_client = token_state == "valid"
         if token_state == "invalid":
             # A token was sent but is wrong, revoked or disabled. Refuse
@@ -395,8 +405,21 @@ def fire():
             _record_history_if_enabled(data, fingerprint, client_ip, blocked_by=blocked_keyword)
             return _json_response({"error": "Content contains blocked keywords"}, 400)
 
-        if data.get("isImage") and not is_valid_image_url(data["text"]):
+        # 外部圖片政策（services/viewer_images.py）。判斷一律在這裡做：新版
+        # 顯示端只認 isImage，舊版顯示端仍會用正則把圖片網址文字轉成圖片，
+        # 所以不在允許範圍的圖片網址必須在這裡擋下，不能原樣轉送。貼圖是
+        # 之後 _resolve_danmu_style 才由伺服器自己產生的，不經過這一段。
+        image_verdict, _image_reason = viewer_images.classify(
+            data.get("text", ""), bool(data.get("isImage"))
+        )
+        if image_verdict == viewer_images.INVALID:
             return _json_response({"error": "Invalid image url"}, 400)
+        if image_verdict == viewer_images.BLOCKED:
+            return _json_response(
+                {"error": "This image link isn't allowed", "reason": "image_not_allowed"},
+                400,
+            )
+        data["isImage"] = image_verdict == viewer_images.IMAGE
 
         # Plugin system: on_fire hook
         plugin_ctx = dict(data)
@@ -588,6 +611,7 @@ def poll_public_status():
 
 @api_bp.route("/poll/vote", methods=["POST"])
 @rate_limit("fire", "FIRE_RATE_LIMIT", "FIRE_RATE_WINDOW")
+@limit_public_body
 def poll_vote():
     """一次按下即投票 —— 觀眾點選項就送出，不再要求他再按一次「發送」。
 
@@ -744,6 +768,7 @@ def generate_avatar(letter, color):
 
 @api_bp.route("/check_blacklist", methods=["POST"])
 @rate_limit("api", "API_RATE_LIMIT", "API_RATE_WINDOW")
+@limit_public_body
 def check_blacklist():
     """檢查內容是否在黑名單中"""
     try:
@@ -765,6 +790,9 @@ def check_blacklist():
             {"blocked": False, "message": "Content is allowed"},
             200,
         )
+    except HTTPException:
+        # 413 from the body cap must reach the client as-is, not as a 500.
+        raise
     except Exception as exc:
         return _log_and_internal_error("Error checking blacklist", exc, as_json=True)
 
@@ -774,6 +802,7 @@ def check_blacklist():
 # write the status line shown on the Extensions page.
 @api_bp.route("/integrations/slido/status", methods=["POST"])
 @rate_limit("slido_status", "API_RATE_LIMIT", "API_RATE_WINDOW")
+@limit_public_body
 def slido_status_report():
     from ..services import slido_status
 

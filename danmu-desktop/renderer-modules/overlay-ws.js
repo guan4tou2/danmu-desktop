@@ -745,7 +745,8 @@ function initOverlayWs(config) {
                 dataPayload.layoutConfig || null,
                 dataPayload.nickname || null,
                 dataPayload.emojis || null,
-                dataPayload.message_id || null
+                dataPayload.message_id || null,
+                dataPayload.isImage === true
               );
               Promise.resolve(rendered).then((confirmed) => {
                 if (confirmed === true && typeof dataPayload.message_id === "string" &&
@@ -825,6 +826,8 @@ function initOverlayWs(config) {
             layoutConfig: data.layoutConfig || null,
             nickname: data.nickname || null,
             emojis: data.emojis || null,
+            // 伺服器明確標成圖片才為 true；顯示端不再自己猜文字是不是圖片網址
+            isImage: data.isImage === true,
           });
         } catch (e) {
           console.error(

@@ -10,7 +10,9 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from . import ws_queue
+from flask import has_request_context, request
+
+from . import viewer_images, ws_queue
 
 logger = logging.getLogger(__name__)
 
@@ -48,17 +50,26 @@ class ReplayService:
         self._current_id: Optional[str] = None
         self._progress = {"sent": 0, "total": 0}
 
-    def start(self, records: List[Dict[str, Any]], speed_multiplier: float = 1.0) -> str:
+    def start(
+        self,
+        records: List[Dict[str, Any]],
+        speed_multiplier: float = 1.0,
+        base_url: Optional[str] = None,
+    ) -> str:
         """啟動回放
 
         Args:
             records: 歷史記錄陣列（含 timestamp, text, color 等）
             speed_multiplier: 倍速（1.0=原速, 2.0=兩倍速, 5.0=五倍速）
+            base_url: 伺服器現在的網址，用來重組貼圖網址。沒給時取目前請求的
+                host_url（回放在背景 thread 跑，那裡沒有請求可以讀）。
 
         Returns:
             replay_id: 本次回放的唯一 ID
         """
         self.stop()  # 停止上一次回放
+        if base_url is None and has_request_context():
+            base_url = request.host_url
 
         with self._lock:
             self._stop_event.clear()
@@ -69,7 +80,7 @@ class ReplayService:
         replay_id = self._current_id
         self._thread = threading.Thread(
             target=self._run,
-            args=(records, speed_multiplier, replay_id),
+            args=(records, speed_multiplier, replay_id, base_url),
             daemon=True,
         )
         self._thread.start()
@@ -86,6 +97,7 @@ class ReplayService:
         records: List[Dict[str, Any]],
         speed_multiplier: float,
         replay_id: str,
+        base_url: Optional[str] = None,
     ):
         """背景 thread：按時間間隔逐筆發送"""
         sorted_records = sorted(records, key=lambda r: r.get("timestamp", ""))
@@ -95,7 +107,7 @@ class ReplayService:
                 break
             self._pause_event.wait()  # 暫停時阻塞
 
-            msg = self._build_message(record)
+            msg = self._build_message(record, base_url)
             ws_queue.enqueue_message(msg)
 
             with self._lock:
@@ -118,9 +130,9 @@ class ReplayService:
         logger.info("Replay finished: id=%s", replay_id)
 
     @staticmethod
-    def _build_message(record: Dict[str, Any]) -> Dict[str, Any]:
+    def _build_message(record: Dict[str, Any], base_url: Optional[str] = None) -> Dict[str, Any]:
         """將歷史記錄轉換為 overlay WS 訊息格式"""
-        return {
+        msg = {
             "text": record.get("text", ""),
             "color": record.get("color", "FFFFFF"),
             "size": record.get("size", 50),
@@ -133,6 +145,12 @@ class ReplayService:
             "displayArea": dict(_DEFAULT_DISPLAY_AREA),
             "effectCss": None,
         }
+        # 紀錄裡的 isImage 不可信（被擋下的那幾筆存的是觀眾自己帶的旗標，
+        # 紀錄本身也是後台頁面送上來的），一律照現在的設定重新判斷；
+        # 本伺服器的貼圖用現在的網址重組。
+        if base_url is None and has_request_context():
+            base_url = request.host_url
+        return viewer_images.apply_to_resend(msg, base_url)
 
     def pause(self):
         """暫停回放"""

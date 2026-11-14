@@ -2973,5 +2973,13 @@
   "offlineBannerTitle": "오프라인 · 서버에 연결할 수 없음",
   "offlineMetaReconnecting": "재연결 중 · {sec}초 · 보내지 않은 임시글 {n}개",
   "eoffDraftLabel": "보내지 않은 임시글({n}개)",
-  "eoffDraftFoot": "재연결 후에도 자동 전송되지 않습니다. 직접 결정하세요"
+  "eoffDraftFoot": "재연결 후에도 자동 전송되지 않습니다. 직접 결정하세요",
+  "viGroupLabel": "시청자 이미지",
+  "viAllowExternal": "시청자 외부 이미지 허용",
+  "viHosts": "허용할 사이트",
+  "viHostsPlaceholder": "비워 두면 모든 사이트 허용. 한 줄에 하나씩 (예: cdn.example.com)",
+  "viExtensions": "허용할 형식",
+  "viErrInvalidHost": "올바른 사이트가 아닙니다: {host}",
+  "viErrTooManyHosts": "사이트는 최대 {max}개까지 입력할 수 있습니다",
+  "viewerImageNotAllowed": "이 이미지 링크는 보낼 수 없습니다"
 }

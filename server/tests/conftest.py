@@ -299,6 +299,19 @@ def _isolate_display_layer(tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_viewer_images(tmp_path):
+    """觀眾外部圖片設定導向 per-test tmp，避免寫進真正的 runtime/viewer_images.json。"""
+    from server.services import viewer_images
+
+    original = viewer_images._state.path
+    viewer_images._state.reset_for_tests(tmp_path / "viewer_images.json")
+    try:
+        yield
+    finally:
+        viewer_images._state.reset_for_tests(original)
+
+
+@pytest.fixture(autouse=True)
 def _isolate_ratelimit_ip(tmp_path):
     """Redirect ratelimit_ip runtime file to per-test tmp.
 

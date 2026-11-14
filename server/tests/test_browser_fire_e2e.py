@@ -72,6 +72,16 @@ def server_ports():
         Config.LOGIN_RATE_LIMIT = 1000
         Config.LOGIN_RATE_WINDOW = 1
 
+        # 這些測試的顯示端不帶 token 連線，/overlay 也是未登入開啟的。連線驗證
+        # 的實際狀態存在 runtime/ws_auth.json，檔案一旦存在就以它為準——而全套
+        # 測試在收集階段 import app 時，會依當下的環境把那個檔種出來（CI 的
+        # .env 來自 .env.example，留空 = 全新安裝 = 開啟）。所以只改 Config
+        # 屬性或環境變數都不夠：子行程要用自己的狀態檔，並明確關閉。
+        import tempfile, pathlib
+        from server.services import ws_auth as _ws_auth
+        _ws_auth._state.reset_for_tests(pathlib.Path(tempfile.mkdtemp()) / "ws_auth.json")
+        _ws_auth.set_state(require_token=False, token="")
+
         from server.app import create_app
         from server.ws import start_ws_broadcast
         from gevent.pywsgi import WSGIServer

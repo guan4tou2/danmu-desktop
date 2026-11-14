@@ -26,6 +26,11 @@ logger = logging.getLogger(__name__)
 _EFFECTS_DIR = Path(__file__).parent.parent / "effects"
 _SCAN_INTERVAL = 5.0  # 秒
 
+# 一則彈幕最多疊幾個特效。觀眾頁每個特效名稱只送一筆（內建 8 個），
+# 上限是內建數量的兩倍，讓主持人另外上傳幾個也還夠用。/fire 的 schema
+# 與 render_effects 共用這個值，產生的 CSS 大小因此有上限。
+MAX_EFFECTS_PER_DANMU = 16
+
 # 快取
 _cache: Dict[str, Dict[str, Any]] = {}  # name -> parsed effect dict
 _mtime_map: Dict[str, float] = {}  # filepath -> mtime
@@ -369,11 +374,19 @@ def render_effects(effects_input: List[Dict[str, Any]]) -> Optional[Dict[str, An
     keyframes_parts = []
     animation_parts = []
     composition_parts = []
+    # 同名特效只套用第一筆：同一組 keyframes 疊兩次沒有視覺差別，
+    # 只會讓送往每個顯示端的 CSS 變大。
+    seen_names = set()
 
     for item in effects_input:
-        name = str(item.get("name", "")).strip()
-        if not name or name == "none":
+        if not isinstance(item, dict):
             continue
+        name = str(item.get("name", "")).strip()
+        if not name or name == "none" or name in seen_names:
+            continue
+        if len(seen_names) >= MAX_EFFECTS_PER_DANMU:
+            break
+        seen_names.add(name)
 
         effect = get_effect(name)
         if not effect:
@@ -381,6 +394,8 @@ def render_effects(effects_input: List[Dict[str, Any]]) -> Optional[Dict[str, An
             continue
 
         user_params = item.get("params") or {}
+        if not isinstance(user_params, dict):
+            user_params = {}
         resolved = {}
         for pkey, pdef in effect.get("params", {}).items():
             resolved[pkey] = _sanitize_param(pkey, user_params.get(pkey, pdef.get("default")), pdef)
