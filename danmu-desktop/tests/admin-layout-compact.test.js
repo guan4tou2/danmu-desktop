@@ -893,7 +893,10 @@ test("admin router hides empty route containers so leaf pages do not keep vertic
 
   expect(adminSrc).toContain("function syncRouteContainerVisibility()");
   expect(adminSrc).toContain('shell.querySelectorAll(".admin-route-sections").forEach');
-  expect(adminSrc).toContain('container.id === "sec-advanced"');
+  // 2026-11-14：裝 Webhook／定時發送的 <details id="sec-advanced"> 容器退場
+  // （兩塊併進「系統 › 擴充」，跟插件、API 金鑰同在 settings-grid），容器
+  // 可見性不再需要它的特例。
+  expect(adminSrc).not.toContain("sec-advanced");
   // 2026-07-29：配置擁有(hasWanted)只回答「可能用到」，section 是按當前
   // 分頁顯示的 —— 還要求「目前真的有可見內容」，否則 0 高幽靈容器會在
   // flex 欄裡白吃兩個 24px gap（審核頁分頁列下那個 48px 洞的成因）。

@@ -96,22 +96,25 @@ describe("AdminTabs folds", () => {
       .toEqual(["overview", "security", "backup", "integrations", "firetoken", "wcag", "about"]);
   });
 
-  test("the extensions tab puts its sections in config order within each container", () => {
+  test("the extensions tab puts its sections in config order", () => {
     document.body.innerHTML = `
       <div id="shell">
         <div id="settings-grid">
           <details id="sec-api-tokens-overview"></details>
+          <details id="sec-scheduler"></details>
           <div id="sec-other"></div>
           <details id="sec-plugins"></details>
+          <details id="sec-webhooks"></details>
           <div id="sec-extensions-overview"></div>
         </div>
-        <div id="advanced-grid"><details id="sec-scheduler"></details><details id="sec-webhooks"></details></div>
       </div>`;
     const shell = document.getElementById("shell");
     window.AdminTabs.applyTabSectionVisibility("system", "integrations", shell);
     const ids = (sel) => [...shell.querySelectorAll(sel + " > [id]")].map((e) => e.id);
-    expect(ids("#settings-grid")).toEqual(["sec-other", "sec-extensions-overview", "sec-plugins", "sec-api-tokens-overview"]);
-    expect(ids("#advanced-grid")).toEqual(["sec-webhooks", "sec-scheduler"]);
+    // 原本分頁列的順序：Webhook → 插件 → API 金鑰 → 定時發送，目錄在最上面
+    expect(ids("#settings-grid")).toEqual([
+      "sec-other", "sec-extensions-overview", "sec-webhooks", "sec-plugins", "sec-api-tokens-overview", "sec-scheduler",
+    ]);
     // 已經排好就不再搬（router 的 MutationObserver 才不會一直重跑）
     const observer = new MutationObserver(() => {});
     observer.observe(shell, { childList: true, subtree: true });

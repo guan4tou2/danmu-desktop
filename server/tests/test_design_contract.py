@@ -636,13 +636,20 @@ def test_extensions_page_is_four_segments(zh):
         ("admin-scheduler.js", "tabExtScheduler"),
     ):
         src = _strip_comments(_read(f"server/static/js/{module}"))
-        assert f'<summary class="admin-ui-page-title">${{ServerI18n.t("{key}")}}</summary>' in src
+        # data-i18n：切語言時 updateUI 會就地換掉標題
+        assert (
+            f'<summary class="admin-ui-page-title" data-i18n="{key}">'
+            f'${{ServerI18n.t("{key}")}}</summary>'
+        ) in src, module
         assert 'class="admin-dsp2-fold' in src, module
 
-    # 搬進 topbar 插槽的按鈕不能靠 section 上的事件委派——它已經不在 section
-    # 底下了。這條擋的是「按鈕看得到但按了沒反應」。
+    # 原本這裡釘「頁首那顆新增 Webhook 被搬進 topbar 後仍要能按」。2026-11-14
+    # 收進收合區塊後頁首不再被併進 topbar，那顆跟端點卡標頭的那顆變成同一塊裡
+    # 的兩個入口（同一個 handler）——只留端點卡那一顆，自綁的程式一起退場。
     wh = _strip_comments(_read("server/static/js/admin-webhooks.js"))
-    assert ".admin-ui-page-actions [data-wh-action='show-add']" in wh
+    assert wh.count('data-wh-action="show-add"') == 1
+    assert "admin-wh-add-btn" in wh
+    assert ".admin-ui-page-actions [data-wh-action='show-add']" not in wh
 
 
 def test_system_page_is_an_entry_point(zh):

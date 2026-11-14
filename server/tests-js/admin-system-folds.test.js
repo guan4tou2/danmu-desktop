@@ -9,7 +9,7 @@ const FOLDS = [
   ["admin-plugins.js", "sec-plugins", "tabExtPlugins",
     ["#pluginsUploadBtn", "#pluginsReloadBtn", "#pluginsList", "[data-console-filter='ERROR']", "#pluginsConsoleBody"]],
   ["admin-webhooks.js", "sec-webhooks", "tabExtWebhooks",
-    ["#wh-register-form", "#wh-url", "#wh-format", "#wh-secret", ".admin-ui-page-actions [data-wh-action='show-add']", "#wh-log-list", "[data-wh-detail]"]],
+    ["#wh-register-form", "#wh-url", "#wh-format", "#wh-secret", ".admin-wh-add-btn[data-wh-action='show-add']", "#wh-log-list", "[data-wh-detail]"]],
   ["admin-api-tokens.js", "sec-api-tokens-overview", "tabExtApiKeys",
     ["#adminAtSubmitBtn", "#adminAtFormError", "[data-at-table-wrap]", "input[name='adminAtExpiry']"]],
   ["admin-scheduler.js", "sec-scheduler", "tabExtScheduler",
@@ -26,8 +26,7 @@ describe("system › extensions folds", () => {
       constructor(cb) { super(cb); observers.push(this); }
     };
     document.body.innerHTML = `
-      <div id="app-container"><div id="settings-grid"></div>
-        <details id="sec-advanced" open><div id="advanced-grid"></div></details></div>`;
+      <div id="app-container"><div id="settings-grid"></div></div>`;
     window.ServerI18n = { t: (key) => zh[key] || key };
     window.DANMU_CONFIG = { session: { logged_in: true } };
     window.AdminUtils = {
@@ -48,6 +47,11 @@ describe("system › extensions folds", () => {
     window.MutationObserver = RealObserver;
   });
 
+  test("the Webhook block has one add button (the duplicate in its head is gone)", () => {
+    expect(document.querySelectorAll("#sec-webhooks [data-wh-action='show-add']")).toHaveLength(1);
+    expect(document.querySelector("#sec-webhooks .admin-ui-page-head [data-wh-action]")).toBeNull();
+  });
+
   test.each(FOLDS)("%s renders a closed fold titled by its tab label", (_file, id, key, controls) => {
     const fold = document.getElementById(id);
     expect(fold.tagName).toBe("DETAILS");
@@ -55,6 +59,10 @@ describe("system › extensions folds", () => {
     expect(fold.open).toBe(false);
     expect(fold.firstElementChild.tagName).toBe("SUMMARY");
     expect(fold.firstElementChild.textContent.trim()).toBe(zh[key]);
+    // 切語言時 updateUI 靠 data-i18n 換字，不用重新載入
+    expect(fold.firstElementChild.getAttribute("data-i18n")).toBe(key);
+    // 四塊都住在同一個容器（settings-grid），畫面順序才由 TabConfig 一處決定
+    expect(fold.parentElement.id).toBe("settings-grid");
     // 標題只有 summary 一個：頁首裡不再有第二個 h2
     expect(fold.querySelector(".admin-ui-page-head .admin-ui-page-title")).toBeNull();
     for (const sel of controls) {

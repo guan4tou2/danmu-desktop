@@ -545,12 +545,13 @@ SYSTEM_TABS_EXPECTED = [
 ]
 
 # 擴充原本的四個分段（設計稿 08 · X1）→ 2026-11-14 起是「系統 › 擴充」裡
-# 預設收合的區塊。順序是畫面順序：settings-grid 裡的（目錄、插件、API 金鑰）
-# 在 sec-advanced 裡的（Webhook、定時發送）前面。
+# 預設收合的區塊。順序沿用原本分頁列（Webhook → 插件 → API 金鑰 → 定時
+# 發送）；五塊都在 settings-grid，畫面順序就是這個順序（實際 DOM 順序由
+# jest 的 admin-router-folds 釘住）。
 INTEGRATIONS_FOLDS_EXPECTED = {
+    "webhooks": "sec-webhooks",
     "plugins": "sec-plugins",
     "api-tokens": "sec-api-tokens-overview",
-    "webhooks": "sec-webhooks",
     "scheduler": "sec-scheduler",
 }
 
@@ -816,9 +817,9 @@ def test_admin_routes_system_owns_exactly_its_tab_sections(admin_js: str):
         "admin-backup-v2-page",
         "sec-timeline-export",
         "sec-extensions-overview",
+        "sec-webhooks",
         "sec-plugins",
         "sec-api-tokens-overview",
-        "sec-webhooks",
         "sec-scheduler",
         "sec-firetoken-overview",
         "sec-wcag-overview",
@@ -958,9 +959,9 @@ PALETTE_CONTRACT = [
     # (label, must_route_to, must_NOT_route_to)
     # 2026-11-14：webhooks / scheduler 的 section 現在由 system 擁有（擴充分頁
     # 的收合區塊），所以 ⌘K 直接指 #/system/<區塊>；不能再指已經不是路由的
-    # integrations。
-    ("Webhooks", "system/webhooks", "integrations"),
-    ("Scheduler", "system/scheduler", "integrations"),
+    # integrations。標籤改走 tabExt* key，跟收合區塊的標題同一個詞。
+    ("tabExtWebhooks", "system/webhooks", "integrations"),
+    ("tabExtScheduler", "system/scheduler", "integrations"),
     ("Fingerprints", "fingerprints", "system"),
 ]
 
@@ -985,7 +986,7 @@ def test_palette_routes_to_owning_route(
     the palette must follow."""
     # Find the palette entry line for this label
     pattern = re.compile(
-        rf'\{{\s*label:\s*"{re.escape(label)}",\s*route:\s*"([^"]+)"',
+        rf'\{{\s*(?:label|labelKey):\s*"{re.escape(label)}",\s*route:\s*"([^"]+)"',
     )
     m = pattern.search(palette_js)
     assert m, f"palette entry for label={label!r} not found"
