@@ -418,6 +418,24 @@ describe("block rule list", () => {
     expect(document.getElementById("blockRuleInput").value).toBe("changed");
   });
 
+  test("a re-render while a rule is being saved does not let it be reopened with stale values", async () => {
+    const gates = pending("/admin/filters/update");
+    editBtn("kw1").click();
+    pressEnter("changed");
+    await flush();
+    await rerender(); // 重繪後清單先回來了，那筆儲存還在路上
+    editBtn("kw1").click();
+    expect(document.getElementById("blockRuleInput").value).toBe("");
+    expect(document.getElementById("blockRuleCancel").hidden).toBe(true);
+
+    rules = rules.map((r) => (r.id === "kw1" ? { ...r, pattern: "changed" } : r));
+    gates[0].release();
+    await flush();
+    respond = null;
+    editBtn("kw1").click();
+    expect(document.getElementById("blockRuleInput").value).toBe("changed");
+  });
+
   test("a save that finishes after a re-render does not unlock the save that followed it", async () => {
     const gates = pending("/admin/filters/add");
     pressEnter("first");

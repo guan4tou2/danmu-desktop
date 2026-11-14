@@ -4,7 +4,7 @@ from flask import request
 
 from ...services import live_feed_buffer
 from ...services.blacklist import block_keyword
-from ...services.filter_engine import RuleSaveError
+from ...services.filter_engine import RuleSaveError, RuleValidationError
 from ...services.security import rate_limit
 from ...services.validation import BlacklistKeywordSchema, validate_request
 from . import _json_response, admin_bp, require_csrf, require_login
@@ -56,6 +56,8 @@ def live_block():
     if block_type == "keyword":
         try:
             status = block_keyword(value)
+        except RuleValidationError as e:
+            return _json_response({"error": str(e), "code": e.code, "details": e.details}, 400)
         except RuleSaveError as e:
             return _json_response({"error": str(e), "code": e.code}, 500)
         # 回的訊息要反映實際結果：同一個字已經在清單上但被停用時，這裡會重新啟用它
@@ -79,6 +81,8 @@ def live_block():
                     "enabled": True,
                 }
             )
+        except RuleValidationError as e:
+            return _json_response({"error": str(e), "code": e.code, "details": e.details}, 400)
         except RuleSaveError as e:
             return _json_response({"error": str(e), "code": e.code}, 500)
         return _json_response({"message": "Fingerprint rule added"})

@@ -597,7 +597,7 @@ class FilterEngine:
         """
         try:
             parsed = json.loads(data.decode("utf-8"))
-        except (UnicodeDecodeError, ValueError) as exc:
+        except (ValueError, RecursionError) as exc:  # 含 UnicodeDecodeError、巢狀過深
             raise ValueError(f"filter_rules.json is not valid JSON: {exc}") from exc
         if not isinstance(parsed, list):
             raise ValueError("filter_rules.json must be a JSON array")
@@ -1002,8 +1002,8 @@ class FilterEngine:
                         rule.enabled = False
                 rules.append(rule)
             # 沒有進行中的場次時，檔案裡「到本場次結束」的規則是上一場留下來的（場次
-            # 結束時寫檔失敗），或是從別處還原進來的：沒有場次可以結束它們，不載入。
-            # 檔案這時不動，下一次寫檔自然就沒有它們。
+            # 結束時寫檔失敗），或是從別處還原進來的：沒有場次可以結束它們，不載入，
+            # 並在下面把檔案也清掉。
             self._stale_session_rules = 0
             if any(r.lifetime == "session" for r in rules) and not self._session_live_at_load():
                 live = [r for r in rules if r.lifetime != "session"]
@@ -1031,18 +1031,20 @@ class FilterEngine:
                         "to the rules will drop the skipped entries from it"
                     ),
                 )
-            if converted:
-                if backed_up and kept_skipped:
-                    self._save()
-                else:
-                    # 原檔沒備份成功就不覆寫它：這次只在記憶體裡轉換。之後主持人真的
-                    # 改了清單才會寫檔（那時寫的是改過的清單，不寫就等於丟掉那次改動）。
-                    logger.warning(
-                        "Block rules: could not back up %s; converted in memory only, "
-                        "the file was left as it is",
-                        self._path,
-                    )
-        except (ValueError, OSError) as exc:  # 壞 JSON、不是 UTF-8、不是陣列、讀不到
+            # 轉換過、或拿掉了過期的本場次規則：把結果寫回去。後者不寫的話，之後開了
+            # 新場次又在任何寫檔之前重啟，檔案裡那幾條會被當成新場次的規則載入。
+            if (converted or self._stale_session_rules) and backed_up and kept_skipped:
+                self._save()
+            elif converted:
+                # 原檔沒備份成功就不覆寫它：這次只在記憶體裡轉換。之後主持人真的
+                # 改了清單才會寫檔（那時寫的是改過的清單，不寫就等於丟掉那次改動）。
+                logger.warning(
+                    "Block rules: could not back up %s; converted in memory only, "
+                    "the file was left as it is",
+                    self._path,
+                )
+        except (ValueError, OSError, RecursionError) as exc:
+            # 壞 JSON、不是 UTF-8、不是陣列、讀不到、巢狀深到解析器放棄
             # 整個檔讀不懂：從空清單開始，但留一份原檔並講清楚——不留的話，下一次
             # 改規則就會把這個檔蓋掉。
             self._rules = []

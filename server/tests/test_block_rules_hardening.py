@@ -1604,3 +1604,60 @@ def test_a_usable_expiry_is_kept():
     Path(filter_engine.path).write_text(content, encoding="utf-8")
     rule = _fresh_engine(filter_engine.path)._rules[0]
     assert (rule.lifetime, rule.expires_at) == ("timed", future)
+
+
+# ── 外部審查（第三批）與複核的邊角 ────────────────────────────────────────
+
+
+def test_stale_session_rules_are_removed_from_the_file_so_a_later_session_cannot_pick_them_up():
+    """沒有場次時還原 → 開新場次 → 沒有任何寫檔就重啟：那幾條不能變成新場次的規則。"""
+    data = json.dumps([_stored("perm", "permanent"), _stored("sess", "session")]).encode()
+    assert engine_module.restore_rules_file(data) == 1
+    assert "sess" not in Path(filter_engine.path).read_text(encoding="utf-8")
+
+    session_service.open_session("下一場")
+    restarted = _fresh_engine(filter_engine.path)
+    assert [r.id for r in restarted._rules] == ["perm"]
+    assert restarted.check("sess").action == "pass"
+
+
+def test_a_start_with_stale_session_rules_cleans_the_file():
+    path = Path(filter_engine.path)
+    path.write_text(
+        json.dumps([_stored("perm", "permanent"), _stored("sess", "session")]), encoding="utf-8"
+    )
+    engine = _fresh_engine(path)  # 沒有進行中的場次
+    assert [r.id for r in engine._rules] == ["perm"]
+    assert [e["id"] for e in json.loads(path.read_text(encoding="utf-8"))] == ["perm"]
+
+
+def test_a_rules_file_nested_too_deep_to_parse_is_kept_and_the_server_still_starts(caplog):
+    deep = b"[" * 200000 + b"]" * 200000
+    path = Path(filter_engine.path)
+    path.write_bytes(deep)
+    with caplog.at_level("WARNING", logger="server.services.filter_engine"):
+        engine = _fresh_engine(path)
+    assert engine._rules == []
+    assert "starting with no rules" in caplog.text
+    assert len(list(path.parent.glob("filter_rules.json.unreadable-*.bak"))) == 1
+
+    filter_engine.add_rule({"type": "word", "pattern": "現有"})
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match="not valid JSON"):
+        engine_module.restore_rules_file(deep)
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    "url, payload",
+    [
+        ("/admin/blacklist/add", {"keyword": "\ud800"}),
+        ("/admin/live/block", {"type": "keyword", "value": "\ud800"}),
+        ("/admin/live/block", {"type": "fingerprint", "value": "\ud800"}),
+    ],
+    ids=["blacklist_add", "live_block_keyword", "live_block_fingerprint"],
+)
+def test_quick_block_routes_refuse_text_that_cannot_be_saved_with_a_400(client, url, payload):
+    res = _post(client, url, payload)
+    assert res.status_code == 400
+    assert filter_engine.list_rules() == []

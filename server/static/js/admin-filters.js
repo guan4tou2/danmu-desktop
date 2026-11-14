@@ -161,7 +161,9 @@
   let _scope = "all";
   let _editing = null; // 正在編輯的規則（null = 新增）
   let _submitting = false; // 送出中：連按 Enter 不會送第二次
-  let _savingId = null; // 正在送出儲存的那條規則（新增時是 null）
+  // 儲存還在送出的規則。每筆儲存自己加、自己拿掉，整頁重繪不清：重繪後清單可能比
+  // 那筆儲存先回來，這時打開同一條會載入舊值、再存就把剛才的修改蓋回去。
+  const _savingIds = new Set();
   let _formSeq = 0; // 每次開始新增／編輯（含整頁重繪）加一，認出儲存是哪一次表單操作發起的
   let _saveSeq = 0; // 每次送出儲存加一：收尾時只有「目前這一次」能清掉送出中的狀態
   // 有沒有進行中的場次（/admin/filters/list 的 session_live）。沒有時不提供「到本場次
@@ -490,7 +492,7 @@
     // 送出中狀態一起清掉（否則同一筆會被送兩次）。
     const saveSeq = ++_saveSeq;
     _submitting = true;
-    _savingId = editing ? editing.id : null;
+    if (editing) _savingIds.add(editing.id);
     if (button) button.disabled = true;
     try {
       const resp = await window.csrfFetch(url, {
@@ -532,10 +534,8 @@
       console.error("Save block rule error:", err);
       window.showToast(t(editing ? "updateRuleFailed" : "addRuleFailed"), false);
     } finally {
-      if (saveSeq === _saveSeq) {
-        _submitting = false;
-        _savingId = null;
-      }
+      if (editing) _savingIds.delete(editing.id);
+      if (saveSeq === _saveSeq) _submitting = false;
       // 整頁重繪過的話，這顆按鈕已經不是畫面上那顆；畫面上那顆本來就沒被停用。
       if (button) button.disabled = false;
     }
@@ -874,7 +874,7 @@
         const rule = _rules.find((r) => r.id === edit.dataset.ruleId);
         // 這一條的儲存還在送：現在打開會載入送出前的舊值，再存一次就把剛才的修改蓋回去。
         // 等它回來（清單會重新整理）再編輯。
-        if (rule && rule.id !== _savingId) startEdit(rule);
+        if (rule && !_savingIds.has(rule.id)) startEdit(rule);
       }
     });
 
@@ -894,7 +894,6 @@
     _editing = null;
     _scope = "all";
     _submitting = false;
-    _savingId = null;
     _saveSeq += 1; // 還在路上的那次儲存回來時，不再碰這份新表單的送出狀態
     _formSeq += 1;
     settingsGrid.insertAdjacentHTML("beforeend", buildSectionHtml());

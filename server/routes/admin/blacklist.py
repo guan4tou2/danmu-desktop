@@ -3,7 +3,7 @@
 from flask import current_app, request
 
 from ...services.blacklist import block_keyword, list_keywords, remove_keyword
-from ...services.filter_engine import RuleSaveError
+from ...services.filter_engine import RuleSaveError, RuleValidationError
 from ...services.security import rate_limit
 from ...services.validation import BlacklistKeywordSchema, validate_request
 from . import _json_response, admin_bp, require_csrf, require_login, sanitize_log_string
@@ -28,6 +28,8 @@ def add_to_blacklist_route():
     keyword = validated_data["keyword"]
     try:
         status = block_keyword(keyword)
+    except RuleValidationError as e:
+        return _json_response({"error": str(e), "code": e.code, "details": e.details}, 400)
     except RuleSaveError as e:
         return _json_response({"error": str(e), "code": e.code}, 500)
     current_app.logger.info(f"Blacklist keyword {status}: {sanitize_log_string(keyword)}")
