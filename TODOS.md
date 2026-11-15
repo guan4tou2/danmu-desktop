@@ -7,6 +7,9 @@
 > 2026-11-14 盤點：對照程式碼逐項查證後仍然開放的項目。`docs/plans/`、
 > `docs/design-v2-backlog.md`、`.design-sync/specs/README.md` 裡其餘未勾選項
 > 多數已實作，只是文件沒更新（見最後一節）。
+>
+> 2026-11-15：5.12.0 之後各項的現況盤點、建議順序、目標形狀與待拍板的決定，
+> 寫在 [docs/plans/2026-11-15-next-steps.md](docs/plans/2026-11-15-next-steps.md)。
 
 ### 設計方向（2026-11-14 拍板）
 
@@ -161,7 +164,7 @@
   （穩定後 0 次）；但 MutationObserver 監看整個主內容區，計時器或輪詢每改
   一次文字就同步一次（實測每秒約 1 次）。可縮小監看範圍到「新增 section」。
   **Priority:** P4
-- **拆分 `admin.js` 的 router／shell** — 1,989 行，比當初計畫時還長。
+- **拆分 `admin.js` 的 router／shell** — 1,969 行，比當初計畫時還長。
   **Priority:** P3
 - **IA v7 收尾** — S3 版型模板、S4 清路由別名。**Priority:** P3
 - **`admin.bundle.js` 依路由切片**（825 KB、68 個模組整包載入）與
