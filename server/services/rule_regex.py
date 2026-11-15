@@ -53,13 +53,28 @@ PROBE_INPUTS = (
 #
 # 訊號只能在主執行緒收；伺服器的請求都跑在主執行緒的 greenlet 上，所以正式環境有效。
 # 不在主執行緒、或平台沒有 SIGALRM（Windows）時，這次比對就沒有上限，與以前相同。
+#
+# 兩件要小心的事：
+#
+# * 取消計時器撤不回一個「已經發出、還沒送達」的訊號。它若在處理函式被換回系統預設值
+#   之後才到，預設動作是終止行程。所以原本沒有人接 SIGALRM 的話，用完就把我們的
+#   處理函式留著——它只在 _armed 期間動作，晚到的訊號什麼都不會發生。原本有人接
+#   （測試的保險絲）才還回去。
+# * 上一次比對晚到的訊號可能落在下一次比對的期間。處理函式會核對「這一次的期限到了
+#   沒」，還沒到就不中斷，並把計時器重新設到期限，不會把別的比對誤判成逾時。
+#
+# 時間是牆上時間，不是 CPU 時間；_run_limited 不可重入（比對期間不會再進來）。
 
-# 一則訊息的所有 regex／replace 規則合計能用多久（秒）。正常的比對是微秒級；這個數字
-# 是「卡住時整個伺服器最多停多久」。
+# 一則訊息的所有 regex／replace 規則合計能用多久（秒）。正常的比對是微秒級；卡住時，
+# 單一則訊息讓伺服器停住的時間大約就是這個數字，再加上預算用完後每條規則的
+# MATCH_MIN_SLICE_SEC。它限制的是每一則訊息，不是訊息的數量。
 MATCH_BUDGET_SEC = 0.25
 
 # 預算用完之後，剩下的規則每條還是給這麼一點時間，不直接當成逾時。
 MATCH_MIN_SLICE_SEC = 0.01
+
+# 訊號比期限早這麼多以內到，就當作期限到了（計時器與單調時鐘不是同一個鐘）。
+_EARLY_TOLERANCE_SEC = 0.002
 
 # 同時存在的子行程上限。正式站的容器記憶體上限 512 MB、行程數上限 200；不設上限的話，
 # 一個已登入的 session 用腳本同時送幾十個新增請求，就會同時起幾十個 Python。主持人
@@ -149,17 +164,30 @@ class _Expired(Exception):
 # 計時器是不是我們設的、還在等。處理函式只在這段期間丟例外：比對剛好跑完、訊號才到
 # 的時候，不能把例外丟進不相干的程式裡。
 _armed = False
+# 這一次比對的期限（time.monotonic 的時刻）；_armed 期間有效。
+_deadline = 0.0
 # 設定計時器時存下的原狀：(原本的處理函式, 原本計時器剩餘秒數, 間隔, 設定的時刻)。
 _saved: Optional[tuple] = None
 
 
 def _on_alarm(signum: int, frame: Any) -> None:
-    if _armed:
-        raise _Expired()
+    if not _armed:
+        return  # 比對已經結束才到的訊號
+    remaining = _deadline - time.monotonic()
+    if remaining > _EARLY_TOLERANCE_SEC:
+        # 不是這一次比對的計時器（上一次晚到的訊號）。這一次的期限還沒到：不中斷，
+        # 並確保計時器仍會在期限響。
+        signal.setitimer(signal.ITIMER_REAL, remaining)
+        return
+    raise _Expired()
 
 
 def _disarm() -> None:
-    """取消計時器並把訊號的處理函式還回去。可以重複呼叫。"""
+    """取消計時器；原本有人接 SIGALRM 就把處理函式還回去。可以重複呼叫。
+
+    原本沒有人接（系統預設、忽略）時不還原，讓 _on_alarm 留著：見檔頭「兩件要小心
+    的事」。
+    """
     global _armed, _saved
     _armed = False
     saved, _saved = _saved, None
@@ -167,7 +195,8 @@ def _disarm() -> None:
         return
     previous_handler, previous_delay, previous_interval, started = saved
     signal.setitimer(signal.ITIMER_REAL, 0)
-    signal.signal(signal.SIGALRM, previous_handler)
+    if callable(previous_handler):
+        signal.signal(signal.SIGALRM, previous_handler)
     if previous_delay:
         # 原本就有人設了計時器（測試的保險絲）：把它剩下的時間還回去。
         remaining = previous_delay - (time.monotonic() - started)
@@ -177,19 +206,22 @@ def _disarm() -> None:
 def _run_limited(call: Callable[[], Any], seconds: float) -> Any:
     """執行 *call*，超過 *seconds* 就中斷並丟 MatchTimeout。
 
-    不在主執行緒、或平台沒有計時訊號時，直接執行、沒有上限。
+    不在主執行緒、或平台沒有計時訊號時，直接執行、沒有上限。不可重入。
     """
-    global _armed, _saved
+    global _armed, _saved, _deadline
     try:
         previous_handler = signal.signal(signal.SIGALRM, _on_alarm)
     except (ValueError, AttributeError, OSError):
         return call()
     try:
         try:
-            _saved = (previous_handler, 0.0, 0.0, time.monotonic())
-            _armed = True
+            started = time.monotonic()
+            _saved = (previous_handler, 0.0, 0.0, started)
+            _deadline = started + seconds
             previous_delay, previous_interval = signal.setitimer(signal.ITIMER_REAL, seconds)
-            _saved = (previous_handler, previous_delay, previous_interval, _saved[3])
+            _saved = (previous_handler, previous_delay, previous_interval, started)
+            # 計時器設好之後才上膛：這之前到的訊號（上一次比對晚到的）不做任何事。
+            _armed = True
             return call()
         finally:
             _disarm()

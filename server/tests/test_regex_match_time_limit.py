@@ -12,6 +12,7 @@
 """
 
 import json
+import os
 import signal
 import threading
 import time
@@ -23,8 +24,11 @@ from server.services import filter_events, rule_regex
 from server.services.filter_engine import filter_engine
 from server.services.ws_state import update_ws_client_count
 
-SLOW = "(a+)+$"  # 在下面這段文字上要回溯 2^40 步
-SLOW_TEXT = "a" * 40 + "!"
+# 在下面這段文字上要回溯約 2^28 步：沒有上限時要跑十幾秒（開發機實測 n=27 約 10 秒），
+# 但會跑完。刻意不用更長的輸入——上限若失效，測試該在幾十秒內「失敗」，不是永遠卡住；
+# 這個檔不能拿 SIGALRM 當保險絲，那正是被測的東西。
+SLOW = "(a+)+$"
+SLOW_TEXT = "a" * 28 + "!"
 
 # 被中斷的比對最多該花多久（秒）。上限本身是 0.1；留寬是為了負載很高的 CI 機器。
 PROMPT = 3.0
@@ -109,18 +113,101 @@ def test_a_match_that_finishes_gives_the_same_answer_with_or_without_a_limit(
     assert limited == plain
 
 
-def test_the_timer_and_the_signal_handler_are_put_back():
-    before = signal.getsignal(signal.SIGALRM)
+@pytest.fixture()
+def default_alarm():
+    """從「沒有人接 SIGALRM」開始（伺服器剛啟動時的狀態），結束時還原。"""
+    before = signal.signal(signal.SIGALRM, signal.SIG_DFL)
+    yield
+    signal.setitimer(signal.ITIMER_REAL, 0)
+    signal.signal(signal.SIGALRM, before)
+
+
+def test_the_timer_is_cancelled_and_the_alarm_is_never_left_on_its_default(default_alarm):
+    """原本沒有人接 SIGALRM 時，用完不換回系統預設值：取消計時器撤不回已經發出、還沒
+    送達的訊號，它若在預設值下才到，行程會被終止。留著的處理函式在比對以外什麼都不做。"""
     compiled = rule_regex.compile_pattern("ab+c")
     assert rule_regex.run_pattern(compiled, "xxabbbc", timeout=0.1) == (1, "xxabbbc")
-    assert signal.getsignal(signal.SIGALRM) is before
+    assert signal.getsignal(signal.SIGALRM) is rule_regex._on_alarm
     assert signal.getitimer(signal.ITIMER_REAL) == (0.0, 0.0)
 
     with pytest.raises(rule_regex.MatchTimeout):
         rule_regex.run_pattern(rule_regex.compile_pattern(SLOW), SLOW_TEXT, timeout=0.1)
-    assert signal.getsignal(signal.SIGALRM) is before
+    assert signal.getsignal(signal.SIGALRM) is rule_regex._on_alarm
     assert signal.getitimer(signal.ITIMER_REAL) == (0.0, 0.0)
-    time.sleep(0.25)  # 上限早就過了：收尾之後不會再有例外跑出來
+
+
+def test_an_alarm_that_arrives_after_the_match_does_nothing(default_alarm):
+    """比對結束後才到的訊號：不丟例外、不重新設計時器、不終止行程。"""
+    compiled = rule_regex.compile_pattern("ab+c")
+    rule_regex.run_pattern(compiled, "xxabbbc", timeout=0.1)
+    # 先確認不是系統預設值再送訊號：預設動作是終止行程，那會連測試行程一起帶走。
+    assert signal.getsignal(signal.SIGALRM) is not signal.SIG_DFL
+    os.kill(os.getpid(), signal.SIGALRM)
+    time.sleep(0.02)  # 讓 Python 執行處理函式
+    assert signal.getitimer(signal.ITIMER_REAL) == (0.0, 0.0)
+    assert rule_regex._armed is False
+    time.sleep(0.2)  # 超過剛才那次比對的上限：處理函式若還把自己當成上膛，例外會從這裡出來
+
+
+def test_a_stale_alarm_does_not_cut_the_next_match_short(default_alarm):
+    """上一次比對晚到的訊號落在下一次比對期間：這一次的期限還沒到，不能被當成逾時；
+    而這一次自己的上限照樣有效。"""
+
+    def interrupted_early():
+        os.kill(os.getpid(), signal.SIGALRM)  # 期限是 5 秒後，這個訊號不是這一次的
+        time.sleep(0.05)
+        return "finished"
+
+    assert rule_regex._run_limited(interrupted_early, 5.0) == "finished"
+    assert signal.getitimer(signal.ITIMER_REAL) == (0.0, 0.0)
+
+    compiled = rule_regex.compile_pattern(SLOW)
+
+    def stale_then_slow():
+        os.kill(os.getpid(), signal.SIGALRM)
+        return compiled.search(SLOW_TEXT)
+
+    started = time.monotonic()
+    with pytest.raises(rule_regex.MatchTimeout):
+        rule_regex._run_limited(stale_then_slow, 0.2)
+    assert 0.15 < time.monotonic() - started < PROMPT
+
+
+_SURVIVES_SCRIPT = r"""
+import os, signal, sys, time
+from server.services import rule_regex
+
+assert signal.getsignal(signal.SIGALRM) is signal.SIG_DFL
+compiled = rule_regex.compile_pattern("(a+)+$")
+try:
+    rule_regex.run_pattern(compiled, "a" * 28 + "!", timeout=0.05)
+except rule_regex.MatchTimeout:
+    pass
+rule_regex.run_pattern(rule_regex.compile_pattern("ab+c"), "xxabbbc", timeout=0.05)
+for _ in range(3):
+    os.kill(os.getpid(), signal.SIGALRM)  # 預設動作是終止行程
+    time.sleep(0.01)
+print("alive")
+"""
+
+
+def test_a_late_alarm_does_not_kill_the_server_process():
+    """整個行程層級的回歸：全新的行程（沒有人接 SIGALRM）做過有上限的比對之後，再收到
+    SIGALRM 也要活著。修正前這裡會以訊號結束（exit 142）。"""
+    import subprocess
+    import sys
+
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    proc = subprocess.run(
+        [sys.executable, "-c", _SURVIVES_SCRIPT],
+        cwd=str(repo_root),
+        env={**os.environ, "PYTHONPATH": str(repo_root)},
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert proc.returncode == 0, (proc.returncode, proc.stderr[-1500:])
+    assert proc.stdout.strip().splitlines()[-1] == "alive"
 
 
 def test_someone_elses_alarm_keeps_running_after_a_limited_match():
@@ -131,15 +218,15 @@ def test_someone_elses_alarm_keeps_running_after_a_limited_match():
         fired.append(signum)
 
     old = signal.signal(signal.SIGALRM, fuse)
-    signal.setitimer(signal.ITIMER_REAL, 0.6)
+    signal.setitimer(signal.ITIMER_REAL, 1.0)
     try:
         with pytest.raises(rule_regex.MatchTimeout):
             rule_regex.run_pattern(rule_regex.compile_pattern(SLOW), SLOW_TEXT, timeout=0.1)
         assert signal.getsignal(signal.SIGALRM) is fuse
         remaining = signal.getitimer(signal.ITIMER_REAL)[0]
-        assert 0 < remaining <= 0.6
+        assert 0 < remaining <= 1.0
         assert fired == []  # 我們的上限不會觸發別人的處理函式
-        deadline = time.monotonic() + 3
+        deadline = time.monotonic() + 5
         while not fired and time.monotonic() < deadline:
             time.sleep(0.02)
         assert fired == [signal.SIGALRM]  # 別人的計時器照常到期
@@ -294,7 +381,7 @@ out = {"results": [], "ticks": 0}
 def request(i):
     started = time.monotonic()
     try:
-        rule_regex.run_pattern(compiled, "a" * 40 + "!", timeout=0.15)
+        rule_regex.run_pattern(compiled, "a" * 28 + "!", timeout=0.15)
         verdict = "finished"
     except rule_regex.MatchTimeout:
         verdict = "interrupted"
@@ -324,7 +411,7 @@ def test_the_limit_works_inside_greenlets_under_gevent():
     proc = subprocess.run(
         [sys.executable, "-c", _GEVENT_SCRIPT],
         cwd=str(repo_root),
-        env={**__import__("os").environ, "PYTHONPATH": str(repo_root)},
+        env={**os.environ, "PYTHONPATH": str(repo_root)},
         capture_output=True,
         text=True,
         timeout=120,
