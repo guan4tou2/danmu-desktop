@@ -220,8 +220,14 @@ def _run_limited(call: Callable[[], Any], seconds: float) -> Any:
             _deadline = started + seconds
             previous_delay, previous_interval = signal.setitimer(signal.ITIMER_REAL, seconds)
             _saved = (previous_handler, previous_delay, previous_interval, started)
-            # 計時器設好之後才上膛：這之前到的訊號（上一次比對晚到的）不做任何事。
+            # 計時器設好之後才上膛：這之前到的訊號不做任何事——多半是上一次比對晚到的，
+            # 但也可能是這一次自己的（行程剛好在這裡被擱置得比上限還久）。後者會讓
+            # 計時器響過就沒了、接下來的比對沒有上限，所以上膛後看一眼：上膛前處理函式
+            # 不碰計時器，晚到的訊號也取消不了它，這時剩餘時間是 0 只可能是自己的已經
+            # 響過，也就是期限到了。
             _armed = True
+            if signal.getitimer(signal.ITIMER_REAL)[0] == 0.0:
+                raise _Expired()
             return call()
         finally:
             _disarm()

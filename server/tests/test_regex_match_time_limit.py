@@ -173,6 +173,33 @@ def test_a_stale_alarm_does_not_cut_the_next_match_short(default_alarm):
     assert 0.15 < time.monotonic() - started < PROMPT
 
 
+def test_a_timer_that_fires_before_the_match_starts_still_counts(default_alarm, monkeypatch):
+    """行程在「計時器設好」與「開始比對」之間被擱置得比上限還久：計時器已經響過。
+    不能因此讓接下來的比對沒有上限——期限已經到了，直接算逾時。"""
+    real_setitimer = signal.setitimer
+    called = []
+
+    def stalled_setitimer(which, seconds, interval=0.0):
+        previous = real_setitimer(which, seconds, interval)
+        if seconds > 0:
+            until = time.monotonic() + seconds + 0.05
+            while time.monotonic() < until:  # 忙等：訊號會在這段期間送達並被處理
+                pass
+        return previous
+
+    monkeypatch.setattr(rule_regex.signal, "setitimer", stalled_setitimer)
+
+    def match():
+        called.append(1)
+        return rule_regex.compile_pattern(SLOW).search(SLOW_TEXT)
+
+    started = time.monotonic()
+    with pytest.raises(rule_regex.MatchTimeout):
+        rule_regex._run_limited(match, 0.05)
+    assert time.monotonic() - started < PROMPT
+    assert called == []  # 期限已過，根本不該開始比對
+
+
 _SURVIVES_SCRIPT = r"""
 import os, signal, sys, time
 from server.services import rule_regex
