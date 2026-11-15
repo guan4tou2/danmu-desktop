@@ -367,22 +367,20 @@ def test_settings_color_toggle_calls_api(admin_page):
     responses = []
     admin_page.on("response", lambda r: responses.append(r) if "/admin/Set" in r.url else None)
 
+    from server.managers import settings_store
+
+    # 這個開關關著時，色票編輯器會收起來，後面的測試找不到它。結束時把伺服器端的
+    # 設定整份還原——不靠畫面上的開關狀態判斷要不要切回去。
+    original_settings = settings_store.get_options()
     # v5: toggle is a button with data-toggle-key, not a checkbox #toggle-Color.
     color_toggle = admin_page.locator('[data-toggle-key="Color"]')
-    before = color_toggle.get_attribute("aria-pressed")
     try:
-        color_toggle.click()
-        admin_page.wait_for_timeout(500)
-
-        set_resp = [r for r in responses if "/admin/Set" in r.url]
-        assert len(set_resp) >= 1
-        assert set_resp[0].status == 200
+        with admin_page.expect_response(lambda r: "/admin/Set" in r.url) as set_call:
+            color_toggle.click()
+        assert set_call.value.status == 200
+        assert any("/admin/Set" in r.url for r in responses)
     finally:
-        # 切回去：這個開關關著時，色票編輯器會收起來，後面的測試找不到它。
-        toggle = admin_page.locator('[data-toggle-key="Color"]')
-        if toggle.get_attribute("aria-pressed") != before:
-            with admin_page.expect_response(lambda r: "/admin/Set" in r.url):
-                toggle.click()
+        settings_store.restore_options(original_settings)
 
 
 # ─── 黑名單管理 ───────────────────────────────────────────────────────────────
@@ -1335,56 +1333,56 @@ def test_palette_visual_layout_preview_and_reduced_motion(admin_page, width, the
             )
             == 0
         )
+        assert editor.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
+
+        def _assert_touch_target(locator):
+            """44px 觸控目標斷言（含重繪競態重試）。
+
+            admin.js 對設定格線是整段 innerHTML 重繪——「可見斷言」與「量測」
+            之間可能剛好夾一次重繪，舊節點 detach 的瞬間 bounding_box() 回傳
+            None（CI 上 light-782 / light-1440 各閃過一次，dark 參數從未失敗）。
+            locator 每次呼叫都重新解析 DOM，重繪後的節點是可見的，因此短重試
+            即可收斂；若五次都量不到，就是真佈局問題，最後一次的 box 會留在
+            訊息裡供診斷。
+            """
+            last_box = None
+            for _ in range(5):
+                expect(locator).to_be_visible()
+                last_box = locator.bounding_box()
+                if last_box is not None and last_box["height"] >= 44:
+                    return
+                page.wait_for_timeout(200)
+            raise AssertionError(f"touch target missing or too small: {last_box}")
+
+        _assert_touch_target(editor.locator("[data-palette-remove]").first)
+        _assert_touch_target(editor.locator("[data-palette-add]"))
+        editor.locator("[data-palette-hex]").fill("invalid")
+        editor.locator("[data-palette-hex]").press("Enter")
+        expect(editor.locator("[data-palette-hex]")).to_have_attribute("aria-invalid", "true")
+        expect(editor.locator("[data-palette-feedback]")).not_to_be_empty()
+        # A failed save preserves the entered code and leaves the controls usable.
+        page.route(
+            "**/admin/options/Color/allowlist",
+            lambda route: route.fulfill(status=500, json={"error": "test failure"}),
+            times=1,
+        )
+        count = editor.locator("[data-palette-count]").inner_text()
+        editor.locator("[data-palette-hex]").fill("#123456")
+        editor.locator("[data-palette-add]").click()
+        expect(editor.locator("[data-palette-feedback]")).to_have_class(
+            "admin-color-palette-feedback is-error"
+        )
+        expect(editor.locator("[data-palette-add]")).to_be_enabled()
+        expect(editor.locator("[data-palette-hex]")).to_have_value("#123456")
+        expect(editor.locator("[data-palette-count]")).to_have_text(count)
+        if os.environ.get("DANMU_QA_SCREENSHOTS"):
+            target = Path(os.environ["DANMU_QA_SCREENSHOTS"])
+            target.mkdir(parents=True, exist_ok=True)
+            editor.locator("[data-palette-preview]").first.click()
+            editor.locator("[data-palette-hex]").fill("#38BDF8")
+            editor.screenshot(path=str(target / f"palette-{width}-{theme}.png"))
     finally:
         settings_store.restore_options(original_settings)
-    assert editor.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
-
-    def _assert_touch_target(locator):
-        """44px 觸控目標斷言（含重繪競態重試）。
-
-        admin.js 對設定格線是整段 innerHTML 重繪——「可見斷言」與「量測」
-        之間可能剛好夾一次重繪，舊節點 detach 的瞬間 bounding_box() 回傳
-        None（CI 上 light-782 / light-1440 各閃過一次，dark 參數從未失敗）。
-        locator 每次呼叫都重新解析 DOM，重繪後的節點是可見的，因此短重試
-        即可收斂；若五次都量不到，就是真佈局問題，最後一次的 box 會留在
-        訊息裡供診斷。
-        """
-        last_box = None
-        for _ in range(5):
-            expect(locator).to_be_visible()
-            last_box = locator.bounding_box()
-            if last_box is not None and last_box["height"] >= 44:
-                return
-            page.wait_for_timeout(200)
-        raise AssertionError(f"touch target missing or too small: {last_box}")
-
-    _assert_touch_target(editor.locator("[data-palette-remove]").first)
-    _assert_touch_target(editor.locator("[data-palette-add]"))
-    editor.locator("[data-palette-hex]").fill("invalid")
-    editor.locator("[data-palette-hex]").press("Enter")
-    expect(editor.locator("[data-palette-hex]")).to_have_attribute("aria-invalid", "true")
-    expect(editor.locator("[data-palette-feedback]")).not_to_be_empty()
-    # A failed save preserves the entered code and leaves the controls usable.
-    page.route(
-        "**/admin/options/Color/allowlist",
-        lambda route: route.fulfill(status=500, json={"error": "test failure"}),
-        times=1,
-    )
-    count = editor.locator("[data-palette-count]").inner_text()
-    editor.locator("[data-palette-hex]").fill("#123456")
-    editor.locator("[data-palette-add]").click()
-    expect(editor.locator("[data-palette-feedback]")).to_have_class(
-        "admin-color-palette-feedback is-error"
-    )
-    expect(editor.locator("[data-palette-add]")).to_be_enabled()
-    expect(editor.locator("[data-palette-hex]")).to_have_value("#123456")
-    expect(editor.locator("[data-palette-count]")).to_have_text(count)
-    if os.environ.get("DANMU_QA_SCREENSHOTS"):
-        target = Path(os.environ["DANMU_QA_SCREENSHOTS"])
-        target.mkdir(parents=True, exist_ok=True)
-        editor.locator("[data-palette-preview]").first.click()
-        editor.locator("[data-palette-hex]").fill("#38BDF8")
-        editor.screenshot(path=str(target / f"palette-{width}-{theme}.png"))
 
 
 @pytest.mark.parametrize("width", [375, 1280])

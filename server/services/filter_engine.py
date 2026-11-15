@@ -57,6 +57,8 @@ LEGACY_BACKUP_SUFFIX = ".pre-unified.bak"
 UNREADABLE_BACKUP_SUFFIX = ".unreadable-{digest}.bak"
 
 _REGEX_TYPES = ("regex", "replace")
+# 同一條規則的「比對逾時」警告最多多久記一次（秒）：被灌訊息時不要把日誌洗掉。
+_SLOW_LOG_EVERY_SEC = 60.0
 
 # 只改這幾個欄位的更新不重跑 pattern 的安全檢查與重複檢查——停用、刪除、改期限
 # 永遠要做得到，即使那條規則的正規式是 5.8 存下來、現在會被判成危險的寫法。
@@ -340,6 +342,7 @@ class FilterEngine:
         self._lock = threading.RLock()
         self._rules: list[FilterRule] = []
         self._regex_cache: dict[str, re.Pattern] = {}
+        self._slow_logged: dict[str, float] = {}  # 規則 id → 上次記「比對逾時」的時刻
         self._rate_tracker: dict[str, list[float]] = {}
         self._check_count = 0
         if path is None:
@@ -366,10 +369,12 @@ class FilterEngine:
                 self._check_count = 0
                 self.cleanup_rate_tracker()
 
+            # 這一則訊息的正規式比對合計最多跑到這個時刻（rule_regex 的「比對的時間上限」）。
+            deadline = time.monotonic() + rule_regex.MATCH_BUDGET_SEC
             for rule in self._sorted_rules():
                 if not rule.enabled:
                     continue
-                result = self._evaluate(rule, text, fingerprint)
+                result = self._evaluate(rule, text, fingerprint, deadline=deadline)
                 if result is not None:
                     # Record the match for the moderation live log. Only
                     # actual matches (block/allow/replace) are recorded;
@@ -875,6 +880,35 @@ class FilterEngine:
             self._regex_cache[rule.pattern] = compiled
         return compiled
 
+    def _timed_out(self, rule: FilterRule, text: str) -> Optional[FilterResult]:
+        """一條 regex／replace 規則在時間上限內比不完時，這則訊息怎麼處理。
+
+        不知道它到底有沒有命中，所以不放行：封鎖規則照封鎖、送審規則照送審；替換
+        規則沒辦法完成替換，改成封鎖。放行規則當作沒命中，繼續往下比——比不完不能
+        變成一張通行證。
+        """
+        now = time.monotonic()
+        if now - self._slow_logged.get(rule.id, -_SLOW_LOG_EVERY_SEC) >= _SLOW_LOG_EVERY_SEC:
+            self._slow_logged[rule.id] = now
+            logger.warning(
+                "Block rules: rule %s (%r) did not finish matching a message within the time "
+                "limit; the message was not let through by it. Simplify or remove the pattern.",
+                rule.id,
+                rule.pattern,
+            )
+        if rule.type == "replace":
+            action = "block"
+        elif rule.action in ("block", "review"):
+            action = rule.action
+        else:
+            return None
+        return FilterResult(
+            action=action,
+            text=text,
+            reason=f"Regex timed out: '{rule.pattern}'",
+            rule_id=rule.id,
+        )
+
     def _get_compiled(self, pattern: str) -> re.Pattern:
         """Retrieve a compiled regex from cache, compiling if necessary."""
         if pattern not in self._regex_cache:
@@ -885,9 +919,17 @@ class FilterEngine:
         return self._regex_cache[pattern]
 
     def _evaluate(
-        self, rule: FilterRule, text: str, fingerprint: Optional[str]
+        self,
+        rule: FilterRule,
+        text: str,
+        fingerprint: Optional[str],
+        deadline: Optional[float] = None,
     ) -> Optional[FilterResult]:
-        """Evaluate a single rule against text. Returns FilterResult on match, None otherwise."""
+        """Evaluate a single rule against text. Returns FilterResult on match, None otherwise.
+
+        *deadline*（time.monotonic 的時刻）：regex／replace 規則最晚跑到這時候；跑不完
+        的處理見 _timed_out。不給就沒有時間上限。
+        """
 
         if rule.type == "word":
             # 只有「測試」會走到這裡；實際比對是 match_word()（第 2 段）。
@@ -937,17 +979,21 @@ class FilterEngine:
                     )
             return None
 
-        if rule.type == "regex":
+        if rule.type in _REGEX_TYPES:
             compiled = self._get_compiled(rule.pattern)
-            hits, _ = rule_regex.run_pattern(compiled, text)
-            return _regex_result(rule, text, hits, text)
-
-        if rule.type == "replace":
-            compiled = self._get_compiled(rule.pattern)
-            count, new_text = rule_regex.run_pattern(
-                compiled, text, mode="replace", replacement=rule.replacement
-            )
-            return _regex_result(rule, text, count, new_text)
+            timeout = None
+            if deadline is not None:
+                timeout = max(deadline - time.monotonic(), rule_regex.MATCH_MIN_SLICE_SEC)
+            try:
+                if rule.type == "regex":
+                    hits, _ = rule_regex.run_pattern(compiled, text, timeout=timeout)
+                    return _regex_result(rule, text, hits, text)
+                count, new_text = rule_regex.run_pattern(
+                    compiled, text, mode="replace", replacement=rule.replacement, timeout=timeout
+                )
+                return _regex_result(rule, text, count, new_text)
+            except rule_regex.MatchTimeout:
+                return self._timed_out(rule, text)
 
         if rule.type == "rate_limit":
             if fingerprint is None:
