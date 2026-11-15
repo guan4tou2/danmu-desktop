@@ -3,7 +3,8 @@
 兩條路：
 
 * ``compile_pattern`` ＋ ``run_pattern``：在本行程裡編譯、比對。給 /fire 的即時比對
-  用（filter_engine 的 regex／replace 規則）。之後要加執行逾時就改這兩個函式。
+  用（filter_engine 的 regex／replace 規則）。``run_pattern`` 可以帶時間上限：超過就
+  中斷並丟 MatchTimeout（見下面「比對的時間上限」）。
 * ``vet_pattern``：在**獨立的子行程**裡編譯並實際執行，有硬性逾時。新增規則、修改
   pattern、規則測試都走這裡——這幾個動作要拿使用者寫的正規式去跑，而一條會指數回溯的
   正規式在本行程裡跑，會把整個伺服器停住：伺服器是單一 gevent 行程，C 層的正規式
@@ -15,10 +16,12 @@
 
 import json
 import re
+import signal
 import subprocess
 import sys
 import threading
-from typing import Optional
+import time
+from typing import Any, Callable, Optional
 
 FLAGS = re.IGNORECASE
 
@@ -37,6 +40,26 @@ PROBE_INPUTS = (
     ("search", "a a " * 10 + "!"),  # 空白與文字混合
     ("search", "1" * 40 + "x"),  # 數字
 )
+
+# ── 比對的時間上限 ──────────────────────────────────────────────────────────
+#
+# 通過新增檢查的正規式，仍可能在某一則特定的訊息上跑很久；5.8 存下來的規則更是從來沒
+# 被檢查過。伺服器是單一行程，比對期間誰都不能動，所以要有上限。
+#
+# 做法是計時訊號：比對前設一個 ITIMER_REAL，時間到了核心送 SIGALRM，CPython 的正規式
+# 迴圈每跑幾千步會檢查一次訊號，這時處理函式丟出例外，比對就從中間停下來。引擎仍是
+# 標準函式庫的 re——換成別的正規式引擎會改變 \w、\d、\s 這些類別涵蓋的字元，等於
+# 悄悄改掉既有規則的意思。
+#
+# 訊號只能在主執行緒收；伺服器的請求都跑在主執行緒的 greenlet 上，所以正式環境有效。
+# 不在主執行緒、或平台沒有 SIGALRM（Windows）時，這次比對就沒有上限，與以前相同。
+
+# 一則訊息的所有 regex／replace 規則合計能用多久（秒）。正常的比對是微秒級；這個數字
+# 是「卡住時整個伺服器最多停多久」。
+MATCH_BUDGET_SEC = 0.25
+
+# 預算用完之後，剩下的規則每條還是給這麼一點時間，不直接當成逾時。
+MATCH_MIN_SLICE_SEC = 0.01
 
 # 同時存在的子行程上限。正式站的容器記憶體上限 512 MB、行程數上限 200；不設上限的話，
 # 一個已登入的 session 用腳本同時送幾十個新增請求，就會同時起幾十個 Python。主持人
@@ -115,6 +138,67 @@ class PatternCheckBusy(Exception):
     """同時進行的檢查已達上限，排隊 QUEUE_TIMEOUT_SEC 還輪不到。"""
 
 
+class MatchTimeout(Exception):
+    """run_pattern 在給定的時間內跑不完，比對已被中斷。"""
+
+
+class _Expired(Exception):
+    """計時訊號的處理函式丟的；只在這個模組裡用，對外一律轉成 MatchTimeout。"""
+
+
+# 計時器是不是我們設的、還在等。處理函式只在這段期間丟例外：比對剛好跑完、訊號才到
+# 的時候，不能把例外丟進不相干的程式裡。
+_armed = False
+# 設定計時器時存下的原狀：(原本的處理函式, 原本計時器剩餘秒數, 間隔, 設定的時刻)。
+_saved: Optional[tuple] = None
+
+
+def _on_alarm(signum: int, frame: Any) -> None:
+    if _armed:
+        raise _Expired()
+
+
+def _disarm() -> None:
+    """取消計時器並把訊號的處理函式還回去。可以重複呼叫。"""
+    global _armed, _saved
+    _armed = False
+    saved, _saved = _saved, None
+    if saved is None:
+        return
+    previous_handler, previous_delay, previous_interval, started = saved
+    signal.setitimer(signal.ITIMER_REAL, 0)
+    signal.signal(signal.SIGALRM, previous_handler)
+    if previous_delay:
+        # 原本就有人設了計時器（測試的保險絲）：把它剩下的時間還回去。
+        remaining = previous_delay - (time.monotonic() - started)
+        signal.setitimer(signal.ITIMER_REAL, max(remaining, 0.001), previous_interval)
+
+
+def _run_limited(call: Callable[[], Any], seconds: float) -> Any:
+    """執行 *call*，超過 *seconds* 就中斷並丟 MatchTimeout。
+
+    不在主執行緒、或平台沒有計時訊號時，直接執行、沒有上限。
+    """
+    global _armed, _saved
+    try:
+        previous_handler = signal.signal(signal.SIGALRM, _on_alarm)
+    except (ValueError, AttributeError, OSError):
+        return call()
+    try:
+        try:
+            _saved = (previous_handler, 0.0, 0.0, time.monotonic())
+            _armed = True
+            previous_delay, previous_interval = signal.setitimer(signal.ITIMER_REAL, seconds)
+            _saved = (previous_handler, previous_delay, previous_interval, _saved[3])
+            return call()
+        finally:
+            _disarm()
+    except _Expired:
+        # 也接住「訊號剛好在收尾時才到」的情況：再收一次尾（_disarm 可重複呼叫）。
+        _disarm()
+        raise MatchTimeout(f"did not finish within {seconds:.3f}s") from None
+
+
 def compile_pattern(pattern: str) -> "re.Pattern[str]":
     """在本行程編譯一條規則的正規式。編譯不了時丟 ``re.error``。
 
@@ -133,6 +217,7 @@ def run_pattern(
     text: str,
     mode: str = "search",
     replacement: Optional[str] = None,
+    timeout: Optional[float] = None,
 ) -> tuple[int, str]:
     """在本行程執行一次比對，回傳 ``(命中次數, 結果文字)``。
 
@@ -140,13 +225,22 @@ def run_pattern(
       search   找到任一處就算命中（次數 1），文字原樣回傳
       match    只從開頭比對，文字原樣回傳
       replace  全部替換成 *replacement*，回傳替換次數與替換後的文字
+
+    *timeout*（秒）：給了就有時間上限，超過丟 MatchTimeout（見檔頭「比對的時間
+    上限」）；不給就一路跑完。
     """
-    if mode == "replace":
-        new_text, count = compiled.subn(replacement or "", text)
-        return count, new_text
-    if mode == "match":
-        return (1 if compiled.match(text) else 0), text
-    return (1 if compiled.search(text) else 0), text
+
+    def call() -> tuple[int, str]:
+        if mode == "replace":
+            new_text, count = compiled.subn(replacement or "", text)
+            return count, new_text
+        if mode == "match":
+            return (1 if compiled.match(text) else 0), text
+        return (1 if compiled.search(text) else 0), text
+
+    if timeout is None:
+        return call()
+    return _run_limited(call, timeout)
 
 
 def vet_pattern(
