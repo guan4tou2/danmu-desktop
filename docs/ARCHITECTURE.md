@@ -1,6 +1,6 @@
 # Architecture / 專案架構
 
-> Status: 5.13.0 · last reviewed 2026-11-19.
+> Status: 5.13.1 · last reviewed 2026-11-19.
 > Scope: where things live and how a message travels. For the feature
 > inventory see [FEATURES.md](FEATURES.md); for deployment see
 > [../DEPLOYMENT.md](../DEPLOYMENT.md).
