@@ -127,6 +127,11 @@ _rate_stats_hits: "defaultdict[str, int]" = defaultdict(int)
 _rate_stats_violations: "defaultdict[str, int]" = defaultdict(int)
 # Each entry is a deque of (timestamp, client_ip) pairs for that prefix.
 _rate_stats_violators: "defaultdict[str, deque]" = defaultdict(deque)
+# /fire requests that passed the per-IP check — and were counted as a ``fire``
+# hit — but were then refused by the per-device or room-wide limit. The totals
+# subtract these so a request that ended in a 429 is not also counted as let
+# through; ``fire``'s own hit count still says how many passed that check.
+_rate_fire_late_refusals = 0
 # Per-prefix list of (bucket_start_unix_ts, allowed_count) tuples, oldest first.
 # Bucket boundary aligned to floor(now / _RATE_BUCKET_SECONDS) * _RATE_BUCKET_SECONDS.
 _rate_buckets: "Dict[str, List[List[float]]]" = defaultdict(list)
@@ -365,7 +370,7 @@ def get_rate_limit_stats() -> dict:
             total_violations += violations
             all_ips |= ips
         out["totals"] = {
-            "hits": total_hits,
+            "hits": max(0, total_hits - _rate_fire_late_refusals),
             "violations": total_violations,
             "locked_sources": len(all_ips),
         }
@@ -379,6 +384,8 @@ def reset_rate_limit_counters() -> None:
         _rate_stats_violations.clear()
         _rate_stats_violators.clear()
         _rate_buckets.clear()
+        global _rate_fire_late_refusals
+        _rate_fire_late_refusals = 0
 
 
 def recent_violations(limit: int = 30) -> List[dict]:
@@ -631,10 +638,14 @@ def enforce_fire_rate_limits(fingerprint: str | None, is_admin: bool) -> None:
         _record_rate_event(scope, client_ip, True)
         return
 
-    def charge(name: str, key: str, limit: int, window: int) -> None:
+    def charge(name: str, key: str, limit: int, window: int, after_ip_pass: bool = False) -> None:
         allowed = limit <= 0 or rate_limiter.allow(key, limit, window)
         _record_rate_event(name, client_ip, allowed)
         if not allowed:
+            if after_ip_pass:
+                global _rate_fire_late_refusals
+                with _rate_stats_lock:
+                    _rate_fire_late_refusals += 1
             _abort_rate_limited(key, limit, window)
 
     if is_admin:
@@ -661,6 +672,7 @@ def enforce_fire_rate_limits(fingerprint: str | None, is_admin: bool) -> None:
             f"fire_fp:{fingerprint}",
             fp_limit,
             int(cfg.get("FIRE_FINGERPRINT_RATE_WINDOW", 60)),
+            after_ip_pass=True,
         )
 
     global_limit = int(cfg.get("GLOBAL_FIRE_RATE_LIMIT", 0))
@@ -670,6 +682,7 @@ def enforce_fire_rate_limits(fingerprint: str | None, is_admin: bool) -> None:
             "fire_global:all",
             global_limit,
             int(cfg.get("GLOBAL_FIRE_RATE_WINDOW", 60)),
+            after_ip_pass=True,
         )
 
 

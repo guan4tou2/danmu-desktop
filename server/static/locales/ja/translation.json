@@ -647,7 +647,7 @@
   "offlineContactOps": "主催者に連絡",
   "loginAttemptsRemaining": "パスワードが違います。あと {n} 回で {min} 分間ロックされます。",
   "loginFailedGeneric": "ログイン失敗。もう一度お試しください。",
-  "lockoutTitle": "5 分ロック",
+  "lockoutTitle": "一時的にロック中",
   "lockoutRemaining": "残り時間",
   "lockoutReason": "ログイン失敗が多すぎます。",
   "lockoutContactAdmin": "管理者に連絡",

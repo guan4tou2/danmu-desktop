@@ -216,6 +216,9 @@
     let config = {}; // 對象 → { limit, window, min, max, default_limit, default_window, saved }
     let stats = {};  // 對象 → { hits, violations, suggestion, bucket_history }
     let suggestionsRevealed = false;
+    // 每次儲存或重設加一。開頁時發出的設定請求如果比一次儲存還晚回來，
+    // 它帶的是舊值——照著填會讓畫面顯示 20、伺服器其實在跑剛存的 7。
+    let configEpoch = 0;
 
     const forms = Array.from(section.querySelectorAll("[data-rl-form]"));
     const formEls = (form) => ({
@@ -280,21 +283,28 @@
     }
 
     async function loadConfig() {
+      const epoch = configEpoch;
       try {
         const r = await fetch("/admin/ratelimit/config", { credentials: "same-origin" });
         if (!r.ok) return;
         const body = await r.json();
+        if (epoch !== configEpoch) return; // 期間有人存過，這份已經過時
         config = (body && body.scopes) || {};
         forms.forEach(fillForm);
       } catch (_) { /* 輸入框留白，好過顯示一個不是伺服器給的數字 */ }
     }
 
+    let statsInFlight = false;
     async function loadStats() {
+      if (statsInFlight) return;
+      statsInFlight = true;
       let m = null;
       try {
         const r = await fetch("/admin/metrics", { credentials: "same-origin" });
         if (r.ok) m = await r.json();
-      } catch (_) { /* */ }
+      } catch (_) { /* */ } finally {
+        statsInFlight = false;
+      }
       const rl = m && m.rate_limits;
       stats = rl || {};
       forms.forEach(fillUsage);
@@ -422,6 +432,7 @@
         });
         if (resp.ok) {
           const body = await resp.json();
+          configEpoch += 1;
           config[scope] = Object.assign({}, config[scope], { limit: body.limit, window: body.window, saved: true });
           // persisted === false：新值已經生效，但伺服器寫不進磁碟（唯讀掛載、
           // 擁有者不對）。照實說，不要顯示一個重啟後就不成立的「已儲存」。
@@ -573,6 +584,7 @@
           });
           if (resp.ok) {
             const body = await resp.json();
+            configEpoch += 1;
             config = (body && body.scopes) || config;
             forms.forEach(fillForm);
             loadStats();
@@ -592,9 +604,12 @@
     section.addEventListener("change", (ev) => {
       const form = ev.target.closest && ev.target.closest("[data-rl-form]");
       if (!form || !ev.target.matches("[data-rl-target]")) return;
-      // 換對象：數值與用量都換成那個對象在伺服器上的現況。
+      // 換對象：數值與用量都換成那個對象在伺服器上的現況。先用手上的資料
+      // 畫，再重抓一次用量——開頁之後進來的彈幕不會自己出現在這裡，而這頁
+      // 刻意不做定時輪詢（後台每分鐘的請求數已經很接近自己的上限）。
       fillForm(form);
       fillUsage(form);
+      loadStats();
     });
     section.addEventListener("input", (ev) => {
       const form = ev.target.closest && ev.target.closest("[data-rl-form]");

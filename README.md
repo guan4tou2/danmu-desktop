@@ -95,6 +95,9 @@ After start-up, open the HTTPS endpoint printed by the wizard:
 - Admin panel: `https://<host>/admin`
 - OBS overlay: `https://<host>/overlay`
 
+With `--profile http` (development only) there is no TLS: use the `http://`
+address the wizard prints instead, with the same paths.
+
 Everything — viewer, admin, OBS overlay, desktop client and WebSocket
 (`wss://<host>/ws`) — shares that single HTTPS origin on port `443`. If the
 self-signed profile must use another port, set `HTTPS_PORT`; there is no
@@ -221,8 +224,8 @@ make help                                    # every target
 make run                                     # run the server locally
 make test                                    # server tests (pytest)
 make lint-css                                # CSS token lint (also runs in CI)
-cd server && npm ci && npm run test:js -- --runInBand        # admin / viewer script tests
-cd danmu-desktop && npm ci && npm test -- --runInBand        # desktop client tests
+(cd server && npm ci && npm run test:js -- --runInBand)        # admin / viewer script tests
+(cd danmu-desktop && npm ci && npm test -- --runInBand)        # desktop client tests
 ```
 
 Generated files are committed and checked in CI. After editing admin

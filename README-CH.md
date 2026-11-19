@@ -95,6 +95,9 @@ docker compose --profile http up -d          # IP／localhost + HTTP，僅供開
 - 後台：`https://<host>/admin`
 - OBS overlay：`https://<host>/overlay`
 
+用 `--profile http`（僅供開發）時沒有 TLS：改用精靈印出的 `http://` 網址，
+路徑相同。
+
 觀眾頁、後台、OBS overlay、桌面客戶端與 WebSocket（`wss://<host>/ws`）全部
 共用這一個 HTTPS 入口（連接埠 `443`）。自簽模式若必須用別的連接埠，設定
 `HTTPS_PORT` 即可；沒有第二個 WebSocket 連接埠。
@@ -212,8 +215,8 @@ make help                                    # 列出所有 target
 make run                                     # 在本機跑伺服器
 make test                                    # 伺服器測試（pytest）
 make lint-css                                # CSS token 檢查（CI 也會跑）
-cd server && npm ci && npm run test:js -- --runInBand        # 後台／觀眾頁腳本測試
-cd danmu-desktop && npm ci && npm test -- --runInBand        # 桌面客戶端測試
+(cd server && npm ci && npm run test:js -- --runInBand)        # 後台／觀眾頁腳本測試
+(cd danmu-desktop && npm ci && npm test -- --runInBand)        # 桌面客戶端測試
 ```
 
 生成檔要一起提交，CI 會檢查。改了後台腳本要跑

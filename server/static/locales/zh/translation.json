@@ -682,7 +682,7 @@
   "offlineContactOps": "聯繫主辦方",
   "loginAttemptsRemaining": "密碼不正確。還可嘗試 {n} 次，之後鎖定 {min} 分鐘。",
   "loginFailedGeneric": "登入失敗，請重試。",
-  "lockoutTitle": "鎖定 5 分鐘",
+  "lockoutTitle": "暫時鎖定",
   "lockoutRemaining": "剩餘時間",
   "lockoutReason": "登入失敗次數過多。",
   "lockoutContactAdmin": "聯繫管理員",

@@ -122,7 +122,9 @@ Request rate limits follow one rule
 ([`services/rate_limits.py`](../server/services/rate_limits.py)): the value
 saved in the admin panel (`runtime/rate_limits.json`) wins, then the
 environment variable, then the built-in default. "Reset all" in the admin
-panel deletes the saved values.
+panel deletes the saved values. Saving and resetting both report `persisted`:
+when the file cannot be written the change still applies to the running
+server, but what is on disk — and so what a restart brings back — is unchanged.
 
 ## Admin panel
 

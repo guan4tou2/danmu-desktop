@@ -7,7 +7,10 @@
 ### 使用 Docker（推薦）
 
 ```bash
-# 從專案根目錄；擇一 profile（完整說明見 ../DEPLOYMENT.md）
+# 從專案根目錄。先產生 .env（沒有 ADMIN_PASSWORD 伺服器不會啟動）：
+./setup.sh init                           # 互動式；或 cp .env.example .env 後自行設定 ADMIN_PASSWORD
+
+# 再擇一 profile（完整說明見 ../DEPLOYMENT.md）
 docker compose --profile https up -d     # IP / 網域 + HTTPS 自簽憑證（推薦；桌面版需要 TLS）
 docker compose --profile traefik up -d   # 網域 + Let's Encrypt
 docker compose --profile http up -d      # 本機 HTTP（僅開發，桌面版連不上）

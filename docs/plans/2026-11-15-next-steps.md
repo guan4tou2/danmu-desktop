@@ -54,7 +54,8 @@
 > - 還原備份後要重啟才套用（沒有加 reload hook，沿用其他 runtime 檔的行為，由還原結果標示）。
 > - 尚未在 e2e（Electron）實跑；`system-admin-moderation.spec.js` 已照新畫面改寫。
 > - e2e 用 `/admin/ratelimit/apply` 拉高的上限現在會存檔，所以加了
->   `danmu-desktop/e2e/helpers/global-teardown.js` 在整輪跑完後呼叫重設。
+>   `danmu-desktop/e2e/helpers/rate-limit-guard.js`：開跑前記下各對象的原樣，
+>   整輪跑完後還原（開發者自己存過的上限會留著）。
 > - 儲存與重設的回應多一個 `persisted`；磁碟寫不進去時前端會明講重啟後會還原。
 > - 「調整建議」對「整合通道」（`fire_admin`）同樣不再產生。
 

@@ -5,7 +5,7 @@ This folder contains project reference material. Prefer the current source-of-tr
 ## Current Sources Of Truth
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — project layout, runtime data flow, where each concern lives.
-- [wiki/](wiki/Home.md) — user manual (繁體中文), screenshot-led: quick start, host guide, audience, FAQ. Written in GitHub-wiki layout (`Home.md`, `_Sidebar.md`, `images/`); to publish, copy the folder's contents into the `danmu-desktop.wiki` repository.
+- [wiki/](wiki/Home.md) — user manual (繁體中文), screenshot-led: quick start, host guide, audience, FAQ. Written in GitHub-wiki layout (`Home.md`, `_Sidebar.md`, `images/`); to publish, copy the folder's contents into the `danmu-desktop.wiki` repository. It is wiki source, not a repository-browsable guide: links between its pages are wiki page names (`Quick-Start`, not `Quick-Start.md`) and resolve only once published. In the repository, open the pages directly: [Quick-Start](wiki/Quick-Start.md) · [Host-Guide](wiki/Host-Guide.md) · [Audience](wiki/Audience.md) · [FAQ](wiki/FAQ.md).
 - [FEATURES.md](FEATURES.md) — canonical feature inventory, product boundaries, admin route map, and vocabulary guardrails.
 - [../DESIGN.md](../DESIGN.md) — high-level design-system notes. Runtime tokens and contract tests are authoritative when they disagree.
 - [designs/README.md](designs/README.md) — how to read design drafts, historical handoffs, and prototype files.

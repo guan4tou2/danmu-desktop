@@ -63,6 +63,9 @@ def test_saved_limit_survives_a_restart(client, app):
     )
     assert app.config["FIRE_RATE_LIMIT"] == 7
 
+    # Drop the in-memory copy: the new app must get the limit from the file,
+    # as a real restart would, not from this process's cache.
+    rate_limits._state.reset_for_tests()
     restarted = create_app(TestConfig)  # same runtime/rate_limits.json
 
     assert restarted.config["FIRE_RATE_LIMIT"] == 7
@@ -88,7 +91,7 @@ def test_upgrade_without_a_file_changes_nothing(app):
         "not json",
         json.dumps(["a", "list"]),
         json.dumps({"fire": {"limit": 0, "window": 60}}),  # below the minimum
-        json.dumps({"fire": {"limit": 5, "window": 45}}),  # not an offered window
+        json.dumps({"fire": {"limit": 5, "window": 0}}),  # no such window
         json.dumps({"admin": {"limit": 1, "window": 60}}),  # would lock the panel
     ],
 )
@@ -162,6 +165,21 @@ def test_scopes_that_used_to_need_env_vars_are_settable(client, app, scope, limi
     assert resp.status_code == 200, resp.data
     assert resp.get_json() == {"scope": scope, "limit": 9, "window": 10, "persisted": True}
     assert app.config[limit_key] == 9
+
+
+def test_a_window_from_the_environment_stays_saveable(client, app):
+    """FIRE_RATE_WINDOW=45 is not one of the five offered windows. Changing
+    only the count must still save — and the saved 45 must load after a restart."""
+    app.config["FIRE_RATE_WINDOW"] = 45
+
+    kept = _post(client, "/admin/ratelimit/apply", {"scope": "fire", "limit": 9, "window": 45})
+    other = _post(client, "/admin/ratelimit/apply", {"scope": "fire", "limit": 9, "window": 50})
+
+    assert kept.status_code == 200, kept.data
+    assert other.status_code == 400  # neither offered nor in effect
+    rate_limits._state.reset_for_tests()
+    restarted = create_app(TestConfig)
+    assert (restarted.config["FIRE_RATE_LIMIT"], restarted.config["FIRE_RATE_WINDOW"]) == (9, 45)
 
 
 def test_only_the_room_wide_cap_can_be_switched_off(client, app):
@@ -256,7 +274,8 @@ def test_reset_returns_every_scope_to_its_startup_value(client, app):
         assert app.config[limit_key] == boot[scope]["limit"]
         assert app.config[window_key] == boot[scope]["window"]
         assert scopes[scope]["saved"] is False
-    # …and stays reset after a restart.
+    # …and stays reset after a restart (read back from the file, not the cache).
+    rate_limits._state.reset_for_tests()
     assert create_app(TestConfig).config["FIRE_RATE_LIMIT"] == boot["fire"]["limit"]
 
 
@@ -429,6 +448,24 @@ def test_one_request_is_one_hit_in_the_totals(app, client, overlay_connected):
 
     # Checked against three limits, still one request.
     assert get_rate_limit_stats()["totals"]["hits"] == before + 1
+
+
+def test_totals_count_a_request_by_how_it_ended(app, client, overlay_connected):
+    """Two requests from one device on two networks, device limit 1: the second
+    passes the per-IP check and is then refused. It is one blocked request, not
+    one allowed and one blocked."""
+    app.config["FIRE_RATE_LIMIT"] = 100
+    app.config["FIRE_FINGERPRINT_RATE_LIMIT"] = 1
+    payload = {**PAYLOAD, "fingerprint": "fp-shared"}
+    before = get_rate_limit_stats()["totals"]
+
+    assert _fire(client, payload, ip="1.1.1.1").status_code == 200
+    assert _fire(client, payload, ip="2.2.2.2").status_code == 429
+
+    after = get_rate_limit_stats()
+    assert after["totals"]["hits"] == before["hits"] + 1
+    assert after["totals"]["violations"] == before["violations"] + 1
+    assert after["fire"]["hits"] == 2  # both did pass the per-IP check
 
 
 def test_token_lane_is_counted_separately(app, client, overlay_connected):

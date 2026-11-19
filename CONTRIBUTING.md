@@ -97,10 +97,10 @@ Place tests in `server/tests/` (use pytest fixtures)。
 vim server/static/locales/zh/translation.json
 
 # 2. 重新生成（改哪一邊就跑哪一邊；兩邊都改就兩支都跑）
-cd server && npm run build:i18n
-cd ../danmu-desktop && npm run build:i18n
+(cd server && npm run build:i18n)
+(cd danmu-desktop && npm run build:i18n)
 
-# 3. Commit JSON 與生成物
+# 3. Commit JSON 與生成物（在專案根目錄）
 git add server/static/locales/ server/static/js/i18n*.js
 git add danmu-desktop/locales/ danmu-desktop/i18n.js
 ```

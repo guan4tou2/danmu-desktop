@@ -136,7 +136,8 @@ test.describe("後台互動與自動化（投票 / 排程 / Webhooks）", () => 
     // 2026-11-19 起儲存上限的端點不受 admin 限流管，一次就會成功；重試迴圈
     // 留著只是保險。可設範圍在 server/services/rate_limits.py 的 _BOUNDS
     // （admin 是 60–10000），超出會 400——400 不是重試能救的。
-    // 這些值現在會存檔；跑完由 e2e/helpers/global-teardown.js 全部重設。
+    // 這些值現在會存檔；e2e/helpers/rate-limit-guard.js 會在整輪跑完後把
+    // 上限還原成開跑前的樣子。
     for (let i = 0; i < 20; i += 1) {
       const r = await adminApi("/admin/ratelimit/apply", {
         method: "POST",

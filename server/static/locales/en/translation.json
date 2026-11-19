@@ -682,7 +682,7 @@
   "offlineContactOps": "Contact organizer",
   "loginAttemptsRemaining": "Wrong password. {n} tries left, then a {min}-minute lockout.",
   "loginFailedGeneric": "Login failed. Please try again.",
-  "lockoutTitle": "Locked for 5 min",
+  "lockoutTitle": "Temporarily locked",
   "lockoutRemaining": "time remaining",
   "lockoutReason": "Too many failed sign-in attempts.",
   "lockoutContactAdmin": "Contact administrator",

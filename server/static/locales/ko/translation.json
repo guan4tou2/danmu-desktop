@@ -647,7 +647,7 @@
   "offlineContactOps": "주최자에게 문의",
   "loginAttemptsRemaining": "비밀번호가 올바르지 않습니다. {n}번 더 시도하면 {min}분간 잠깁니다.",
   "loginFailedGeneric": "로그인 실패. 다시 시도해 주세요.",
-  "lockoutTitle": "5분 잠김",
+  "lockoutTitle": "일시적으로 잠김",
   "lockoutRemaining": "남은 시간",
   "lockoutReason": "로그인 실패 횟수가 많습니다.",
   "lockoutContactAdmin": "관리자에게 문의",

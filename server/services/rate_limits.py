@@ -56,7 +56,11 @@ SCOPES: Dict[str, Tuple[str, str]] = {
     "login": _config_keys("LOGIN"),
 }
 
+# The windows the admin panel offers. A scope may also keep the window it is
+# running with: FIRE_RATE_WINDOW=45 in the environment has to stay saveable
+# when the host only changes the count.
 VALID_WINDOWS = (10, 30, 60, 300, 3600)
+_WINDOW_MAX = 86400
 
 # (min, max) per scope. Only the room-wide cap may be 0, which turns it off.
 # The admin floor is not "enough to use the panel comfortably" — one page load
@@ -80,8 +84,14 @@ def bounds(scope: str) -> Tuple[int, int]:
     return _BOUNDS[scope]
 
 
-def validate(scope: Any, limit: Any, window: Any) -> Tuple[str, int, int]:
-    """Return ``(scope, limit, window)`` or raise ``ValueError`` saying why not."""
+def validate(
+    scope: Any, limit: Any, window: Any, *, current_window: Optional[int] = None
+) -> Tuple[str, int, int]:
+    """Return ``(scope, limit, window)`` or raise ``ValueError`` saying why not.
+
+    ``current_window`` is the window the scope runs with right now; it is
+    accepted in addition to ``VALID_WINDOWS``.
+    """
     # isinstance first: a list or dict here would make ``in`` raise TypeError.
     if not isinstance(scope, str) or scope not in SCOPES:
         raise ValueError(f"scope must be one of {list(SCOPES)}")
@@ -92,8 +102,10 @@ def validate(scope: Any, limit: Any, window: Any) -> Tuple[str, int, int]:
         raise ValueError(f"limit must be between {low} and {high}")
     if isinstance(window, bool) or not isinstance(window, int):
         raise ValueError("window must be an integer")
-    if window not in VALID_WINDOWS:
+    if window not in VALID_WINDOWS and window != current_window:
         raise ValueError(f"window must be one of {list(VALID_WINDOWS)}")
+    if window < 1 or window > _WINDOW_MAX:
+        raise ValueError(f"window must be between 1 and {_WINDOW_MAX}")
     return scope, limit, window
 
 
@@ -118,7 +130,10 @@ def _normalize(raw: Any) -> Dict[str, Any]:
         try:
             if not isinstance(entry, dict):
                 raise ValueError("must be an object")
-            _, limit, window = validate(scope, entry.get("limit"), entry.get("window"))
+            # What is on disk was validated when it was saved, possibly with a
+            # window from the environment at the time — accept any sane one.
+            window = entry.get("window")
+            _, limit, window = validate(scope, entry.get("limit"), window, current_window=window)
         except ValueError as exc:
             logger.warning("rate_limits: ignoring saved %s limit (%s)", scope, exc)
             continue
@@ -192,11 +207,17 @@ def snapshot(config) -> Dict[str, Dict[str, Any]]:
 
 def set_scope(config, scope: Any, limit: Any, window: Any) -> Dict[str, int]:
     """Validate, save, and put one scope's limit into effect. Raises ``ValueError``."""
-    scope, limit, window = validate(scope, limit, window)
-    _state.update({scope: {"limit": limit, "window": window}})
+    in_effect = None
+    if isinstance(scope, str) and scope in SCOPES:
+        in_effect = int(config.get(SCOPES[scope][1], 0) or 0) or None
+    scope, limit, window = validate(scope, limit, window, current_window=in_effect)
     limit_key, window_key = SCOPES[scope]
-    config[limit_key] = limit
-    config[window_key] = window
+    # One lock for the file and the running config: two overlapping saves must
+    # not leave the disk on one value and the limiter on the other.
+    with _state.lock:
+        _state.update({scope: {"limit": limit, "window": window}})
+        config[limit_key] = limit
+        config[window_key] = window
     return {"limit": limit, "window": window}
 
 
@@ -205,9 +226,10 @@ def reset(config, scope: Optional[str] = None) -> None:
     if scope is not None and (not isinstance(scope, str) or scope not in SCOPES):
         raise ValueError(f"scope must be one of {list(SCOPES)}")
     targets = [scope] if scope else list(SCOPES)
-    _state.update({name: None for name in targets})
     boot = config.get(BOOT_VALUES_KEY) or _startup_values(config)
-    for name in targets:
-        limit_key, window_key = SCOPES[name]
-        config[limit_key] = boot[name]["limit"]
-        config[window_key] = boot[name]["window"]
+    with _state.lock:
+        _state.update({name: None for name in targets})
+        for name in targets:
+            limit_key, window_key = SCOPES[name]
+            config[limit_key] = boot[name]["limit"]
+            config[window_key] = boot[name]["window"]
