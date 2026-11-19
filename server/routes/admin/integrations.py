@@ -23,7 +23,7 @@ GET  /admin/integrations/slido/status
 
 from flask import current_app, request
 
-from ...services import fire_sources, fire_token, slido_status
+from ...services import fire_sources, fire_token, rate_limits, slido_status
 from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login
 
@@ -126,19 +126,25 @@ def get_fire_token_audit():
 def get_fire_token_usage():
     """24h hourly + 60min per-minute usage series for the Fire Token page.
 
-    Backed by the existing rate-limit bucket history for the ``fire``
-    scope (5-min granularity, 24h retention). Aggregated to:
+    Backed by the rate-limit bucket history for the ``fire_admin`` scope —
+    requests that carried a valid token (5-min granularity, 24h retention).
+    Aggregated to:
       - usage_24h: 24 entries (one per hour)
       - usage_60m: 60 entries (one per minute, last 60min)
     """
     from ...services.security import get_rate_limit_bucket_history
 
     # 24h hourly aggregation (60-second granularity buckets summed per hour)
-    hourly = get_rate_limit_bucket_history("fire", 60)  # returns 24 hour entries
+    hourly = get_rate_limit_bucket_history("fire_admin", 60)  # returns 24 hour entries
+    lane = rate_limits.snapshot(current_app.config)["fire_admin"]
     return _json_response(
         {
             "usage_24h": list(hourly),
-            "ceiling_per_min": 200,  # FIRE_RATE_LIMIT default
+            # The token lane's limit, normalised to one minute.
+            # At least 1 so a small limit over a long window does not read as "none".
+            "ceiling_per_min": (
+                max(1, round(lane["limit"] * 60 / lane["window"])) if lane["window"] else 0
+            ),
             "ips": fire_sources.recent_ips(window_sec=3600, limit=10),
         }
     )

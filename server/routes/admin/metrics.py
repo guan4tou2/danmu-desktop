@@ -5,7 +5,7 @@ from pathlib import Path
 
 from flask import current_app, request
 
-from ...services import api_tokens, security_settings, telemetry, ws_queue, ws_state
+from ...services import api_tokens, rate_limits, security_settings, telemetry, ws_queue, ws_state
 from ...services.plugin_manager import plugin_manager
 from ...services.poll import poll_service
 from ...services.security import (
@@ -22,16 +22,6 @@ from . import _json_response, admin_bp, rate_limit, require_login
 # first loads this routes package). Reported through /admin/metrics so the
 # admin System page can render an "UPTIME · 14d 02h" chip per prototype.
 _SERVER_STARTED_AT = time.time()
-
-# Default (limit, window) per scope — keeps the suggestion pre-restart sane
-# even if the operator hasn't set the env var explicitly. Mirrors the
-# fallback values in services/security.py:rate_limit decorator.
-_RATE_DEFAULTS = {
-    "fire": ("FIRE_RATE_LIMIT", "FIRE_RATE_WINDOW", 20, 60),
-    "api": ("API_RATE_LIMIT", "API_RATE_WINDOW", 30, 60),
-    "admin": ("ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW", 60, 60),
-    "login": ("LOGIN_RATE_LIMIT", "LOGIN_RATE_WINDOW", 5, 300),
-}
 
 
 def _format_bytes(n: int) -> str:
@@ -107,6 +97,9 @@ def _system_counts() -> dict:
     }
 
 
+_NO_SUGGESTION_SCOPES = ("fire", "fire_fingerprint", "fire_admin")
+
+
 def _attach_suggestions(rate_stats: dict) -> dict:
     """Decorate each scope entry with a ``suggestion`` field.
 
@@ -115,16 +108,27 @@ def _attach_suggestions(rate_stats: dict) -> dict:
     ``suggested_limit`` and ``suggested_window``. See
     ``security.get_rate_limit_suggestion`` for trigger logic.
     """
-    cfg = current_app.config
-    for scope, (limit_key, window_key, def_limit, def_window) in _RATE_DEFAULTS.items():
+    for scope, current in rate_limits.snapshot(current_app.config).items():
         entry = rate_stats.get(scope)
         if not entry:
             continue
-        cur_limit = int(cfg.get(limit_key, def_limit))
-        cur_window = int(cfg.get(window_key, def_window))
+        cur_limit = current["limit"]
+        cur_window = current["window"]
         entry["limit"] = cur_limit
         entry["window"] = cur_window
-        entry["suggestion"] = get_rate_limit_suggestion(scope, cur_limit, cur_window)
+        # The suggestion sizes a limit from the scope's total traffic. That
+        # total says nothing about one viewer, one device or one integration,
+        # so the per-sender /fire limits get no suggestion: now that /fire
+        # traffic is counted, a busy room would otherwise be told to raise
+        # (or, under pressure, lower) every sender's allowance to match the
+        # whole room. (api / admin / login are sized the same way and always
+        # were; those keep their suggestion.)
+        # A limit of 0 is switched off; there is nothing to resize.
+        entry["suggestion"] = (
+            get_rate_limit_suggestion(scope, cur_limit, cur_window)
+            if cur_limit > 0 and scope not in _NO_SUGGESTION_SCOPES
+            else None
+        )
         # 24-element hourly history of allowed-request counts for the
         # admin Rate Limits sparkline. Always 24 entries (zero-padded if
         # the server hasn't been up 24h yet).
@@ -155,19 +159,11 @@ def get_metrics():
     series = telemetry.get_series()
     system_counts = _system_counts()
 
-    # 2026-05-19 (PR review): expose live rate-limit *config* alongside
-    # the counter snapshot so the viewer Limits tab + the ratelimit page
-    # can show actual server-resolved values instead of hardcoded
-    # defaults. Reads via current_app.config so ratelimit/apply edits
-    # are reflected immediately (no restart needed).
-    from flask import current_app
-
+    # The limits in effect right now, for every scope, next to the counters.
+    # Same source as GET /admin/ratelimit/config (services/rate_limits.py).
     rl_config = {
-        scope: {
-            "limit": int(current_app.config.get(f"{scope.upper()}_RATE_LIMIT", 0) or 0),
-            "window": int(current_app.config.get(f"{scope.upper()}_RATE_WINDOW", 0) or 0),
-        }
-        for scope in ("fire", "api", "admin", "login")
+        scope: {"limit": current["limit"], "window": current["window"]}
+        for scope, current in rate_limits.snapshot(current_app.config).items()
     }
 
     return _json_response(

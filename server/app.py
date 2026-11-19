@@ -89,6 +89,12 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     setup_logging(app.config.get("LOG_LEVEL", "INFO"))
+    # 後台存過的請求上限蓋在環境變數之上；同時記下環境變數的值，
+    # 「重設預設」要回到那一份。見 services/rate_limits.py。
+    # 在 setup_logging 之後：存檔裡有不能用的項目時，警告才進得了日誌。
+    from .services import rate_limits
+
+    rate_limits.apply_saved(app)
     env = str(app.config.get("ENV", "development")).lower()
 
     # Security check for missing/default password
@@ -294,7 +300,15 @@ def create_app(config_class=Config):
 
     @app.errorhandler(429)
     def handle_rate_limit(error):  # noqa: ARG001
-        return json_response({"error": "Too many requests. Please try again later."}, 429)
+        response = json_response({"error": "Too many requests. Please try again later."}, 429)
+        # Set by services.security when a bucket (not a deny rule) refused the
+        # request. The viewer page uses it to choose between a short countdown
+        # on the send button and the full "slow down" screen; the login page
+        # counts down from it.
+        retry_after = getattr(g, "rate_limit_retry_after", None)
+        if retry_after:
+            response.headers["Retry-After"] = str(int(retry_after))
+        return response
 
     @app.errorhandler(502)
     def handle_bad_gateway(error):  # noqa: ARG001

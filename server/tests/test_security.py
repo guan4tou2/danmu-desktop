@@ -439,13 +439,17 @@ def test_rate_limit_suggestion_in_metrics_response(client, app):
     now = _time.time()
     bucket_start = (int(now) // 300) * 300
 
-    # Saturate the FIRE bucket to force a suggestion to surface in the response.
+    # Saturate the room-wide danmu bucket to force a suggestion to surface, and
+    # the per-viewer one alongside it.
     with _rate_stats_lock:
-        for i in range(24):
-            _rate_buckets["fire"].append([float(bucket_start - i * 300), 300])
-        _rate_stats_hits["fire"] = 24 * 300
+        for scope in ("fire_global", "fire"):
+            for i in range(24):
+                _rate_buckets[scope].append([float(bucket_start - i * 300), 300])
+            _rate_stats_hits[scope] = 24 * 300
 
-    # Set current limit small so undersized condition fires.
+    # Set current limits small so the undersized condition fires.
+    app.config["GLOBAL_FIRE_RATE_LIMIT"] = 10
+    app.config["GLOBAL_FIRE_RATE_WINDOW"] = 60
     app.config["FIRE_RATE_LIMIT"] = 10
     app.config["FIRE_RATE_WINDOW"] = 60
     app.config["ADMIN_RATE_LIMIT"] = 9999  # don't rate-limit ourselves out
@@ -455,13 +459,18 @@ def test_rate_limit_suggestion_in_metrics_response(client, app):
     res = client.get("/admin/metrics")
     assert res.status_code == 200
     payload = res.get_json()
+    room = payload["rate_limits"]["fire_global"]
+    assert "suggestion" in room
+    assert room["suggestion"] is not None
+    assert room["suggestion"]["suggested_window"] == 60
+    assert room["suggestion"]["suggested_limit"] >= 1
+    assert room["limit"] == 10
+    assert room["window"] == 60
+    # The whole room's traffic is no basis for sizing one viewer's allowance:
+    # the per-viewer limit reports its numbers but never a suggestion.
     fire = payload["rate_limits"]["fire"]
-    assert "suggestion" in fire
-    assert fire["suggestion"] is not None
-    assert fire["suggestion"]["suggested_window"] == 60
-    assert fire["suggestion"]["suggested_limit"] >= 1
-    assert fire["limit"] == 10
-    assert fire["window"] == 60
+    assert fire["limit"] == 10 and fire["window"] == 60
+    assert fire["suggestion"] is None
     # API scope had no traffic — should suggest nothing.
     assert payload["rate_limits"]["api"]["suggestion"] is None
 

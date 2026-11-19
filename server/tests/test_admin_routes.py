@@ -425,7 +425,7 @@ def test_ratelimit_apply_updates_config(client, app):
     )
     assert resp.status_code == 200
     body = resp.get_json()
-    assert body == {"scope": "fire", "limit": 42, "window": 30}
+    assert body == {"scope": "fire", "limit": 42, "window": 30, "persisted": True}
     assert app.config["FIRE_RATE_LIMIT"] == 42
     assert app.config["FIRE_RATE_WINDOW"] == 30
 
@@ -440,6 +440,26 @@ def test_ratelimit_apply_updates_config(client, app):
     assert app.config["LOGIN_RATE_WINDOW"] == 300
     # First scope's writes survive the second update.
     assert app.config["FIRE_RATE_LIMIT"] == 42
+
+
+def test_ratelimit_reset_requires_login(client):
+    resp = client.post("/admin/ratelimit/reset", json={})
+    assert resp.status_code in (302, 401, 403)
+
+
+def test_viewer_cooldown_is_adjustable_through_admin_update(client):
+    """發送上限頁的「送出後冷卻」走既有的 /admin/update，觀眾頁讀 /get_settings。"""
+    resp = authed_post(
+        client, "/admin/update", {"type": "ViewerFireCooldownSec", "value": 1.5, "index": 1}
+    )
+    assert resp.status_code == 200
+    assert client.get("/get_settings").get_json()["ViewerFireCooldownSec"][1] == 1.5
+
+    resp = authed_post(
+        client, "/admin/update", {"type": "ViewerFireCooldownSec", "value": 11, "index": 1}
+    )
+    assert resp.status_code == 400
+    assert client.get("/get_settings").get_json()["ViewerFireCooldownSec"][1] == 1.5
 
 
 def test_ratelimit_apply_validates_scope_and_window(client):

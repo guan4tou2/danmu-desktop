@@ -1,88 +1,83 @@
-"""Admin route to live-apply rate-limit changes (v5.0.0+).
+"""Admin routes for the request rate limits and the IP allow/deny rules.
 
-POST /admin/ratelimit/apply accepts a JSON body of:
+    GET  /admin/ratelimit/config   what is in effect now, per scope
+    POST /admin/ratelimit/apply    { "scope", "limit", "window" } — save one scope
+    POST /admin/ratelimit/reset    { "scope"? } — back to the startup value(s)
 
-    { "scope": "fire" | "api" | "admin" | "login",
-      "limit": int (1..1000),
-      "window": int (one of 10, 30, 60, 300, 3600) }
+Both writes answer with ``persisted``: false means the change is in effect but
+could not be written to disk, so it will not survive a restart.
 
-and writes the new values directly into ``current_app.config`` under the
-keys ``{SCOPE}_RATE_LIMIT`` / ``{SCOPE}_RATE_WINDOW``. The ``rate_limit``
-decorator reads those keys per-request via ``current_app.config.get(...)``,
-so the change takes effect for the very next request — no restart needed.
+Saved limits live in ``runtime/rate_limits.json`` and survive a restart; the
+scopes, bounds and precedence are documented in ``services/rate_limits.py``.
 
-Persistence note: changes are in-memory only. On the next server restart
-the values revert to whatever the env vars (FIRE_RATE_LIMIT etc.) provide.
-The matching ``匯出 .env 片段`` button in the Rate Limits admin page is
-still the way to make a change survive a restart.
+These three endpoints are deliberately **not** charged against the admin
+rate limit. They are how an admin who set that limit too low puts it back —
+if they were throttled by it, the only way out would be to edit the file and
+restart. They still require a logged-in session (and CSRF for the writes).
 """
 
 from flask import current_app, request
 
-from ...services import ratelimit_ip
+from ...services import rate_limits, ratelimit_ip
 from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login, sanitize_log_string
 
-_VALID_SCOPES = ("fire", "api", "admin", "login")
-_VALID_WINDOWS = (10, 30, 60, 300, 3600)
-_LIMIT_MIN = 1
-_LIMIT_MAX = 1000
 
-
-def _validate(payload):
-    """Return (validated_dict, error_message) — error_message is None on success."""
-    if not isinstance(payload, dict):
-        return None, "Body must be a JSON object"
-
-    scope = payload.get("scope")
-    if scope not in _VALID_SCOPES:
-        return None, f"scope must be one of {list(_VALID_SCOPES)}"
-
-    raw_limit = payload.get("limit")
-    if isinstance(raw_limit, bool) or not isinstance(raw_limit, int):
-        return None, "limit must be an integer"
-    if raw_limit < _LIMIT_MIN or raw_limit > _LIMIT_MAX:
-        return None, f"limit must be between {_LIMIT_MIN} and {_LIMIT_MAX}"
-
-    raw_window = payload.get("window")
-    if isinstance(raw_window, bool) or not isinstance(raw_window, int):
-        return None, "window must be an integer"
-    if raw_window not in _VALID_WINDOWS:
-        return None, f"window must be one of {list(_VALID_WINDOWS)}"
-
-    return {"scope": scope, "limit": raw_limit, "window": raw_window}, None
+@admin_bp.route("/ratelimit/config", methods=["GET"])
+@require_login
+def ratelimit_config():
+    return _json_response({"scopes": rate_limits.snapshot(current_app.config)})
 
 
 @admin_bp.route("/ratelimit/apply", methods=["POST"])
-@rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_csrf
 @require_login
 def ratelimit_apply():
-    """Apply a new (limit, window) pair to one of the four rate-limit scopes.
+    """Save a new (limit, window) pair for one scope and put it into effect."""
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return _json_response({"error": "Body must be a JSON object"}, 400)
+    try:
+        applied = rate_limits.set_scope(
+            current_app.config, payload.get("scope"), payload.get("limit"), payload.get("window")
+        )
+    except ValueError as exc:
+        return _json_response({"error": str(exc)}, 400)
 
-    Writes to ``current_app.config`` only — the values are NOT persisted to
-    disk and revert to env-var defaults on next server restart.
+    scope = payload["scope"]
+    current_app.logger.info(
+        "Rate limit saved: %s limit=%d window=%d",
+        sanitize_log_string(scope),
+        applied["limit"],
+        applied["window"],
+    )
+    return _json_response({"scope": scope, **applied, "persisted": rate_limits.is_persisted()})
+
+
+@admin_bp.route("/ratelimit/reset", methods=["POST"])
+@require_csrf
+@require_login
+def ratelimit_reset():
+    """Drop the saved value for one scope (or all) and return to the startup value.
+
+    The startup value is the environment variable, or the built-in default
+    when that is not set.
     """
     payload = request.get_json(silent=True)
-    validated, error = _validate(payload)
-    if error:
-        return _json_response({"error": error}, 400)
-
-    scope = validated["scope"]
-    limit = validated["limit"]
-    window = validated["window"]
-    upper = scope.upper()
-
-    current_app.config[f"{upper}_RATE_LIMIT"] = limit
-    current_app.config[f"{upper}_RATE_WINDOW"] = window
-
+    scope = payload.get("scope") if isinstance(payload, dict) else None
+    try:
+        rate_limits.reset(current_app.config, scope)
+    except ValueError as exc:
+        return _json_response({"error": str(exc)}, 400)
     current_app.logger.info(
-        "Rate-limit applied (in-memory): %s limit=%d window=%d",
-        sanitize_log_string(scope),
-        limit,
-        window,
+        "Rate limit reset to startup value: %s", sanitize_log_string(scope or "all")
     )
-    return _json_response({"scope": scope, "limit": limit, "window": window})
+    return _json_response(
+        {
+            "scopes": rate_limits.snapshot(current_app.config),
+            "persisted": rate_limits.is_persisted(),
+        }
+    )
 
 
 @admin_bp.route("/ratelimit/ip-rules", methods=["GET"])

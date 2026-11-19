@@ -146,8 +146,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const _routeAliases = Object.create(null);
   Object.assign(_routeAliases, {
     // === Moderation tabs ===
-    // 2026-05-18 v5: ratelimit promoted to first-class sidebar slug (has its
-    // own ADMIN_ROUTES entry). Alias removed so #/ratelimit resolves directly.
     fingerprints: { nav: "moderation", tab: "fingerprints" },
     // brief 0518-v3 #2 (2026-05-18): queue + bans now moderation tabs.
     // Keep deep-link aliases so old bookmarks (#/modqueue, #/modbans) still
@@ -473,7 +471,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "sec-polls",
         "sec-security",
         "sec-ws-auth",
-        "sec-onscreen-limits",
       ],
     },
     assets: {

@@ -375,6 +375,37 @@ def _isolate_viewer_images(tmp_path):
         viewer_images._state.reset_for_tests(original)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _isolate_rate_limits_session(tmp_path_factory):
+    """Session-scoped apps (the shared /ws server) must not read a developer's
+    saved rate limits from the real runtime/rate_limits.json at create_app."""
+    from server.services import rate_limits
+
+    original = rate_limits._state.path
+    rate_limits._state.reset_for_tests(
+        tmp_path_factory.mktemp("danmu_rate_limits") / "rate_limits.json"
+    )
+    yield
+    rate_limits._state.reset_for_tests(original)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_rate_limits(tmp_path):
+    """Per-test rate-limit overrides file, same pattern as _isolate_ratelimit_ip.
+
+    Function-scoped autouse fixtures are set up before ``app``, so
+    ``create_app`` reads this empty per-test file, never another test's saves.
+    """
+    from server.services import rate_limits
+
+    original = rate_limits._state.path
+    rate_limits._state.reset_for_tests(tmp_path / "rate_limits.json")
+    try:
+        yield
+    finally:
+        rate_limits._state.reset_for_tests(original)
+
+
 @pytest.fixture(autouse=True)
 def _isolate_ratelimit_ip(tmp_path):
     """Redirect ratelimit_ip runtime file to per-test tmp.

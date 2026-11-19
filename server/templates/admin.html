@@ -72,6 +72,9 @@
         settingDefaults: {{ (setting_defaults or {}) | tojson }},
         defaultColorPalette: {{ default_color_palette | tojson }},
         appVersion: {{ app_version | tojson }},
+        // 登入頁要說「還可嘗試幾次、之後鎖多久」——用實際生效的值，不寫死。
+        loginLimit: {{ config.get("LOGIN_RATE_LIMIT", 5) | tojson }},
+        loginWindow: {{ config.get("LOGIN_RATE_WINDOW", 300) | tojson }},
         // WebSocket is served by Flask on the same web origin at /ws.
         // Admin itself still polls /admin/live-feed/recent.
         wsPath: "/ws",

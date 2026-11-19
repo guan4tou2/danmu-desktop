@@ -260,7 +260,9 @@ def test_login_is_one_field_and_says_what_happens_next(zh):
     assert "admin-login-icon" in js and "admin-login-wordmark" in js
     assert "data-login-reveal" in js, "密碼要能看——打錯字是最常見的失敗原因"
     assert "還可嘗試" in zh["loginAttemptsRemaining"]
-    assert "鎖定 15 分鐘" in zh["loginAttemptsRemaining"]
+    # 鎖多久是實際生效的登入時間窗（由模板帶進來），不是稿上寫死的 15 分鐘。
+    assert "鎖定 {min} 分鐘" in zh["loginAttemptsRemaining"]
+    assert "loginWindow" in _read("server/templates/admin.html")
     assert 'classList.toggle("is-warn"' not in js, "密碼錯誤不是警告"
 
 

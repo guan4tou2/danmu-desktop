@@ -22,6 +22,7 @@
     token: null,         // {enabled, prefix, has_token, rotated_at, created_at}
     plainToken: null,    // raw, only after regen
     usage24h: [],        // 24 hour entries
+    ceilingPerMin: 0,    // token 通道的上限，來自伺服器
     ips: [],             // recent IPs
     audit: [],           // audit events
     pollTimer: 0,
@@ -44,7 +45,7 @@
                 <span class="admin-ft-token-icon">⚿</span>
                 <div class="admin-ft-token-title">
                   <div class="name">Fire Token · ${ServerI18n.t("firetokenSharedSecretLabel")}</div>
-                  <div class="meta">${ServerI18n.t("firetokenCardMeta")} · admin lane ceiling 200/min</div>
+                  <div class="meta">${ServerI18n.t("firetokenCardMeta")}<span data-ft-ceiling></span></div>
                 </div>
                 <span class="admin-ft-status" data-ft-status>${ServerI18n.t("firetokenStatusLoading")}</span>
               </div>
@@ -142,6 +143,14 @@
       if (!r.ok) return;
       const data = await r.json();
       _state.usage24h = Array.isArray(data.usage_24h) ? data.usage_24h : [];
+      // 這條通道實際生效的上限（審核 › 發送上限可改），換算成每分鐘。
+      _state.ceilingPerMin = Number(data.ceiling_per_min) || 0;
+      const ceilingEl = document.querySelector("[data-ft-ceiling]");
+      if (ceilingEl) {
+        ceilingEl.textContent = _state.ceilingPerMin > 0
+          ? " · " + ServerI18n.t("firetokenCeilingPerMin", { n: _state.ceilingPerMin })
+          : "";
+      }
       _state.ips = Array.isArray(data.ips) ? data.ips : [];
       _renderChart();
       _renderIps();
@@ -309,7 +318,7 @@
       return;
     }
     const peak = Math.max(...arr);
-    const ceiling = 12000; // 200/min × 60min
+    const ceiling = (_state.ceilingPerMin || 0) * 60; // 每分鐘上限 × 60 分鐘
     const ceilingPct = peak > 0 ? Math.min(100, (ceiling / Math.max(peak, ceiling)) * 100) : 100;
     wrap.innerHTML = `
       <div class="admin-ft-chart-bars">

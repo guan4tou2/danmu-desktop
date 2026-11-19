@@ -1586,21 +1586,10 @@
       const body = await r.json();
       const fire = (body.rate_limits && body.rate_limits.fire) || {};
       const totals = (body.rate_limits && body.rate_limits.totals) || {};
-      // 2026-05-19 (PR review): pull config from rate_limit_config
-      // instead of hard-coding. Old responses (pre-config-injection
-      // server) fall back to per-deployment defaults.
-      const cfg = (body.rate_limit_config && body.rate_limit_config.fire) || {};
       const uptime = Math.max(
         1,
         (body.server_time || 0) - (body.server_started_at || 0)
       );
-      // Rate limits — `fire` scope drives the visible per-FP limit.
-      // Global/burst/cooldown don't have their own config keys yet,
-      // so render "—" rather than mislead with hardcoded numbers.
-      set("[data-vc-rate-fp]", cfg.limit || "—");
-      set("[data-vc-rate-global]", "—");
-      set("[data-vc-rate-burst]", "—");
-      set("[data-vc-rate-cooldown]", cfg.window || "—");
       // Content limits — text max from validation.py is 100. Surface
       // as "—" until exposed via a config endpoint to avoid drift.
       set("[data-vc-msg-len]", 100);
@@ -1730,30 +1719,15 @@
     limitsPanel.id = LIMITS_ID;
     limitsPanel.className = "admin-dsp2-fold lg:col-span-2";
     limitsPanel.innerHTML =
-      '<summary class="admin-ui-page-title">' + escapeHtml(t("viewerLimitsFoldTitle")) + '</summary>' +
+      '<summary class="admin-ui-page-title">' + escapeHtml(t("displayContentLimitsTitle")) + '</summary>' +
       '<div class="admin-vc-limits-grid">' +
-      // ── Rate Limits card ───────────────────────────────────────
-      '<div class="admin-vc-limit-card">' +
-        '<div class="admin-vc-limit-card__head">' +
-          '<span class="admin-vc-limit-card__dot is-amber"></span>' +
-          '<span class="admin-vc-limit-card__zh">' + escapeHtml(t("displayRateLimitsTitle")) + '</span>' +
-          '<a href="#/ratelimit" class="admin-vc-limit-card__edit">' + escapeHtml(t("displayEditLink")) + '</a>' +
-        '</div>' +
-        _vcLimitRow(escapeHtml(t("displayRateFpLabel")), "PER FP / MIN", '<span data-vc-rate-fp>—</span>', escapeHtml(t("displayRateFpUnit")), escapeHtml(t("displayRateFpHint"))) +
-        _vcLimitRow(escapeHtml(t("displayRateGlobalLabel")), "GLOBAL / SEC", '<span data-vc-rate-global>—</span>', "/s", escapeHtml(t("displayRateGlobalHint"))) +
-        _vcLimitRow(escapeHtml(t("displayRateBurstLabel")), "BURST WINDOW", '<span data-vc-rate-burst>—</span>', escapeHtml(t("displayRateBurstUnit")), escapeHtml(t("displayRateBurstHint"))) +
-        _vcLimitRow(escapeHtml(t("displayRateCooldownLabel")), "COOLDOWN", '<span data-vc-rate-cooldown>—</span>', "s", escapeHtml(t("displayRateCooldownHint"))) +
-        '<div class="admin-vc-limit-card__foot">' +
-          '⚠ ' + escapeHtml(t("displayRateLimitsFooter")) +
-        '</div>' +
-      '</div>' +
-
+      // 2026-11-19：原本這裡有一張「速率限制」唯讀卡。它把每 IP 上限標成
+      // 「每人每分鐘」、把時間窗標成「Cooldown 時間」、其餘兩列固定顯示「—」，
+      // 提示還寫「超過自動排隊」（實際回 429）。發送上限現在只有一個入口：
+      // 審核 › 發送上限。
       // ── Content Limits card ────────────────────────────────────
+      // 卡片自己的標題列拿掉了——摺疊區的標題已經是「內容限制」，再寫一次是重複。
       '<div class="admin-vc-limit-card">' +
-        '<div class="admin-vc-limit-card__head">' +
-          '<span class="admin-vc-limit-card__dot is-cyan"></span>' +
-          '<span class="admin-vc-limit-card__zh">' + escapeHtml(t("displayContentLimitsTitle")) + '</span>' +
-        '</div>' +
         _vcLimitRow(escapeHtml(t("displayMsgLenLabel")), "MAX LENGTH", '<span data-vc-msg-len>—</span>', escapeHtml(t("displayMsgLenUnit")), escapeHtml(t("displayMsgLenHint"))) +
         _vcLimitRow(escapeHtml(t("displayNickLenLabel")), "NICK MAX", '<span data-vc-nick-len>—</span>', escapeHtml(t("displayNickLenUnit")), escapeHtml(t("displayNickLenHint"))) +
         _vcLimitRow(escapeHtml(t("displayDedupLabel")), "DEDUP WINDOW", '<span data-vc-dedup>—</span>', "s", escapeHtml(t("displayDedupHint"))) +
