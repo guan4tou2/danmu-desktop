@@ -145,6 +145,83 @@ def test_incoming_webhook_fires_danmu(client):
     assert len(danmu) == 1
 
 
+def _hook_with_rule(client, rule):
+    """Register a signed webhook and one filter rule; return (hook_id, secret)."""
+    token = _login(client)
+    secret = "test-secret-key"
+    resp = client.post(
+        "/admin/webhooks/register",
+        json={"url": "https://example.com/hook", "events": ["on_danmu"], "secret": secret},
+        headers={"X-CSRF-Token": token},
+    )
+    added = client.post("/admin/filters/add", json=rule, headers={"X-CSRF-Token": token})
+    assert added.status_code == 200, added.data
+    return resp.get_json()["hook_id"], secret
+
+
+def _send(client, hook_id, secret, text):
+    payload = json.dumps({"text": text}).encode()
+    signature = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+    return client.post(
+        f"/admin/webhook/incoming/{hook_id}",
+        data=payload,
+        content_type="application/json",
+        headers={"X-Webhook-Signature": signature},
+    )
+
+
+def test_incoming_webhook_applies_replace_rules(client):
+    """A replace rule rewrites the text; it used to raise (500) on this path."""
+    hook_id, secret = _hook_with_rule(
+        client,
+        {"type": "replace", "pattern": "darn", "action": "replace", "replacement": "***"},
+    )
+
+    resp = _send(client, hook_id, secret, "well darn it")
+
+    assert resp.status_code == 200, resp.data
+    texts = [m.get("text") for m in ws_queue.dequeue_all()]
+    assert "well *** it" in texts
+    assert "well darn it" not in texts
+
+
+def test_incoming_webhook_holds_messages_that_hit_a_review_rule(client):
+    """Same as a viewer's message: a review rule means the moderation queue,
+    not the screen."""
+    from server.services.mod_queue import mod_queue
+
+    hook_id, secret = _hook_with_rule(
+        client, {"type": "keyword", "pattern": "giveaway", "action": "review"}
+    )
+
+    resp = _send(client, hook_id, secret, "free giveaway here")
+
+    assert resp.status_code == 202, resp.data
+    body = resp.get_json()
+    assert body["status"] == "queued_for_review"
+    assert not [m for m in ws_queue.dequeue_all() if m.get("text") == "free giveaway here"]
+    assert body["queue_id"] in [item["id"] for item in mod_queue.snapshot()["pending"]]
+
+
+def test_incoming_webhook_is_not_lost_when_the_review_queue_fails(client, monkeypatch):
+    """Same choice as /fire: a broken queue lets the message through rather
+    than answering 500 and dropping it."""
+    from server.services.mod_queue import mod_queue
+
+    def broken(*_args, **_kwargs):
+        raise RuntimeError("queue unavailable")
+
+    monkeypatch.setattr(mod_queue, "enqueue", broken)
+    hook_id, secret = _hook_with_rule(
+        client, {"type": "keyword", "pattern": "giveaway", "action": "review"}
+    )
+
+    resp = _send(client, hook_id, secret, "free giveaway here")
+
+    assert resp.status_code == 200, resp.data
+    assert [m for m in ws_queue.dequeue_all() if m.get("text") == "free giveaway here"]
+
+
 def test_incoming_webhook_bad_signature_rejected(client):
     """Incoming webhook with invalid signature should be rejected."""
     token = _login(client)

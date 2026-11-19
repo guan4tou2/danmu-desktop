@@ -3,7 +3,7 @@
 import json
 import re as _re
 
-from flask import request
+from flask import current_app, request
 
 from ...services import audit_log, messaging
 from ...services.security import limit_public_body, rate_limit
@@ -226,8 +226,23 @@ def incoming_webhook(hook_id):
     result = filter_engine.check(text)
     if result.action == "block":
         return _json_response({"error": "Blocked by filter rule"}, 403)
-    if result.action == "replace" and result.replacement is not None:
-        text = result.replacement
+    if result.action == "replace":
+        # FilterResult 帶的是改寫後的全文（.text）。這裡原本讀 .replacement——
+        # 沒有這個欄位，命中替換規則的訊息一律 500。
+        text = result.text
+    if result.action == "review":
+        # 與觀眾送出的訊息一致：命中送審規則就進審核佇列，不直接上畫面。
+        # 原本這條路徑完全沒看 review，等於外部系統可以繞過人工審核。
+        # 佇列出問題時也與 /fire 一致——放行，而不是回 500 把訊息丟掉。
+        try:
+            from ...services.mod_queue import mod_queue
+
+            rule_name = (result.reason or "review")[:60]
+            queue_id = mod_queue.enqueue(text, rule_name=rule_name, pattern=rule_name)
+            mod_queue.start_reaper()
+            return _json_response({"status": "queued_for_review", "queue_id": queue_id}, 202)
+        except Exception as exc:
+            current_app.logger.warning("webhook incoming: review queue failed (%s)", exc)
 
     msg = {
         "text": text,

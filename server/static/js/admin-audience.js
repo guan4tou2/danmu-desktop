@@ -563,7 +563,9 @@
         body: JSON.stringify({
           type: "fingerprint",
           pattern: fp,
-          action: "mask",
+          // 指紋規則引擎只認 block。原本送的 "mask" 不在允許清單，這顆按鈕
+          // 每次都被伺服器以 400 拒絕。
+          action: "block",
           priority: 0,
           enabled: true,
         }),

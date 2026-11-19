@@ -73,7 +73,13 @@ def overlay():
     if ws_token and not session.get("logged_in"):
         return redirect(url_for("admin_bp.admin"))
 
-    join_url = request.host_url.rstrip("/")
+    # 待機畫面上的入場網址與 QR。用 localhost 開這一頁時（OBS 與 server 同一台
+    # 機器是常態）改用區網位址，否則投影出去的 QR 沒有人連得到。
+    from ..services import join_url as join_url_service
+
+    join_url = join_url_service.resolve(request.host_url, current_app.config.get("TRUSTED_HOSTS"))[
+        "url"
+    ]
     join_label = join_url.split("://", 1)[-1]
     return render_template(
         "overlay.html",

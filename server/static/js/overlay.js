@@ -186,8 +186,14 @@
     qr.dataset.rendered = "1";
   }
 
+  // 待機畫面上寫給觀眾看的位址。以伺服器給的入場網址為準（用 localhost 開
+  // 這一頁時，伺服器會換成區網位址）；沒有才退回這一頁自己的位址。
   function _hostName() {
-    try { return window.location.host; } catch (_) { return "danmu.local"; }
+    try {
+      var joinUrl = window.OVERLAY_CONFIG && window.OVERLAY_CONFIG.joinUrl;
+      if (joinUrl) return String(joinUrl).replace(/^[a-z]+:\/\//i, "").replace(/\/$/, "");
+      return window.location.host;
+    } catch (_) { return "danmu.local"; }
   }
 
   function _setIdleState(state) {

@@ -412,9 +412,12 @@
 
   // ── Add entry ────────────────────────────────────────────
 
-  function addEntry(data) {
+  // tsSec：伺服器轉發這則訊息的時間（unix 秒）。沒有才退回「現在」——舊版
+  // server 與測試資料不帶這個欄位。原本一律用 Date.now()，所以重新整理後
+  // 一次拿回來的整批訊息全部顯示同一秒。
+  function addEntry(data, tsSec) {
     const entry = {
-      ts: Date.now(),
+      ts: typeof tsSec === "number" && tsSec > 0 ? tsSec * 1000 : Date.now(),
       data: data,
       // message_id 是伺服器給的穩定識別碼，撤回與詳情抽屜都要用它。
       // 沒有它（舊資料／測試資料）才退回本機流水號。
@@ -615,7 +618,7 @@
             if (e.seq <= _pollerSince) continue;
             _pollerSince = e.seq;
           }
-          addEntry(e.data);
+          addEntry(e.data, e.ts);
         }
       }
       if (typeof j.next_since === "number" && j.next_since > _pollerSince) {

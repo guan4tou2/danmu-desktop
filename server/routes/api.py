@@ -208,6 +208,12 @@ def _record_history_if_enabled(data, fingerprint, client_ip, *, blocked_by=None,
     設計稿 10 · G2 的場次詳情要列出「被擋下 23」並在那幾列標出是哪條規則擋
     的；在這之前被擋的彈幕直接消失，主持人事後完全查不到自己擋掉了什麼。
     """
+    if not blocked_by:
+        # 控制台的「訊息」數：這一場收下了幾則。被規則或封鎖擋掉的不算。
+        from ..services import session_service
+
+        session_service.note_message()
+
     if not history_service.danmu_history:
         return
 

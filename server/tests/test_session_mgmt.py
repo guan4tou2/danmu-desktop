@@ -45,6 +45,104 @@ def test_current_returns_idle_state(client):
     assert body["name"] is None
 
 
+def _open(client, name="Friday"):
+    token = _login_csrf(client)
+    opened = client.post(
+        "/admin/session/open", json={"name": name}, headers={"X-CSRF-Token": token}
+    )
+    assert opened.status_code == 200, opened.data
+
+
+def _message_count(client):
+    return json.loads(client.get("/admin/session/current").data)["message_count"]
+
+
+def test_current_counts_the_messages_accepted_in_this_session(client):
+    """The console's "Messages" is this session's count — not the whole
+    retained history, and not what a rule stopped."""
+    from server.routes.api import _record_history_if_enabled
+
+    _record_history_if_enabled({"text": "before the session"}, "fp", "203.0.113.5")
+    _open(client)
+    assert _message_count(client) == 0
+
+    _record_history_if_enabled({"text": "one"}, "fp", "203.0.113.5")
+    _record_history_if_enabled({"text": "two"}, "fp", "203.0.113.5", status="forwarded")
+    _record_history_if_enabled({"text": "spam"}, "fp", "203.0.113.5", blocked_by="rule-1")
+
+    assert _message_count(client) == 2
+
+
+def test_the_count_does_not_shrink_when_history_is_cleaned_up(client):
+    """History keeps a day; a session can run for weeks. The session's count
+    is its own, so what history has dropped is still counted."""
+    from server.routes.api import _record_history_if_enabled
+    from server.services import history as history_service
+
+    _open(client)
+    for text in ("one", "two", "three"):
+        _record_history_if_enabled({"text": text}, "fp", "203.0.113.5")
+    history_service.danmu_history.clear()
+
+    assert _message_count(client) == 3
+
+
+def test_the_count_survives_a_restart(client, monkeypatch):
+    monkeypatch.setattr(session_service, "_COUNT_SAVE_INTERVAL", 0)  # save every message
+    _open(client)
+    session_service.note_message()
+    session_service.note_message()
+
+    session_service.reset_for_tests()  # what a restart leaves: only the file
+
+    assert _message_count(client) == 2
+
+
+def test_the_count_is_not_written_to_disk_on_every_message(client, monkeypatch):
+    writes = []
+    _open(client)
+    monkeypatch.setattr(session_service, "_persist", lambda: writes.append(1))
+
+    for _ in range(50):
+        session_service.note_message()
+
+    assert writes == []  # the session was saved a moment ago, when it opened
+    assert session_service.get_message_count() == 50
+
+
+def test_a_session_that_predates_the_count_starts_from_what_history_holds(client):
+    """Upgrading with a session already running: history is the best figure
+    there is. It is taken once — later cleanup does not pull the count down."""
+    from server.services import history as history_service
+
+    _open(client)
+    history_service.danmu_history.add({"text": "one"})
+    history_service.danmu_history.add({"text": "two"})
+    history_service.danmu_history.add({"text": "spam", "blockedBy": "rule-1"})
+    session_service._message_count = None  # the state file of an older version
+
+    assert _message_count(client) == 2
+
+    history_service.danmu_history.clear()
+    session_service.note_message()
+    assert _message_count(client) == 3
+
+
+def test_the_audience_is_not_told_the_count(client):
+    _open(client)
+    session_service.note_message()
+
+    public = json.loads(client.get("/session/public-state").data)
+
+    assert public["status"] == "live"
+    assert "message_count" not in public
+
+
+def test_current_has_no_message_count_without_a_session(client):
+    _login_csrf(client)
+    assert "message_count" not in json.loads(client.get("/admin/session/current").data)
+
+
 # ─── /admin/session/open ──────────────────────────────────────────────────────
 
 

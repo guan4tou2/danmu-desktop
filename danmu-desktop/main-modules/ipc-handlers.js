@@ -174,7 +174,7 @@ function setupIpcHandlers(getMainWindow, childWindows) {
   // BrowserWindow instance before loadFile). Returns null for unknown
   // senders and for windows already destroyed by a newer createChild —
   // the child treats null as "don't connect".
-  ipcMain.handle("overlay:get-config", (event) => {
+  ipcMain.handle("overlay:get-config", async (event) => {
     const win = childWindows.find(
       (w) => w && !w.isDestroyed() && w.webContents === event.sender
     );
@@ -182,6 +182,8 @@ function setupIpcHandlers(getMainWindow, childWindows) {
       console.warn("[Main] overlay:get-config: rejected IPC from untrusted sender");
       return null;
     }
+    // 待機畫面上的位址可能還在查（setupChildWindow）；等它，查完才回設定。
+    if (win.overlayConfigReady) await win.overlayConfigReady;
     return win.overlayConfig || null;
   });
 

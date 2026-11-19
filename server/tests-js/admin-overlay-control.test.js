@@ -65,6 +65,27 @@ describe("cockpit display card follows the shared display state", () => {
     expect(status()).toBe('uiDisplayOff · setupWizardReadyDisplayOk:{"n":1}');
   });
 
+  test("the top-bar pill follows the display state, on every page", async () => {
+    // 膠囊每一頁都在；原本它讀的是排版設定，永遠顯示「開」。
+    document.body.insertAdjacentHTML("beforeend",
+      '<button class="admin-dash-broadcast is-on" data-overlay-pill>顯示層 · <span data-overlay-pill-state>statusOn</span></button>');
+    const pill = document.querySelector("[data-overlay-pill]");
+    const label = () => pill.querySelector("[data-overlay-pill-state]").textContent;
+
+    document.dispatchEvent(new CustomEvent("admin-overlay-state", { detail: { live: false, count: 1 } }));
+    expect(label()).toBe("statePaused");
+    expect(pill.classList.contains("is-off")).toBe(true);
+    expect(pill.classList.contains("is-on")).toBe(false);
+
+    // 換到沒有顯示層卡片的頁面：問一次伺服器，不靠控制台的輪詢。
+    serverMode = "live";
+    document.dispatchEvent(new CustomEvent("admin-route-applied", { detail: { route: "moderation" } }));
+    await flush();
+    await flush();
+    expect(label()).toBe("statusOn");
+    expect(pill.classList.contains("is-on")).toBe(true);
+  });
+
   const showCard = () => jest.spyOn(HTMLElement.prototype, "offsetParent", "get")
     .mockImplementation(function () { return this.parentElement; });
 

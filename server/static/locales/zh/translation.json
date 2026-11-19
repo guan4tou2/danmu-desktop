@@ -2917,5 +2917,7 @@
   "rlFoldBlocked": "近期被擋紀錄",
   "firetokenCeilingPerMin": "上限 {n}／分鐘",
   "rlOutOfRange": "請輸入 {min}–{max} 之間的整數",
-  "rlNotPersisted": "已套用，但伺服器無法寫入存檔——重啟後會還原"
+  "rlNotPersisted": "已套用，但伺服器無法寫入存檔——重啟後會還原",
+  "joinUrlLocalOnly": "觀眾連不到這個網址",
+  "joinUrlNotTrusted": "觀眾連不到：請把 {host} 加進 TRUSTED_HOSTS"
 }

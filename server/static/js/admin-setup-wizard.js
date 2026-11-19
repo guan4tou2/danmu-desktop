@@ -123,6 +123,16 @@
 
   function _deriveServerSnapshot() {
     _state.publicUrl = window.location.origin + "/";
+    // 給觀眾的網址以伺服器說的為準（用 localhost 開後台時會是區網位址）。
+    // 先用這一頁的網址頂著，回來再換；換不到就維持原樣。
+    fetch("/admin/qr/public", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!j || !j.url || j.url + "/" === _state.publicUrl) return;
+        _state.publicUrl = j.url + "/";
+        if (_state.open) _renderStep(); // 精靈開著就重畫，讓畫面上的網址換成新的
+      })
+      .catch(() => {});
   }
 
   function _onHashChange() {

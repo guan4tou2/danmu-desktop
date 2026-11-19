@@ -54,6 +54,18 @@ def test_recent_respects_limit():
     assert [e["data"]["text"] for e in nxt["entries"]][0] == "msg-10"
 
 
+def test_entries_carry_the_time_the_server_forwarded_them(monkeypatch):
+    """The feed shows when a message went out, not when the page polled."""
+    clock = iter([1000.0, 1000.7, 1003.2])
+    monkeypatch.setattr(live_feed_buffer.time, "time", lambda: next(clock))
+
+    for text in ("a", "b", "c"):
+        live_feed_buffer.append({"text": text})
+
+    assert [e["ts"] for e in live_feed_buffer.snapshot()] == [1000.0, 1000.7, 1003.2]
+    assert [e["ts"] for e in live_feed_buffer.recent(0)["entries"]] == [1000.0, 1000.7, 1003.2]
+
+
 def test_buffer_caps_at_max_entries():
     # Push 250 entries; buffer keeps last 200, but seq still monotonic.
     for i in range(250):

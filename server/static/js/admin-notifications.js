@@ -65,7 +65,7 @@
     const results = await Promise.all(tasks);
     const merged = results.flat();
     merged.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
-    _state.items = merged;
+    _state.items = _numberDuplicates(merged);
     _renderBadge();
     if (_isOpen()) _renderPanel();
   }
@@ -102,6 +102,30 @@
     });
   }
 
+  // 通知的 id 必須只由事件自己的內容決定。已讀是記 id 的集合；原本 id 裡
+  // 帶著「這則在清單裡排第幾」，每進來一則新事件，舊事件的位置全部往後移、
+  // id 全部換新，先前標的已讀整批作廢——鈴鐺因此永遠歸不了零。
+  function _stableSuffix(value) {
+    const text = typeof value === "string" ? value : JSON.stringify(value || "");
+    let h = 5381;
+    for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+  }
+
+  // 同一秒、內容一模一樣的兩則（連續兩次登入失敗）要是兩則通知。給每個 id
+  // 加上它在「同 id」那一組裡的序號——清單是新的在前，所以從尾端（最舊）
+  // 開始數：新事件進來排在前面，舊事件的序號不會變。
+  function _numberDuplicates(items) {
+    const seen = {};
+    for (let i = items.length - 1; i >= 0; i--) {
+      const base = items[i].id;
+      const n = seen[base] || 0;
+      seen[base] = n + 1;
+      if (n) items[i].id = base + "~" + n;
+    }
+    return items;
+  }
+
   async function _fetchFilterEvents() {
     const r = await fetch("/admin/filters/events", { credentials: "same-origin" });
     if (!r.ok) return [];
@@ -109,7 +133,11 @@
     const events = Array.isArray(data.events) ? data.events : [];
     return events.map(function (e, i) {
       const ts = (Number(e.ts) || 0) * 1000;
-      const id = "flt-" + (e.ts || i) + "-" + (e.action || "x") + "-" + i;
+      // seq 是伺服器記憶體裡的流水號，重啟就從頭數；只用它當 id，重啟後的新
+      // 事件會撞上先前已讀的那一則、一出現就是已讀。所以連時間一起算。
+      const id = "flt-" + (e.ts || 0) + "-" + (e.seq != null
+        ? "s" + e.seq
+        : (e.action || "x") + "-" + _stableSuffix([e.rule_id, e.text_excerpt]));
       const action = e.action || "match";
       const sev = action === "drop" ? "warn" : "info";
       return {
@@ -132,7 +160,7 @@
     return events.map(function (e, i) {
       const ts = (Number(e.ts) || 0) * 1000;
       const kind = String(e.kind || "?");
-      const id = "wh-" + (e.ts || i) + "-" + kind + "-" + i;
+      const id = "wh-" + (e.ts || 0) + "-" + kind + "-" + _stableSuffix([e.actor, e.meta]);
       const sev = (kind === "unregister") ? "warn" : "info";
       return {
         id: id,
@@ -153,11 +181,15 @@
     const events = Array.isArray(data.events) ? data.events : [];
     const allowed = new Set(["auth", "broadcast", "system", "session", "sessions"]);
     return events.filter(function (e) {
-      return allowed.has(String(e.source || ""));
-    }).map(function (e, i) {
+      if (!allowed.has(String(e.source || ""))) return false;
+      // 自己登入、登出不是需要被通知的事；登入失敗與改密碼才是。原本鈴鐺上
+      // 的數字幾乎全是主持人自己的登入紀錄。
+      const own = String(e.source) === "auth" && (e.kind === "login" || e.kind === "logout");
+      return !own;
+    }).map(function (e) {
       const ts = (Number(e.ts) || 0) * 1000;
       const kind = String(e.kind || "?");
-      const id = "sys-" + (e.ts || i) + "-" + (e.source || "x") + "-" + kind + "-" + i;
+      const id = "sys-" + (e.ts || 0) + "-" + (e.source || "x") + "-" + kind + "-" + _stableSuffix([e.actor, e.meta]);
       const sev = kind === "login_failed" ? "warn" : "info";
       return {
         id: id,

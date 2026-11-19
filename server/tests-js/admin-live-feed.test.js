@@ -72,6 +72,20 @@ describe("live feed incremental rendering", () => {
     await jest.advanceTimersByTimeAsync(1500);
   }
 
+  test("rows show when the server sent each message, not when the page fetched them", async () => {
+    // 三則訊息相隔數秒送出，重新整理後同一次輪詢一起拿回來。
+    const at = (h, m, sec) => new Date(2026, 10, 19, h, m, sec).getTime() / 1000;
+    queue.push({ ...entry(1, "first", "m1"), ts: at(11, 57, 3) });
+    queue.push({ ...entry(2, "second", "m2"), ts: at(11, 57, 41) });
+    queue.push({ ...entry(3, "third", "m3"), ts: at(11, 58, 9) });
+    await jest.advanceTimersByTimeAsync(1500);
+
+    const shown = Array.from(document.querySelectorAll("#settings-grid *"))
+      .map((el) => (el.children.length === 0 ? el.textContent.trim() : ""))
+      .filter((text) => /^\d{2}:\d{2}:\d{2}$/.test(text));
+    expect(shown.sort()).toEqual(["11:57:03", "11:57:41", "11:58:09"]);
+  });
+
   test("new message inserts one row instead of rebuilding the list", async () => {
     queue.push(entry(1, "第一則", "id1"));
     await poll();

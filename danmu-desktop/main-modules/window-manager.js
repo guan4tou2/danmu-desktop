@@ -3,7 +3,7 @@ const { app, BrowserWindow, nativeTheme, screen, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { sanitizeLog } = require("../shared/utils");
-const { buildOverlayConfig } = require("./child-ws-script");
+const { buildOverlayConfig, resolveViewerHost } = require("./child-ws-script");
 const { buildDisplayOptions } = require("./display-watcher");
 
 // Main-window default size — used on first run and as a fallback when the
@@ -389,6 +389,25 @@ function setupChildWindow(
     startupAnimationSettings,
     wsAuthToken
   );
+  // 待機畫面上給觀眾掃的位址。連的是本機時要查區網位址、再問 server 認不
+  // 認它（非同步，最多 1.5 秒）；overlay:get-config 會等這個結果。查不到或
+  // server 不認就維持上面那份（印連線位址，跟以前一樣）。
+  const lookup = resolveViewerHost(ip, port)
+    .then((viewerHost) => {
+      if (viewerHost === String(ip)) return;
+      // 這個視窗在查詢期間又被設定了一次（換了位址或 token）：舊查詢的結果
+      // 不能蓋掉新的設定。
+      if (targetWindow.overlayConfigReady !== lookup) return;
+      targetWindow.overlayConfig = buildOverlayConfig(
+        ip,
+        port,
+        startupAnimationSettings,
+        wsAuthToken,
+        viewerHost
+      );
+    })
+    .catch(() => {});
+  targetWindow.overlayConfigReady = lookup;
 
   targetWindow.loadFile(path.join(__dirname, "../child.html"));
   hardenWebContents(targetWindow.webContents);
