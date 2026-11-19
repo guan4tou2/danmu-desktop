@@ -1,6 +1,6 @@
 # Danmu Fire — Feature Specification
 
-**Status:** Canonical feature inventory (synced 2026-11-19 against v5.13.0; the admin IA and route map below are current, the 5.0.0 notes further down are a historical snapshot)
+**Status:** Canonical feature inventory (synced 2026-11-19 against v5.13.1; the admin IA and route map below are current, the 5.0.0 notes further down are a historical snapshot)
 **Audience:** designers, PMs, Claude Design agents
 **Pairs with:** [DESIGN.md](../DESIGN.md) (design tokens), [CLAUDE.md](../CLAUDE.md) (project rules)
 
@@ -25,6 +25,7 @@ One line per release, taken from [CHANGELOG.md](../CHANGELOG.md) (the authority;
 - **5.11.0** (2026-11-15) — "Viewer" page renamed Danmu style (彈幕樣式 in the sidebar): one page for themes, defaults and viewer-page appearance; theme font and viewer default colour now take effect.
 - **5.12.0** (2026-11-15) — Time limit on regex matching of each message (shared 0.25 s budget; rules that cannot finish fail closed).
 - **5.13.0** (2026-11-19) — Send limits become one form covering seven scopes; saved limits survive a restart; cooldown and on-screen cap get controls; `/fire` traffic is counted; rate-limit 429s carry `Retry-After`.
+- **5.13.1** (2026-11-19) — Event-day fixes: the entry QR and public address no longer silently say `localhost`; the console's message count and clock belong to the running session; the notification bell can reach zero; incoming webhooks honour review rules; the admin panel makes far fewer requests of its own.
 
 The sidebar is now 10 rows (5.11.0 merged Themes into Danmu style). Work after 5.12.0 is planned in [plans/2026-11-15-next-steps.md](plans/2026-11-15-next-steps.md).
 
@@ -489,4 +490,4 @@ If a designer wants one of these, it is a **new product scope** and needs explic
 4. **When showing flows**: use the 7 scenarios above as the storyboard backbone.
 5. **When in doubt about what persists**: check the persistence map. Volatile state should not have a "Reset" button unless the data visibly accumulates (fingerprints, history, widgets).
 
-Last sync: 2026-11-19 against the current workspace, `APP_VERSION = 5.13.0`. The desktop-client sections were not re-audited in this pass and still describe v5.0.0 behaviour.
+Last sync: 2026-11-19 against the current workspace, `APP_VERSION = 5.13.1`. The desktop-client sections were not re-audited in this pass and still describe v5.0.0 behaviour.
