@@ -263,3 +263,17 @@ def test_overlay_idle_screen_shows_the_lan_address(client, app, lan):
 
     assert "http://192.168.1.20:4000" in html  # OVERLAY_CONFIG.joinUrl
     assert "localhost:4000" not in html
+    assert 'id="overlayIdleQr"' in html
+    assert "joinReachable: true" in html
+
+
+def test_overlay_idle_screen_prints_no_qr_when_nobody_could_use_it(client, lan):
+    """The idle screen is projected to the room. A QR that opens each phone's
+    own localhost is worse than none; the host sees why in the admin panel."""
+    lan(address="192.168.1.20")  # detected, but the test app only trusts localhost
+
+    html = client.get("/overlay", base_url="http://localhost:4000").get_data(as_text=True)
+
+    assert 'id="overlayIdleQr"' not in html
+    assert "joinReachable: false" in html
+    assert "用手機掃描 QR" not in html

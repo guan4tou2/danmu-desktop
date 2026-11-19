@@ -77,17 +77,20 @@ def overlay():
     # 機器是常態）改用區網位址，否則投影出去的 QR 沒有人連得到。
     from ..services import join_url as join_url_service
 
-    join_url = join_url_service.resolve(request.host_url, current_app.config.get("TRUSTED_HOSTS"))[
-        "url"
-    ]
+    resolved = join_url_service.resolve(request.host_url, current_app.config.get("TRUSTED_HOSTS"))
+    join_url = resolved["url"]
     join_label = join_url.split("://", 1)[-1]
+    # 找不到觀眾連得到的位址時不印 QR：這個畫面是投影給全場看的，印一個掃了
+    # 只會連到自己手機的 QR，比不印更糟。主持人在後台看得到原因與解法。
+    join_reachable = resolved["source"] != "unavailable"
     return render_template(
         "overlay.html",
         ws_path="/ws",
         ws_token=ws_token,
         join_url=join_url,
         join_label=join_label,
-        qr_svg=qr.render_svg(join_url),
+        join_reachable=join_reachable,
+        qr_svg=qr.render_svg(join_url) if join_reachable else "",
     )
 
 

@@ -95,7 +95,11 @@
   var idleStateConfig = {
     idle: {
       label: "等待配對",
-      subtitle: function (host) { return "用手機掃描 QR 連入 " + host; },
+      // 伺服器找不到觀眾連得到的位址時，這一頁沒有 QR，也不把那個位址
+      // （localhost）寫給全場看。
+      subtitle: function (host) {
+        return _joinReachable() ? "用手機掃描 QR 連入 " + host : "打字，就會飛到這個螢幕上";
+      },
       noteHtml: function (code) { return '或輸入 6 碼連線碼: <span class="overlay-idle-pair-code" id="overlayIdlePairCode">' + code + '</span>'; },
       actionsHtml: '<span class="overlay-idle-hint">⌥⌘C 複製配對碼 · ESC 進入設定</span>',
     },
@@ -194,6 +198,12 @@
       if (joinUrl) return String(joinUrl).replace(/^[a-z]+:\/\//i, "").replace(/\/$/, "");
       return window.location.host;
     } catch (_) { return "danmu.local"; }
+  }
+
+  function _joinReachable() {
+    try {
+      return !(window.OVERLAY_CONFIG && window.OVERLAY_CONFIG.joinReachable === false);
+    } catch (_) { return true; }
   }
 
   function _setIdleState(state) {
