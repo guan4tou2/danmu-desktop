@@ -247,10 +247,14 @@
       e.limit.max = c.max;
       e.limit.value = c.limit;
       // 環境變數可以設成選單裡沒有的秒數；照實顯示，不要悄悄換成別的值。
+      // 這個額外的選項只屬於「目前正在用它」的對象：換對象或存成別的時間窗
+      // 之後要拿掉，否則會在另一個對象上選到伺服器不收的值。
+      e.window.querySelectorAll("option[data-rl-custom]").forEach((o) => o.remove());
       if (!e.window.querySelector(`option[value="${c.window}"]`)) {
         const opt = document.createElement("option");
         opt.value = String(c.window);
         opt.textContent = windowLabel(c.window);
+        opt.dataset.rlCustom = "1";
         e.window.appendChild(opt);
       }
       e.window.value = String(c.window);
@@ -288,7 +292,10 @@
         const r = await fetch("/admin/ratelimit/config", { credentials: "same-origin" });
         if (!r.ok) return;
         const body = await r.json();
-        if (epoch !== configEpoch) return; // 期間有人存過，這份已經過時
+        // 期間有人存過：這份已經過時，不能用。但也不能就此打住——儲存只更新了
+        // 那一個對象，其餘對象還沒有值，換對象時表單會留著上一個對象的數字。
+        // 重抓一份完整的。
+        if (epoch !== configEpoch) { await loadConfig(); return; }
         config = (body && body.scopes) || {};
         forms.forEach(fillForm);
       } catch (_) { /* 輸入框留白，好過顯示一個不是伺服器給的數字 */ }
@@ -525,7 +532,7 @@
           return;
         }
         if (await saveScope(btn, e.target.value, limit, window_)) {
-          syncWindowState(form);
+          fillForm(form); // 以伺服器回的值重畫（也順手收掉不再適用的額外時間窗選項）
           loadStats();
         }
         return;

@@ -95,8 +95,9 @@ docker compose --profile http up -d          # IP／localhost + HTTP，僅供開
 - 後台：`https://<host>/admin`
 - OBS overlay：`https://<host>/overlay`
 
-用 `--profile http`（僅供開發）時沒有 TLS：改用精靈印出的 `http://` 網址，
-路徑相同。
+用 `--profile http`（僅供開發）時沒有 TLS：網址是
+`http://<host>:<HTTP_DEV_PORT>`，路徑相同。`HTTP_DEV_PORT` 讀自 `.env`，預設值
+寫在 `docker-compose.yml`。
 
 觀眾頁、後台、OBS overlay、桌面客戶端與 WebSocket（`wss://<host>/ws`）全部
 共用這一個 HTTPS 入口（連接埠 `443`）。自簽模式若必須用別的連接埠，設定

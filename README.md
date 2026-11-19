@@ -95,8 +95,9 @@ After start-up, open the HTTPS endpoint printed by the wizard:
 - Admin panel: `https://<host>/admin`
 - OBS overlay: `https://<host>/overlay`
 
-With `--profile http` (development only) there is no TLS: use the `http://`
-address the wizard prints instead, with the same paths.
+With `--profile http` (development only) there is no TLS: the pages are at
+`http://<host>:<HTTP_DEV_PORT>`, with the same paths. `HTTP_DEV_PORT` is read
+from `.env`; its default is in `docker-compose.yml`.
 
 Everything — viewer, admin, OBS overlay, desktop client and WebSocket
 (`wss://<host>/ws`) — shares that single HTTPS origin on port `443`. If the
