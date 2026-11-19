@@ -8,7 +8,6 @@ This directory contains dated design briefs, prototype exports, handoffs, and au
 - [../../DESIGN.md](../../DESIGN.md) is the high-level design-system note.
 - Runtime CSS and contract tests are authoritative for implemented UI:
   - [../../shared/tokens.css](../../shared/tokens.css)
-  - [../../shared/hud.css](../../shared/hud.css)
   - [../../server/static/css/viewer-v2.css](../../server/static/css/viewer-v2.css)
   - [../../server/static/css/style.css](../../server/static/css/style.css)
   - [../../danmu-desktop/tests/design-style-contract.test.js](../../danmu-desktop/tests/design-style-contract.test.js)

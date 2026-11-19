@@ -2,149 +2,126 @@
 
 # danmu-desktop
 
-在桌面直接顯示彈幕
+讓任何一場演講都能有彈幕：觀眾用手機送出訊息，訊息飄過講者的螢幕。
 
-[English README](https://github.com/guan4tou2/danmu-desktop/blob/main/README.md)
+[English README](README.md)
 
-完整功能清單（伺服器路由、管理頁面、持久化對照、範圍規範）詳見 [docs/FEATURES.md](docs/FEATURES.md)。完整文件索引見 [docs/README.md](docs/README.md)。
+![彈幕飄過簡報](img/overlay.png)
 
-![img](img/danmu%20display.png)
+<sub>彈幕由顯示端實際繪製；後方的簡報是為了這張截圖加上的示意底圖——顯示端本身是透明的。</sub>
 
-## 概述
+## 運作方式
 
-此專案分為兩個部分：
+| 組成 | 做什麼 |
+|---|---|
+| **伺服器**（`server/`） | 同一個網址提供觀眾頁、後台、`/overlay` 瀏覽器來源，以及推送彈幕給所有顯示端的 `/ws` WebSocket。 |
+| **桌面客戶端**（`danmu-desktop/`） | Electron 應用程式，支援 Windows、macOS、Linux。在你選的螢幕上開一個透明、滑鼠可穿透的視窗，把彈幕畫在目前的畫面上。 |
+| **Slido 橋接**（`slido-extension/`） | 選用的 Chrome 擴充功能，把 Slido 活動的新提問變成彈幕。 |
 
-1. Danmu-Desktop
-   - 客戶端應用程式，在您的電腦上運行以顯示彈幕
-   - 支援 Windows、MacOS 和 Linux
-   - 發布為可攜式桌面套件：Windows portable x64 `.exe`、macOS arm64
-     `.zip`，以及 Linux AppImage / `.deb`
-   - Windows 維持 portable-only 時不發布更新 metadata；macOS 更新 metadata
-     指向 ZIP package
+不裝桌面客戶端也可以：把 `https://<host>/overlay` 加進 OBS 的瀏覽器來源。
 
-![img](img/client.png)
-![img](img/client%20start%20effect.png)
+## 畫面
 
-2. Server
-   - 提供網頁介面用於彈幕輸入
-   - 管理彈幕傳送到已連接的客戶端
-   - 包含管理員配置面板、來源指紋記錄與歷史追蹤
-   - OBS Browser Source 覆蓋層（`/overlay` 路由）
-   - 插件 SDK 支援伺服器端擴展
-   - 四語介面（EN、ZH、JA、KO）
+**觀眾頁**——觀眾打開的頁面，手機直接用，不必安裝任何東西。
 
-![img](img/web%20panel.png)
-![img](img/admin%20panel.png)
+<p>
+  <img src="img/viewer.png" width="72%" alt="桌面上的觀眾頁">
+  <img src="img/viewer-mobile.png" width="19%" alt="手機上的觀眾頁">
+</p>
 
-## 功能特色
+**後台**——即時訊息與顯示控制、審核、彈幕樣式。
 
-### 佈局模式
+![控制台](img/admin-console.png)
+![審核 · 發送上限](img/admin-send-limits.png)
+![彈幕樣式](img/admin-danmu-style.png)
 
-支援五種彈幕顯示佈局：捲動（右至左）、頂部固定、底部固定、浮動（隨機位置）、上升（由下至上）。
+<sub>截圖為英文介面；介面語言跟隨瀏覽器，後台與觀眾頁都有繁體中文。</sub>
 
-![佈局模式](img/danmu-layouts.png)
+**排版與效果**
 
-### 特效與樣式
+![排版模式](img/danmu-layouts.png)
+![效果展示](img/danmu-effects-demo.gif)
+![效果總覽](img/danmu-effects-showcase.png)
 
-內建動畫特效（旋轉、彈跳、彩虹、發光、抖動、波浪、閃爍、縮放），每個特效可調參數。支援暱稱、自訂顏色、文字描邊/陰影，以及多特效疊加。
+## 功能
 
-![特效動態展示](img/danmu-effects-demo.gif)
-![特效展示](img/danmu-effects-showcase.png)
+**觀眾**
 
-### 熱插拔特效 (.dme)
+- 任何瀏覽器都能送出；可選暱稱、顏色、大小與效果——哪些可以改由主持人決定。
+- 五種排版：滾動、頂部、底部、浮動、上升。
+- 八種內建效果（縮放、發光、彈跳、旋轉、震動、波浪、閃爍、彩虹），可以疊加。
+- 送出選項代號（A／B／C…）就能投票。觀眾永遠看不到票數。
+- 四種介面語言：English、繁體中文、日本語、한국어。
 
-將 `.dme` 檔案（YAML 格式）放入 `server/effects/` 目錄即可新增自訂特效，5 秒內自動偵測載入。可在管理面板中編輯和管理特效。
+**主持人**
 
-### 樣式主題
+- **控制台**——即時訊息流、暫停或清空顯示層、就地封鎖發送者或收回單則訊息。
+- **投票**——可連續多題，每題 2–6 個選項，可附圖片與作答時限。
+- **審核**——封鎖規則（關鍵字、正規式、頻率、裝置），命中時拒絕、替換或保留待審；審核佇列；可設期限的封鎖（依裝置或 IP）；發送上限：每則之間的冷卻、同時在畫面上的彈幕數、請求速率上限。
+- **彈幕樣式**——主題（預設、霓虹、復古、電影，或自訂）決定字型、顏色、描邊與陰影；以及觀眾的預設值與可調範圍。
+- **動畫效果**——可熱插拔的 `.dme` 檔（YAML）。放進 `server/effects/` 或在後台直接編輯。
+- **素材**——表情、貼圖、字型（可做子集化，把大型中日韓字型縮小）與音效。
+- **小工具**——固定在顯示層上的計分板、跑馬燈與標籤。
+- **紀錄與匯出**——場次、觀眾、搜尋、操作紀錄；每則訊息的送達狀態。
+- **系統**——安全設定、備份與還原，以及擴充：Slido 橋接、給整合用的 Fire Token、Webhook、伺服器插件（[插件指南](server/PLUGIN_GUIDE.md)）、API Token、定時發送。
 
-預定義視覺主題（預設、霓虹、復古、電影），一鍵切換顏色、描邊、陰影和特效組合。可在管理面板或使用者頁面切換主題。
+完整功能清單見 [docs/FEATURES.md](docs/FEATURES.md)。
 
-### 互動投票
+## 快速開始
 
-管理員建立 2-6 個選項的投票。觀眾透過發送選項代號（A/B/C）作為彈幕來投票。即時結果顯示在覆蓋層上，包含即時票數統計。
+### 伺服器
 
-### 覆蓋層小工具
-
-在 OBS 覆蓋層上新增持久的計分板、跑馬燈和標籤。從管理面板管理位置、樣式和內容。小工具透過 WebSocket 廣播至所有已連接的覆蓋層客戶端。
-
-### OBS Browser Source
-
-使用 `https://your-server/overlay` 作為 OBS Browser Source，無需 Electron 即可顯示彈幕。透明背景，透過 WebSocket 自動連接。
-
-### 插件 SDK
-
-建立伺服器端插件，可對彈幕事件做出反應、修改訊息、過濾內容和自動回覆。每 5 秒熱載入。詳見[插件開發指南](server/PLUGIN_GUIDE.md)。
-
-### 時間軸匯出
-
-將即時彈幕場次錄製為 JSON 時間軸，供離線回放或分析使用。可從管理面板操作。
-
-## 安裝與使用
-
-### Danmu-Desktop 客戶端
-
-1. 下載[最新版本](https://github.com/guan4tou2/danmu-desktop/releases)
-2. macOS 使用者解除隔離：
-   ```bash
-   sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
-   ```
-3. 啟動應用程式
-4. 輸入伺服器 host 與設定精靈顯示的 HTTPS/web port
-
-Mac 更新：下載新版 arm64 ZIP，結束程式，再以解壓縮的新版取代舊程式。
-原有設定會保留。此版本採用臨時簽章，更新按鈕會提供下載入口，需手動替換。
-
-待送彈幕從第一次排隊起保留 24 小時，到期後自動失效；重啟伺服器或再次暫停不會延長期限。
-伺服器會在啟動時及每 60 秒清理待送佇列；磁碟正常時，即使閒置也會在下一個週期移除到期資料，等候清理期間不會再送出。清理範圍只有待送佇列，歷史紀錄與封存備份另行保留。
-
-歷史紀錄會區分等待顯示、已送往顯示端與顯示端已回報呈現。「顯示端已回報呈現」代表至少一個桌面或瀏覽器顯示端回報可見的動畫畫面，不代表觀眾一定看見或 OBS 已擷取。
-30 秒內沒有有效回報會標示「未確認」並提供原因；舊版顯示端仍可播放，但不會回報。未確認的訊息不會自動重播。
-
-### 伺服器設置
-
-正規安裝路徑是 `./setup.sh init` — 一個互動式精靈，會根據你的
-環境挑合理預設、自動產生 secret、寫好 `.env`。第一層會用部署情境呈現：
-IP/localhost + HTTP dev、IP + HTTPS 自簽、Domain + HTTPS 自簽、以及
-Domain + HTTPS Let's Encrypt。兩個自簽 HTTPS 情境共用同一個 compose
-profile，只是憑證 SAN 的提示不同。
+`./setup.sh init` 是互動式精靈：依你的環境挑預設值、產生密鑰並寫入 `.env`。
+它提供四種情境：IP／localhost + HTTP（開發）、IP + HTTPS 自簽、Domain + HTTPS 自簽、
+Domain + HTTPS Let's Encrypt。
 
 ```bash
 git clone https://github.com/guan4tou2/danmu-desktop.git
 cd danmu-desktop
-./setup.sh init                      # 互動式：模式、密碼、ports、desktop client
-./setup.sh init --advanced           # + 速率限制、log、資源上限
-./setup.sh check                     # 啟動前驗證現有 .env
+./setup.sh init                      # 互動：模式、密碼、連接埠、桌面客戶端
+./setup.sh init --advanced           # 另含速率限制、日誌、資源上限
+./setup.sh check                     # 啟動前驗證既有的 .env
 ./setup.sh gen-secret                # 只產生並寫入 SECRET_KEY
 
-# 再啟動 stack。精靈會印出確切指令，常見路徑：
-docker compose --profile https up -d         # IP/Domain + HTTPS 自簽 — 推薦
+# 接著啟動。精靈會印出確切指令；常見的有：
+docker compose --profile https up -d         # IP／Domain + HTTPS 自簽——建議
 docker compose --profile traefik up -d       # Domain + HTTPS Let's Encrypt
-docker compose --profile http up -d          # IP/localhost + HTTP dev only
+docker compose --profile http up -d          # IP／localhost + HTTP，僅供開發
 ```
 
-> v5.0.0+：Electron 桌面客戶端固定走 `wss://`。正式對外入口是
-> `443` 上的 HTTPS/WSS，同一個 web origin 的 `/ws` 提供 WebSocket。
-> `--profile http` 可跑後端 + web admin/viewer，但 desktop overlay 無法連線。
+啟動後，打開精靈印出的 HTTPS 網址：
 
-完整部署文件（HTTPS 模式、桌面客戶端連線、Redis、備份/還原、升級）：
+- 觀眾頁：`https://<host>`
+- 後台：`https://<host>/admin`
+- OBS overlay：`https://<host>/overlay`
+
+觀眾頁、後台、OBS overlay、桌面客戶端與 WebSocket（`wss://<host>/ws`）全部
+共用這一個 HTTPS 入口（連接埠 `443`）。自簽模式若必須用別的連接埠，設定
+`HTTPS_PORT` 即可；沒有第二個 WebSocket 連接埠。
+
+> 桌面客戶端只走 `wss://`。`--profile http` 能跑伺服器、觀眾頁與後台，但
+> 無法提供桌面 overlay。
+
+完整部署說明（HTTPS 模式、桌面客戶端連線、Redis、備份還原、升級）：
 **[DEPLOYMENT.md](DEPLOYMENT.md)**。
 
-#### 捷徑：預編譯映像，無需 clone
+<details>
+<summary>直接用預建映像檔，不 clone</summary>
 
-若你只要跑 server，不需要原始碼：
+把 `ghcr.io/guan4tou2/danmu-server:latest` 放在 HTTPS 反向代理後面。不要直接
+對外公開應用程式容器；只開放 `443` 的 TLS 入口，並把 `/ws` 轉到同一個內部
+上游。
 
-可使用預建 `ghcr.io/guan4tou2/danmu-server:latest` image，但需放在 HTTPS
-反向代理後方。不要直接 publish app container；對外只開 `443` TLS 入口。
+正式環境必須設定 `SECRET_KEY`——啟動時會拒絕臨時產生的金鑰。可用
+`openssl rand -hex 32` 產生；請保存下來，重建容器後 session 才會延續。
 
-`SECRET_KEY` 在 production 為必填 — 啟動時會拒絕 ephemeral key。
-`openssl rand -hex 32` 會即時產一把；記下來才能在 container 重建後保有
-相同的 session。
+多架構（`linux/amd64` + `linux/arm64/v8`）。標籤：`latest`、`main`、
+`<git-sha>`。
 
-多架構（`linux/amd64` + `linux/arm64/v8`）。Tags：`latest`、`main`、
-`<git-sha>`。若要給 desktop 使用，前面必須接 `443` HTTPS，並把 `/ws`
-轉到同一個私有 upstream。
+</details>
 
-#### 手動（不使用 Docker）
+<details>
+<summary>手動安裝，不用 Docker</summary>
 
 ```bash
 cp .env.example .env
@@ -152,79 +129,132 @@ cp .env.example .env
 # 編輯 .env：設定 ADMIN_PASSWORD
 
 cd server && uv venv && uv sync
-PYTHONPATH=.. uv run python -m server.app    # HTTP + /ws 都從這邊起
+PYTHONPATH=.. uv run python -m server.app    # HTTP 與 /ws 都由這裡提供
 ```
 
-### 存取伺服器
+</details>
 
-啟動後開啟精靈印出的 HTTPS endpoint：
+### 桌面客戶端
 
-- 主介面：`https://<host>`
-- 管理面板：`https://<host>/admin`
-- OBS overlay：`https://<host>/overlay`
+1. 下載[最新版本](https://github.com/guan4tou2/danmu-desktop/releases)。
+   發布為可攜式桌面套件：Windows portable x64 `.exe`、macOS arm64 `.zip`、
+   Linux AppImage 或 `.deb`。
+2. 僅 macOS——解除隔離：
+   ```bash
+   sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
+   ```
+3. 啟動應用程式，輸入設定精靈印出的伺服器主機與 HTTPS 連接埠。
 
-Desktop 與 viewer 都應只使用這個 HTTPS origin。
+Mac 更新：下載新的 arm64 ZIP、結束應用程式，用解壓後的版本取代舊的。設定
+保留在使用者設定檔裡。這些是 ad-hoc 簽署的套件，提供的是下載而不是自動
+安裝。Windows 維持 portable-only 時不發布更新 metadata；macOS 的更新 metadata
+指向 ZIP 套件。
 
-### 環境變數
+### Slido 橋接
 
-`.env.example` 有完整註解。精靈會幫你處理的關鍵變數：
+在**後台 → 系統 → 擴充**的 Slido 卡片下載擴充功能（.zip）並產生 Fire token。
+解壓縮後到 `chrome://extensions` 以「載入未封裝項目」載入，再把本站網址與
+token 填進擴充功能的 popup。細節與限制見
+[slido-extension/README.md](slido-extension/README.md)。
+
+## 送達與待處理訊息
+
+待處理訊息在第一次進入待命佇列的 24 小時後過期。伺服器只在啟動時與每 60 秒
+掃一次待處理佇列，因此在磁碟 I/O 正常的情況下，即使閒置，過期項目也會在下
+一次掃描時移除。過期訊息在等待清理期間不會被轉送；歷史紀錄與封存備份另外
+保留。重啟伺服器或再次暫停都不會延長期限。
+
+送達紀錄區分「已排入」「已轉送」「已顯示」。「已顯示」表示至少一個桌面或
+瀏覽器 overlay 回報畫出了可見的動畫影格；它不代表有人看到，也不代表 OBS 有
+擷取到。30 秒內沒有收到有效回報，結果就是「未確認」，原因會顯示在歷史紀錄
+中。舊版客戶端仍能顯示訊息，只是不回報。未確認的訊息不會自動重播。
+
+## 設定
+
+`.env.example` 有完整且附說明的清單。精靈會幫你設定的有：
 
 | 變數 | 用途 |
 |---|---|
-| `ADMIN_PASSWORD` / `ADMIN_PASSWORD_HASHED` | 管理員登入（至少設一個） |
-| `SECRET_KEY` | Flask session 密鑰（精靈 / `gen-secret` 產生） |
-| `ENV` | `production` 啟用嚴格 session / HSTS 預設值 |
-| `HTTPS_PORT` | 自簽 HTTPS profile 的覆寫值；預設 `443`，desktop 仍走同一個 port 的 `/ws` |
-| `TRUSTED_HOSTS` | Host header 白名單（逗號分隔） |
-| `SESSION_COOKIE_SECURE` | production 走 HTTPS 時設 `true` |
-| `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` | `/ws` 共用 token 驗證的首次啟動種子值；之後由後台「安全」管理 |
-| `RATE_LIMIT_BACKEND` | `memory` 或 `redis`（透過 `--profile redis` 啟） |
+| `ADMIN_PASSWORD`／`ADMIN_PASSWORD_HASHED` | 後台登入（至少設定一個） |
+| `SECRET_KEY` | Flask session 金鑰（精靈或 `gen-secret` 產生） |
+| `ENV` | `production` 啟用嚴格的 session／HSTS 預設 |
+| `HTTPS_PORT` | 自簽 HTTPS 模式的連接埠；預設 `443`，桌面客戶端用同一個連接埠加 `/ws` |
+| `TRUSTED_HOSTS` | Host 標頭的允許清單，逗號分隔 |
+| `SESSION_COOKIE_SECURE` | 正式環境走 HTTPS 時為 `true` |
+| `WS_REQUIRE_TOKEN`／`WS_AUTH_TOKEN` | `/ws` 共用 token 驗證的首次啟動種子；之後改在後台 → 系統 → 安全調整 |
+| `RATE_LIMIT_BACKEND` | `memory` 或 `redis`（以 `--profile redis` 啟用） |
 
-其他設定都有安全預設；`.env.example` 列齊了所有項目。
+其餘設定都有安全的預設值。日常設定在後台調整並存到 `server/runtime/`。
+同一個設定兩邊都有時（例如請求速率上限），以後台存的值為準，蓋過環境變數。
 
-## 安全備註
+## 專案結構
+
+```
+server/            Flask 後端、觀眾頁、後台、/overlay、/ws
+danmu-desktop/     Electron 桌面客戶端（控制視窗＋overlay 視窗）
+slido-extension/   Chrome 擴充功能：Slido 提問 → 彈幕
+shared/            兩邊共用的設計 token 與彈幕繪製程式
+scripts/           repo 工具（CSS token 檢查、版本號、備份、部署）
+nginx/ traefik/    各 compose profile 用的反向代理設定
+docs/              文件（索引：docs/README.md）
+img/               README 截圖
+```
+
+各部分怎麼接在一起、一則訊息怎麼走、狀態存在哪裡：
+**[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**。
+
+## 開發
+
+Node.js 24（最低 22.12）與已提交的 lockfile；Python 用 `uv`。
+
+```bash
+make help                                    # 列出所有 target
+make run                                     # 在本機跑伺服器
+make test                                    # 伺服器測試（pytest）
+make lint-css                                # CSS token 檢查（CI 也會跑）
+cd server && npm ci && npm run test:js -- --runInBand        # 後台／觀眾頁腳本測試
+cd danmu-desktop && npm ci && npm test -- --runInBand        # 桌面客戶端測試
+```
+
+生成檔要一起提交，CI 會檢查。改了後台腳本要跑
+`cd server && npm run build:admin-js`；改了語系檔要在你改的那個目錄跑
+`npm run build:i18n`（`server/` 與 `danmu-desktop/` 各有一支）。詳見
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#generated-files-commit-them-with-the-source-change)
+與 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+覆蓋率：`make coverage`（HTML 報告在 `server/htmlcov/index.html`）。
+
+### CI 與發行
+
+- `.github/workflows/test.yml`——Python 測試與覆蓋率、`pip-audit`、JS 測試、生成檔檢查，以及 CSS token 檢查（`scripts/check-css-tokens.mjs`，新增寫死的色碼會失敗）。
+- `.github/workflows/docker-build.yml`——每個 PR／push 建置並測試伺服器映像檔。設定 `DOCKERHUB_USERNAME` 與 `DOCKERHUB_TOKEN` 後，push 到 `main` 會另外發布 `DOCKERHUB_USERNAME/danmu-server:latest` 與 commit SHA 標籤。
+- `.github/workflows/build.yml`——版本號變動時為 Windows、macOS、Linux 建置 Electron 應用程式並發布 GitHub Release。會發布 macOS ZIP 的更新 metadata；Windows 維持可攜式，不發布。
+- `.github/workflows/osv-scanner.yml`——push、pull request 與排程時做 OSV 掃描。
+
+## 安全注意事項
 
 - 此 repo 已啟用 GitHub Advanced Security 與 Dependabot。
-- OSV 掃描會在 `push`、`pull_request` 與排程任務執行（見 `.github/workflows/osv-scanner.yml`）。
-- 前端 lockfile 透過 npm overrides 強制 `serialize-javascript@7.0.3`，對應 `GHSA-5c6j-r48x-rmvq`。
-- 新安裝且未設定兩個 WS 驗證環境變數時，預設啟用驗證並產生隨機密碼；明確設定的 `WS_REQUIRE_TOKEN=false` 會保留。`server/runtime/ws_auth.json` 建立後，以檔案內儲存狀態為準；更新、重啟及更改環境變數不會自動改變既有部署的設定。
-- 驗證關閉且 web port 對 localhost 或受信任 LAN 以外可達時，任何能連到 `/ws` 的人都可連接顯示層並接收彈幕；這不會開放後台管理權限。安全啟用順序：到「後台 → 安全 → 顯示層連線密碼」，保持驗證關閉，必要時先產生密碼；將密碼貼到每台桌面程式的「WS Token」設定並儲存，再回後台開啟驗證並儲存。於合適時機讓各桌面端重連，確認測試彈幕可顯示。儲存後只影響新連線與重連，現有連線會保留。密碼不要放進公開網址或截圖；詳見[部署指南](./DEPLOYMENT.md)的 Desktop Client 章節。
-- production 啟動現在會拒絕以下不安全設定：未明確設定 `SECRET_KEY`、`SESSION_COOKIE_SECURE=false`、或未設定 `TRUSTED_HOSTS`。部署前請先補齊。
-- 目前 app 會送出 nonce-based `Content-Security-Policy` header。之後若新增 inline script，請使用模板提供的 nonce，不要退回 `unsafe-inline`。
-- `Strict-Transport-Security` 目前是 opt-in，需明確設定 `HSTS_ENABLED=true`，且只會在 HTTPS 回應上送出。
+- 前端 lockfile 透過 npm overrides 固定 `serialize-javascript@7.0.3`，以處理 `GHSA-5c6j-r48x-rmvq`。
+- 全新安裝且兩個 WS 驗證環境變數都沒設定時，會以「啟用 token 驗證＋自動產生 token」啟動。明確設定 `WS_REQUIRE_TOKEN=false` 會被尊重。`server/runtime/ws_auth.json` 存在之後，以它保存的狀態為準；升級、重啟或更改環境變數都不會自動改變既有部署的設定。
+- 若 WS 驗證關閉，而網頁連接埠能從 localhost 或受信任區網以外連到，任何連得到 `/ws` 的人都能接上一個顯示端並收到彈幕；這不會給予後台權限。安全的啟用方式：打開**後台 → 系統 → 安全**（顯示層連線密碼），在驗證仍關閉時視需要產生 token，把它貼進每一台桌面應用程式的 **WS Token** 設定並儲存，再回後台啟用驗證並儲存。找適當的時機讓各桌面重新連線，並送一則測試彈幕確認。儲存的變更只對新連線／重新連線的客戶端生效，既有連線不會中斷。不要把 token 放進公開網址或截圖。細節見 [DEPLOYMENT.md](./DEPLOYMENT.md) 的 **Desktop Client** 一節。
+- 正式環境啟動時會拒絕臨時的 `SECRET_KEY`、`SESSION_COOKIE_SECURE=false` 或未設定的 `TRUSTED_HOSTS`。部署前請明確設定。
+- 應用程式送出以 nonce 為基礎的 `Content-Security-Policy` 標頭。新增 inline script 時請用模板的 nonce，不要退回 `unsafe-inline`。
+- `Strict-Transport-Security` 需以 `HSTS_ENABLED=true` 明確開啟，而且只在 HTTPS 回應送出。
 
-## 專案文件
+## 文件
 
-- [`DESIGN.md`](./DESIGN.md) – 設計系統（brand、color、typography、motion、a11y、voice）。所有視覺決策的單一真相來源。
-- `docs/perf/baseline-v4.6.1.md` – performance baseline（HTTP payload、latency、font loading）。
-- `docs/designs/` – 設計探索產出（排版比較頁等）。
-- `docs/audits/` – 設計審查 audit 報告（依 round 編列）。
-- `docs/README.md` – 技術文件與 archive 的索引。
-- `DEPLOYMENT.md` – production 部署指南。
-- `server/PLUGIN_GUIDE.md` – Plugin SDK 開發文件。
-- `README.md` – 英文總覽。
-- `docs/archive/` – 歷史紀錄與整理檔案。
+| 文件 | 內容 |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 專案結構、訊息流程、狀態存放位置 |
+| [docs/FEATURES.md](docs/FEATURES.md) | 功能清單、後台路由對照、持久化對照 |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Docker、HTTPS 模式、VPS 部署、升級 |
+| [server/PLUGIN_GUIDE.md](server/PLUGIN_GUIDE.md) | 撰寫伺服器插件 |
+| [slido-extension/README.md](slido-extension/README.md) | Slido 橋接 |
+| [DESIGN.md](DESIGN.md) | 設計系統：品牌、色彩、字體、動態、無障礙 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 環境設定、慣例、生成檔 |
+| [CHANGELOG.md](CHANGELOG.md)・[TODOS.md](TODOS.md) | 發行紀錄・待辦 |
+| [docs/README.md](docs/README.md) | `docs/` 底下其餘文件的索引 |
 
-## CI/CD 與 Docker Hub
+## 參考
 
-- `.github/workflows/docker-build.yml` 會在每次 PR / push 時建置與測試伺服器映像。
-- `.github/workflows/test.yml` 執行 Python 測試（含覆蓋率報告、`pip-audit` CVE 掃描，以及 CSS 設計 token 防回歸 lint `scripts/check-css-tokens.mjs`——新增裸 hex 色碼會使此步驟失敗）。
-- `.github/workflows/build.yml` 在版本更新時為 Windows、macOS、Linux 建置 Electron 應用程式，並建立含自動更新中繼資料的 GitHub Releases。
-- 於 GitHub Secrets 設定 `DOCKERHUB_USERNAME` 與 `DOCKERHUB_TOKEN`（Docker Hub Access Token），即可在 main 更新時自動推送 `DOCKERHUB_USERNAME/danmu-server:latest` 與對應 commit SHA tag。
-
-## 測試與覆蓋率
-
-- 執行測試：`make test` 或 `make test-verbose`
-- 產生覆蓋率報告：`make coverage`
-  - 終端會顯示 `coverage report`
-  - HTML 報告位於 `server/htmlcov/index.html`
-
-## 端口配置
-
-- 正式對外入口：`443` 上的 `https://<host>` 與 `wss://<host>/ws`
-- Desktop、viewer、admin、OBS overlay、WebSocket 都共用這個 HTTPS/WSS 入口
-- 若自簽 HTTPS profile 必須使用自訂 port，只設定單一 `HTTPS_PORT`；不要再開第二個 WS port
-
-## 參考資料
-
-SAO UI 設計參考自 [SAO-UI-PLAN-LINK-START | Akilar の糖果屋](https://akilar.top/posts/1b4fa1dd/)
+SAO UI 設計靈感來自 [SAO-UI-PLAN-LINK-START | Akilar の糖果屋](https://akilar.top/posts/1b4fa1dd/)

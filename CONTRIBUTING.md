@@ -7,7 +7,7 @@
 ### 前置需求 / Requirements
 - Python 3.11+
 - [uv](https://github.com/astral-sh/uv)
-- Node.js 18+ (前端 / renderer)
+- Node.js 22.12+ (前端 / renderer；`server/package.json` 與 `danmu-desktop/package.json` 的 `engines` 都是 `>=22.12.0`)
 - Docker (optional for deployment)
 
 ### 設定步驟 / Setup Steps
@@ -82,30 +82,43 @@ Place tests in `server/tests/` (use pytest fixtures)。
 
 ## i18n 翻譯 / Translations
 
-翻譯檔案為 JSON，是唯一的修改來源。修改後必須重新生成 `i18n.js`。
+翻譯檔案為 JSON，是唯一的修改來源。修改後必須重新生成對應的 `i18n*.js`。**有兩支各自獨立的產生器**（server 與 Electron client），只跑一支會讓 CI 變紅。
 
-| 目錄 | 用途 |
-|---|---|
-| `server/static/locales/{lang}/translation.json` | 伺服器 Web UI（752 keys） |
-| `danmu-desktop/locales/{lang}/translation.json` | Electron client UI（113 keys） |
+| 來源 | 產生器（指令） | 生成物（要 commit） |
+|---|---|---|
+| `server/static/locales/{lang}/translation.json`（伺服器 Web UI） | `cd server && npm run build:i18n` | `server/static/js/i18n.js` 與 `i18n.{en,zh,ja,ko}.js` |
+| `danmu-desktop/locales/{lang}/translation.json`（Electron client UI） | `cd danmu-desktop && npm run build:i18n` | `danmu-desktop/i18n.js` |
 
-支援語言：`en`、`zh`、`ja`、`ko`
+支援語言：`en`、`zh`、`ja`、`ko`。key 數會一直變動，這裡不寫死；要看目前數量可直接執行產生器（會印出每個語言的 key 數）。
 
 **修改翻譯的流程 / Workflow:**
 ```bash
 # 1. 編輯 JSON 檔
 vim server/static/locales/zh/translation.json
 
-# 2. 重新生成 i18n.js（兩端各自執行）
+# 2. 重新生成（改哪一邊就跑哪一邊；兩邊都改就兩支都跑）
 cd server && npm run build:i18n
 cd ../danmu-desktop && npm run build:i18n
 
-# 3. Commit JSON 與生成的 i18n.js
-git add server/static/locales/ server/static/js/i18n.js
+# 3. Commit JSON 與生成物
+git add server/static/locales/ server/static/js/i18n*.js
 git add danmu-desktop/locales/ danmu-desktop/i18n.js
 ```
 
-> CI 會自動驗證 `i18n.js` 與 JSON 是否同步。若忘記執行 `build:i18n`，CI 會失敗並提示。
+> CI（`.github/workflows/test.yml`）會分別驗證兩邊的生成物與 JSON 是否同步。忘記執行 `build:i18n` 會失敗。
+
+## Admin JS bundle
+
+後台頁面（`server/templates/admin.html`）只載入一支 `server/static/js/admin.bundle.js`；`server/static/js/admin-*.js` 是它的原始碼。改了任何 admin 的 JS 之後必須重建並 commit bundle：
+
+```bash
+cd server && npm run build:admin-js
+```
+
+- 檔案清單與**載入順序**的唯一來源是 `server/static/js/admin-bundle.manifest.json`；新增模組就在那裡加一行（放在它依賴的模組之後）。這些檔案是全域 IIFE、靠 `window.*` 溝通，順序不能亂動（詳見 `server/scripts/build-admin-bundle.mjs` 開頭註解）。
+- `i18n.js` 不在 bundle 內。
+- CI 會重建並檢查 `admin.bundle.js` 是否與原始碼同步。
+- `cd server && npm run build` 會依序跑 i18n、tailwind、viewer CSS 與 admin bundle。
 
 ## 已知待辦 / Known Deferred Work
 
@@ -126,15 +139,18 @@ git add danmu-desktop/locales/ danmu-desktop/i18n.js
   - Commit 訊息符合規範
 
 ## 專案結構 / Project Structure
+
+資料流與各模組的職責見 [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)；文件索引見 [`docs/README.md`](./docs/README.md)。
+
 ```
 danmu-desktop/
-├── server/              # Backend (Flask + WS)
-│   ├── routes/
-│   ├── services/
-│   ├── managers/
-│   ├── tests/
-│   └── ...
-├── danmu-desktop/       # Electron renderer
+├── server/              # Backend (Flask + WS /ws)：routes/ services/ managers/ ws/ static/ templates/ tests/ tests-js/
+├── danmu-desktop/       # Electron client (display endpoint)
+├── shared/              # server 與 Electron 共用的 tokens.css、danmu-effects.js、particle-bg.js
+├── slido-extension/     # Chrome MV3 擴充功能：把 Slido 提問轉成彈幕
+├── scripts/             # repo 層級腳本（CSS token lint、備份、部署、版本號）
+├── nginx/               # HTTPS / HTTP 反向代理設定（docker compose profile）
+├── traefik/             # Traefik profile 的 acme.json 存放處（僅 .gitkeep，見 DEPLOYMENT.md）
 ├── docs/                # Guides & archives
 ├── README.md / README-CH.md
 └── ...
