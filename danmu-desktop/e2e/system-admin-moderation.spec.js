@@ -273,7 +273,7 @@ test.describe("後台審核頁 · 真實 UI 操作", () => {
 
   // ─── 速率限制 tab ────────────────────────────────────────────────────
 
-  test("速率限制：改 FIRE count 後按「即時套用」→ /admin/metrics 的 fire.limit 真的變了", async () => {
+  test("發送上限：改「每位觀眾」的數值後按「儲存」→ /admin/metrics 的 fire.limit 真的變了", async () => {
     await openTab("ratelimit");
 
     /** 從 /admin/metrics 讀目前生效的 fire 設定（config 快照，不是計數器）。 */
@@ -284,9 +284,15 @@ test.describe("後台審核頁 · 真實 UI 操作", () => {
     };
     const before = await liveFire();
 
-    const limitInput = admin.locator('[data-rl-limit="fire"]');
-    const windowSelect = admin.locator('[data-rl-window="fire"]');
-    const applyBtn = admin.locator('[data-rl-save="fire"]');
+    // 2026-11-19 發送上限合一：四列各自的輸入框變成一張「對象＋數值＋時間窗」
+    // 表單，對象預設就是每位觀眾（fire）。
+    const form = admin.locator('[data-rl-form="viewer"]');
+    await form.locator("[data-rl-target]").selectOption("fire");
+    const limitInput = form.locator("[data-rl-limit]");
+    const windowSelect = form.locator("[data-rl-window]");
+    const applyBtn = form.locator('[data-rl-action="save"]');
+    // 輸入框顯示的是伺服器現值，不是前端寫死的數字。
+    await expect(limitInput).toHaveValue(String(before.limit));
 
     try {
       await limitInput.fill("33");
@@ -295,8 +301,10 @@ test.describe("後台審核頁 · 真實 UI 操作", () => {
 
       await expect.poll(async () => (await liveFire()).limit, { timeout: 8000 }).toBe(33);
       expect((await liveFire()).window).toBe(60);
-      // 畫面上的 effective_rate 也要跟著重算
-      await expect(admin.locator('[data-rl-effective="fire"]')).toContainText("33 / 60s");
+      // 換到別的對象再換回來，看到的仍是剛存的值（來自伺服器，不是輸入框殘留）。
+      await form.locator("[data-rl-target]").selectOption("fire_global");
+      await form.locator("[data-rl-target]").selectOption("fire");
+      await expect(limitInput).toHaveValue("33");
     } finally {
       // 收尾：改回進場前的值（同一台 server 上還有別的測試在跑，別留 33）。
       // window 只能是 select 提供的五個值，落在外面就退回 60s 預設。

@@ -12,7 +12,7 @@ from functools import wraps
 from typing import Dict, List, Optional
 
 import bcrypt
-from flask import abort, current_app, make_response, request, session
+from flask import abort, current_app, g, make_response, request, session
 from itsdangerous import BadSignature, BadTimeSignature, URLSafeTimedSerializer
 
 from .ip import get_client_ip as _get_client_ip
@@ -39,6 +39,14 @@ class BaseRateLimiter:
         which leaves the decision to ``allow()``.
         """
         return True
+
+    def retry_after(self, key: str, limit: int, window: int) -> int:
+        """Whole seconds until ``allow()`` would succeed again for a full bucket.
+
+        Sent as ``Retry-After`` on a 429. Backends that cannot tell answer
+        with the window, which is never too short.
+        """
+        return max(1, int(window))
 
     def reset(self):
         raise NotImplementedError
@@ -75,6 +83,17 @@ class InMemoryRateLimiter(BaseRateLimiter):
                 dq.popleft()
             return len(dq) < limit
 
+    def retry_after(self, key: str, limit: int, window: int) -> int:
+        now = time.time()
+        with self.lock:
+            dq = self.history.get(key)
+            if not dq or limit <= 0 or len(dq) < limit:
+                return max(1, int(window)) if limit <= 0 else 1
+            # A slot opens when the entry that is ``limit`` places from the
+            # newest end slides out of the window.
+            oldest_blocking = dq[len(dq) - limit]
+        return max(1, math.ceil(oldest_blocking + window - now))
+
     def reset(self):
         with self.lock:
             self.history.clear()
@@ -108,9 +127,36 @@ _rate_stats_hits: "defaultdict[str, int]" = defaultdict(int)
 _rate_stats_violations: "defaultdict[str, int]" = defaultdict(int)
 # Each entry is a deque of (timestamp, client_ip) pairs for that prefix.
 _rate_stats_violators: "defaultdict[str, deque]" = defaultdict(deque)
+# /fire requests that passed the per-IP check — and were counted as a ``fire``
+# hit — but were then refused by the per-device or room-wide limit. The totals
+# subtract these so a request that ended in a 429 is not also counted as let
+# through; ``fire``'s own hit count still says how many passed that check.
+_rate_fire_late_refusals = 0
 # Per-prefix list of (bucket_start_unix_ts, allowed_count) tuples, oldest first.
 # Bucket boundary aligned to floor(now / _RATE_BUCKET_SECONDS) * _RATE_BUCKET_SECONDS.
 _rate_buckets: "Dict[str, List[List[float]]]" = defaultdict(list)
+
+
+# Every scope the admin can set a limit for (see services/rate_limits.py).
+_RATE_SCOPES = ("fire", "fire_fingerprint", "fire_global", "fire_admin", "api", "admin", "login")
+# One /fire request is checked against up to three of the fire scopes, so
+# summing ``hits`` over all seven would count it three times. These five see
+# each request exactly once.
+_RATE_SCOPES_COUNTED_ONCE = ("fire", "fire_admin", "api", "admin", "login")
+
+
+def _abort_rate_limited(key: Optional[str] = None, limit: int = 0, window: int = 0) -> None:
+    """Abort 429. With a bucket key, tell the client when to come back.
+
+    Without one (an IP on the admin's deny list) there is no time to give,
+    so no ``Retry-After`` is sent.
+    """
+    if key:
+        try:
+            g.rate_limit_retry_after = rate_limiter.retry_after(key, limit, window)
+        except Exception:  # a limiter hiccup must not turn a 429 into a 500
+            g.rate_limit_retry_after = max(1, int(window or 1))
+    abort(429, description="Too Many Requests")
 
 
 def _record_rate_event(key_prefix: str, client_ip: str, allowed: bool) -> None:
@@ -285,6 +331,7 @@ def get_rate_limit_stats() -> dict:
     Shape:
         {
           "fire":  {"hits": int, "violations": int, "locked_sources": int},
+          "fire_fingerprint": {...}, "fire_global": {...}, "fire_admin": {...},
           "api":   {...},
           "admin": {...},
           "login": {...},
@@ -292,9 +339,10 @@ def get_rate_limit_stats() -> dict:
         }
 
     `locked_sources` is the number of distinct client IPs that violated the
-    limit in the last 300 seconds. Thread-safe, cheap (<1ms).
+    limit in the last 300 seconds. ``totals.hits`` counts each request once
+    (see ``_RATE_SCOPES_COUNTED_ONCE``). Thread-safe, cheap (<1ms).
     """
-    prefixes = ("fire", "api", "admin", "login")
+    prefixes = _RATE_SCOPES
     now = time.time()
     out: dict = {}
     total_hits = 0
@@ -317,11 +365,12 @@ def get_rate_limit_stats() -> dict:
                 "violations": violations,
                 "locked_sources": len(ips),
             }
-            total_hits += hits
+            if p in _RATE_SCOPES_COUNTED_ONCE:
+                total_hits += hits
             total_violations += violations
             all_ips |= ips
         out["totals"] = {
-            "hits": total_hits,
+            "hits": max(0, total_hits - _rate_fire_late_refusals),
             "violations": total_violations,
             "locked_sources": len(all_ips),
         }
@@ -335,6 +384,8 @@ def reset_rate_limit_counters() -> None:
         _rate_stats_violations.clear()
         _rate_stats_violators.clear()
         _rate_buckets.clear()
+        global _rate_fire_late_refusals
+        _rate_fire_late_refusals = 0
 
 
 def recent_violations(limit: int = 30) -> List[dict]:
@@ -342,13 +393,12 @@ def recent_violations(limit: int = 30) -> List[dict]:
 
     Powers the Ratelimits page 近期違規 feed. Each entry::
 
-        {"ts": float, "scope": "fire"|"api"|"admin"|"login", "ip": str}
+        {"ts": float, "scope": <one of _RATE_SCOPES>, "ip": str}
 
-    Newest first. Capped at ``limit``. Pulls from
-    ``_rate_stats_violators`` which the rate_limit decorator populates on
-    every 429.
+    Newest first. Capped at ``limit``. Pulls from ``_rate_stats_violators``,
+    which every rate-limit check populates when it refuses a request.
     """
-    prefixes = ("fire", "api", "admin", "login")
+    prefixes = _RATE_SCOPES
     out: List[dict] = []
     now = time.time()
     cutoff = now - _RATE_STATS_VIOLATOR_WINDOW
@@ -413,6 +463,19 @@ return 1
         except Exception:
             return True
         return int(count) < limit
+
+    def retry_after(self, key: str, limit: int, window: int) -> int:
+        now = time.time()
+        if limit <= 0:
+            return max(1, int(window))
+        try:
+            # The entry ``limit`` places from the newest end (rank -limit).
+            rows = self.client.zrange(f"ratelimit:{key}", -limit, -limit, withscores=True)
+        except Exception:
+            return max(1, int(window))
+        if not rows:
+            return 1
+        return max(1, min(int(window), math.ceil(float(rows[0][1]) + window - now)))
 
     def reset(self):
         # not implemented for redis backend
@@ -496,7 +559,7 @@ def rate_limit(
             verdict = _check_ip_rules(client_ip)
             if verdict == "deny":
                 _record_rate_event(key_prefix, client_ip, False)
-                abort(429, description="Too Many Requests")
+                _abort_rate_limited()
             if verdict == "allow":
                 _record_rate_event(key_prefix, client_ip, True)
                 return func(*args, **kwargs)
@@ -506,7 +569,7 @@ def rate_limit(
             allowed = rate_limiter.allow(key, limit, window)
             _record_rate_event(key_prefix, client_ip, allowed)
             if not allowed:
-                abort(429, description="Too Many Requests")
+                _abort_rate_limited(key, limit, window)
             return func(*args, **kwargs)
 
         return wrapper
@@ -562,37 +625,65 @@ def enforce_fire_rate_limits(fingerprint: str | None, is_admin: bool) -> None:
     """
     cfg = current_app.config
     client_ip = _get_client_ip()
+    scope = "fire_admin" if is_admin else "fire"
 
+    # Each check is recorded under the scope it belongs to, so the admin's
+    # usage bars and blocked-requests list show real danmu traffic and say
+    # which limit turned a request away.
     verdict = _check_ip_rules(client_ip)
     if verdict == "deny":
-        abort(429, description="Too Many Requests")
+        _record_rate_event(scope, client_ip, False)
+        _abort_rate_limited()
     if verdict == "allow":
+        _record_rate_event(scope, client_ip, True)
         return
 
+    def charge(name: str, key: str, limit: int, window: int, after_ip_pass: bool = False) -> None:
+        allowed = limit <= 0 or rate_limiter.allow(key, limit, window)
+        _record_rate_event(name, client_ip, allowed)
+        if not allowed:
+            if after_ip_pass:
+                global _rate_fire_late_refusals
+                with _rate_stats_lock:
+                    _rate_fire_late_refusals += 1
+            _abort_rate_limited(key, limit, window)
+
     if is_admin:
-        limit = int(cfg.get("FIRE_ADMIN_RATE_LIMIT", 200))
-        window = int(cfg.get("FIRE_ADMIN_RATE_WINDOW", 60))
-        if limit > 0 and not rate_limiter.allow(f"fire_admin:{client_ip}", limit, window):
-            abort(429, description="Too Many Requests")
+        charge(
+            "fire_admin",
+            f"fire_admin:{client_ip}",
+            int(cfg.get("FIRE_ADMIN_RATE_LIMIT", 200)),
+            int(cfg.get("FIRE_ADMIN_RATE_WINDOW", 60)),
+        )
         return
 
     # Per-IP ceiling (mirrors the pre-v4.9.1 decorator behaviour).
-    ip_limit = int(cfg.get("FIRE_RATE_LIMIT", 20))
-    ip_window = int(cfg.get("FIRE_RATE_WINDOW", 60))
-    if ip_limit > 0 and not rate_limiter.allow(f"fire:{client_ip}", ip_limit, ip_window):
-        abort(429, description="Too Many Requests")
+    charge(
+        "fire",
+        f"fire:{client_ip}",
+        int(cfg.get("FIRE_RATE_LIMIT", 20)),
+        int(cfg.get("FIRE_RATE_WINDOW", 60)),
+    )
 
     fp_limit = int(cfg.get("FIRE_FINGERPRINT_RATE_LIMIT", 0))
-    fp_window = int(cfg.get("FIRE_FINGERPRINT_RATE_WINDOW", 60))
     if fp_limit > 0 and fingerprint:
-        if not rate_limiter.allow(f"fire_fp:{fingerprint}", fp_limit, fp_window):
-            abort(429, description="Too Many Requests")
+        charge(
+            "fire_fingerprint",
+            f"fire_fp:{fingerprint}",
+            fp_limit,
+            int(cfg.get("FIRE_FINGERPRINT_RATE_WINDOW", 60)),
+            after_ip_pass=True,
+        )
 
     global_limit = int(cfg.get("GLOBAL_FIRE_RATE_LIMIT", 0))
-    global_window = int(cfg.get("GLOBAL_FIRE_RATE_WINDOW", 60))
     if global_limit > 0:
-        if not rate_limiter.allow("fire_global:all", global_limit, global_window):
-            abort(429, description="Too Many Requests")
+        charge(
+            "fire_global",
+            "fire_global:all",
+            global_limit,
+            int(cfg.get("GLOBAL_FIRE_RATE_WINDOW", 60)),
+            after_ip_pass=True,
+        )
 
 
 def enforce_invalid_token_limit() -> None:
@@ -606,11 +697,12 @@ def enforce_invalid_token_limit() -> None:
     cfg = current_app.config
     client_ip = _get_client_ip()
     if _check_ip_rules(client_ip) == "deny":
-        abort(429, description="Too Many Requests")
+        _abort_rate_limited()
     limit = int(cfg.get("FIRE_RATE_LIMIT", 20))
     window = int(cfg.get("FIRE_RATE_WINDOW", 60))
-    if limit > 0 and not rate_limiter.allow(f"fire_badtoken:{client_ip}", limit, window):
-        abort(429, description="Too Many Requests")
+    key = f"fire_badtoken:{client_ip}"
+    if limit > 0 and not rate_limiter.allow(key, limit, window):
+        _abort_rate_limited(key, limit, window)
 
 
 def enforce_public_body_limit() -> None:
@@ -680,13 +772,16 @@ def precheck_fire_limits(token_state: str) -> None:
 
     verdict = _check_ip_rules(client_ip)
     if verdict == "deny":
-        abort(429, description="Too Many Requests")
+        if token_state != "invalid":
+            _record_rate_event("fire_admin" if token_state == "valid" else "fire", client_ip, False)
+        _abort_rate_limited()
     if verdict == "allow" and token_state != "invalid":
         return
 
     if token_state == "valid":
         checks = [
             (
+                "fire_admin",
                 f"fire_admin:{client_ip}",
                 int(cfg.get("FIRE_ADMIN_RATE_LIMIT", 200)),
                 int(cfg.get("FIRE_ADMIN_RATE_WINDOW", 60)),
@@ -695,6 +790,7 @@ def precheck_fire_limits(token_state: str) -> None:
     elif token_state == "invalid":
         checks = [
             (
+                None,
                 f"fire_badtoken:{client_ip}",
                 int(cfg.get("FIRE_RATE_LIMIT", 20)),
                 int(cfg.get("FIRE_RATE_WINDOW", 60)),
@@ -703,19 +799,25 @@ def precheck_fire_limits(token_state: str) -> None:
     else:
         checks = [
             (
+                "fire",
                 f"fire:{client_ip}",
                 int(cfg.get("FIRE_RATE_LIMIT", 20)),
                 int(cfg.get("FIRE_RATE_WINDOW", 60)),
             ),
             (
+                "fire_global",
                 "fire_global:all",
                 int(cfg.get("GLOBAL_FIRE_RATE_LIMIT", 0)),
                 int(cfg.get("GLOBAL_FIRE_RATE_WINDOW", 60)),
             ),
         ]
-    for key, limit, window in checks:
+    for scope, key, limit, window in checks:
         if limit > 0 and not rate_limiter.would_allow(key, limit, window):
-            abort(429, description="Too Many Requests")
+            # The request stops here, so this is the only place its refusal
+            # can be recorded. (A wrong token has no admin-facing scope.)
+            if scope:
+                _record_rate_event(scope, client_ip, False)
+            _abort_rate_limited(key, limit, window)
 
 
 def verify_captcha(token: str | None) -> bool:

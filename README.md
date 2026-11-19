@@ -2,130 +2,78 @@
 
 # danmu-desktop
 
-Display bullet screen directly on the desktop
-在桌面直接顯示彈幕
+Live danmu (bullet comments) for any talk. The audience sends messages from
+their phones; the messages fly across the presenter's screen.
 
-[中文說明](https://github.com/guan4tou2/danmu-desktop/blob/main/README-CH.md)
+在桌面直接顯示彈幕 · [中文說明](README-CH.md)
 
-For a complete capability inventory (server routes, admin pages, persistence map, scope guardrails), see [docs/FEATURES.md](docs/FEATURES.md). For the full documentation map, see [docs/README.md](docs/README.md).
+![Danmu flying across a slide](img/overlay.png)
 
-![img](img/danmu%20display.png)
+<sub>Danmu drawn by the display. The slide behind them is a mock backdrop added for this screenshot — the display itself is transparent.</sub>
 
-## Overview
+## How it works
 
-This project is divided into two parts:
+| Part | What it does |
+|---|---|
+| **Server** (`server/`) | One web origin that serves the viewer page, the admin panel, the `/overlay` browser source, and the `/ws` WebSocket that feeds every display. |
+| **Desktop client** (`danmu-desktop/`) | Electron app for Windows, macOS and Linux. Opens a transparent, click-through window on the screen you pick and draws danmu over whatever is showing. |
+| **Slido bridge** (`slido-extension/`) | Optional Chrome extension that turns new questions from a Slido event into danmu. |
 
-1. Danmu-Desktop
-   - Client-side application that runs on your computer to display danmu
-   - Supports Windows, MacOS, and Linux
-   - Published as a portable desktop package: Windows portable x64 `.exe`,
-     macOS arm64 `.zip`, plus Linux AppImage / `.deb`
-   - Windows updater metadata is not published while the Windows channel stays
-     portable-only; macOS update metadata targets the ZIP package
+No desktop app? Add `https://<host>/overlay` to OBS as a Browser Source instead.
 
-![img](img/client.png)
-![img](img/client%20start%20effect.png)
+## Screenshots
 
-2. Server
-   - Creates a web interface for danmu input
-   - Manages danmu delivery to connected clients
-   - Includes admin panel for configuration, source fingerprint logging, and history review
-   - OBS Browser Source overlay (`/overlay` route)
-   - Plugin SDK for server-side extensions
-   - 4-language UI (EN, ZH, JA, KO)
+**Viewer page** — what the audience opens. Works on a phone without installing anything.
 
-![img](img/web%20panel.png)
-![img](img/admin%20panel.png)
+<p>
+  <img src="img/viewer.png" width="72%" alt="Viewer page on desktop">
+  <img src="img/viewer-mobile.png" width="19%" alt="Viewer page on a phone">
+</p>
 
-## Features
+**Admin panel** — live feed and display control, moderation, danmu style.
 
-### Layout Modes
+![Admin console](img/admin-console.png)
+![Moderation · send limits](img/admin-send-limits.png)
+![Danmu style](img/admin-danmu-style.png)
 
-Five danmu display layouts: scroll (right-to-left), top fixed, bottom fixed, float (random position), and rise (bottom-to-top).
+**Layouts and effects**
 
 ![Layout modes](img/danmu-layouts.png)
-
-### Effects & Styling
-
-Built-in animation effects (spin, bounce, rainbow, glow, shake, wave, blink, zoom) with per-effect parameters. Supports nicknames, custom colors, text stroke/shadow, and multiple effects stacking.
-
 ![Effects demo](img/danmu-effects-demo.gif)
 ![Effects showcase](img/danmu-effects-showcase.png)
 
-### Hot-pluggable Effects (.dme)
+## Features
 
-Drop `.dme` files (YAML format) into `server/effects/` to add custom effects — auto-detected within 5 seconds. Edit and manage effects from the admin panel.
+**For the audience**
 
-### Style Themes
+- Send from any browser; optional nickname, colour, size and effects — the host decides which of these viewers may change.
+- Five layouts: scroll, top, bottom, float, rise.
+- Eight built-in effects (zoom, glow, bounce, spin, shake, wave, blink, rainbow) that can be stacked.
+- Vote in polls by sending the option key (A / B / C…). Viewers never see vote counts.
+- Four interface languages: English, 繁體中文, 日本語, 한국어.
 
-Predefined visual themes (default, neon, retro, cinema) that set color, stroke, shadow, and effects in one click. Switch themes from the admin panel or the user-facing page.
+**For the host**
 
-### Interactive Polls
+- **Dashboard** — live feed, pause or clear the display, block a sender or recall one message in place.
+- **Polls** — several questions in a row, 2–6 options each, optional image and time limit per question.
+- **Moderation** — block rules (keyword, regex, frequency, device) that reject, replace or hold for review; a review queue; time-bound bans by device or IP; and send limits: cooldown between messages, how many danmu may be on screen at once, and request rate limits.
+- **Danmu style** — themes (default, neon, retro, cinema, or your own) that set font, colour, stroke and shadow; the defaults viewers start with and the ranges they may pick from.
+- **Effects** — hot-pluggable `.dme` files (YAML). Drop one into `server/effects/` or edit it in the admin panel.
+- **Assets** — emojis, stickers, fonts (with subsetting to shrink large CJK fonts) and sounds.
+- **Widgets** — scoreboards, tickers and labels pinned on the display.
+- **Records & export** — sessions, audience, search, audit log; delivery status per message.
+- **System** — security settings, backup and restore, and extensions: Slido bridge, Fire Token for integrations, webhooks, server plugins ([Plugin Guide](server/PLUGIN_GUIDE.md)), API tokens, scheduled messages.
 
-Admin creates polls with 2-6 options across **multiple sequential questions** (5.1.0+). Each question can carry an optional hero image and a per-question time limit. Viewers vote by sending option keys (A/B/C) as danmu. Audience never sees vote counts/percentages — those are admin-only. Live results display on the overlay with real-time counts.
+The full inventory is in [docs/FEATURES.md](docs/FEATURES.md).
 
-### Time-bound Bans & Replay Annotations (5.1.0+)
+## Quick start
 
-Time-bound bans: moderate by fingerprint / IP / nickname with duration presets (1h / 6h / 24h / 7d / 永久) or custom hours. Stored in append-only audit log, no reaper thread. Replay annotations: admin pins highlight/vote/note/warning markers to a session timeline for post-session review.
+### Server
 
-### Font Subsetting (5.1.0+)
-
-Shrink uploaded fonts to a chosen unicode range (Latin / CJK BMP / CJK full / Kana / Hangul / custom). Typical reduction: 5+ MB → 100 KB (90%+). Requires `fonttools` dep (`uv add fonttools`).
-
-### Overlay Widgets
-
-Add persistent scoreboards, tickers, and labels to the OBS overlay. Manage position, style, and content from the admin panel. Widgets broadcast to all connected overlay clients via WebSocket.
-
-### OBS Browser Source
-
-Use `https://your-server/overlay` as an OBS Browser Source to display danmu without the Electron app. Transparent background, auto-connects via WebSocket.
-
-### Plugin SDK
-
-Build server-side plugins that react to danmu events, modify messages, filter content, and auto-reply. Hot-reloaded every 5 seconds. See [Plugin Guide](server/PLUGIN_GUIDE.md) for details.
-
-### Timeline Export
-
-Record live danmu sessions as JSON timelines for offline replay or analysis. Available from the admin panel.
-
-## Installation & Usage
-
-### Danmu-Desktop Client
-
-1. Download the [latest release](https://github.com/guan4tou2/danmu-desktop/releases)
-2. For macOS users, lift the quarantine:
-   ```bash
-   sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
-   ```
-3. Launch the app
-4. Enter the server host + HTTPS/web port printed by the setup wizard
-
-Mac updates: download the new arm64 ZIP, quit the app, and replace the previous
-app with the extracted copy. Settings stay in your user profile. These ad-hoc
-signed packages provide a download action rather than automatic installation.
-
-Pending messages expire 24 hours after they first enter the standby queue.
-The server sweeps only the pending queue at startup and every 60 seconds,
-so with normal disk I/O, expired entries are removed by the next sweep even
-while idle. Expired messages are never forwarded while waiting for cleanup;
-history and archived backups are retained separately.
-Restarting the server or pausing again does not renew their deadline.
-
-Delivery history distinguishes queued, forwarded, and rendered messages.
-Rendered means at least one desktop or browser overlay reported a visible
-animated frame; it does not prove that a person saw it or OBS captured it.
-Without a valid receipt within 30 seconds, the result is unconfirmed, with a
-reason shown in history. Older clients can still display messages without
-reporting receipts. Unconfirmed messages are not automatically replayed.
-
-### Server Setup
-
-The canonical path is `./setup.sh init` — an interactive wizard that
-picks sensible defaults for your environment, generates secrets, and
-writes `.env` for you. It presents user-facing scenarios: IP/localhost +
-HTTP dev, IP + HTTPS self-signed, Domain + HTTPS self-signed, and Domain +
-HTTPS Let's Encrypt. The two self-signed HTTPS choices share the same
-compose profile; only the certificate SAN prompts differ.
+`./setup.sh init` is an interactive wizard: it picks defaults for your
+environment, generates secrets and writes `.env`. It offers four scenarios:
+IP/localhost + HTTP (dev), IP + HTTPS self-signed, Domain + HTTPS
+self-signed, and Domain + HTTPS Let's Encrypt.
 
 ```bash
 git clone https://github.com/guan4tou2/danmu-desktop.git
@@ -141,33 +89,45 @@ docker compose --profile traefik up -d       # Domain + HTTPS Let's Encrypt
 docker compose --profile http up -d          # IP/localhost + HTTP dev only
 ```
 
-> v5.0.0+: the Electron desktop client connects via `wss://` only. The
-> formal external endpoint is HTTPS/WSS on port `443`, with WebSocket at
-> `/ws` on the same web origin.
-> `--profile http` runs server + web admin/viewer fine but cannot
-> serve the desktop overlay.
+After start-up, open the HTTPS endpoint printed by the wizard:
 
-Full deploy guide (HTTPS modes, desktop-client connection, Redis, backup/
+- Viewer page: `https://<host>`
+- Admin panel: `https://<host>/admin`
+- OBS overlay: `https://<host>/overlay`
+
+With `--profile http` (development only) there is no TLS: the pages are at
+`http://<host>:<HTTP_DEV_PORT>`, with the same paths. `HTTP_DEV_PORT` is read
+from `.env`; its default is in `docker-compose.yml`.
+
+Everything — viewer, admin, OBS overlay, desktop client and WebSocket
+(`wss://<host>/ws`) — shares that single HTTPS origin on port `443`. If the
+self-signed profile must use another port, set `HTTPS_PORT`; there is no
+second WebSocket port.
+
+> The desktop client connects over `wss://` only. `--profile http` runs the
+> server, viewer and admin pages, but cannot serve the desktop overlay.
+
+Full deploy guide (HTTPS modes, desktop-client connection, Redis, backup and
 restore, upgrades): **[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
-#### Shortcut: prebuilt image, no clone
+<details>
+<summary>Prebuilt image, no clone</summary>
 
-If you only want the server binary and don't need source access:
+Use `ghcr.io/guan4tou2/danmu-server:latest` behind an HTTPS reverse proxy.
+Do not publish the app container directly; expose only the TLS endpoint on
+port `443` and forward `/ws` to the same private upstream.
 
-Use the prebuilt `ghcr.io/guan4tou2/danmu-server:latest` image behind an
-HTTPS reverse proxy. Do not publish the app container directly; expose only
-the TLS endpoint on port `443`.
-
-`SECRET_KEY` is required in production — production startup refuses to
-boot with an ephemeral key. `openssl rand -hex 32` inlines a fresh one;
-save it if you want consistent sessions across container recreates.
+`SECRET_KEY` is required in production — startup refuses an ephemeral key.
+`openssl rand -hex 32` generates one; save it so sessions survive container
+recreates.
 
 Multi-arch (`linux/amd64` + `linux/arm64/v8`). Tags: `latest`, `main`,
-`<git-sha>`. This shortcut exposes the app's internal HTTP upstream. For
-desktop use, front it with HTTPS on port `443` and forward `/ws` to the same
-private upstream.
+`<git-sha>`.
 
-#### Manual (no Docker)
+</details>
+
+<details>
+<summary>Manual, no Docker</summary>
 
 ```bash
 cp .env.example .env
@@ -178,20 +138,51 @@ cd server && uv venv && uv sync
 PYTHONPATH=.. uv run python -m server.app    # HTTP + /ws both run from here
 ```
 
-### Accessing the server
+</details>
 
-After start-up, open the HTTPS endpoint printed by the wizard:
+### Desktop client
 
-- Main interface: `https://<host>`
-- Admin panel: `https://<host>/admin`
-- OBS overlay: `https://<host>/overlay`
+1. Download the [latest release](https://github.com/guan4tou2/danmu-desktop/releases).
+   It is published as a portable desktop package: Windows portable x64 `.exe`,
+   macOS arm64 `.zip`, Linux AppImage or `.deb`.
+2. macOS only — lift the quarantine:
+   ```bash
+   sudo xattr -r -d com.apple.quarantine 'Danmu Desktop.app'
+   ```
+3. Launch the app and enter the server host and HTTPS port printed by the setup wizard.
 
-Desktop and viewer traffic should use that HTTPS origin only.
+Mac updates: download the new arm64 ZIP, quit the app, and replace the
+previous app with the extracted copy. Settings stay in your user profile.
+These ad-hoc signed packages offer a download rather than automatic
+installation. Windows updater metadata is not published while the Windows
+channel stays portable-only; macOS update metadata targets the ZIP package.
 
-### Environment variables
+### Slido bridge
 
-`.env.example` has the full annotated list. Key ones the wizard sets
-for you:
+In **Admin → System → Extensions**, the Slido card has a download for the
+extension (.zip) and generates the Fire token. Unzip it, load it unpacked at
+`chrome://extensions`, then enter this site's URL and the token in the
+extension popup. Details and limits: [slido-extension/README.md](slido-extension/README.md).
+
+## Delivery and pending messages
+
+Pending messages expire 24 hours after they first enter the standby queue.
+The server sweeps only the pending queue at startup and every 60 seconds,
+so with normal disk I/O, expired entries are removed by the next sweep even
+while idle. Expired messages are never forwarded while waiting for cleanup;
+history and archived backups are retained separately.
+Restarting the server or pausing again does not renew their deadline.
+
+Delivery history distinguishes queued, forwarded, and rendered messages.
+Rendered means at least one desktop or browser overlay reported a visible
+animated frame; it does not prove that a person saw it or OBS captured it.
+Without a valid receipt within 30 seconds, the result is unconfirmed, with a
+reason shown in history. Older clients can still display messages without
+reporting receipts. Unconfirmed messages are not automatically replayed.
+
+## Configuration
+
+`.env.example` has the full annotated list. The ones the wizard sets for you:
 
 | Variable | Purpose |
 |---|---|
@@ -201,60 +192,82 @@ for you:
 | `HTTPS_PORT` | Self-signed HTTPS profile override; default is `443`, desktop still uses the same port with `/ws` |
 | `TRUSTED_HOSTS` | Comma-separated allowlist for Host header |
 | `SESSION_COOKIE_SECURE` | `true` in production over HTTPS |
-| `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` | First-boot seed for `/ws` shared-token auth; later managed in Admin → Security |
+| `WS_REQUIRE_TOKEN` / `WS_AUTH_TOKEN` | First-boot seed for `/ws` shared-token auth; later managed in Admin → System → Security |
 | `RATE_LIMIT_BACKEND` | `memory` or `redis` (set up via `--profile redis`) |
 
-Every other setting ships a safe default; `.env.example` shows them all.
+Every other setting ships a safe default. Day-to-day settings are changed
+in the admin panel and saved under `server/runtime/`. Where a setting exists
+in both places — the request rate limits, for example — the value saved in
+the admin panel wins over the environment variable.
 
-## Security Notes
+## Project layout
+
+```
+server/            Flask backend, viewer page, admin panel, /overlay, /ws
+danmu-desktop/     Electron desktop client (control window + overlay window)
+slido-extension/   Chrome extension: Slido questions → danmu
+shared/            design tokens and the danmu renderer both sides load
+scripts/           repo tooling (CSS token lint, version bump, backup, deploy)
+nginx/ traefik/    reverse-proxy configs for the compose profiles
+docs/              documentation (index: docs/README.md)
+img/               README screenshots
+```
+
+How the parts fit together, how a message travels, and where state is
+stored: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+
+## Development
+
+Node.js 24 (minimum 22.12) and the committed lockfiles; Python via `uv`.
+
+```bash
+make help                                    # every target
+make run                                     # run the server locally
+make test                                    # server tests (pytest)
+make lint-css                                # CSS token lint (also runs in CI)
+(cd server && npm ci && npm run test:js -- --runInBand)        # admin / viewer script tests
+(cd danmu-desktop && npm ci && npm test -- --runInBand)        # desktop client tests
+```
+
+Generated files are committed and checked in CI. After editing admin
+scripts run `cd server && npm run build:admin-js`; after editing locale
+files run `npm run build:i18n` in the directory you changed (`server/` and
+`danmu-desktop/` each have their own). See
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#generated-files-commit-them-with-the-source-change)
+and [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Coverage: `make coverage` (HTML report at `server/htmlcov/index.html`).
+
+### CI and releases
+
+- `.github/workflows/test.yml` — Python tests with coverage, `pip-audit`, the JS tests, the generated-file checks, and the CSS token lint (`scripts/check-css-tokens.mjs`, fails on new hard-coded hex colours).
+- `.github/workflows/docker-build.yml` — builds and tests the server image on each PR/push. With the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets set, pushes to `main` also publish `DOCKERHUB_USERNAME/danmu-server:latest` and a commit-SHA tag.
+- `.github/workflows/build.yml` — builds the Electron app for Windows, macOS and Linux on a version bump and publishes a GitHub Release. macOS ZIP update metadata is published; Windows metadata is not, while Windows remains portable-only.
+- `.github/workflows/osv-scanner.yml` — OSV scanning on push, pull request and a schedule.
+
+## Security notes
 
 - GitHub Advanced Security and Dependabot are enabled for this repository.
-- OSV scanning runs on `push`, `pull_request`, and scheduled jobs via `.github/workflows/osv-scanner.yml`.
 - Frontend lockfile enforces `serialize-javascript@7.0.3` through npm overrides to address advisory `GHSA-5c6j-r48x-rmvq`.
 - Fresh installs with neither WS auth environment variable set start with token auth enabled and a generated token. An explicit `WS_REQUIRE_TOKEN=false` is respected. After `server/runtime/ws_auth.json` exists, its saved state is authoritative; upgrades, restarts, and changing the environment variables do not automatically change an existing deployment's setting.
-- If WS auth is off and the web port is reachable beyond localhost or a trusted LAN, anyone who can reach `/ws` can connect a display and receive danmu; this does not grant admin access. To enable it safely, open **Admin → Security → Connection password**, generate a token if needed while auth remains off, copy it into every desktop app's **WS Token** setting and save there, then enable authentication and save in Admin. Reconnect each desktop at a suitable time and verify a test danmu. Saved changes apply only to new/reconnecting clients; existing connections stay up. Keep tokens out of public URLs and screenshots. See the **Desktop Client** section in [deployment instructions](./DEPLOYMENT.md) for details.
-- Production startup now refuses an ephemeral `SECRET_KEY`, `SESSION_COOKIE_SECURE=false`, or missing `TRUSTED_HOSTS`. Set those explicitly before deploying.
-- The app now emits a nonce-based `Content-Security-Policy` header. If you add new inline scripts, use the template nonce instead of falling back to `unsafe-inline`.
+- If WS auth is off and the web port is reachable beyond localhost or a trusted LAN, anyone who can reach `/ws` can connect a display and receive danmu; this does not grant admin access. To enable it safely, open **Admin → System → Security** (display connection password), generate a token if needed while auth remains off, copy it into every desktop app's **WS Token** setting and save there, then enable authentication and save in Admin. Reconnect each desktop at a suitable time and verify a test danmu. Saved changes apply only to new/reconnecting clients; existing connections stay up. Keep tokens out of public URLs and screenshots. See the **Desktop Client** section in [DEPLOYMENT.md](./DEPLOYMENT.md) for details.
+- Production startup refuses an ephemeral `SECRET_KEY`, `SESSION_COOKIE_SECURE=false`, or missing `TRUSTED_HOSTS`. Set those explicitly before deploying.
+- The app emits a nonce-based `Content-Security-Policy` header. If you add new inline scripts, use the template nonce instead of falling back to `unsafe-inline`.
 - `Strict-Transport-Security` stays opt-in via `HSTS_ENABLED=true` and is only sent on HTTPS responses.
 
-## Project Docs / 文件
+## Documentation
 
-- [`DESIGN.md`](./DESIGN.md) – 設計系統（brand, color, typography, motion, a11y, voice）. Single source of truth for all visual decisions.
-- `docs/perf/baseline-v4.6.1.md` – performance baseline（HTTP payload, latency, font loading strategy）。
-- `docs/designs/` – design exploration artifacts（typography comparison pages etc）.
-- `docs/audits/` – design-review audit reports by round.
-- `docs/README.md` – index of technical notes and archives / 技術文件索引。
-- `DEPLOYMENT.md` – production-grade setup instructions / 部署說明。
-- `server/PLUGIN_GUIDE.md` – Plugin SDK documentation / 插件開發文件。
-- `README-CH.md` – 中文總覽。
-- `docs/archive/` – historical improvement notes kept for reference / 歷史紀錄。
-
-## CI/CD & Docker Hub
-
-Frontend development uses Node.js 24 (minimum 22.12) and the committed lockfiles.
-Run `npm ci` in `server/` and `danmu-desktop/`; run `npm run test:js -- --runInBand`
-in `server/` for focused DOM tests and `npm test -- --runInBand` in `danmu-desktop/`.
-
-- Workflow `.github/workflows/docker-build.yml` builds and tests the server image on each PR/push.
-- Workflow `.github/workflows/test.yml` runs Python tests with coverage reporting, `pip-audit` for CVE scanning, and a CSS token-discipline lint (`scripts/check-css-tokens.mjs`) that fails on new hardcoded hex colors.
-- Workflow `.github/workflows/build.yml` builds Electron app for Windows,
-  macOS, and Linux on version bump, then publishes GitHub Releases with
-  portable desktop artifacts. macOS ZIP updater metadata is published; Windows
-  updater metadata stays unpublished while Windows remains portable-only.
-- Set GitHub secrets `DOCKERHUB_USERNAME` + `DOCKERHUB_TOKEN` (Docker Hub access token) to auto-publish `DOCKERHUB_USERNAME/danmu-server:latest` and a commit-SHA tag whenever `main` is updated.
-
-## Testing & Coverage
-
-- Run tests: `make test` or `make test-verbose`
-- Generate coverage report: `make coverage`
-  - Console summary via `coverage report`
-  - HTML report at `server/htmlcov/index.html`
-
-## Port Configuration
-
-- External formal endpoint: `https://<host>` and `wss://<host>/ws` on port `443`
-- Desktop, viewer, admin, OBS overlay, and WebSocket all share that single HTTPS/WSS entrypoint
-- If the self-signed HTTPS profile must use a custom port, set one `HTTPS_PORT`; do not add a second WS port
+| Document | What it covers |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Project layout, how a message travels, where state lives |
+| [docs/FEATURES.md](docs/FEATURES.md) | Feature inventory, admin route map, persistence map |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Docker, HTTPS modes, VPS deployment, upgrades |
+| [server/PLUGIN_GUIDE.md](server/PLUGIN_GUIDE.md) | Writing server plugins |
+| [slido-extension/README.md](slido-extension/README.md) | Slido bridge |
+| [DESIGN.md](DESIGN.md) | Design system: brand, colour, typography, motion, accessibility |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Setup, conventions, generated files |
+| [CHANGELOG.md](CHANGELOG.md) · [TODOS.md](TODOS.md) | Release history · open work |
+| [docs/README.md](docs/README.md) | Index of everything else under `docs/` |
 
 ## References
 

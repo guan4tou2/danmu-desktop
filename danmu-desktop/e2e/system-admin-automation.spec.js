@@ -133,9 +133,11 @@ test.describe("後台互動與自動化（投票 / 排程 / Webhooks）", () => 
       document.getElementById("admin-onboarding-root")?.remove();
     });
     // 本檔會在短時間內打出大量 admin 請求，預設 300/60s 會 429 打爆自己。
-    // live-apply 本身也吃 admin 限流，所以要重試到成功為止。
-    // limit 上限是 1000（routes/admin/ratelimit.py:_LIMIT_MAX），超過會 400 —
-    // 400 不是重試能救的，寫大於 1000 的值等於整個迴圈空轉、限流沒被拉高。
+    // 2026-11-19 起儲存上限的端點不受 admin 限流管，一次就會成功；重試迴圈
+    // 留著只是保險。可設範圍在 server/services/rate_limits.py 的 _BOUNDS
+    // （admin 是 60–10000），超出會 400——400 不是重試能救的。
+    // 這些值現在會存檔；e2e/helpers/rate-limit-guard.js 會在整輪跑完後把
+    // 上限還原成開跑前的樣子。
     for (let i = 0; i < 20; i += 1) {
       const r = await adminApi("/admin/ratelimit/apply", {
         method: "POST",

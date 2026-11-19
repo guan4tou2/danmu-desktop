@@ -7,13 +7,18 @@
 ### 使用 Docker（推薦）
 
 ```bash
-# 從專案根目錄
-docker-compose up -d
+# 從專案根目錄。先產生 .env（沒有 ADMIN_PASSWORD 伺服器不會啟動）：
+./setup.sh init                           # 互動式；或 cp .env.example .env 後自行設定 ADMIN_PASSWORD
+
+# 再擇一 profile（完整說明見 ../DEPLOYMENT.md）
+docker compose --profile https up -d     # IP / 網域 + HTTPS 自簽憑證（推薦；桌面版需要 TLS）
+docker compose --profile traefik up -d   # 網域 + Let's Encrypt
+docker compose --profile http up -d      # 本機 HTTP（僅開發，桌面版連不上）
 ```
 
 > 正式部署對外只需要 `443` HTTPS/WSS 入口；WebSocket 走同一個入口的 `/ws`
->（`wss://<host>/ws`）。
-> 放置 `nginx/certs/fullchain.pem` 與 `nginx/certs/privkey.pem` 後，使用 `docker-compose --profile https up -d` 啟用 `443` HTTPS/WSS 反向代理。
+>（`wss://<host>/ws`）。`https` profile 會在第一次啟動時自動產生自簽憑證，
+> 憑證設定、自訂 port、Let's Encrypt 與 Redis 的做法請看 [`../DEPLOYMENT.md`](../DEPLOYMENT.md)。
 
 ### 手動安裝
 
@@ -37,28 +42,34 @@ docker-compose up -d
 
 ## 專案結構
 
+資料流與各模組的職責見 [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)。
+
 ```
 server/
-├── app.py              # HTTP + WebSocket (/ws) 伺服器主程式
-├── config.py           # 配置管理
+├── app.py              # Flask app 工廠與 HTTP + WebSocket (/ws) 進入點
+├── config.py           # 配置管理（環境變數、APP_VERSION、可設定的選項鍵）
+├── state.py / utils.py # 共用狀態與小工具
 ├── routes/             # Flask 路由藍圖
-│   ├── admin.py        # 管理員面板路由
-│   ├── api.py          # API 路由
-│   └── main.py         # 主頁路由
-├── services/           # 業務邏輯服務
-│   ├── fonts.py        # 字型管理
-│   ├── messaging.py    # 訊息傳遞
-│   ├── security.py     # 安全功能（CSRF, Rate Limit）
-│   └── settings.py     # 設定管理
-├── managers/           # 狀態管理器
-│   ├── connections.py  # 連線管理
-│   └── settings.py     # 設定儲存
-├── ws/                 # WebSocket 相關
-│   └── flask_ws.py     # Flask /ws route 實作
-├── templates/          # HTML 模板
-├── static/             # 靜態資源
-└── tests/              # 測試檔案
+│   ├── admin/          # 管理後台 API（套件，一個 domain 一個檔案）
+│   ├── api.py          # 公開 API（/fire、/get_settings 等）
+│   ├── main.py         # 觀眾頁 /、/overlay、登入／登出、改密碼
+│   └── health.py       # /health 探針
+├── services/           # 業務邏輯（過濾引擎、歷史、投票、Webhook、備份、JsonState 等）
+├── managers/           # 連線與設定狀態管理器
+├── ws/                 # WebSocket 實作（flask_ws.py，/ws）
+├── static/             # 靜態資源：js（含 admin.bundle.js）、css、locales、字型、表情、貼圖、音效
+├── templates/          # HTML 模板（觀眾頁、後台、overlay、錯誤頁）
+├── effects/            # 內建 .dme 動畫效果（可熱重載）
+├── themes/             # 主題 YAML（可熱重載）
+├── plugins/            # 內建範例外掛
+├── user_plugins/       # 使用者上傳或自行放入的外掛（.py）
+├── runtime/            # 執行期狀態檔（設定、規則、token、歷史…）；Docker 部署要放在持久化 volume
+├── tests/              # pytest
+├── tests-js/           # 後台與觀眾頁 JS 的 jest 測試
+└── scripts/            # 建置與維運腳本（build-i18n、build-admin-bundle、hash_password.py 等）
 ```
+
+另有 `user_fonts/`（後台上傳的字型）。外掛寫法見 [`PLUGIN_GUIDE.md`](./PLUGIN_GUIDE.md)。
 
 ## 環境變數
 
@@ -71,6 +82,10 @@ server/
 ```bash
 PYTHONPATH=.. uv run python -m pytest
 ```
+
+### 前端建置
+
+改了 `static/locales/` 或後台 JS 之後要重新生成產物（`npm run build:i18n`、`npm run build:admin-js`，或一次 `npm run build`）；細節見 [`../CONTRIBUTING.md`](../CONTRIBUTING.md)。
 
 ### 程式碼風格
 

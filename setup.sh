@@ -295,9 +295,9 @@ _init() {
     _info "Rate limits"
     read -rp "  FIRE_RATE_LIMIT [20]: "  adv_fire_limit
     read -rp "  FIRE_RATE_WINDOW seconds [60]: " adv_fire_window
-    read -rp "  ADMIN_RATE_LIMIT [60]: " adv_admin_limit
+    read -rp "  ADMIN_RATE_LIMIT [300]: " adv_admin_limit
     read -rp "  ADMIN_RATE_WINDOW seconds [60]: " adv_admin_window
-    read -rp "  API_RATE_LIMIT [30]: "   adv_api_limit
+    read -rp "  API_RATE_LIMIT [120]: "  adv_api_limit
     read -rp "  API_RATE_WINDOW seconds [60]: "  adv_api_window
     read -rp "  LOGIN_RATE_LIMIT (failed attempts) [5]: " adv_login_limit
     read -rp "  LOGIN_RATE_WINDOW seconds [300]: "        adv_login_window

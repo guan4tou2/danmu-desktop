@@ -155,14 +155,14 @@ test("admin Viewer surface exposes language/copy and defaults/limits guidance", 
   // Old static "DEFAULTS / LIMITS" text panel replaced with 2 cards
   // (RATE LIMITS + CONTENT LIMITS) + CURRENT SESSION strip, populated
   // live from /admin/metrics.rate_limit_config.
-  expect(displaySrc).toContain("RATE LIMITS");
-  expect(displaySrc).toContain("CONTENT LIMITS");
-  expect(displaySrc).toContain('t("displayRateLimitsTitle")'); // D-4：文案在 zh locale
-  expect(zhLocaleSrc3).toContain("速率限制");
+  // 2026-11-19 發送上限合一：「速率限制」唯讀卡退場（數字標錯，而且同一件事
+  // 有兩個入口）。發送上限只在 審核 › 發送上限 一處；這裡只留「內容限制」。
+  expect(displaySrc).not.toContain('t("displayRateLimitsTitle")');
+  expect(displaySrc).not.toContain("data-vc-rate-fp");
+  expect(displaySrc).not.toContain("data-vc-rate-cooldown");
   expect(displaySrc).toContain('t("displayContentLimitsTitle")');
   expect(zhLocaleSrc3).toContain("內容限制"); // D-4
   expect(displaySrc).toContain('admin-vc-limits-grid');
-  expect(displaySrc).toContain('data-vc-rate-fp');
   expect(displaySrc).toContain('data-vc-msg-len');
   expect(adminSrc).toContain('sec-viewer-config-defaults');
   expect(adminSrc).toContain('sec-viewer-config-limits');
@@ -497,7 +497,17 @@ test("admin Rate Limits actions compose shared admin-ui controls", () => {
   expect(ratelimitSrc).toContain('class="admin-ui-action is-primary admin-rl-action" data-rl-action="save"');
   expect(ratelimitSrc).toContain('class="admin-ui-action is-primary admin-rl-action" data-rl-action="apply-suggest"');
   expect(ratelimitSrc).toContain('class="admin-ui-action admin-rl-footer-action" data-rl-action="reset"');
-  expect(ratelimitSrc).toContain('class="admin-ui-action is-primary admin-rl-footer-action" data-rl-action="export"');
+  // 2026-11-19：「匯出 .env 片段」退場——上限現在存檔、重啟後保留，不必再
+  // 靠人把數值貼回環境變數。
+  expect(ratelimitSrc).not.toContain('data-rl-action="export"');
+  // 四列各自的表單併成一個「對象＋數值＋時間窗」元件，主卡與摺疊區各用一次。
+  expect(ratelimitSrc).toContain('formHtml("viewer")');
+  expect(ratelimitSrc).toContain('formHtml("other")');
+  // 沒有對應後端的「鎖定秒數」欄位不再出現。
+  expect(ratelimitSrc).not.toContain("data-rl-lockout");
+  // 輸入框的值來自伺服器，不是前端寫死的預設。
+  expect(ratelimitSrc).toContain("/admin/ratelimit/config");
+  expect(ratelimitSrc).not.toMatch(/defLimit|defWindow/);
   expect(ratelimitSrc).not.toContain('class="admin-poll-btn');
 
   expect(styleSrc).toContain(".admin-ui-action {");

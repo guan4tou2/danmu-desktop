@@ -7,15 +7,17 @@
 // brand lockup, mono labels, cyan sign-in, status chip row.
 //
 // v5 retrofit: intercepts the submit via fetch so we can surface
-//   - 401 → remaining-attempt hint (5-attempt window, LOGIN_RATE_LIMIT)
-//   - 429 → full lockout screen with countdown (Retry-After if present,
-//           else hardcoded 300s matching LOGIN_RATE_WINDOW default)
+//   - wrong password → remaining-attempt hint, from the limit in effect
+//   - 429 → full lockout screen counting down from the server's Retry-After
 // See docs/design-v2-backlog.md P2-4.
 (function () {
   "use strict";
 
-  const LOGIN_MAX_ATTEMPTS = 5;           // matches LOGIN_RATE_LIMIT default
-  const LOGIN_LOCKOUT_DEFAULT = 300;       // matches LOGIN_RATE_WINDOW default
+  // 實際生效的登入上限（審核 › 發送上限可改），由模板帶進來。先前這裡寫死
+  // 5 次／300 秒，文案還說「鎖定 15 分鐘」，三個數字都可能跟伺服器不一樣。
+  const _cfg = window.DANMU_CONFIG || {};
+  const LOGIN_MAX_ATTEMPTS = Number(_cfg.loginLimit) > 0 ? Number(_cfg.loginLimit) : 5;
+  const LOGIN_LOCKOUT_DEFAULT = Number(_cfg.loginWindow) > 0 ? Number(_cfg.loginWindow) : 300;
   let _loginAttemptsUsed = 0;
 
   function _ctx() { return window.__adminCtx || {}; }
@@ -115,7 +117,10 @@
           // 設計稿 06 · L2：欄位同時轉紅框，錯誤指向出錯的地方。
           const pw = document.getElementById("password");
           if (pw) pw.classList.add("is-error");
-          hint.textContent = ServerI18n.t("loginAttemptsRemaining", { n: remaining });
+          hint.textContent = ServerI18n.t("loginAttemptsRemaining", {
+            n: remaining,
+            min: Math.max(1, Math.ceil(LOGIN_LOCKOUT_DEFAULT / 60)),
+          });
         }
       }
     } catch (_) {}
