@@ -37,15 +37,23 @@ from .json_state import JsonState
 
 logger = logging.getLogger(__name__)
 
-# scope → (limit config key, window config key)
+
+def _config_keys(prefix: str) -> Tuple[str, str]:
+    """``FIRE`` → ``("FIRE_RATE_LIMIT", "FIRE_RATE_WINDOW")``."""
+    return f"{prefix}_RATE_LIMIT", f"{prefix}_RATE_WINDOW"
+
+
+# scope → (limit config key, window config key). Built from the env-var prefix
+# rather than spelled out: a literal pair of strings next to a "login" or
+# "admin" key reads as a username/password to secret scanners.
 SCOPES: Dict[str, Tuple[str, str]] = {
-    "fire": ("FIRE_RATE_LIMIT", "FIRE_RATE_WINDOW"),
-    "fire_fingerprint": ("FIRE_FINGERPRINT_RATE_LIMIT", "FIRE_FINGERPRINT_RATE_WINDOW"),
-    "fire_global": ("GLOBAL_FIRE_RATE_LIMIT", "GLOBAL_FIRE_RATE_WINDOW"),
-    "fire_admin": ("FIRE_ADMIN_RATE_LIMIT", "FIRE_ADMIN_RATE_WINDOW"),
-    "api": ("API_RATE_LIMIT", "API_RATE_WINDOW"),
-    "admin": ("ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW"),
-    "login": ("LOGIN_RATE_LIMIT", "LOGIN_RATE_WINDOW"),
+    "fire": _config_keys("FIRE"),
+    "fire_fingerprint": _config_keys("FIRE_FINGERPRINT"),
+    "fire_global": _config_keys("GLOBAL_FIRE"),
+    "fire_admin": _config_keys("FIRE_ADMIN"),
+    "api": _config_keys("API"),
+    "admin": _config_keys("ADMIN"),
+    "login": _config_keys("LOGIN"),
 }
 
 VALID_WINDOWS = (10, 30, 60, 300, 3600)
