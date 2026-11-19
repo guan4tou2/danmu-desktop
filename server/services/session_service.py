@@ -198,43 +198,77 @@ def is_live() -> bool:
         return _state.get("status") == "live"  # type: ignore[union-attr]
 
 
-def note_message() -> None:
-    """One more message was accepted. Does nothing when no session is live."""
+def _retained_message_count(started_at: Any) -> int:
+    """What history still holds for a session that started at ``started_at``.
+
+    The starting figure for a session that was already running before it
+    kept its own count. History holds a day at most, so this can be short.
+    """
+    try:
+        from datetime import datetime, timezone
+
+        from . import history as history_service
+
+        if not history_service.danmu_history or not started_at:
+            return 0
+        return history_service.danmu_history.count_since(
+            datetime.fromtimestamp(float(started_at), tz=timezone.utc)
+        )
+    except Exception as exc:
+        logger.warning("Could not read the session's retained message count: %s", exc)
+        return 0
+
+
+def _known_count() -> int:
+    """The live session's count, seeded from history if it has none yet.
+
+    Caller must hold _lock and have checked that a session is live. Seeding
+    happens here, under the lock, for every reader and writer alike: a
+    message accepted while another request is seeding must neither be missed
+    nor counted twice. ``note_message`` runs before the message is added to
+    history, so the figure read here never includes the message in hand.
+    """
     global _message_count
-    with _lock:
-        _ensure_loaded()
-        if _state.get("status") != "live" or _message_count is None:  # type: ignore[union-attr]
-            return
-        _message_count += 1
-        if time.monotonic() - _count_saved_at >= _COUNT_SAVE_INTERVAL:
-            _persist()
+    if _message_count is None:
+        started_at = _state.get("started_at")  # type: ignore[union-attr]
+        _message_count = _retained_message_count(started_at)
+        _persist()
+    return _message_count
 
 
-def get_message_count() -> Optional[int]:
-    """Messages accepted in the live session; None when idle or not known yet."""
-    with _lock:
-        _ensure_loaded()
-        if _state.get("status") != "live":  # type: ignore[union-attr]
-            return None
-        return _message_count
+def note_message() -> None:
+    """One more message was accepted. Does nothing when no session is live.
 
-
-def seed_message_count(count: int) -> int:
-    """Give a live session that has no count a starting one. Returns the count.
-
-    For a session that was already running before the counter existed: the
-    caller passes the best figure it has (what history still holds). A count
-    that is already known is left alone.
+    Call it before the message is written to history (see ``_known_count``).
     """
     global _message_count
     with _lock:
         _ensure_loaded()
         if _state.get("status") != "live":  # type: ignore[union-attr]
-            return 0
-        if _message_count is None:
-            _message_count = max(0, int(count))
+            return
+        _message_count = _known_count() + 1
+        if time.monotonic() - _count_saved_at >= _COUNT_SAVE_INTERVAL:
             _persist()
-        return _message_count
+
+
+def get_message_count() -> Optional[int]:
+    """Messages accepted in the live session; None when no session is live."""
+    return get_state_and_count()[1]
+
+
+def get_state_and_count() -> tuple:
+    """``(state, message_count)`` read together, so they describe one session.
+
+    Read separately, a session closing and another opening in between would
+    pair one session's name and start time with the other's count.
+    ``message_count`` is None when no session is live.
+    """
+    with _lock:
+        _ensure_loaded()
+        state = dict(_state)  # type: ignore[arg-type]
+        if state.get("status") != "live":
+            return state, None
+        return state, _known_count()
 
 
 def open_session(name: str) -> Dict[str, Any]:

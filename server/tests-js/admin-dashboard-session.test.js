@@ -58,4 +58,26 @@ describe("console session tiles", () => {
     jest.advanceTimersByTime(5000);
     expect(tile("session")).toBe("—");
   });
+
+  test("an answer that was asked earlier but arrives later does not win", async () => {
+    // 兩條路都在抓場次狀態；回來的順序不一定是送出的順序。
+    const startedAt = Date.now() / 1000 - 60;
+    const live = (count) => ({ status: "live", id: "sess_1", started_at: startedAt, message_count: count });
+    const pending = [];
+    window.fetch = jest.fn(() => new Promise((resolve) => {
+      pending.push((body) => resolve({ ok: true, json: async () => body }));
+    }));
+
+    const older = window.AdminDashboard.refreshSessionBanner();
+    const newer = window.AdminDashboard.refreshSessionBanner();
+    pending[1](live(12)); // 後送出的先回來
+    await newer;
+    expect(tile("messages")).toBe("12");
+
+    pending[0](live(10)); // 先送出的這時才回來
+    await older;
+    expect(tile("messages")).toBe("12");
+
+    window.fetch = jest.fn(async () => ({ ok: true, json: async () => session }));
+  });
 });

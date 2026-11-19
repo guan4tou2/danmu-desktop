@@ -80,14 +80,25 @@ describe("notification bell", () => {
     expect(badge()).toBe("1"); // 只有新的那一則
   });
 
-  test("two identical failed sign-ins in the same second are two notifications", async () => {
-    audit = [event(200, "auth", "login_failed"), event(200, "auth", "login_failed")];
+  test("two failed sign-ins a moment apart are two notifications", async () => {
+    // 伺服器記的時間帶小數；同一秒內的兩次嘗試時間不同。
+    audit = [event(200.412, "auth", "login_failed"), event(200.108, "auth", "login_failed")];
     await refresh();
 
     expect(badge()).toBe("2");
+  });
 
-    panel().querySelector("[data-notif-readall]").click();
-    audit = [event(200, "auth", "login_failed"), ...audit]; // 同一秒又來一次
+  test("reading one of them stays put when older events leave the page", async () => {
+    audit = [event(200.412, "auth", "login_failed"), event(200.108, "auth", "login_failed")];
+    await refresh();
+    // 只讀較舊的那一則。
+    const rows = panel().querySelectorAll("[data-notif-go]");
+    expect(rows.length).toBe(2);
+    rows[rows.length - 1].click();
+    expect(badge()).toBe("1");
+
+    // 較舊的那則滾出伺服器回傳的範圍，較新的那則還在，而且還是未讀。
+    audit = [event(200.412, "auth", "login_failed")];
     await refresh();
 
     expect(badge()).toBe("1");

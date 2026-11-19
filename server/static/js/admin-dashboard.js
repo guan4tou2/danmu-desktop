@@ -25,6 +25,7 @@
       const cachedHist = boot.get("history_stats");
       // /admin/stats/hourly is not bundled — always fetch. /admin/history IS
       // bundled as history_stats (same shape), so consult cache first.
+      const sessionTicket = _nextSessionTicket();
       const [histRes, hourlyRes, sessRes] = await Promise.all([
         cachedHist ? null : fetch("/admin/history?hours=24&limit=200", { credentials: "same-origin" }),
         fetch("/admin/stats/hourly?hours=24", { credentials: "same-origin" }),
@@ -56,7 +57,8 @@
       }
 
       // 訊息、已進行 —— 都是「這一場」的數字，由場次狀態決定。
-      applySessionTiles(sessRes && sessRes.ok ? await sessRes.json() : null);
+      const sess = sessRes && sessRes.ok ? await sessRes.json() : null;
+      if (_isLatestSession(sessionTicket)) applySessionTiles(sess);
     } catch (e) {
       // Silent — dashboard falls back to placeholders.
     }
@@ -69,6 +71,13 @@
   // 場次輪詢刷新。沒有進行中的場次時兩格都是「—」。
   let _sessionTileStartedAt = null;
   let _sessionTileTimer = null;
+
+  // 場次狀態有兩條路在抓（開頁的 KPI、10 秒一次的輪詢），回來的順序不一定
+  // 是送出的順序。每次送出前領一張號碼，回來時只有還是最新的那張才寫上
+  // 畫面——否則較早送出、較晚回來的那份會把訊息數倒退回去。
+  let _sessionTicket = 0;
+  function _nextSessionTicket() { return ++_sessionTicket; }
+  function _isLatestSession(ticket) { return ticket === _sessionTicket; }
 
   function _tickSessionTile() {
     const tile = document.querySelector('[data-kpi="session"] [data-kpi-value]');
@@ -507,9 +516,11 @@
 
   async function refreshSessionBanner() {
     try {
+      const ticket = _nextSessionTicket();
       const r = await fetch("/admin/session/current", { credentials: "same-origin" });
       if (!r.ok) return;
       const data = await r.json();
+      if (!_isLatestSession(ticket)) return; // 有更新的一次在路上，讓它來畫
       _renderSessionBanner(data);
       applySessionTiles(data);
     } catch (_) { /* silent */ }
@@ -568,8 +579,10 @@
     const rev = _cockpitRev;
     try {
       const r = await fetch("/admin/broadcast/status", { credentials: "same-origin" });
-      if (!r.ok || rev !== _cockpitRev) return;
+      if (!r.ok) return;
       const live = (await r.json()).mode === "live";
+      // 讀完內容才比對：等內容的這段時間裡也可能剛按了暫停。
+      if (rev !== _cockpitRev) return;
       _cockpitState = { live, count: _cockpitState ? _cockpitState.count : 0 };
       renderOverlayPill();
     } catch (_) { /* 問不到就維持原樣 */ }
@@ -681,9 +694,11 @@
       window.showToast && window.showToast(ServerI18n.t("sohQrFailed"), false);
       return;
     }
+    const body = document.createElement("div");
     const box = document.createElement("div");
     box.className = "admin-soh-qr";
     box.innerHTML = data.svg; // server 自己產生的 SVG，內容只有入場網址
+    body.appendChild(box);
     if (data.source === "unavailable") {
       // 仍是 localhost（伺服器找不到區網位址）：這張 QR 觀眾掃了連不到。
       const warn = document.createElement("p");
@@ -691,12 +706,14 @@
       warn.textContent = data.blocked_host
         ? ServerI18n.t("joinUrlNotTrusted", { host: data.blocked_host })
         : ServerI18n.t("joinUrlLocalOnly");
-      box.appendChild(warn);
+      // 放在 QR 白框外面：白框在任何主題下都是白底，警示色是照主題挑的，
+      // 放進去在深色主題下幾乎看不見。
+      body.appendChild(warn);
     }
     const copy = await window.HudConfirm?.open({
       icon: "▦",
       titleText: data.url,
-      body: box,
+      body: body,
       severity: "info",
       confirmLabel: ServerI18n.t("copyBtn"),
       cancelLabel: ServerI18n.t("close"),

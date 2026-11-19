@@ -128,6 +128,57 @@ def test_a_session_that_predates_the_count_starts_from_what_history_holds(client
     assert _message_count(client) == 3
 
 
+def test_a_message_arriving_before_anyone_looks_is_not_lost(client):
+    """The count is seeded wherever it is first needed — also by the first
+    message, not only by the console. Seeding only on a console read left a
+    window where a message accepted meanwhile was counted by neither."""
+    from server.routes.api import _record_history_if_enabled
+    from server.services import history as history_service
+
+    _open(client)
+    history_service.danmu_history.add({"text": "one"})
+    history_service.danmu_history.add({"text": "two"})
+    session_service._message_count = None  # the state file of an older version
+
+    _record_history_if_enabled({"text": "three"}, "fp", "203.0.113.5")
+
+    assert session_service.get_message_count() == 3
+    assert _message_count(client) == 3
+
+
+def test_retained_messages_are_counted_even_when_stored_out_of_order(client):
+    """A record is stamped before it takes the lock to be stored, so two
+    concurrent sends can land newest-first. Both are after the cutoff."""
+    from datetime import datetime, timedelta, timezone
+
+    from server.services import history as history_service
+
+    history = history_service.danmu_history
+    cutoff = datetime.now(timezone.utc)
+    history.add({"text": "later"})
+    history.add({"text": "earlier"})
+    with history._lock:
+        records = list(history._records)[-2:]
+        records[0]["timestamp"] = (cutoff + timedelta(seconds=2)).isoformat()
+        records[1]["timestamp"] = (cutoff - timedelta(seconds=2)).isoformat()  # before the cutoff
+        extra = dict(records[1], timestamp=(cutoff + timedelta(seconds=1)).isoformat())
+        history._records.append(extra)  # after it, stored behind an older record
+
+    assert history.count_since(cutoff) == 2
+
+
+def test_state_and_count_are_read_together(client):
+    _open(client, name="Friday")
+    session_service.note_message()
+
+    state, count = session_service.get_state_and_count()
+    assert (state["name"], count) == ("Friday", 1)
+
+    session_service.close_session()
+    state, count = session_service.get_state_and_count()
+    assert (state["status"], count) == ("idle", None)
+
+
 def test_the_audience_is_not_told_the_count(client):
     _open(client)
     session_service.note_message()

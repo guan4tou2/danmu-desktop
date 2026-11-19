@@ -222,6 +222,40 @@ def test_incoming_webhook_is_not_lost_when_the_review_queue_fails(client, monkey
     assert [m for m in ws_queue.dequeue_all() if m.get("text") == "free giveaway here"]
 
 
+def test_incoming_webhook_held_for_review_is_never_also_shown(client, monkeypatch):
+    """Once the message is in the queue nothing may let it through as well —
+    not even the cleanup thread failing to start."""
+    from server.services.mod_queue import mod_queue
+
+    def no_thread():
+        raise RuntimeError("can't start new thread")
+
+    monkeypatch.setattr(mod_queue, "start_reaper", no_thread)
+    hook_id, secret = _hook_with_rule(
+        client, {"type": "keyword", "pattern": "giveaway", "action": "review"}
+    )
+
+    resp = _send(client, hook_id, secret, "free giveaway here")
+
+    assert resp.status_code == 202, resp.data
+    assert not [m for m in ws_queue.dequeue_all() if m.get("text") == "free giveaway here"]
+    assert resp.get_json()["queue_id"] in [item["id"] for item in mod_queue.snapshot()["pending"]]
+
+
+def test_incoming_webhook_messages_count_towards_the_session(client):
+    from server.services import session_service
+
+    session_service.open_session("Friday")
+    hook_id, secret = _hook_with_rule(
+        client, {"type": "keyword", "pattern": "giveaway", "action": "review"}
+    )
+
+    assert _send(client, hook_id, secret, "hello from outside").status_code == 200
+    assert _send(client, hook_id, secret, "free giveaway here").status_code == 202  # held
+
+    assert session_service.get_message_count() == 1
+
+
 def test_incoming_webhook_bad_signature_rejected(client):
     """Incoming webhook with invalid signature should be rejected."""
     token = _login(client)

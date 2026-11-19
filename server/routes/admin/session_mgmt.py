@@ -35,21 +35,8 @@ def session_current():
     History is only the starting figure for a session that was already
     running before the count existed.
     """
-    state = dict(session_service.get_state())
-    started_at = state.get("started_at")
-    if state.get("status") == "live" and started_at:
-        count = session_service.get_message_count()
-        if count is None:
-            from datetime import datetime, timezone
-
-            from ...services import history as history_service
-
-            held = 0
-            if history_service.danmu_history:
-                held = history_service.danmu_history.count_since(
-                    datetime.fromtimestamp(float(started_at), tz=timezone.utc)
-                )
-            count = session_service.seed_message_count(held)
+    state, count = session_service.get_state_and_count()
+    if count is not None:
         state["message_count"] = count
     return _json_response(state)
 

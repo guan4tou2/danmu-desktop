@@ -65,7 +65,7 @@
     const results = await Promise.all(tasks);
     const merged = results.flat();
     merged.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
-    _state.items = _numberDuplicates(merged);
+    _state.items = merged;
     _renderBadge();
     if (_isOpen()) _renderPanel();
   }
@@ -112,19 +112,9 @@
     return h.toString(36);
   }
 
-  // 同一秒、內容一模一樣的兩則（連續兩次登入失敗）要是兩則通知。給每個 id
-  // 加上它在「同 id」那一組裡的序號——清單是新的在前，所以從尾端（最舊）
-  // 開始數：新事件進來排在前面，舊事件的序號不會變。
-  function _numberDuplicates(items) {
-    const seen = {};
-    for (let i = items.length - 1; i >= 0; i--) {
-      const base = items[i].id;
-      const n = seen[base] || 0;
-      seen[base] = n + 1;
-      if (n) items[i].id = base + "~" + n;
-    }
-    return items;
-  }
+  // id 裡的時間是伺服器記下的原值（帶小數的秒），連續兩次登入失敗的時間不會
+  // 相同，所以各是一則。不另外替「同 id」的事件編流水號：流水號得從抓到的
+  // 這一頁重新數，舊事件滾出這一頁時號碼會位移，已讀就記到別則頭上了。
 
   async function _fetchFilterEvents() {
     const r = await fetch("/admin/filters/events", { credentials: "same-origin" });

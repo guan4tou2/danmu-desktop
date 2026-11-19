@@ -329,17 +329,19 @@ class DanmuHistory:
             start_time = start_time.replace(tzinfo=timezone.utc)
         count = 0
         with self._lock:
-            # Newest last: walk back until the first record older than the cutoff.
-            for record in reversed(self._records):
+            # Every record, not "walk back until one is too old": a record gets
+            # its timestamp before it takes the lock to be appended, so two
+            # concurrent sends can land out of order.
+            for record in self._records:
+                if record.get("blockedBy"):
+                    continue
                 stamp = record["timestamp"]
                 if stamp.endswith("Z"):
                     stamp = stamp.replace("Z", "+00:00")
                 when = datetime.fromisoformat(stamp)
                 if when.tzinfo is None:
                     when = when.replace(tzinfo=timezone.utc)
-                if when < start_time:
-                    break
-                if not record.get("blockedBy"):
+                if when >= start_time:
                     count += 1
         return count
 
