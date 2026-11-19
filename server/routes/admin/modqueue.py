@@ -17,7 +17,7 @@ decisions even before the full pending-queue store ships.
 
 from flask import current_app, request
 
-from ...services import danmu_style, messaging, viewer_images
+from ...services import danmu_style, messaging, session_service, viewer_images
 from ...services.mod_queue import mod_queue
 from ...services.security import rate_limit
 from . import _json_response, admin_bp, require_csrf, require_login
@@ -72,7 +72,10 @@ def modqueue_approve():
         # 佇列只存了文字，觀眾當時的顏色／字型已經不在；使用中主題的覆寫
         # 有值時照樣補上（沒有覆寫時不加任何欄位，payload 與以前相同）。
         danmu_style.apply_theme_defaults(forwarded)
-        messaging.forward_to_ws_server(forwarded, bypass_broadcast_gate=False)
+        result = messaging.forward_to_ws_server(forwarded, bypass_broadcast_gate=False) or {}
+        if result.get("status") in ("sent", "queued"):
+            # 這一則現在才算收下：進佇列時沒有計，核准後真的送出才計入場次。
+            session_service.note_message()
     except Exception as exc:  # pragma: no cover — log + continue
         current_app.logger.warning("modqueue approve forward failed: %s", exc)
     return _json_response({"ok": True, "id": qid})

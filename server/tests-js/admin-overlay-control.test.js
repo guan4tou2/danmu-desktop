@@ -142,6 +142,35 @@ describe("cockpit display card follows the shared display state", () => {
     expect(document.querySelector("[data-cockpit-status]").firstChild).toBe(node);
   });
 
+  test("the status is asked for on entering a page, not every time the page settles", async () => {
+    // admin-route-applied 在版面同步時也會發；頁面上有每秒在走的數字時，
+    // 等於每秒來一次。只有「進到這一頁」的那一次該去問伺服器。
+    showCard();
+    const again = (route) => document.dispatchEvent(
+      new CustomEvent("admin-route-applied", { detail: { route } }));
+    again("overlay"); // 先離開，下一次才算是進來
+    window.fetch.mockClear();
+
+    again("live");
+    await flush();
+    const onEntering = window.fetch.mock.calls.length;
+    expect(onEntering).toBeGreaterThan(0);
+    for (let i = 0; i < 5; i++) again("live");
+    await flush();
+    expect(window.fetch.mock.calls.length).toBe(onEntering);
+
+    // 沒有卡片的頁面也一樣：進來問一次膠囊的狀態，之後不再問。
+    document.body.insertAdjacentHTML("beforeend",
+      '<button data-overlay-pill><span data-overlay-pill-state></span></button>');
+    window.fetch.mockClear();
+    again("system");
+    await flush();
+    expect(window.fetch).toHaveBeenCalledTimes(1);
+    for (let i = 0; i < 5; i++) again("system");
+    await flush();
+    expect(window.fetch).toHaveBeenCalledTimes(1);
+  });
+
   test("leaving for another route does not touch the card", () => {
     document.dispatchEvent(new CustomEvent("admin-overlay-state", { detail: { live: true, count: 3 } }));
     document.dispatchEvent(new CustomEvent("admin-route-applied", { detail: { route: "overlay" } }));

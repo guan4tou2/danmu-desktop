@@ -457,7 +457,10 @@
         const data = await r.json();
         if (!r.ok) { window.showToast && window.showToast(data.error || ServerI18n.t("dashToastOpenFailed"), false); return; }
         window.showToast && window.showToast(ServerI18n.t("dashToastSessOpened", { name: name }), true);
+        // 領一張新號碼：開場前送出、還在路上的那次輪詢回來時不能把畫面改回去。
+        _nextSessionTicket();
         _renderSessionBanner(data.session);
+        applySessionTiles(Object.assign({ message_count: 0 }, data.session));
       } catch (err) {
         window.showToast && window.showToast(ServerI18n.t("dashToastOpenSessFailed"), false);
       } finally {
@@ -504,7 +507,9 @@
         if (!r.ok) { window.showToast && window.showToast(data.error || ServerI18n.t("dashToastCloseFailed"), false); return; }
         window.showToast && window.showToast(ServerI18n.t("dashToastSessClosed"), true);
         _stopSessionTimer();
+        _nextSessionTicket(); // 同上：收場前送出的輪詢不能把剛結束的場次畫回來
         _renderSessionBanner({ status: "idle", viewer_end_behavior: data.archived && data.archived.viewer_end_behavior || "continue" });
+        applySessionTiles(null);
       } catch (err) {
         window.showToast && window.showToast(ServerI18n.t("dashToastCloseSessFailed"), false);
       } finally {
@@ -645,15 +650,22 @@
     renderCockpitOverlay();
   });
 
+  // admin-route-applied 不只在換頁時發：頁面上任何 DOM 變動都會觸發版面同步，
+  // 同步完又發一次。頁面上只要有每秒在走的數字（場次的「已進行」、系統頁的
+  // 運行時間），這個事件就每秒來一次——每次都去問狀態，等於每秒打一到兩支
+  // API。所以只在「進到這一頁」的那一次問；之後靠輪詢與狀態事件。
+  let _lastAppliedRoute = null;
   document.addEventListener("admin-route-applied", (e) => {
     const route = e && e.detail && e.detail.route;
+    const entered = route !== _lastAppliedRoute;
+    _lastAppliedRoute = route;
     if (route !== "live" && route !== "dashboard") {
       // 其他頁沒有卡片的輪詢，換頁時問一次。顯示層頁自己會輪詢並發事件。
-      if (route !== "overlay") refreshOverlayPill();
+      if (entered && route !== "overlay") refreshOverlayPill();
       return;
     }
-    renderCockpitOverlay();
-    refreshCockpitOverlay();
+    renderCockpitOverlay(); // 從快取重畫，沒有變化時不動 DOM
+    if (entered) refreshCockpitOverlay();
   });
 
   function bindCockpit() {

@@ -123,8 +123,10 @@
   };
 
   function _deriveServerSnapshot() {
-    _state.publicUrl = window.location.origin + "/";
-    _state.publicUrlWarning = "";
+    // 第一次開精靈時先用這一頁的網址頂著。之後再開，沿用上一次伺服器說的
+    // （網址與「觀眾連不到」的說明）直到這次問到新的——這次要是問不到，不能
+    // 把已經知道的警示清掉、讓那一列看起來是就緒的。
+    if (!_state.publicUrl) _state.publicUrl = window.location.origin + "/";
     // 給觀眾的網址以伺服器說的為準（用 localhost 開後台時會是區網位址）。
     // 先用這一頁的網址頂著，回來再換；換不到就維持原樣。
     fetch("/admin/qr/public", { credentials: "same-origin" })

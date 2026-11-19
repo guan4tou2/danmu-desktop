@@ -280,6 +280,40 @@ def test_incoming_webhook_messages_that_never_reach_the_screen_are_not_counted(
     assert session_service.get_message_count() == 0
 
 
+def test_a_held_message_counts_once_it_is_approved_and_sent(client, monkeypatch):
+    """Held for review is not accepted yet; approved and sent is. Approved
+    but dropped (the screen is full) is not."""
+    from server.services import messaging, session_service
+
+    session_service.open_session("Friday")
+    hook_id, secret = _hook_with_rule(
+        client, {"type": "keyword", "pattern": "giveaway", "action": "review"}
+    )
+    token = _login(client)
+
+    def hold(text):
+        held = _send(client, hook_id, secret, text)
+        assert held.status_code == 202, held.data
+        return held.get_json()["queue_id"]
+
+    def approve(queue_id):
+        approved = client.post(
+            "/admin/modqueue/approve", json={"id": queue_id}, headers={"X-CSRF-Token": token}
+        )
+        assert approved.status_code == 200, approved.data
+
+    first = hold("giveaway one")
+    assert session_service.get_message_count() == 0  # held: not accepted yet
+    approve(first)
+    assert session_service.get_message_count() == 1
+
+    second = hold("giveaway two")
+    dropped = {"status": "dropped", "reason": "full"}
+    monkeypatch.setattr(messaging, "forward_to_ws_server", lambda *_a, **_k: dropped)
+    approve(second)
+    assert session_service.get_message_count() == 1
+
+
 def test_incoming_webhook_bad_signature_rejected(client):
     """Incoming webhook with invalid signature should be rejected."""
     token = _login(client)

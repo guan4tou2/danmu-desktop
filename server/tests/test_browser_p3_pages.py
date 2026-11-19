@@ -259,12 +259,16 @@ def test_setup_wizard_overlay_renders(admin_page):
     assert labels == ["伺服器網址", "主題", "審核基本防線", "完成"]
     assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "伺服器網址"
     assert admin_page.locator(".admin-setup-ready-row").count() == 4
-    server_row = admin_page.locator(".admin-setup-ready-row").first
-    server_value = server_row.locator(".admin-setup-ready-value").text_content()
-    if "is-pending" in (server_row.get_attribute("class") or ""):
-        assert "TRUSTED_HOSTS" in server_value or "連不到" in server_value
+    # 一次讀出同一個時間點的 class 與文字：伺服器的回應回來時這一列會重畫，
+    # 分兩次讀可能一半是重畫前、一半是重畫後。
+    server_row = admin_page.locator(".admin-setup-ready-row").first.evaluate("""row => ({
+            pending: row.classList.contains("is-pending"),
+            value: row.querySelector(".admin-setup-ready-value").textContent,
+        })""")
+    if server_row["pending"]:
+        assert "TRUSTED_HOSTS" in server_row["value"] or "連不到" in server_row["value"]
     else:
-        assert server_value.startswith("http")
+        assert server_row["value"].startswith("http")
     assert admin_page.locator("[data-setup-field='http-port']").count() == 0
     assert admin_page.locator("[data-setup-field='ws-path']").count() == 0
     # Footer action buttons (close / prev / next)

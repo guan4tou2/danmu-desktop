@@ -109,7 +109,9 @@
     // 「iPhone · Safari · 192.168.1.84」。改成講重連這件真的在發生的事。
     scanning: {
       label: "重新連線中",
-      subtitle: function (host) { return "與 " + host + " 的連線中斷 · 正在重試"; },
+      subtitle: function (host) {
+        return _joinReachable() ? "與 " + host + " 的連線中斷 · 正在重試" : "連線中斷 · 正在重試";
+      },
       noteHtml: function () { return "觀眾送出的訊息會排隊，連上後補播"; },
       actionsHtml: '<span class="overlay-idle-hint">⌥⌘C 複製配對碼 · ESC 進入設定</span>',
     },
@@ -124,7 +126,9 @@
     },
     failed: {
       label: "連線失敗",
-      subtitle: function (host) { return "找不到 " + host + " · 檢查網路"; },
+      subtitle: function (host) {
+        return _joinReachable() ? "找不到 " + host + " · 檢查網路" : "連線失敗 · 檢查網路";
+      },
       noteHtml: function () { return "確認 Server 啟動 · 或手動輸入 /ws 位址"; },
       actionsHtml:
         '<button type="button" class="overlay-idle-btn overlay-idle-btn-primary" data-overlay-idle-action="retry">重試連線</button>' +

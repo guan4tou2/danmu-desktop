@@ -42,7 +42,7 @@
     <div class="overlay-idle-topbar" aria-hidden="true">
       <span class="overlay-idle-topbar-brand">Danmu Fire · 顯示層</span>
       <span class="overlay-idle-topbar-sep">|</span>
-      <span class="overlay-idle-topbar-meta">v{{ app_version }} · {{ join_label }}</span>
+      <span class="overlay-idle-topbar-meta">v{{ app_version }}{% if join_reachable %} · {{ join_label }}{% endif %}</span>
       <span class="overlay-idle-topbar-state" id="overlayIdleTopbarState">
         <span class="overlay-idle-topbar-dot" aria-hidden="true"></span>
       </span>

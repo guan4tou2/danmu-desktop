@@ -80,4 +80,37 @@ describe("console session tiles", () => {
 
     window.fetch = jest.fn(async () => ({ ok: true, json: async () => session }));
   });
+
+  test("a poll sent before the session was opened does not undo the opening", async () => {
+    document.body.insertAdjacentHTML("beforeend", '<div id="admin-session-banner"></div>');
+    session = { status: "idle", id: null };
+    await window.AdminDashboard.refreshSessionBanner(); // 畫出「開啟場次」表單
+
+    // 一次輪詢送出去了（當時還沒有場次），回應還在路上……
+    let answerPoll;
+    window.fetch = jest.fn(() => new Promise((resolve) => {
+      answerPoll = () => resolve({ ok: true, json: async () => ({ status: "idle", id: null }) });
+    }));
+    const poll = window.AdminDashboard.refreshSessionBanner();
+
+    // ……主持人按下開啟場次。
+    const startedAt = Date.now() / 1000;
+    window.csrfFetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({ session: { status: "live", id: "sess_2", name: "Friday", started_at: startedAt } }),
+    }));
+    document.querySelector("[data-sess-name]").value = "Friday";
+    document.querySelector('[data-sess-action="open"]').click();
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+    expect(tile("messages")).toBe("0");
+    expect(tile("session")).toBe("00:00");
+
+    answerPoll(); // 舊的那次這時才回來，說「沒有場次」
+    await poll;
+
+    expect(tile("messages")).toBe("0");
+    expect(document.querySelector('[data-sess-action="close"]')).not.toBeNull();
+
+    window.fetch = jest.fn(async () => ({ ok: true, json: async () => session }));
+  });
 });
