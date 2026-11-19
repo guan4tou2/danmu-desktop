@@ -189,7 +189,16 @@
   }
 
   // Badge polling — moderation tab shows the modqueue pending count.
+  // 只有底部導覽真的顯示時（手機寬度）才需要這個數字；桌面寬度下它是
+  // display:none，分頁藏到背景時也沒有人在看——兩種情況都不打。
+  function _badgeNeeded() {
+    if (document.hidden) return false;
+    const nav = document.getElementById(NAV_ID);
+    return !!nav && window.getComputedStyle(nav).display !== "none";
+  }
+
   async function _pollBadge() {
+    if (!_badgeNeeded()) return;
     try {
       const r = await fetch("/admin/modqueue/list", { credentials: "same-origin" });
       if (!r.ok) return;
@@ -236,6 +245,9 @@
     _syncActive();
     _pollBadge();
     setInterval(_pollBadge, 8000);
+    // 回到前景、或視窗縮到手機寬度時補抓一次，不必等下一輪。
+    document.addEventListener("visibilitychange", _pollBadge);
+    window.matchMedia?.("(max-width: 768px)")?.addEventListener?.("change", _pollBadge);
     _bindKeyboardHide();
   }
 
