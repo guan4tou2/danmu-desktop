@@ -318,6 +318,33 @@ class DanmuHistory:
         start_time = end_time - timedelta(hours=hours)
         return self.get_records(start_time=start_time, end_time=end_time, limit=limit)
 
+    def count_since(self, start_time: datetime) -> int:
+        """How many retained messages were accepted at or after ``start_time``.
+
+        Messages a rule or a ban stopped (``blockedBy``) are not counted.
+        Only what is still retained (a day, and a capped number of records):
+        this is a starting figure for a session's own count, not the count.
+        """
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=timezone.utc)
+        count = 0
+        with self._lock:
+            # Every record, not "walk back until one is too old": a record gets
+            # its timestamp before it takes the lock to be appended, so two
+            # concurrent sends can land out of order.
+            for record in self._records:
+                if record.get("blockedBy"):
+                    continue
+                stamp = record["timestamp"]
+                if stamp.endswith("Z"):
+                    stamp = stamp.replace("Z", "+00:00")
+                when = datetime.fromisoformat(stamp)
+                if when.tzinfo is None:
+                    when = when.replace(tzinfo=timezone.utc)
+                if when >= start_time:
+                    count += 1
+        return count
+
     def get_stats(self) -> Dict:
         """
         獲取統計資訊

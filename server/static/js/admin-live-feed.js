@@ -412,9 +412,12 @@
 
   // ── Add entry ────────────────────────────────────────────
 
-  function addEntry(data) {
+  // tsSec：伺服器轉發這則訊息的時間（unix 秒）。沒有才退回「現在」——舊版
+  // server 與測試資料不帶這個欄位。原本一律用 Date.now()，所以重新整理後
+  // 一次拿回來的整批訊息全部顯示同一秒。
+  function addEntry(data, tsSec) {
     const entry = {
-      ts: Date.now(),
+      ts: typeof tsSec === "number" && tsSec > 0 ? tsSec * 1000 : Date.now(),
       data: data,
       // message_id 是伺服器給的穩定識別碼，撤回與詳情抽屜都要用它。
       // 沒有它（舊資料／測試資料）才退回本機流水號。
@@ -592,6 +595,26 @@
   let _pollerSince = 0;
   const _POLL_INTERVAL_MS = 1500;
 
+  // 訊息流只在控制台看得到，但這支輪詢原本在每一頁、分頁藏到背景時也照樣
+  // 每 1.5 秒打一次——後台自己的請求有四成是它。現在：
+  //   · 分頁藏起來 → 不打
+  //   · 在別的頁面 → 放慢到 15 秒一次（訊息詳情抽屜會讀這裡記著的訊息，
+  //     所以不完全停）
+  //   · 回到控制台或分頁回到前景 → 立刻補抓一次；用游標抓，不會漏也不會重複
+  const _OFFSCREEN_POLL_INTERVAL_MS = 15000;
+  let _onScreen = true; // 路由事件來之前先當作看得見
+  let _lastPollAt = 0;
+
+  function _pollDue() {
+    if (document.hidden) return false;
+    if (_onScreen) return true;
+    return Date.now() - _lastPollAt >= _OFFSCREEN_POLL_INTERVAL_MS;
+  }
+
+  function _pollIfDue() {
+    if (_pollDue()) _pollOnce();
+  }
+
   // 同時最多一個請求在飛：慢網路下第二個 tick 會用同一個游標再要一次，
   // 兩份回應都帶同一批訊息，列表就會重複插入。
   let _pollInFlight = false;
@@ -599,6 +622,7 @@
   async function _pollOnce() {
     if (_pollInFlight) return;
     _pollInFlight = true;
+    _lastPollAt = Date.now();
     try {
       const r = await fetch(
         "/admin/live-feed/recent?since=" + encodeURIComponent(_pollerSince),
@@ -615,7 +639,7 @@
             if (e.seq <= _pollerSince) continue;
             _pollerSince = e.seq;
           }
-          addEntry(e.data);
+          addEntry(e.data, e.ts);
         }
       }
       if (typeof j.next_since === "number" && j.next_since > _pollerSince) {
@@ -629,13 +653,14 @@
   }
 
   // 待審數量：審核佇列有自己的資料來源（/admin/modqueue/list），訊息流不會有。
-  // 頻率比訊息流低——數字只是提醒，真正處理在審核頁；頁面隱藏時不打。
+  // 頻率比訊息流低——數字只是提醒，真正處理在審核頁；頁面隱藏時不打，
+  // 訊息流不在畫面上時也不打（這個數字就印在訊息流的標題列上）。
   const _PENDING_INTERVAL_MS = 5000;
   let _pendingTimer = null;
   let _pendingInFlight = false;
 
   async function _pollPending() {
-    if (_pendingInFlight || document.hidden) return;
+    if (_pendingInFlight || document.hidden || !_onScreen) return;
     _pendingInFlight = true;
     try {
       const r = await fetch("/admin/modqueue/list", { credentials: "same-origin" });
@@ -660,9 +685,26 @@
     _pollerBound = true;
     // Initial fetch surfaces the current buffer head before polling kicks in
     _pollOnce();
-    _pollerTimer = setInterval(_pollOnce, _POLL_INTERVAL_MS);
+    _pollerTimer = setInterval(_pollIfDue, _POLL_INTERVAL_MS);
     _pollPending();
     _pendingTimer = setInterval(_pollPending, _PENDING_INTERVAL_MS);
+    // admin-route-applied 在版面同步時也會發（每秒可能來一次），所以只在
+    // 「從別頁回到控制台」的那一次補抓。
+    document.addEventListener("admin-route-applied", (e) => {
+      const route = e && e.detail && e.detail.route;
+      const onScreen = route === "live" || route === "dashboard";
+      const returned = onScreen && !_onScreen;
+      _onScreen = onScreen;
+      if (returned) {
+        _pollOnce();
+        _pollPending();
+      }
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) return;
+      _pollIfDue();
+      _pollPending();
+    });
     window.addEventListener("beforeunload", () => {
       if (_pendingTimer) {
         clearInterval(_pendingTimer);

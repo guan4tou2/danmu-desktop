@@ -95,7 +95,11 @@
   var idleStateConfig = {
     idle: {
       label: "等待配對",
-      subtitle: function (host) { return "用手機掃描 QR 連入 " + host; },
+      // 伺服器找不到觀眾連得到的位址時，這一頁沒有 QR，也不把那個位址
+      // （localhost）寫給全場看。
+      subtitle: function (host) {
+        return _joinReachable() ? "用手機掃描 QR 連入 " + host : "打字，就會飛到這個螢幕上";
+      },
       noteHtml: function (code) { return '或輸入 6 碼連線碼: <span class="overlay-idle-pair-code" id="overlayIdlePairCode">' + code + '</span>'; },
       actionsHtml: '<span class="overlay-idle-hint">⌥⌘C 複製配對碼 · ESC 進入設定</span>',
     },
@@ -105,7 +109,9 @@
     // 「iPhone · Safari · 192.168.1.84」。改成講重連這件真的在發生的事。
     scanning: {
       label: "重新連線中",
-      subtitle: function (host) { return "與 " + host + " 的連線中斷 · 正在重試"; },
+      subtitle: function (host) {
+        return _joinReachable() ? "與 " + host + " 的連線中斷 · 正在重試" : "連線中斷 · 正在重試";
+      },
       noteHtml: function () { return "觀眾送出的訊息會排隊，連上後補播"; },
       actionsHtml: '<span class="overlay-idle-hint">⌥⌘C 複製配對碼 · ESC 進入設定</span>',
     },
@@ -120,7 +126,9 @@
     },
     failed: {
       label: "連線失敗",
-      subtitle: function (host) { return "找不到 " + host + " · 檢查網路"; },
+      subtitle: function (host) {
+        return _joinReachable() ? "找不到 " + host + " · 檢查網路" : "連線失敗 · 檢查網路";
+      },
       noteHtml: function () { return "確認 Server 啟動 · 或手動輸入 /ws 位址"; },
       actionsHtml:
         '<button type="button" class="overlay-idle-btn overlay-idle-btn-primary" data-overlay-idle-action="retry">重試連線</button>' +
@@ -186,8 +194,20 @@
     qr.dataset.rendered = "1";
   }
 
+  // 待機畫面上寫給觀眾看的位址。以伺服器給的入場網址為準（用 localhost 開
+  // 這一頁時，伺服器會換成區網位址）；沒有才退回這一頁自己的位址。
   function _hostName() {
-    try { return window.location.host; } catch (_) { return "danmu.local"; }
+    try {
+      var joinUrl = window.OVERLAY_CONFIG && window.OVERLAY_CONFIG.joinUrl;
+      if (joinUrl) return String(joinUrl).replace(/^[a-z]+:\/\//i, "").replace(/\/$/, "");
+      return window.location.host;
+    } catch (_) { return "danmu.local"; }
+  }
+
+  function _joinReachable() {
+    try {
+      return !(window.OVERLAY_CONFIG && window.OVERLAY_CONFIG.joinReachable === false);
+    } catch (_) { return true; }
   }
 
   function _setIdleState(state) {

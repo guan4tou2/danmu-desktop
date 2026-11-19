@@ -23,8 +23,22 @@ from . import _json_response, admin_bp, require_csrf, require_login
 @rate_limit("admin", "ADMIN_RATE_LIMIT", "ADMIN_RATE_WINDOW")
 @require_login
 def session_current():
-    """Return current session state."""
-    return _json_response(session_service.get_state())
+    """Return current session state.
+
+    While a session is live, ``message_count`` is the number of messages
+    accepted since it started. The console used to show the whole retained
+    history under "Messages"; that number had nothing to do with the running
+    session.
+
+    The session keeps its own count. History cannot answer this: it holds a
+    day and at most a few thousand records, and a session can run for weeks.
+    History is only the starting figure for a session that was already
+    running before the count existed.
+    """
+    state, count = session_service.get_state_and_count()
+    if count is not None:
+        state["message_count"] = count
+    return _json_response(state)
 
 
 @admin_bp.route("/session/open", methods=["POST"])

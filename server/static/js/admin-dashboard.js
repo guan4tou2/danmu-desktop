@@ -25,6 +25,7 @@
       const cachedHist = boot.get("history_stats");
       // /admin/stats/hourly is not bundled — always fetch. /admin/history IS
       // bundled as history_stats (same shape), so consult cache first.
+      const sessionTicket = _nextSessionTicket();
       const [histRes, hourlyRes, sessRes] = await Promise.all([
         cachedHist ? null : fetch("/admin/history?hours=24&limit=200", { credentials: "same-origin" }),
         fetch("/admin/stats/hourly?hours=24", { credentials: "same-origin" }),
@@ -34,15 +35,10 @@
       const hist = cachedHist || (histRes && histRes.ok ? await histRes.json() : null);
       if (!hist) return;
       const dist = (await hourlyRes.json()).distribution || [];
-      const total = (hist.stats && hist.stats.total) || 0;
       const peakEntry = dist.reduce((m, e) => (e.count > (m?.count || -1) ? e : m), null);
       const peakVal = peakEntry ? peakEntry.count : 0;
       const peakHour = peakEntry ? (peakEntry.hour || "").slice(-5) : "—";
 
-      const tileMsg = document.querySelector('[data-kpi="messages"]');
-      if (tileMsg) {
-        tileMsg.querySelector("[data-kpi-value]").textContent = total.toLocaleString();
-      }
       const tilePeak = document.querySelector('[data-kpi="peak"]');
       if (tilePeak) {
         tilePeak.querySelector("[data-kpi-value]").textContent = peakVal.toLocaleString();
@@ -60,25 +56,50 @@
         tileFp.querySelector("[data-kpi-value]").textContent = fpSet.size.toLocaleString();
       }
 
-      // 已進行 —— 目前場次時長。
-      const tileSession = document.querySelector('[data-kpi="session"]');
-      if (tileSession) {
-        const sess = sessRes && sessRes.ok ? await sessRes.json() : null;
-        const isLive = sess && sess.status === "live";
-        const valEl = tileSession.querySelector("[data-kpi-value]");
-        if (isLive && sess.started_at) {
-          const secs = Math.max(0, Math.floor(Date.now() / 1000 - sess.started_at));
-          const h = Math.floor(secs / 3600);
-          const m = Math.floor((secs % 3600) / 60);
-          valEl.textContent = h > 0
-            ? `${h}:${String(m).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`
-            : `${m}:${String(secs % 60).padStart(2, "0")}`;
-        } else {
-          valEl.textContent = "—";
-        }
-      }
+      // 訊息、已進行 —— 都是「這一場」的數字，由場次狀態決定。
+      const sess = sessRes && sessRes.ok ? await sessRes.json() : null;
+      if (_isLatestSession(sessionTicket)) applySessionTiles(sess);
     } catch (e) {
       // Silent — dashboard falls back to placeholders.
+    }
+  }
+
+  // ── 這一場的兩個數字：訊息、已進行 ─────────────────────────────────────
+  // 原本兩格都只在開頁後算一次：「訊息」顯示的是整份保留紀錄的筆數，不是
+  // 這一場的；「已進行」不會走。現在訊息數由 /admin/session/current 提供
+  // （場次開始之後送出的則數），已進行每秒更新；兩者都跟著 10 秒一次的
+  // 場次輪詢刷新。沒有進行中的場次時兩格都是「—」。
+  let _sessionTileStartedAt = null;
+  let _sessionTileTimer = null;
+
+  // 場次狀態有兩條路在抓（開頁的 KPI、10 秒一次的輪詢），回來的順序不一定
+  // 是送出的順序。每次送出前領一張號碼，回來時只有還是最新的那張才寫上
+  // 畫面——否則較早送出、較晚回來的那份會把訊息數倒退回去。
+  let _sessionTicket = 0;
+  function _nextSessionTicket() { return ++_sessionTicket; }
+  function _isLatestSession(ticket) { return ticket === _sessionTicket; }
+
+  function _tickSessionTile() {
+    const tile = document.querySelector('[data-kpi="session"] [data-kpi-value]');
+    if (!tile) return;
+    const text = _sessionTileStartedAt ? _fmtDuration(_sessionTileStartedAt) : "—";
+    if (tile.textContent !== text) tile.textContent = text;
+  }
+
+  function applySessionTiles(sess) {
+    const live = !!(sess && sess.status === "live" && sess.started_at);
+    const msg = document.querySelector('[data-kpi="messages"] [data-kpi-value]');
+    if (msg) {
+      const text = live && typeof sess.message_count === "number" ? sess.message_count.toLocaleString() : "—";
+      if (msg.textContent !== text) msg.textContent = text;
+    }
+    _sessionTileStartedAt = live ? sess.started_at : null;
+    _tickSessionTile();
+    if (live && !_sessionTileTimer) {
+      _sessionTileTimer = setInterval(_tickSessionTile, 1000);
+    } else if (!live && _sessionTileTimer) {
+      clearInterval(_sessionTileTimer);
+      _sessionTileTimer = null;
     }
   }
 
@@ -436,7 +457,10 @@
         const data = await r.json();
         if (!r.ok) { window.showToast && window.showToast(data.error || ServerI18n.t("dashToastOpenFailed"), false); return; }
         window.showToast && window.showToast(ServerI18n.t("dashToastSessOpened", { name: name }), true);
+        // 領一張新號碼：開場前送出、還在路上的那次輪詢回來時不能把畫面改回去。
+        _nextSessionTicket();
         _renderSessionBanner(data.session);
+        applySessionTiles(Object.assign({ message_count: 0 }, data.session));
       } catch (err) {
         window.showToast && window.showToast(ServerI18n.t("dashToastOpenSessFailed"), false);
       } finally {
@@ -483,7 +507,9 @@
         if (!r.ok) { window.showToast && window.showToast(data.error || ServerI18n.t("dashToastCloseFailed"), false); return; }
         window.showToast && window.showToast(ServerI18n.t("dashToastSessClosed"), true);
         _stopSessionTimer();
+        _nextSessionTicket(); // 同上：收場前送出的輪詢不能把剛結束的場次畫回來
         _renderSessionBanner({ status: "idle", viewer_end_behavior: data.archived && data.archived.viewer_end_behavior || "continue" });
+        applySessionTiles(null);
       } catch (err) {
         window.showToast && window.showToast(ServerI18n.t("dashToastCloseSessFailed"), false);
       } finally {
@@ -495,10 +521,13 @@
 
   async function refreshSessionBanner() {
     try {
+      const ticket = _nextSessionTicket();
       const r = await fetch("/admin/session/current", { credentials: "same-origin" });
       if (!r.ok) return;
       const data = await r.json();
+      if (!_isLatestSession(ticket)) return; // 有更新的一次在路上，讓它來畫
       _renderSessionBanner(data);
+      applySessionTiles(data);
     } catch (_) { /* silent */ }
   }
 
@@ -531,7 +560,41 @@
   // 代表期間有更新的事件（例如剛按了暫停），輪詢讀到的 mode 是舊的，不採用。
   let _cockpitRev = 0;
 
+  // 頂欄右上的「顯示層 · 開」膠囊。原本它讀的是排版設定（"scroll"），只要
+  // 不是 "off" 就顯示「開」——等於永遠開著，按了暫停也不會變。現在跟卡片用
+  // 同一份狀態。
+  function renderOverlayPill() {
+    const pill = document.querySelector("[data-overlay-pill]");
+    const st = _cockpitState;
+    if (!pill || !st) return;
+    pill.classList.toggle("is-on", !!st.live);
+    pill.classList.toggle("is-off", !st.live);
+    const label = pill.querySelector("[data-overlay-pill-state]");
+    if (label) {
+      const key = st.live ? "statusOn" : "statePaused";
+      const text = ServerI18n.t(key);
+      label.dataset.i18n = key;
+      if (label.textContent !== text) label.textContent = text;
+    }
+  }
+
+  // 膠囊每一頁都在，卡片只在控制台；不在控制台時也要知道現在是不是暫停。
+  async function refreshOverlayPill() {
+    if (!document.querySelector("[data-overlay-pill]")) return;
+    const rev = _cockpitRev;
+    try {
+      const r = await fetch("/admin/broadcast/status", { credentials: "same-origin" });
+      if (!r.ok) return;
+      const live = (await r.json()).mode === "live";
+      // 讀完內容才比對：等內容的這段時間裡也可能剛按了暫停。
+      if (rev !== _cockpitRev) return;
+      _cockpitState = { live, count: _cockpitState ? _cockpitState.count : 0 };
+      renderOverlayPill();
+    } catch (_) { /* 問不到就維持原樣 */ }
+  }
+
   function renderCockpitOverlay() {
+    renderOverlayPill();
     const card = document.querySelector("[data-cockpit-overlay]");
     const ctl = window.AdminOverlayControl;
     const st = _cockpitState;
@@ -587,11 +650,22 @@
     renderCockpitOverlay();
   });
 
+  // admin-route-applied 不只在換頁時發：頁面上任何 DOM 變動都會觸發版面同步，
+  // 同步完又發一次。頁面上只要有每秒在走的數字（場次的「已進行」、系統頁的
+  // 運行時間），這個事件就每秒來一次——每次都去問狀態，等於每秒打一到兩支
+  // API。所以只在「進到這一頁」的那一次問；之後靠輪詢與狀態事件。
+  let _lastAppliedRoute = null;
   document.addEventListener("admin-route-applied", (e) => {
     const route = e && e.detail && e.detail.route;
-    if (route !== "live" && route !== "dashboard") return;
-    renderCockpitOverlay();
-    refreshCockpitOverlay();
+    const entered = route !== _lastAppliedRoute;
+    _lastAppliedRoute = route;
+    if (route !== "live" && route !== "dashboard") {
+      // 其他頁沒有卡片的輪詢，換頁時問一次。顯示層頁自己會輪詢並發事件。
+      if (entered && route !== "overlay") refreshOverlayPill();
+      return;
+    }
+    renderCockpitOverlay(); // 從快取重畫，沒有變化時不動 DOM
+    if (entered) refreshCockpitOverlay();
   });
 
   function bindCockpit() {
@@ -632,13 +706,26 @@
       window.showToast && window.showToast(ServerI18n.t("sohQrFailed"), false);
       return;
     }
+    const body = document.createElement("div");
     const box = document.createElement("div");
     box.className = "admin-soh-qr";
     box.innerHTML = data.svg; // server 自己產生的 SVG，內容只有入場網址
+    body.appendChild(box);
+    if (data.source === "unavailable") {
+      // 仍是 localhost（伺服器找不到區網位址）：這張 QR 觀眾掃了連不到。
+      const warn = document.createElement("p");
+      warn.className = "admin-soh-urlwarn";
+      warn.textContent = data.blocked_host
+        ? ServerI18n.t("joinUrlNotTrusted", { host: data.blocked_host })
+        : ServerI18n.t("joinUrlLocalOnly");
+      // 放在 QR 白框外面：白框在任何主題下都是白底，警示色是照主題挑的，
+      // 放進去在深色主題下幾乎看不見。
+      body.appendChild(warn);
+    }
     const copy = await window.HudConfirm?.open({
       icon: "▦",
       titleText: data.url,
-      body: box,
+      body: body,
       severity: "info",
       confirmLabel: ServerI18n.t("copyBtn"),
       cancelLabel: ServerI18n.t("close"),

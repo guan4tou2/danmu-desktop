@@ -2917,5 +2917,7 @@
   "rlFoldBlocked": "최근 차단 기록",
   "firetokenCeilingPerMin": "한도 {n}/분",
   "rlOutOfRange": "{min}~{max} 사이의 정수를 입력하세요",
-  "rlNotPersisted": "적용했지만 서버가 저장하지 못했습니다 — 재시작하면 되돌아갑니다"
+  "rlNotPersisted": "적용했지만 서버가 저장하지 못했습니다 — 재시작하면 되돌아갑니다",
+  "joinUrlLocalOnly": "시청자는 이 주소로 접속할 수 없습니다",
+  "joinUrlNotTrusted": "시청자가 접속할 수 없습니다: {host}을(를) TRUSTED_HOSTS에 추가하세요"
 }

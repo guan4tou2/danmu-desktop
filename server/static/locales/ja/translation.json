@@ -2917,5 +2917,7 @@
   "rlFoldBlocked": "最近ブロックされたリクエスト",
   "firetokenCeilingPerMin": "上限 {n}／分",
   "rlOutOfRange": "{min}〜{max} の整数を入力してください",
-  "rlNotPersisted": "適用しましたが、サーバーが保存できませんでした——再起動で元に戻ります"
+  "rlNotPersisted": "適用しましたが、サーバーが保存できませんでした——再起動で元に戻ります",
+  "joinUrlLocalOnly": "視聴者はこのアドレスに接続できません",
+  "joinUrlNotTrusted": "視聴者は接続できません：{host} を TRUSTED_HOSTS に追加してください"
 }

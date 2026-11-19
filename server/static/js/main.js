@@ -111,6 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let _cooldownTimer = null;
   // 冷卻總長，給送出鍵的環形進度換算比例用（設計稿 05 · V5）。
   let _cooldownTotalMs = 0;
+  let _cooldownThrottled = false; // 這次冷卻是不是被限流（429）造成的
   let _bannerTimer = null;
   let _burstTimer = null;
   // selectedEffects: { [name]: {params} } — multi-select effect state
@@ -1912,11 +1913,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (elements.btnSendText) elements.btnSendText.textContent = `${fmt}s`;
     if (elements.btnSendIcon) elements.btnSendIcon.classList.add("hidden");
     if (elements.danmuText) elements.danmuText.placeholder = ServerI18n.t("placeholderCooldown").replace("{n}", fmt);
-    _setSendbarHint(ServerI18n.t("hintCooldown"), "cooldown");
+    // 「送太快了」只在真的被限流時才說。送出成功後的例行冷卻沿用呼叫端已經
+    // 放上去的提示：原本這裡每 0.1 秒都把它蓋成「送太快了」，於是觀眾剛看到
+    // 「已送上螢幕」就被告知自己送太快。
+    if (_cooldownThrottled) _setSendbarHint(ServerI18n.t("hintCooldown"), "cooldown");
     if (elements.btnSend) elements.btnSend.disabled = true;
   }
 
-  function _startCooldown(ms) {
+  // throttled：這次冷卻是伺服器限流（429）造成的，不是送出成功後的例行間隔。
+  function _startCooldown(ms, throttled) {
+    _cooldownThrottled = !!throttled;
     _cooldownTotalMs = Math.max(0, ms);
     _cooldownEnd = Date.now() + Math.max(0, ms);
     if (_cooldownTimer) clearInterval(_cooldownTimer);
@@ -2024,7 +2030,9 @@ document.addEventListener("DOMContentLoaded", () => {
             ? (responseData?.reason === "broadcast_standby" ? "broadcastStandbyQueued" : "onscreenFullQueued")
             : "bannerSent";
           _showBanner(status === "queued" ? "queued" : "sent", ServerI18n.t(feedbackKey));
-          _setSendbarHint(ServerI18n.t(feedbackKey), status === "queued" ? "queued" : "sent");
+          // 排隊中的提示留到冷卻結束（banner 兩秒就收）。「已送上螢幕」banner
+          // 說一次就夠，接下來由送出鍵上的倒數說話。
+          _setSendbarHint(status === "queued" ? ServerI18n.t(feedbackKey) : ServerI18n.t("sendbarHint"), status === "queued" ? "queued" : "");
           _startCooldown(_resolveCooldownMs());
           try {
             if (window.ViewerStates && document.body.dataset.viewerState === "ratelimit") {
@@ -2076,7 +2084,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // Design v3-r10: amber cooldown banner first; full-screen
           // ViewerStates only when server says retryAfter > 3s (long wait).
           if (Number.isFinite(retryAfter) && retryAfter > 0 && retryAfter <= 3) {
-            _startCooldown(retryAfter * 1000);
+            _startCooldown(retryAfter * 1000, true);
           } else if (window.ViewerStates && typeof window.ViewerStates.showRateLimited === "function") {
             window.ViewerStates.showRateLimited({
               retryAfter: Number.isFinite(retryAfter) ? retryAfter : 0,

@@ -93,6 +93,7 @@
     activeTheme: FALLBACK_THEMES[0].name,
     selectedTheme: FALLBACK_THEMES[0].name,
     publicUrl: "",
+    publicUrlWarning: "", // 觀眾連不到 publicUrl 時的說明；連得到就是空字串
     // 2026-10-29：三項改成真實存在的設定位置。以前這裡的 enabled 值只是
     // 本機狀態——完成頁把它算成「N / M 啟用」，等於替不存在的功能背書。
     // route 指到側欄真正放這些設定的頁面。
@@ -122,7 +123,31 @@
   };
 
   function _deriveServerSnapshot() {
-    _state.publicUrl = window.location.origin + "/";
+    // 第一次開精靈時先用這一頁的網址頂著。之後再開，沿用上一次伺服器說的
+    // （網址與「觀眾連不到」的說明）直到這次問到新的——這次要是問不到，不能
+    // 把已經知道的警示清掉、讓那一列看起來是就緒的。
+    if (!_state.publicUrl) _state.publicUrl = window.location.origin + "/";
+    // 給觀眾的網址以伺服器說的為準（用 localhost 開後台時會是區網位址）。
+    // 先用這一頁的網址頂著，回來再換；換不到就維持原樣。
+    fetch("/admin/qr/public", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!j || !j.url) return;
+        const url = j.url + "/";
+        // 伺服器給不出觀眾連得到的位址時，網址還是原本那個 localhost——
+        // 網址沒變，但這件事本身要讓主持人看到。
+        let warning = "";
+        if (j.source === "unavailable") {
+          warning = j.blocked_host
+            ? ServerI18n.t("joinUrlNotTrusted", { host: j.blocked_host })
+            : ServerI18n.t("joinUrlLocalOnly");
+        }
+        if (url === _state.publicUrl && warning === _state.publicUrlWarning) return;
+        _state.publicUrl = url;
+        _state.publicUrlWarning = warning;
+        if (_state.open) _renderStep(); // 精靈開著就重畫，讓畫面上的網址換成新的
+      })
+      .catch(() => {});
   }
 
   function _onHashChange() {
@@ -245,9 +270,10 @@
     const displayOk = overlayCount !== null && overlayCount > 0;
     const rows = [
       {
-        ok: true,
+        // 觀眾連不到這個網址時，這一列不是「就緒」。
+        ok: !_state.publicUrlWarning,
         title: ServerI18n.t("setupWizardReadyServer"),
-        value: _state.publicUrl,
+        value: _state.publicUrlWarning || _state.publicUrl,
       },
       {
         ok: displayOk,
@@ -413,7 +439,7 @@
         <h2 class="admin-setup-step-title">${ServerI18n.t("setupWizardDoneTitle")}</h2>
         <p class="admin-setup-step-desc">${ServerI18n.t("setupWizardDoneDesc")}</p>
         <div class="admin-setup-done-summary">
-          <div class="row"><span class="k">${ServerI18n.t("setupWizardStepServer")}</span><span class="v">${escapeHtml(_state.publicUrl)}</span></div>
+          <div class="row"><span class="k">${ServerI18n.t("setupWizardStepServer")}</span><span class="v">${escapeHtml(_state.publicUrlWarning || _state.publicUrl)}</span></div>
           <div class="row"><span class="k">${ServerI18n.t("setupWizardStepTheme")}</span><span class="v">${escapeHtml(themeName)}</span></div>
         </div>
         <div class="admin-setup-done-next">

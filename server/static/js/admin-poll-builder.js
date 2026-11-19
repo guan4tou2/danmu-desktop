@@ -878,7 +878,9 @@
           const KEYS = ["A", "B", "C", "D", "E"];
           const fill = (labels) => labels.map((txt, i) => {
             const o = newOpt(KEYS[i]);
-            o.text = txt;
+            // 編輯器與送出都讀 o.label（newOpt 給的也是 label）。原本寫 o.text，
+            // 範本建出來的選項全是空的。
+            o.label = txt;
             return o;
           });
           if (kind === "yesno") {

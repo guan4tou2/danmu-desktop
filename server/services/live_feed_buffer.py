@@ -14,6 +14,7 @@ WS bootstrap. flask-sock route stays for the viewer's
 from __future__ import annotations
 
 import threading
+import time
 from collections import deque
 from typing import Any, Deque, Dict, List
 
@@ -34,6 +35,11 @@ def append(entry: Dict[str, Any]) -> int:
     ``entry`` is the same shape as the legacy WS ``danmu_live.data``
     payload (text / color / size / speed / opacity / nickname / layout
     / isImage / fingerprint).
+
+    Each entry is stamped with ``ts`` (unix seconds) — when the server
+    forwarded it. The admin feed shows that time; without it the page could
+    only show when it happened to poll, so a reload stamped the whole buffer
+    with one and the same second.
     """
     global _next_seq
     if not isinstance(entry, dict):
@@ -41,7 +47,7 @@ def append(entry: Dict[str, Any]) -> int:
     with _lock:
         seq = _next_seq
         _next_seq += 1
-        _buffer.append({"seq": seq, "data": dict(entry)})
+        _buffer.append({"seq": seq, "ts": time.time(), "data": dict(entry)})
         return seq
 
 

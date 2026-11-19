@@ -59,6 +59,7 @@
             <span class="lbl">${ServerI18n.t("sohPublicUrlLabel")}</span>
             <span class="val admin-soh-urlrow">
               <code id="sysoPublicUrl">${location.origin}</code>
+              <span class="admin-soh-urlwarn" data-soh-urlwarn hidden>${ServerI18n.t("joinUrlLocalOnly")}</span>
               <button type="button" class="admin-ui-action" data-soh-action="copy-url">${ServerI18n.t("copyBtn")}</button>
               <button type="button" class="admin-ui-action" data-soh-action="show-qr">QR</button>
             </span>
@@ -207,10 +208,35 @@
         if (!box.hidden) { box.hidden = true; return; }
         fetch("/admin/qr/public", { credentials: "same-origin" })
           .then((r) => (r.ok ? r.json() : Promise.reject(r)))
-          .then((j) => { box.innerHTML = j.svg; box.hidden = false; })
+          .then((j) => { showPublicUrl(root, j); box.innerHTML = j.svg; box.hidden = false; })
           .catch(() => window.showToast && window.showToast(ServerI18n.t("sohQrFailed"), false));
       }
     });
+    loadPublicUrl(root);
+  }
+
+  // 「公開網址」是給觀眾的網址，不是這一頁的網址。兩者在主持人用 localhost
+  // 開後台時不一樣：伺服器會回這台機器的區網位址；找不到時 source 是
+  // "unavailable"，網址仍是 localhost，要標出來——觀眾連不到。
+  function showPublicUrl(root, data) {
+    const code = root.querySelector("#sysoPublicUrl");
+    const warn = root.querySelector("[data-soh-urlwarn]");
+    if (code && data && data.url) code.textContent = data.url;
+    if (warn) {
+      warn.hidden = !(data && data.source === "unavailable");
+      // 這台機器有區網位址、但伺服器不收（沒列在 TRUSTED_HOSTS）時，直接說
+      // 要補哪一個位址；否則只能說觀眾連不到。
+      warn.textContent = data && data.blocked_host
+        ? ServerI18n.t("joinUrlNotTrusted", { host: data.blocked_host })
+        : ServerI18n.t("joinUrlLocalOnly");
+    }
+  }
+
+  function loadPublicUrl(root) {
+    fetch("/admin/qr/public", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j) showPublicUrl(root, j); })
+      .catch(() => { /* 留著這一頁的網址 */ });
   }
 
   function init() {

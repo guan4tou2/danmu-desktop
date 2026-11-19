@@ -915,9 +915,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <!-- 誠實的狀態燈＋捷徑：它是導航（前往顯示層頁），
                                          不是開關。 -->
                                     <button class="admin-dash-broadcast ${broadcasting ? "is-on" : "is-off"}" type="button" aria-live="polite"
-                                        title="${escapeHtml(ServerI18n.t("adminRouteTitle_overlay"))}" data-route="overlay">
+                                        title="${escapeHtml(ServerI18n.t("adminRouteTitle_overlay"))}" data-route="overlay" data-overlay-pill>
                                         <span class="dot"></span>
-                                        ${escapeHtml(ServerI18n.t("adminRouteTitle_overlay"))} · ${broadcasting ? escapeHtml(ServerI18n.t("statusOn")) : escapeHtml(ServerI18n.t("statusOff"))}
+                                        ${escapeHtml(ServerI18n.t("adminRouteTitle_overlay"))} · <span data-overlay-pill-state>${broadcasting ? escapeHtml(ServerI18n.t("statusOn")) : escapeHtml(ServerI18n.t("statusOff"))}</span>
                                         <span class="admin-dash-broadcast-go" aria-hidden="true">→</span>
                                     </button>
                                 </div>

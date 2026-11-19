@@ -3,7 +3,7 @@
 import json
 import re as _re
 
-from flask import request
+from flask import current_app, request
 
 from ...services import audit_log, messaging
 from ...services.security import limit_public_body, rate_limit
@@ -226,8 +226,31 @@ def incoming_webhook(hook_id):
     result = filter_engine.check(text)
     if result.action == "block":
         return _json_response({"error": "Blocked by filter rule"}, 403)
-    if result.action == "replace" and result.replacement is not None:
-        text = result.replacement
+    if result.action == "replace":
+        # FilterResult 帶的是改寫後的全文（.text）。這裡原本讀 .replacement——
+        # 沒有這個欄位，命中替換規則的訊息一律 500。
+        text = result.text
+    if result.action == "review":
+        # 與觀眾送出的訊息一致：命中送審規則就進審核佇列，不直接上畫面。
+        # 原本這條路徑完全沒看 review，等於外部系統可以繞過人工審核。
+        # 佇列出問題時也與 /fire 一致——放行，而不是回 500 把訊息丟掉。
+        from ...services.mod_queue import mod_queue
+
+        queue_id = None
+        try:
+            rule_name = (result.reason or "review")[:60]
+            queue_id = mod_queue.enqueue(text, rule_name=rule_name, pattern=rule_name)
+        except Exception as exc:
+            current_app.logger.warning("webhook incoming: review queue failed (%s)", exc)
+        if queue_id is not None:
+            # 訊息已經在佇列裡了：之後不管發生什麼都不能再放行，否則同一則
+            # 訊息會既在畫面上、又在待審清單裡。清理執行緒起不來只影響過期
+            # 項目的回收，不影響這則訊息。
+            try:
+                mod_queue.start_reaper()
+            except Exception as exc:
+                current_app.logger.warning("webhook incoming: review reaper failed (%s)", exc)
+            return _json_response({"status": "queued_for_review", "queue_id": queue_id}, 202)
 
     msg = {
         "text": text,
@@ -246,5 +269,11 @@ def incoming_webhook(hook_id):
     danmu_style.apply_theme_defaults(msg)
     if not msg["color"]:
         msg["color"] = "FFFFFF"
-    messaging.forward_to_ws_server(msg)
+    forwarded = messaging.forward_to_ws_server(msg) or {}
+    if forwarded.get("status") in ("sent", "queued"):
+        # 控制台的「訊息」數是這一場收下了幾則，外部系統送進來的也算——
+        # 與 /fire 相同，畫面滿了被丟掉、佇列滿了被拒絕的不算。
+        from ...services import session_service
+
+        session_service.note_message()
     return _json_response({"status": "OK"})

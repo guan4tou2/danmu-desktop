@@ -37,8 +37,11 @@ def test_overlay_has_ws_token_placeholder(client):
     assert b"wsToken:" in rv.data
 
 
-def test_overlay_renders_idle_scene(client):
-    rv = client.get("/overlay")
+def test_overlay_renders_idle_scene(client, app):
+    # Opened at an address the audience can reach — the QR is only printed
+    # then (the localhost case is in test_join_url.py).
+    app.config["TRUSTED_HOSTS"] = [*app.config["TRUSTED_HOSTS"], "danmu.example.com"]
+    rv = client.get("/overlay", base_url="https://danmu.example.com")
     body = rv.data
     # P2 OverlayIdle (v5.0.0 prototype-aligned: corner brackets + topbar +
     # chip + QR + pairing code + actions row).

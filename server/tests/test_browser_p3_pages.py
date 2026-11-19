@@ -249,6 +249,9 @@ def test_setup_wizard_overlay_renders(admin_page):
     原本是五步，多一步「顯示規則」——那是四個開關的巡覽，不是設定。第一步
     也從四個欄位收成稿上的伺服器網址（HTTP Port / WebSocket Path 退場）。
     """
+    # 就緒檢查第一列寫的是觀眾連得到的網址；連不到時寫的是原因。測試 server
+    # 跑在 127.0.0.1，哪一種取決於這台機器的區網位址有沒有在 TRUSTED_HOSTS
+    # 裡——兩種都是對的，這裡驗的是版面，不是網路環境。
     _go_to_route(admin_page, "setup")
     admin_page.wait_for_selector("#admin-setup-wizard-root", state="visible", timeout=5000)
     assert admin_page.locator(".admin-setup-step").count() == 4
@@ -256,7 +259,16 @@ def test_setup_wizard_overlay_renders(admin_page):
     assert labels == ["伺服器網址", "主題", "審核基本防線", "完成"]
     assert admin_page.locator(".admin-setup-step.is-active .lbl").text_content() == "伺服器網址"
     assert admin_page.locator(".admin-setup-ready-row").count() == 4
-    assert admin_page.locator(".admin-setup-ready-value").first.text_content().startswith("http")
+    # 一次讀出同一個時間點的 class 與文字：伺服器的回應回來時這一列會重畫，
+    # 分兩次讀可能一半是重畫前、一半是重畫後。
+    server_row = admin_page.locator(".admin-setup-ready-row").first.evaluate("""row => ({
+            pending: row.classList.contains("is-pending"),
+            value: row.querySelector(".admin-setup-ready-value").textContent,
+        })""")
+    if server_row["pending"]:
+        assert "TRUSTED_HOSTS" in server_row["value"] or "連不到" in server_row["value"]
+    else:
+        assert server_row["value"].startswith("http")
     assert admin_page.locator("[data-setup-field='http-port']").count() == 0
     assert admin_page.locator("[data-setup-field='ws-path']").count() == 0
     # Footer action buttons (close / prev / next)

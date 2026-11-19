@@ -48,6 +48,17 @@ _lock = threading.RLock()
 _state: Optional[Dict[str, Any]] = None
 _write_failure_logged: bool = False
 
+# Messages accepted in the running session. Kept beside ``_state`` rather than
+# in it: ``get_state()`` is also what the public /session endpoint returns, and
+# the count is the host's to see. ``None`` = not known yet (a session that was
+# already running when this counter was introduced); the caller seeds it once.
+_message_count: Optional[int] = None
+_count_saved_at: float = 0.0
+# The count is written to disk at most this often, plus when the session
+# closes — not once per message. A crash loses a few seconds of counting.
+_COUNT_SAVE_INTERVAL = 5.0
+_COUNT_KEY = "message_count"
+
 VALID_BEHAVIORS = ("continue", "ended_screen", "reload")
 
 _DEFAULT_STATE: Dict[str, Any] = {
@@ -126,19 +137,37 @@ def _load_state() -> Dict[str, Any]:
 
 
 def _persist() -> None:
-    """Write _state to disk. Caller must hold _lock."""
+    """Write _state (and the message count) to disk. Caller must hold _lock."""
+    global _count_saved_at
     if _state is None:
         return
+    payload = dict(_state)
+    if _message_count is not None:
+        payload[_COUNT_KEY] = _message_count
+    _count_saved_at = time.monotonic()
     try:
-        _atomic_write_json(_STATE_FILE, _state)
+        _atomic_write_json(_STATE_FILE, payload)
     except OSError as exc:
         _log_write_failure_once(exc)
 
 
+def _load_message_count() -> Optional[int]:
+    """The count saved with a live session, or None. Caller must hold _lock."""
+    try:
+        with open(_STATE_FILE, encoding="utf-8") as f:
+            saved = json.load(f).get(_COUNT_KEY)
+    except (OSError, ValueError, AttributeError):
+        return None
+    if isinstance(saved, bool) or not isinstance(saved, int) or saved < 0:
+        return None
+    return saved
+
+
 def _ensure_loaded() -> None:
-    global _state
+    global _state, _message_count
     if _state is None:
         _state = _load_state()
+        _message_count = _load_message_count() if _state.get("status") == "live" else None
 
 
 def _append_archive(record: Dict[str, Any]) -> None:
@@ -169,6 +198,79 @@ def is_live() -> bool:
         return _state.get("status") == "live"  # type: ignore[union-attr]
 
 
+def _retained_message_count(started_at: Any) -> int:
+    """What history still holds for a session that started at ``started_at``.
+
+    The starting figure for a session that was already running before it
+    kept its own count. History holds a day at most, so this can be short.
+    """
+    try:
+        from datetime import datetime, timezone
+
+        from . import history as history_service
+
+        if not history_service.danmu_history or not started_at:
+            return 0
+        return history_service.danmu_history.count_since(
+            datetime.fromtimestamp(float(started_at), tz=timezone.utc)
+        )
+    except Exception as exc:
+        logger.warning("Could not read the session's retained message count: %s", exc)
+        return 0
+
+
+def _known_count() -> int:
+    """The live session's count, seeded from history if it has none yet.
+
+    Caller must hold _lock and have checked that a session is live. Seeding
+    happens here, under the lock, for every reader and writer alike: a
+    message accepted while another request is seeding must neither be missed
+    nor counted twice. ``note_message`` runs before the message is added to
+    history, so the figure read here never includes the message in hand.
+    """
+    global _message_count
+    if _message_count is None:
+        started_at = _state.get("started_at")  # type: ignore[union-attr]
+        _message_count = _retained_message_count(started_at)
+        _persist()
+    return _message_count
+
+
+def note_message() -> None:
+    """One more message was accepted. Does nothing when no session is live.
+
+    Call it before the message is written to history (see ``_known_count``).
+    """
+    global _message_count
+    with _lock:
+        _ensure_loaded()
+        if _state.get("status") != "live":  # type: ignore[union-attr]
+            return
+        _message_count = _known_count() + 1
+        if time.monotonic() - _count_saved_at >= _COUNT_SAVE_INTERVAL:
+            _persist()
+
+
+def get_message_count() -> Optional[int]:
+    """Messages accepted in the live session; None when no session is live."""
+    return get_state_and_count()[1]
+
+
+def get_state_and_count() -> tuple:
+    """``(state, message_count)`` read together, so they describe one session.
+
+    Read separately, a session closing and another opening in between would
+    pair one session's name and start time with the other's count.
+    ``message_count`` is None when no session is live.
+    """
+    with _lock:
+        _ensure_loaded()
+        state = dict(_state)  # type: ignore[arg-type]
+        if state.get("status") != "live":
+            return state, None
+        return state, _known_count()
+
+
 def open_session(name: str) -> Dict[str, Any]:
     """Open a new session.
 
@@ -181,10 +283,12 @@ def open_session(name: str) -> Dict[str, Any]:
     if len(name) > 120:
         raise ValueError("Session name must be ≤ 120 characters.")
 
+    global _message_count
     with _lock:
         _ensure_loaded()
         if _state.get("status") == "live":  # type: ignore[union-attr]
             raise ValueError("A session is already live. Close it first.")
+        _message_count = 0
 
         now = time.time()
         # Deterministic ID from start timestamp
@@ -234,6 +338,7 @@ def close_session() -> Dict[str, Any]:
     Returns the archived session record (not the new idle state).
     Raises ValueError if no session is currently live.
     """
+    global _message_count
     with _lock:
         _ensure_loaded()
         if _state.get("status") != "live":  # type: ignore[union-attr]
@@ -261,6 +366,7 @@ def close_session() -> Dict[str, Any]:
                 "started_at": None,
             }
         )
+        _message_count = None
         _persist()
 
     # Append archive record (outside lock)
@@ -338,7 +444,9 @@ def get_archive(limit: int = 100) -> List[Dict[str, Any]]:
 
 def reset_for_tests() -> None:
     """Drop in-memory cache. Tests should patch _STATE_FILE first."""
-    global _state, _write_failure_logged
+    global _state, _write_failure_logged, _message_count, _count_saved_at
     with _lock:
         _state = None
         _write_failure_logged = False
+        _message_count = None
+        _count_saved_at = 0.0

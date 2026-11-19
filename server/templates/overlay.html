@@ -42,7 +42,7 @@
     <div class="overlay-idle-topbar" aria-hidden="true">
       <span class="overlay-idle-topbar-brand">Danmu Fire · 顯示層</span>
       <span class="overlay-idle-topbar-sep">|</span>
-      <span class="overlay-idle-topbar-meta">v{{ app_version }} · {{ join_label }}</span>
+      <span class="overlay-idle-topbar-meta">v{{ app_version }}{% if join_reachable %} · {{ join_label }}{% endif %}</span>
       <span class="overlay-idle-topbar-state" id="overlayIdleTopbarState">
         <span class="overlay-idle-topbar-dot" aria-hidden="true"></span>
       </span>
@@ -50,7 +50,7 @@
 
     <div class="overlay-idle-inner">
       <h1 class="overlay-idle-hero">Danmu Fire</h1>
-      <p class="overlay-idle-subtitle" id="overlayIdleSubtitle">用手機掃描 QR 或打開 {{ join_label }} — 開始送彈幕</p>
+      <p class="overlay-idle-subtitle" id="overlayIdleSubtitle">{% if join_reachable %}用手機掃描 QR 或打開 {{ join_label }} — 開始送彈幕{% else %}打字，就會飛到這個螢幕上{% endif %}</p>
 
       <div class="overlay-idle-chip" id="overlayIdleChip" data-state="idle">
         <span class="overlay-idle-chip-dot" aria-hidden="true"></span>
@@ -58,6 +58,7 @@
         <span class="overlay-idle-chip-label">等待配對</span>
       </div>
 
+      {% if join_reachable %}
       <div class="overlay-idle-qr-wrap">
         <!-- Server-rendered scannable QR svg (v4.10/main feature). overlay.js
              leaves this alone unless dataset.rendered is unset.
@@ -79,6 +80,7 @@
           <span class="overlay-idle-qr-icon"></span>
         </div>
       </div>
+      {% endif %}
 
       <div class="overlay-idle-note" id="overlayIdleNote">
         或輸入 6 碼連線碼: <span class="overlay-idle-pair-code" id="overlayIdlePairCode" style="font-family: var(--font-mono, ui-monospace, monospace);">··-··-··</span>
@@ -113,6 +115,7 @@
       wsPath: {{ ws_path|tojson }},
       wsToken: {{ (ws_token or '')|tojson }},
       joinUrl: {{ join_url|tojson }},
+      joinReachable: {{ join_reachable|tojson }},
       idleAfterMs: 30000
     };
   </script>

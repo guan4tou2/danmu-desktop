@@ -145,6 +145,175 @@ def test_incoming_webhook_fires_danmu(client):
     assert len(danmu) == 1
 
 
+def _hook_with_rule(client, rule):
+    """Register a signed webhook and one filter rule; return (hook_id, secret)."""
+    token = _login(client)
+    secret = "test-secret-key"
+    resp = client.post(
+        "/admin/webhooks/register",
+        json={"url": "https://example.com/hook", "events": ["on_danmu"], "secret": secret},
+        headers={"X-CSRF-Token": token},
+    )
+    added = client.post("/admin/filters/add", json=rule, headers={"X-CSRF-Token": token})
+    assert added.status_code == 200, added.data
+    return resp.get_json()["hook_id"], secret
+
+
+def _send(client, hook_id, secret, text):
+    payload = json.dumps({"text": text}).encode()
+    signature = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+    return client.post(
+        f"/admin/webhook/incoming/{hook_id}",
+        data=payload,
+        content_type="application/json",
+        headers={"X-Webhook-Signature": signature},
+    )
+
+
+def test_incoming_webhook_applies_replace_rules(client):
+    """A replace rule rewrites the text; it used to raise (500) on this path."""
+    hook_id, secret = _hook_with_rule(
+        client,
+        {"type": "replace", "pattern": "darn", "action": "replace", "replacement": "***"},
+    )
+
+    resp = _send(client, hook_id, secret, "well darn it")
+
+    assert resp.status_code == 200, resp.data
+    texts = [m.get("text") for m in ws_queue.dequeue_all()]
+    assert "well *** it" in texts
+    assert "well darn it" not in texts
+
+
+def test_incoming_webhook_holds_messages_that_hit_a_review_rule(client):
+    """Same as a viewer's message: a review rule means the moderation queue,
+    not the screen."""
+    from server.services.mod_queue import mod_queue
+
+    hook_id, secret = _hook_with_rule(
+        client, {"type": "keyword", "pattern": "giveaway", "action": "review"}
+    )
+
+    resp = _send(client, hook_id, secret, "free giveaway here")
+
+    assert resp.status_code == 202, resp.data
+    body = resp.get_json()
+    assert body["status"] == "queued_for_review"
+    assert not [m for m in ws_queue.dequeue_all() if m.get("text") == "free giveaway here"]
+    assert body["queue_id"] in [item["id"] for item in mod_queue.snapshot()["pending"]]
+
+
+def test_incoming_webhook_is_not_lost_when_the_review_queue_fails(client, monkeypatch):
+    """Same choice as /fire: a broken queue lets the message through rather
+    than answering 500 and dropping it."""
+    from server.services.mod_queue import mod_queue
+
+    def broken(*_args, **_kwargs):
+        raise RuntimeError("queue unavailable")
+
+    monkeypatch.setattr(mod_queue, "enqueue", broken)
+    hook_id, secret = _hook_with_rule(
+        client, {"type": "keyword", "pattern": "giveaway", "action": "review"}
+    )
+
+    resp = _send(client, hook_id, secret, "free giveaway here")
+
+    assert resp.status_code == 200, resp.data
+    assert [m for m in ws_queue.dequeue_all() if m.get("text") == "free giveaway here"]
+
+
+def test_incoming_webhook_held_for_review_is_never_also_shown(client, monkeypatch):
+    """Once the message is in the queue nothing may let it through as well —
+    not even the cleanup thread failing to start."""
+    from server.services.mod_queue import mod_queue
+
+    def no_thread():
+        raise RuntimeError("can't start new thread")
+
+    monkeypatch.setattr(mod_queue, "start_reaper", no_thread)
+    hook_id, secret = _hook_with_rule(
+        client, {"type": "keyword", "pattern": "giveaway", "action": "review"}
+    )
+
+    resp = _send(client, hook_id, secret, "free giveaway here")
+
+    assert resp.status_code == 202, resp.data
+    assert not [m for m in ws_queue.dequeue_all() if m.get("text") == "free giveaway here"]
+    assert resp.get_json()["queue_id"] in [item["id"] for item in mod_queue.snapshot()["pending"]]
+
+
+def test_incoming_webhook_messages_count_towards_the_session(client):
+    from server.services import session_service
+
+    session_service.open_session("Friday")
+    hook_id, secret = _hook_with_rule(
+        client, {"type": "keyword", "pattern": "giveaway", "action": "review"}
+    )
+
+    assert _send(client, hook_id, secret, "hello from outside").status_code == 200
+    assert _send(client, hook_id, secret, "free giveaway here").status_code == 202  # held
+
+    assert session_service.get_message_count() == 1
+
+
+@pytest.mark.parametrize(
+    "outcome",
+    [
+        {"status": "dropped", "reason": "full"},
+        {"status": "rejected", "reason": "queue_full"},
+    ],
+)
+def test_incoming_webhook_messages_that_never_reach_the_screen_are_not_counted(
+    client, monkeypatch, outcome
+):
+    """Same rule as /fire: the session count is what was accepted."""
+    from server.services import messaging, session_service
+
+    session_service.open_session("Friday")
+    hook_id, secret = _hook_with_rule(
+        client, {"type": "keyword", "pattern": "giveaway", "action": "review"}
+    )
+    monkeypatch.setattr(messaging, "forward_to_ws_server", lambda *_a, **_k: outcome)
+
+    assert _send(client, hook_id, secret, "hello from outside").status_code == 200
+
+    assert session_service.get_message_count() == 0
+
+
+def test_a_held_message_counts_once_it_is_approved_and_sent(client, monkeypatch):
+    """Held for review is not accepted yet; approved and sent is. Approved
+    but dropped (the screen is full) is not."""
+    from server.services import messaging, session_service
+
+    session_service.open_session("Friday")
+    hook_id, secret = _hook_with_rule(
+        client, {"type": "keyword", "pattern": "giveaway", "action": "review"}
+    )
+    token = _login(client)
+
+    def hold(text):
+        held = _send(client, hook_id, secret, text)
+        assert held.status_code == 202, held.data
+        return held.get_json()["queue_id"]
+
+    def approve(queue_id):
+        approved = client.post(
+            "/admin/modqueue/approve", json={"id": queue_id}, headers={"X-CSRF-Token": token}
+        )
+        assert approved.status_code == 200, approved.data
+
+    first = hold("giveaway one")
+    assert session_service.get_message_count() == 0  # held: not accepted yet
+    approve(first)
+    assert session_service.get_message_count() == 1
+
+    second = hold("giveaway two")
+    dropped = {"status": "dropped", "reason": "full"}
+    monkeypatch.setattr(messaging, "forward_to_ws_server", lambda *_a, **_k: dropped)
+    approve(second)
+    assert session_service.get_message_count() == 1
+
+
 def test_incoming_webhook_bad_signature_rejected(client):
     """Incoming webhook with invalid signature should be rejected."""
     token = _login(client)

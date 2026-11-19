@@ -65,6 +65,27 @@ describe("cockpit display card follows the shared display state", () => {
     expect(status()).toBe('uiDisplayOff · setupWizardReadyDisplayOk:{"n":1}');
   });
 
+  test("the top-bar pill follows the display state, on every page", async () => {
+    // 膠囊每一頁都在；原本它讀的是排版設定，永遠顯示「開」。
+    document.body.insertAdjacentHTML("beforeend",
+      '<button class="admin-dash-broadcast is-on" data-overlay-pill>顯示層 · <span data-overlay-pill-state>statusOn</span></button>');
+    const pill = document.querySelector("[data-overlay-pill]");
+    const label = () => pill.querySelector("[data-overlay-pill-state]").textContent;
+
+    document.dispatchEvent(new CustomEvent("admin-overlay-state", { detail: { live: false, count: 1 } }));
+    expect(label()).toBe("statePaused");
+    expect(pill.classList.contains("is-off")).toBe(true);
+    expect(pill.classList.contains("is-on")).toBe(false);
+
+    // 換到沒有顯示層卡片的頁面：問一次伺服器，不靠控制台的輪詢。
+    serverMode = "live";
+    document.dispatchEvent(new CustomEvent("admin-route-applied", { detail: { route: "moderation" } }));
+    await flush();
+    await flush();
+    expect(label()).toBe("statusOn");
+    expect(pill.classList.contains("is-on")).toBe(true);
+  });
+
   const showCard = () => jest.spyOn(HTMLElement.prototype, "offsetParent", "get")
     .mockImplementation(function () { return this.parentElement; });
 
@@ -119,6 +140,35 @@ describe("cockpit display card follows the shared display state", () => {
     const node = document.querySelector("[data-cockpit-status]").firstChild;
     document.dispatchEvent(new CustomEvent("admin-overlay-state", { detail: { live: true, count: 2 } }));
     expect(document.querySelector("[data-cockpit-status]").firstChild).toBe(node);
+  });
+
+  test("the status is asked for on entering a page, not every time the page settles", async () => {
+    // admin-route-applied 在版面同步時也會發；頁面上有每秒在走的數字時，
+    // 等於每秒來一次。只有「進到這一頁」的那一次該去問伺服器。
+    showCard();
+    const again = (route) => document.dispatchEvent(
+      new CustomEvent("admin-route-applied", { detail: { route } }));
+    again("overlay"); // 先離開，下一次才算是進來
+    window.fetch.mockClear();
+
+    again("live");
+    await flush();
+    const onEntering = window.fetch.mock.calls.length;
+    expect(onEntering).toBeGreaterThan(0);
+    for (let i = 0; i < 5; i++) again("live");
+    await flush();
+    expect(window.fetch.mock.calls.length).toBe(onEntering);
+
+    // 沒有卡片的頁面也一樣：進來問一次膠囊的狀態，之後不再問。
+    document.body.insertAdjacentHTML("beforeend",
+      '<button data-overlay-pill><span data-overlay-pill-state></span></button>');
+    window.fetch.mockClear();
+    again("system");
+    await flush();
+    expect(window.fetch).toHaveBeenCalledTimes(1);
+    for (let i = 0; i < 5; i++) again("system");
+    await flush();
+    expect(window.fetch).toHaveBeenCalledTimes(1);
   });
 
   test("leaving for another route does not touch the card", () => {

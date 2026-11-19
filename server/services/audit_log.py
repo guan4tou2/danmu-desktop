@@ -12,6 +12,8 @@ backups elsewhere if needed).
 
 Each entry shape:
     {
+      "id": "3f9c1a7e5b02",           # unique per event; absent on entries
+                                      # written before 2026-11
       "ts": 1714198400.123,
       "source": "fire_token" | "auth" | "broadcast" | ...,
       "kind":   "rotated" | "revoked" | "toggled" | "login" | ...,
@@ -48,6 +50,7 @@ import logging
 import os
 import threading
 import time as _time
+import uuid
 from collections import deque
 from pathlib import Path
 from typing import Any, Deque, Dict, List, Optional
@@ -147,6 +150,10 @@ def append(
     ``meta``    carries lightweight context. Keep it small (< 1 KB).
     """
     entry: Dict[str, Any] = {
+        # What a reader can tell two events apart by. The timestamp cannot
+        # promise that: two identical events (two failed sign-ins) may be
+        # stamped the same, and a reader keyed on content would merge them.
+        "id": uuid.uuid4().hex[:12],
         "ts": _time.time(),
         "source": str(source)[:32] or "unknown",
         "kind": str(kind)[:32] or "event",

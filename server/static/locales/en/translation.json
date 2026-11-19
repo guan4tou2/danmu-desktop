@@ -2917,5 +2917,7 @@
   "rlFoldBlocked": "Recently blocked",
   "firetokenCeilingPerMin": "limit {n}/min",
   "rlOutOfRange": "Enter a whole number from {min} to {max}",
-  "rlNotPersisted": "Applied, but the server could not write it to disk — it will revert on restart"
+  "rlNotPersisted": "Applied, but the server could not write it to disk — it will revert on restart",
+  "joinUrlLocalOnly": "Viewers can't reach this address",
+  "joinUrlNotTrusted": "Viewers can't connect: add {host} to TRUSTED_HOSTS"
 }
