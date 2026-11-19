@@ -1,5 +1,7 @@
 """Unit tests for the persistent audit_log service."""
 
+import types
+
 import pytest
 
 from server.services import audit_log
@@ -115,7 +117,10 @@ def test_source_truncated_at_32_chars():
 def test_every_event_has_its_own_id(monkeypatch):
     """Two events can be identical down to the timestamp (two failed sign-ins
     stamped the same); the id is what tells them apart for a reader."""
-    monkeypatch.setattr(audit_log._time, "time", lambda: 1700000000.0)
+    # Only this module's clock: ``audit_log._time`` is the ``time`` module
+    # itself, and patching ``time.time`` there would freeze it for everyone.
+    frozen = types.SimpleNamespace(time=lambda: 1700000000.0)
+    monkeypatch.setattr(audit_log, "_time", frozen)
 
     first = audit_log.append("auth", "login_failed", actor="admin")
     second = audit_log.append("auth", "login_failed", actor="admin")

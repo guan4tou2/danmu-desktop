@@ -7,6 +7,8 @@ admin polls /admin/live-feed/recent with a cursor.
 
 # pyright: reportMissingImports=false
 
+import types
+
 from server.services import live_feed_buffer  # ty: ignore[unresolved-import]
 
 
@@ -57,7 +59,11 @@ def test_recent_respects_limit():
 def test_entries_carry_the_time_the_server_forwarded_them(monkeypatch):
     """The feed shows when a message went out, not when the page polled."""
     clock = iter([1000.0, 1000.7, 1003.2])
-    monkeypatch.setattr(live_feed_buffer.time, "time", lambda: next(clock))
+    # Only this module's clock. ``live_feed_buffer.time`` is the ``time``
+    # module itself — patching ``time.time`` there replaces it for every
+    # fixture that tears down after this test, and the three values run out.
+    fake_time = types.SimpleNamespace(time=lambda: next(clock))
+    monkeypatch.setattr(live_feed_buffer, "time", fake_time)
 
     for text in ("a", "b", "c"):
         live_feed_buffer.append({"text": text})
