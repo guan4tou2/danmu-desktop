@@ -80,6 +80,22 @@ describe("notification bell", () => {
     expect(badge()).toBe("1"); // 只有新的那一則
   });
 
+  test("two events identical down to the timestamp are still two notifications", async () => {
+    // 伺服器給每筆事件一個 id；時間與內容完全相同也分得開。
+    const twin = (id) => ({ ...event(200.5, "auth", "login_failed"), id });
+    audit = [twin("bbbb"), twin("aaaa")];
+    await refresh();
+    expect(badge()).toBe("2");
+
+    // 讀掉較舊的那一則；它滾出這一頁之後，較新的那則仍是未讀。
+    const rows = panel().querySelectorAll("[data-notif-go]");
+    rows[rows.length - 1].click();
+    expect(badge()).toBe("1");
+    audit = [twin("bbbb")];
+    await refresh();
+    expect(badge()).toBe("1");
+  });
+
   test("two failed sign-ins a moment apart are two notifications", async () => {
     // 伺服器記的時間帶小數；同一秒內的兩次嘗試時間不同。
     audit = [event(200.412, "auth", "login_failed"), event(200.108, "auth", "login_failed")];

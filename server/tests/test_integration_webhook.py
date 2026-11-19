@@ -256,6 +256,30 @@ def test_incoming_webhook_messages_count_towards_the_session(client):
     assert session_service.get_message_count() == 1
 
 
+@pytest.mark.parametrize(
+    "outcome",
+    [
+        {"status": "dropped", "reason": "full"},
+        {"status": "rejected", "reason": "queue_full"},
+    ],
+)
+def test_incoming_webhook_messages_that_never_reach_the_screen_are_not_counted(
+    client, monkeypatch, outcome
+):
+    """Same rule as /fire: the session count is what was accepted."""
+    from server.services import messaging, session_service
+
+    session_service.open_session("Friday")
+    hook_id, secret = _hook_with_rule(
+        client, {"type": "keyword", "pattern": "giveaway", "action": "review"}
+    )
+    monkeypatch.setattr(messaging, "forward_to_ws_server", lambda *_a, **_k: outcome)
+
+    assert _send(client, hook_id, secret, "hello from outside").status_code == 200
+
+    assert session_service.get_message_count() == 0
+
+
 def test_incoming_webhook_bad_signature_rejected(client):
     """Incoming webhook with invalid signature should be rejected."""
     token = _login(client)

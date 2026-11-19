@@ -112,9 +112,13 @@
     return h.toString(36);
   }
 
-  // id 裡的時間是伺服器記下的原值（帶小數的秒），連續兩次登入失敗的時間不會
-  // 相同，所以各是一則。不另外替「同 id」的事件編流水號：流水號得從抓到的
+  // 稽核事件自己帶 id（伺服器每筆給一個）；有就直接用，兩筆內容、時間都
+  // 一樣的事件（連續兩次登入失敗）也分得開。舊版寫下的事件沒有 id，退回用
+  // 時間與內容組一個。不在這裡替「同 id」的事件編流水號：流水號得從抓到的
   // 這一頁重新數，舊事件滾出這一頁時號碼會位移，已讀就記到別則頭上了。
+  function _auditId(prefix, e, fallback) {
+    return prefix + (e.id ? String(e.id) : fallback);
+  }
 
   async function _fetchFilterEvents() {
     const r = await fetch("/admin/filters/events", { credentials: "same-origin" });
@@ -150,7 +154,7 @@
     return events.map(function (e, i) {
       const ts = (Number(e.ts) || 0) * 1000;
       const kind = String(e.kind || "?");
-      const id = "wh-" + (e.ts || 0) + "-" + kind + "-" + _stableSuffix([e.actor, e.meta]);
+      const id = _auditId("wh-", e, (e.ts || 0) + "-" + kind + "-" + _stableSuffix([e.actor, e.meta]));
       const sev = (kind === "unregister") ? "warn" : "info";
       return {
         id: id,
@@ -179,7 +183,7 @@
     }).map(function (e) {
       const ts = (Number(e.ts) || 0) * 1000;
       const kind = String(e.kind || "?");
-      const id = "sys-" + (e.ts || 0) + "-" + (e.source || "x") + "-" + kind + "-" + _stableSuffix([e.actor, e.meta]);
+      const id = _auditId("sys-", e, (e.ts || 0) + "-" + (e.source || "x") + "-" + kind + "-" + _stableSuffix([e.actor, e.meta]));
       const sev = kind === "login_failed" ? "warn" : "info";
       return {
         id: id,

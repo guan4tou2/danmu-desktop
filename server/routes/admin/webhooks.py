@@ -269,9 +269,11 @@ def incoming_webhook(hook_id):
     danmu_style.apply_theme_defaults(msg)
     if not msg["color"]:
         msg["color"] = "FFFFFF"
-    # 控制台的「訊息」數是這一場收下了幾則，外部系統送進來的也算。
-    from ...services import session_service
+    forwarded = messaging.forward_to_ws_server(msg) or {}
+    if forwarded.get("status") in ("sent", "queued"):
+        # 控制台的「訊息」數是這一場收下了幾則，外部系統送進來的也算——
+        # 與 /fire 相同，畫面滿了被丟掉、佇列滿了被拒絕的不算。
+        from ...services import session_service
 
-    session_service.note_message()
-    messaging.forward_to_ws_server(msg)
+        session_service.note_message()
     return _json_response({"status": "OK"})
