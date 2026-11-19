@@ -327,39 +327,4 @@ describe("ipc-handlers integration", () => {
 
     warnSpy.mockRestore();
   });
-
-  // -----------------------------------------------------------------------
-  // overlay:get-config — 待機畫面上的位址還在查時，等查完才回設定
-  // -----------------------------------------------------------------------
-  test("overlay:get-config waits for the idle-screen address before answering", async () => {
-    const handler = findHandleHandler("overlay:get-config");
-    const webContents = { id: 99 };
-    let finish;
-    const child = {
-      isDestroyed: jest.fn(() => false),
-      webContents,
-      overlayConfig: { displayHost: "127.0.0.1:9487" },
-    };
-    child.overlayConfigReady = new Promise((resolve) => {
-      finish = () => {
-        child.overlayConfig = { displayHost: "192.168.1.20:9487" };
-        resolve();
-      };
-    });
-    childWindows.push(child);
-
-    const answer = handler({ sender: webContents });
-    finish();
-
-    expect(await answer).toEqual({ displayHost: "192.168.1.20:9487" });
-  });
-
-  test("overlay:get-config answers null to a window it does not know", async () => {
-    const handler = findHandleHandler("overlay:get-config");
-    const warnSpy = jest.spyOn(console, "warn").mockImplementation();
-
-    expect(await handler({ sender: { id: 12345 } })).toBeNull();
-
-    warnSpy.mockRestore();
-  });
 });

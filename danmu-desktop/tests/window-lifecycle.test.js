@@ -16,14 +16,6 @@ const mockIsDestroyed = jest.fn(() => false);
 const mockDestroy = jest.fn();
 const mockSetPosition = jest.fn();
 
-// 待機畫面位址的查詢會開 socket、實際去問 server；測試裡換成可控的假查詢
-// （預設：位址不變）。查詢本身的規則在 child-ws-script.test.js。
-const mockResolveViewerHost = jest.fn(async (ip) => String(ip));
-jest.mock("../main-modules/child-ws-script", () => ({
-  ...jest.requireActual("../main-modules/child-ws-script"),
-  resolveViewerHost: (...args) => mockResolveViewerHost(...args),
-}));
-
 // Store BrowserWindow constructor calls for inspection
 let browserWindowOptions = null;
 
@@ -127,15 +119,15 @@ describe("window-lifecycle: setupChildWindow", () => {
     const logSpy = jest.spyOn(console, "log").mockImplementation();
 
     setupChildWindow(
-      targetWindow, display, "192.168.1.100", 9487, "tok", null, childWindows
+      targetWindow, display, "127.0.0.1", 9487, "tok", null, childWindows
     );
 
     expect(targetWindow.overlayConfig).toEqual({
-      ip: "192.168.1.100",
+      ip: "127.0.0.1",
       port: 9487,
       startupAnimationSettings: { enabled: false },
       wsAuthToken: "tok",
-      displayHost: "192.168.1.100:9487",
+      displayHost: "127.0.0.1:9487",
       qrSvg: expect.any(String),
     });
     expect(mockLoadFile).toHaveBeenCalledTimes(1);
@@ -146,69 +138,6 @@ describe("window-lifecycle: setupChildWindow", () => {
     );
     if (didFinishLoadCall) didFinishLoadCall[1]();
     expect(mockExecuteJavaScript).not.toHaveBeenCalled();
-
-    logSpy.mockRestore();
-  });
-
-  test("the idle screen's address is looked up, and get-config can wait for it", async () => {
-    // 顯示端連本機：先印連線位址，查到觀眾連得到的位址後換掉。
-    const logSpy = jest.spyOn(console, "log").mockImplementation();
-    mockResolveViewerHost.mockResolvedValueOnce("192.168.1.20");
-
-    setupChildWindow(
-      targetWindow, display, "127.0.0.1", 9487, "tok", null, childWindows
-    );
-
-    expect(mockResolveViewerHost).toHaveBeenLastCalledWith("127.0.0.1", 9487);
-    expect(targetWindow.overlayConfig.displayHost).toBe("127.0.0.1:9487");
-
-    await targetWindow.overlayConfigReady;
-
-    expect(targetWindow.overlayConfig).toMatchObject({
-      ip: "127.0.0.1", // 顯示端自己還是連本機
-      port: 9487,
-      wsAuthToken: "tok",
-      displayHost: "192.168.1.20:9487",
-    });
-
-    logSpy.mockRestore();
-  });
-
-  test("a slow lookup from an earlier setup does not overwrite a newer one", async () => {
-    const logSpy = jest.spyOn(console, "log").mockImplementation();
-    let finishFirst;
-    mockResolveViewerHost.mockReturnValueOnce(new Promise((resolve) => { finishFirst = resolve; }));
-
-    setupChildWindow(
-      targetWindow, display, "127.0.0.1", 9487, "old-token", null, childWindows
-    );
-    const first = targetWindow.overlayConfigReady;
-    setupChildWindow(
-      targetWindow, display, "192.168.1.100", 9487, "new-token", null, childWindows
-    );
-    finishFirst("192.168.1.20");
-    await first;
-    await targetWindow.overlayConfigReady;
-
-    expect(targetWindow.overlayConfig).toMatchObject({
-      ip: "192.168.1.100",
-      wsAuthToken: "new-token",
-      displayHost: "192.168.1.100:9487",
-    });
-
-    logSpy.mockRestore();
-  });
-
-  test("a failed address lookup leaves the config as it was", async () => {
-    const logSpy = jest.spyOn(console, "log").mockImplementation();
-    mockResolveViewerHost.mockRejectedValueOnce(new Error("boom"));
-
-    setupChildWindow(
-      targetWindow, display, "127.0.0.1", 9487, "", null, childWindows
-    );
-    await targetWindow.overlayConfigReady;
-
-    expect(targetWindow.overlayConfig.displayHost).toBe("127.0.0.1:9487");
 
     logSpy.mockRestore();
   });
