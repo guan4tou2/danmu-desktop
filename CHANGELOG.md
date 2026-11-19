@@ -5,7 +5,7 @@
 格式基於 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，
 版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased]
+## [5.13.0] - 2026-11-19
 
 ### 發送上限合一
 
